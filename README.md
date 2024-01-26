@@ -23,6 +23,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 
 ## Requirements
 - A jailbroken PS4
+- Give the bot permsisions to manage threads and delete messages in addition to the message content intents.
 
 ## Tutorial
 Make sure to read everything.
