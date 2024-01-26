@@ -42,20 +42,20 @@ How to obtain NPPSO:
 - Upload the config.ini file to /data/cecie on your PS4.
 - Set up a Google Drive Service Account and grab the json file with the key 
   https://support.google.com/a/answer/7378726?hl=en (its free), if the json file has the key "universal_domain", you remove it
-- Download the code from the bot and go to the .env file, edit it as follows:\n
-  IP: PS4 IP address
-  FTP_PORT: The port that your FTP payload uses
-  SOCKET_PORT: The port that you used in the config.ini file
-  UPLOAD_PATH: The path that you used in the config.ini file
-  MOUNT_PATH: The path on your PS4 where the saves will be mounted
-  GOOGLE_DRIVE_JSON_PATH: The path to the Google Drive Service Account json file
+- Download the code from the bot and go to the .env file, edit it as follows:  
+  IP: PS4 IP address  
+  FTP_PORT: The port that your FTP payload uses  
+  SOCKET_PORT: The port that you used in the config.ini file  
+  UPLOAD_PATH: The path that you used in the config.ini file  
+  MOUNT_PATH: The path on your PS4 where the saves will be mounted  
+  GOOGLE_DRIVE_JSON_PATH: The path to the Google Drive Service Account json file  
   STORED_SAVES_FOLDER_PATH: The path to the folder where you store saves for use in the quickresign command, format inside the folder 
-  is {NAME OF GAME}/{CUSAXXXXX}{ANY NAME FOR SAVE}/{THE .BIN AND FILE}
-  TOKEN: Discord bot token
-  NPSSO: The NPSSO token
+  is {NAME OF GAME}/{CUSAXXXXX}{ANY NAME FOR SAVE}/{THE .BIN AND FILE}  
+  TOKEN: Discord bot token  
+  NPSSO: The NPSSO token  
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run main.py
-
+  
 ### Disclaimers
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example /data/example/mount & 
   /data/example/upload
