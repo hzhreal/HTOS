@@ -8,8 +8,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Change the picture of encrypted saves
 - Change the titles of encrypted saves
 - Quickly resign pre stored saves
-- Convert GTA V & RDR 2 gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones   
-  that do will get added over time)
+- Convert GTA V & RDR 2 gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will get added over time)
 
 ## Functionalities
 - File uploads through discord and google drive
