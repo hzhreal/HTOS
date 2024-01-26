@@ -18,6 +18,8 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Param.sfo parser
 - Asynchronous, can handle multiple operations at once
 - Bot will guide you with what do to in each command
+- All commands except ping will only work in private threads created by the bot, thread IDs are stored in .db file
+- Everything will get cleaned up locally and on the PS4
 
 ## Requirements
 - A jailbroken PS4
@@ -55,6 +57,8 @@ How to obtain NPPSO:
   NPSSO: The NPSSO token  
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run main.py
+- Do >init in the channel you want the private threads to get created in
+- Enjoy!
   
 ### Disclaimers
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example /data/example/mount & 
