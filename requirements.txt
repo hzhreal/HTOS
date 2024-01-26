@@ -1,0 +1,9 @@
+py-cord
+python-dotenv
+aiosqlite
+pycryptodome
+aiofiles
+pillow
+aioftp
+aiogoogle
+psnawp
