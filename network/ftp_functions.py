@@ -86,7 +86,6 @@ class FTPps:
     async def reregioner(self, location_to_scesys: str, title_id: str, account_id: str) -> None:
         paramPath = os.path.join(self.PARAM_PATH, self.PARAMSFO_NAME)
 
-        print(f"TITLE ID TO REREGION: {title_id}")
         if not check_titleid(title_id):
             raise FTPError("Invalid title id!")
         
@@ -186,8 +185,6 @@ class FTPps:
 
         try: title_id = await obtainCUSA(self.PARAM_PATH)
         except OrbisError as e: raise OrbisError(e)
-
-        print(f"title id: {title_id}")
         
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -222,15 +219,12 @@ class FTPps:
     async def deleteuploads(self, savenames: str) -> None:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
-                print("CONNECTED")
                 await ftp.change_directory(self.ENCRYPTED_LOCATION)
                 await ftp.remove(savenames)
-                print(f"{savenames} has been deleted from the PS4")
 
                 savenames_bin = savenames + ".bin"
 
                 await ftp.remove(savenames_bin)
-                print(f"{savenames_bin} has been deleted from the PS4")
 
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
@@ -257,7 +251,6 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.remove(folder_path)
-            print(f"Folder contents of '{folder_path}' deleted successfully.")
 
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
@@ -267,9 +260,7 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.make_directory(folder1)
-                print(f"{folder1} has been created")
                 await ftp.make_directory(folder2)
-                print(f"{folder2} has been created")
 
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
@@ -279,7 +270,6 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.make_directory(path)
-                print(f"{path} has been created")
 
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
@@ -302,7 +292,6 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.download(folder_path, downloadpath, write_into=True)
-                print(f"Folder contents of '{folder_path}' downloaded successfully.")
 
             if ignoreSceSys: 
                 shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
@@ -315,8 +304,6 @@ class FTPps:
     
         try: title_id = await obtainCUSA(self.PARAM_PATH)
         except OrbisError as e: raise OrbisError(e)
-
-        print(f"title id: {title_id}")
 
         savefilespath = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, "PS4", "SAVEDATA", account_id, title_id)
 
@@ -385,7 +372,6 @@ class FTPps:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
-        print(f"Listed all contents of {mountpath}")
         # exclude sce_sys, parent- and working directory)
         files = [
             str(file) 
@@ -406,7 +392,7 @@ class FTPps:
                 for fileName in fileList:
                     if (await ftp.exists(fileName)):
                         await ftp.remove(fileName)
-                        print(f"Deleted {fileName}")
+
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
