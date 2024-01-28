@@ -44,10 +44,8 @@ class GDapi:
 
         if match:
             folder_id = match.group(1)
-            print(f"The Folder ID is: {folder_id}")
             return folder_id
         else:
-            print("Folder ID not found in the link.")
             await ctx.edit(embed=GDapi.emblinkwrong)
             return False
 
@@ -212,20 +210,17 @@ class GDapi:
                     )
                 
                     uploaded_file_paths.append(file_name)
+
                     embeddone = discord.Embed(title="Google drive upload: Retrieved file",
                         description=f"{file_name} has been uploaded and saved.",
                         colour=0x854bf7)
-
                     embeddone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-
                     embeddone.set_footer(text="Made with expertise by HTOP")
                     await ctx.edit(embed=embeddone)
                     
             else:
-                print("Didnt find any files")
                 await ctx.edit(embed=cls.embednf)
                 await asyncio.sleep(0.5)
                 raise GDapiError(f"G-D UPLOAD ERROR: No files found! Or they are more than {max_files}.")
-
-        print("Download completed.")
+            
         return uploaded_file_paths, file_name
