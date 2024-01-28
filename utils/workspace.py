@@ -64,7 +64,6 @@ def startup():
             ftp.connect(IP, PORT)
             login_result = ftp.login()  # Call the login method and get its return value
             if login_result == "230 User logged in, proceed.":
-                print("CONNECTED")
                 try:
                     ftp.mkd(MOUNT_LOCATION)
                     ftp.mkd(PS_UPLOADDIR)
@@ -154,7 +153,7 @@ def enumerateFiles(fileList: list, randomString: str) -> list:
             fileList[i] = os.path.splitext(os.path.basename(name))[0] + f"_{randomString}.bin" 
         else:
             fileList[i] = os.path.basename(name) + f"_{randomString}"
-    print(fileList)
+
     return fileList
 
 async def listStoredSaves(ctx) -> str | None:
@@ -186,8 +185,6 @@ async def listStoredSaves(ctx) -> str | None:
                             description += f"-- {index}. {save}\n"
                             save_paths.append(savePath)
                             index += 1
-
-    print(description)
 
     embList = discord.Embed(title="List of available saves",
                         description=f"{description}\nType in the number associated to the save to resign it, or send 'EXIT' to cancel.",
