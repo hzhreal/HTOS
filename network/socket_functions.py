@@ -17,10 +17,8 @@ class SocketPS:
     try:
       async with self.semaphore:
         reader, writer = await asyncio.open_connection(host, port)
-        print("CONNECTED")
         writer.write(message.encode())
         await writer.drain()
-        print("sent")
       
         response = await reader.read(1024)
 
@@ -40,29 +38,20 @@ class SocketPS:
     writer.close()
     await writer.wait_closed()
 
-  async def socket_list(self, random_string: str, savename: str) -> None:
-
-    print(random_string)
-    message = f"""{{"RequestType": "rtListSaveFiles", "listTargetSaveName": "{savename}"}}\r\n"""
-    response = await self.send_tcp_message_with_response(self.HOST, self.PORT, message)
-    print(response)
+  #async def socket_list(self, random_string: str, savename: str) -> None:
+  #  message = f"""{{"RequestType": "rtListSaveFiles", "listTargetSaveName": "{savename}"}}\r\n"""
+  #  response = await self.send_tcp_message_with_response(self.HOST, self.PORT, message)
 
   async def socket_dump(self, random_string: str, savename: str) -> None: 
-
-    print(random_string)
     message = f'''{{"RequestType": "rtDumpSave", "sourceSaveName": "{savename}", "targetFolder": "{random_string}", "dumpOnly": []}}\r\n'''
     response = await self.send_tcp_message_with_response(self.HOST, self.PORT, message)
-    print(response)
 
     if response != self.SUCCESS:
       raise SocketError("Invalid save!")
 
   async def socket_update(self, random_string: str, savename: str) -> None: 
-
-    print(random_string)
     message = f"""{{"RequestType": "rtUpdateSave", "targetSaveName": "{savename}", "sourceFolder": "{random_string}", "selectOnly": []}}\r\n"""
     response = await self.send_tcp_message_with_response(self.HOST, self.PORT, message)
-    print(response)
 
     if response != self.SUCCESS:
       raise SocketError("Invalid save!")
