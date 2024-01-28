@@ -106,8 +106,6 @@ class CustomCrypto:
                 await encrypted_file.write(data_before)
                 await encrypted_file.write(encrypted_data)
 
-            print(f"Encryption completed. Encrypted data saved to '{fileToEncrypt}'.")
-
         @staticmethod
         async def decryptFile(upload_decrypted: str, start_offset: int) -> None:
             files = CustomCrypto.obtainFiles(upload_decrypted)
@@ -132,8 +130,6 @@ class CustomCrypto:
                 async with aiofiles.open(file_name, "wb") as decrypted_file:
                     await decrypted_file.write(data_before)
                     await decrypted_file.write(decrypted_data)
-
-                print(f"Decryption completed. Decrypted data saved to '{decrypted_file_name}'.")
 
     class Xeno2:
         SAVE_HEADER_KEY = b"PR]-<Q9*WxHsV8rcW!JuH7k_ug:T5ApX"
