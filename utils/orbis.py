@@ -233,8 +233,6 @@ async def obtainCUSA(param_path: str) -> str | None:
     try: title_id = data_title_id.decode("utf-8")
     except UnicodeDecodeError: raise OrbisError("Invalid title ID in param.sfo!")
     
-    print(f"title id: {title_id}")
-    
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
         
@@ -273,8 +271,6 @@ async def reregion_write(paramPath: str, title_id: str) -> None:
 
     async with aiofiles.open(paramPath, "wb") as file_param:
         await file_param.write(new_sfo_data) 
-        
-    print("title id swapped")
 
 async def obtainID(paramPath: str) -> str | None:
     paramPath = os.path.join(paramPath, PARAM_NAME)
@@ -290,12 +286,10 @@ async def obtainID(paramPath: str) -> str | None:
     if not checkid(account_id):
         raise OrbisError("Invalid account ID in param.sfo!")
 
-    print(f"Obtained ID: {account_id}")
     return account_id
 
 def xeno2Check(title_id: str, savePath: str, original_savePath: str, original_savePath1: str) -> None:
     if title_id in XENO2_TITLEID:
-        print(f"[RE-REGION] XENOVERSE 2 SAVE DETECTED: {title_id}")
         newnameFile = os.path.join(savePath, title_id + "01")
         newnameBin = os.path.join(savePath, title_id + "01.bin")
         if os.path.exists(newnameFile) and os.path.exists(newnameBin):
@@ -305,7 +299,6 @@ def xeno2Check(title_id: str, savePath: str, original_savePath: str, original_sa
         if os.path.exists(original_savePath) and os.path.exists(original_savePath1):
             os.rename(original_savePath, newnameFile)
             os.rename(original_savePath1, newnameBin)
-            print("[RE-REGION] RENAMED FILES")
 
 async def handleTitles(paramPath: str, maintitle: str, subtitle: str) -> None:
     paramPath = os.path.join(paramPath, PARAM_NAME)
