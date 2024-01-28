@@ -36,8 +36,6 @@ class Converter:
             await file.write(data_to_move)
 
     class Rstar:
-
-
         @staticmethod
         def get_uint32(data: bytearray, seed: int) -> int:
             num1 = seed
@@ -67,7 +65,6 @@ class Converter:
 
                 title_bytes = bytearray(await file.read(0x100))
                 chks = format(Converter.Rstar.get_uint32(title_bytes, SEED), "08x")
-                print(chks)
                 chks_bytes = bytes.fromhex(chks)
 
                 await file.seek(0x104)
@@ -94,14 +91,12 @@ class Converter:
                         header = await file.read(4)
             
                     if header == HEADER and platform == "ps4":
-                        print("decrypted ps4 file recognized")
                         await Converter.pushBytes(PS_HEADER_OFFSET, PC_HEADER_OFFSET, filePath)
                         await Converter.Rstar.handleTitle(filePath)
 
                         await CustomCrypto.Rstar.encryptFile(filePath, PC_HEADER_OFFSET)
                     
                     elif header != HEADER and platform == "ps4":
-                        print("encrypted ps4 file recognized")
                         await CustomCrypto.Rstar.decryptFile(os.path.dirname(filePath), PS_HEADER_OFFSET)
 
                         await Converter.pushBytes(PS_HEADER_OFFSET, PC_HEADER_OFFSET, filePath)
@@ -110,12 +105,10 @@ class Converter:
                         await CustomCrypto.Rstar.encryptFile(filePath, PC_HEADER_OFFSET)
 
                     elif header == HEADER and platform == "pc":
-                        print("decrypted pc file recognized")
                         await Converter.pushBytes(PC_HEADER_OFFSET, PS_HEADER_OFFSET, filePath)
                         await Converter.Rstar.handleTitle(filePath)
 
                     elif header != HEADER and platform == "pc":
-                        print("encrypted pc file recognized")
                         await CustomCrypto.Rstar.decryptFile(os.path.dirname(filePath), PC_HEADER_OFFSET)
 
                         await Converter.pushBytes(PC_HEADER_OFFSET, PS_HEADER_OFFSET, filePath)
@@ -150,14 +143,12 @@ class Converter:
                         header = await file.read(4)
                 
                 if header == HEADER and platform == "ps4":
-                    print("decrypted ps4 file recognized")
                     await Converter.pushBytes(PS_HEADER_OFFSET, PC_HEADER_OFFSET, filePath)
                     await Converter.Rstar.handleTitle(filePath)
 
                     await CustomCrypto.Rstar.encryptFile(filePath, PC_HEADER_OFFSET)
                 
                 elif header != HEADER and platform == "ps4":
-                    print("encrypted ps4 file recognized")
                     await CustomCrypto.Rstar.decryptFile(os.path.dirname(filePath), PS_HEADER_OFFSET)
 
                     await Converter.pushBytes(PS_HEADER_OFFSET, PC_HEADER_OFFSET, filePath)
@@ -166,12 +157,10 @@ class Converter:
                     await CustomCrypto.Rstar.encryptFile(filePath, PC_HEADER_OFFSET)
                 
                 elif header == HEADER and platform == "pc":
-                    print("decrypted pc file recognized")
                     await Converter.pushBytes(PC_HEADER_OFFSET, PS_HEADER_OFFSET, filePath)
                     await Converter.Rstar.handleTitle(filePath)
                 
                 elif header != HEADER and platform == "pc":
-                    print("encrypted pc file recognized")
                     await CustomCrypto.Rstar.decryptFile(os.path.dirname(filePath), PC_HEADER_OFFSET)
 
                     await Converter.pushBytes(PC_HEADER_OFFSET, PS_HEADER_OFFSET, filePath)
