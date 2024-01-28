@@ -22,7 +22,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Everything will get cleaned up locally and on the PS4
 
 ## Requirements
-- A jailbroken PS4 running GoldHEN v2.4b14 payload
+- A jailbroken PS4 running atleast GoldHEN v2.4b14 payload
 - Give the bot permsisions to manage threads and delete messages in addition to the message content intents.
 
 ## Tutorial
@@ -58,7 +58,7 @@ How to obtain NPPSO:
   NPSSO: The NPSSO token  
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run main.py
-- Do >init in the channel you want the private threads to get created in
+- Do >init in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
 - Enjoy!
   
 ### Disclaimers
