@@ -63,7 +63,7 @@ How to obtain NPPSO:
   
 ### Disclaimers
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example /data/example/mount & 
-  /data/example/upload
+  /data/example/upload, these paths will get deleted and remade so you should not store anything there
 - Saves created using this application will work on SaveWizard as long as you copy it from your PS4
 
 ### No jailbroken PS4?
