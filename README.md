@@ -22,7 +22,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Everything will get cleaned up locally and on the PS4
 
 ## Requirements
-- A jailbroken PS4
+- A jailbroken PS4 running GoldHEN v2.4b14 payload
 - Give the bot permsisions to manage threads and delete messages in addition to the message content intents.
 
 ## Tutorial
