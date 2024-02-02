@@ -59,6 +59,7 @@ How to obtain NPPSO:
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run main.py
 - Do >init in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
+- Make sure you are running the pkg
 - Enjoy!
   
 ### Disclaimers
