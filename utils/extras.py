@@ -49,3 +49,12 @@ def pngprocess(path: str, size: tuple[int, int]) -> None:
         image.close()
     except Exception as e:
         print(f"Error processing {path}: {e}")
+
+def obtain_savenames(dir_: str) -> list:
+    savenames = []
+    saves = os.listdir(dir_)
+
+    for fileName in saves:
+        if not fileName.endswith(".bin"):
+            savenames.append(fileName)
+    return savenames
