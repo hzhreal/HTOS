@@ -181,41 +181,6 @@ class FTPps:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
-    async def dlencrypted_new(self, savenames: str, account_id: str) -> None:
-
-        try: title_id = await obtainCUSA(self.PARAM_PATH)
-        except OrbisError as e: raise OrbisError(e)
-        
-        try:
-            async with aioftp.Client.context(self.IP, self.PORT) as ftp:
-                await ftp.change_directory(self.ENCRYPTED_LOCATION)
-                newsavenames = savenames.rsplit("_", 1)[0]
-                fulldl_process = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, newsavenames)
-             
-                await self.downloadStream(ftp, savenames, fulldl_process)
-
-                savenames_bin = savenames + ".bin"
-                newsavenames_bin = newsavenames + ".bin"
-                fulldl_process1 = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, newsavenames_bin)
-
-                await self.downloadStream(ftp, savenames_bin, fulldl_process1)
-
-        except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
-            raise FTPError("An unexpected error!")
-
-        zip_contents = os.listdir(self.DOWNLOAD_ENCRYPTED_PATH)
-        zip_name_ = "PS4.zip"
-        zip_in_path = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, zip_name_)
-
-        with zipfile.ZipFile(zip_in_path, "w") as zipping1:
-            for esavefiles in zip_contents:
-                the_path1 = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, esavefiles)
-                # Calculate the relative path inside the zip
-                relative_path = os.path.join("PS4", "SAVEDATA", account_id, title_id, os.path.basename(the_path1))
-                # Add the file to the zip with the calculated relative path
-                zipping1.write(the_path1, relative_path)
-
     async def deleteuploads(self, savenames: str) -> None:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
