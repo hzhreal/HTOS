@@ -15,7 +15,7 @@ from utils.constants import (
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv, embnv1, embnt, embUtimeout, embinit, embTitleChange)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError
 from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, obtainID, handleTitles
-from utils.extras import generate_random_string, zipfiles, pngprocess
+from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_savenames
 from utils.exceptions import FileError, PSNIDError
 from data import Converter, ConverterError, CustomCrypto, CryptoError
 import aiofiles
@@ -147,7 +147,7 @@ async def upload1(ctx, saveLocation: str) -> str | None:
 
     return name_of_file
 
-async def extra_decrypt(ctx, title_id: str, destination_directory: str) -> None:
+async def extra_decrypt(ctx, title_id: str, destination_directory: str, savePairName: str) -> None:
     TIMEOUT = 60 # seconds
     ENCRYPTION_EMOJI = "<:catishochilling:1141168937208397944>"
     DECRYPTION_EMOJI = "<:ratisho:1141168619842191410>"
@@ -156,7 +156,7 @@ async def extra_decrypt(ctx, title_id: str, destination_directory: str) -> None:
     embedTimeout = discord.Embed(title="Timeout Error:", description="You took too long, sending the file with the format: Encrypted", color=0x854bf7)
     embedTimeout.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         
-    embedFormat = discord.Embed(title="Format", description="Choose what format you want the file to be sent in", color=0x854bf7)
+    embedFormat = discord.Embed(title=f"Format: {savePairName}", description="Choose what format you want the file to be sent in", color=0x854bf7)
     embedFormat.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
     embedFormat.set_footer(text="If you want to use the file in a save editor, choose decrypted")
 
@@ -365,7 +365,7 @@ async def psusername(ctx, username: str) -> str | None:
     await asyncio.sleep(0.5)
     return user_id.lower()
 
-async def replaceDecrypted(ctx, fInstance: FTPps, files: list, titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str) -> list | None:
+async def replaceDecrypted(ctx, fInstance: FTPps, files: list, titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str, savePairName: str) -> list | None:
     completed = []
     if upload_individually or len(files) == 1:
         for file in files:
@@ -374,7 +374,7 @@ async def replaceDecrypted(ctx, fInstance: FTPps, files: list, titleid: str, mou
             lastN = cwdHere.pop(len(cwdHere) - 1)
             cwdHere = "/".join(cwdHere)
 
-            emb18 = discord.Embed(title="Resigning Process (Decrypted): Upload",
+            emb18 = discord.Embed(title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
                             description=f"Please attach a decrypted savefile that you want to upload, MUST be equivalent to {file} (can be any name).",
                             colour=0x854bf7)
             emb18.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
@@ -394,7 +394,7 @@ async def replaceDecrypted(ctx, fInstance: FTPps, files: list, titleid: str, mou
     else:
         SPLITVALUE = "SLASH"
         patterned = '\n'.join(files)
-        emb18 = discord.Embed(title="Resigning Process (Decrypted): Upload",
+        emb18 = discord.Embed(title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
                             description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:\n{patterned}",
                             colour=0x854bf7)
         emb18.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
@@ -474,7 +474,7 @@ async def on_message(message) -> None:
     await bot.process_commands(message)
 
 @bot.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
-async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None:
+async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -498,19 +498,14 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
 
-    savename2 = []
-
-    file_name_10 = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_name11 in file_name_10:
-        if not file_name11.endswith(".bin"):
-            savename2.append(file_name11)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        for save in savename2:
+        for save in savenames:
             realSave = f"{save}_{random_string}"
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
             try:
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
@@ -522,7 +517,7 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
 
                 await ctx.edit(embed=emb4)
                 await C1ftp.uploadencrypted_bulk(realSave)
-                mount_location_new = MOUNT_LOCATION + "/" + random_string
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                 await C1ftp.make1(mount_location_new)
                 mountPaths.append(mount_location_new)
                 await C1socket.socket_dump(mount_location_new, realSave)
@@ -545,9 +540,9 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 return
         
-        if len(savename2) == 1:
-            finishedFiles = "".join(savename2)
-        else: finishedFiles = ", ".join(savename2)
+        if len(savenames) == 1:
+            finishedFiles = "".join(savenames)
+        else: finishedFiles = ", ".join(savenames)
         
         embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
                             description=f"**{finishedFiles}** resigned to **{playstation_id}**.",
@@ -583,7 +578,7 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Decrypt a savefile and download the contents.")
-async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None:
+async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -605,21 +600,15 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
             
-    savename3 = []
-
-    file_name_10 = os.listdir(newUPLOAD_ENCRYPTED)
-
-
-    for file_name11 in file_name_10:
-        if not file_name11.endswith(".bin"):
-            savename3.append(file_name11)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
  
     if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        for save in savename3:
+        for save in savenames:
             destination_directory = os.path.join(newDOWNLOAD_DECRYPTED, f"dec_{save}")
             realSave = f"{save}_{random_string}"
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
 
             emb11 = discord.Embed(title="Decrypt process: Initializing",
                       description=f"Mounting {save}.",
@@ -633,7 +622,7 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
                 os.mkdir(destination_directory)
                 await ctx.edit(embed=emb11)
                 await C1ftp.uploadencrypted_bulk(realSave)
-                mount_location_new = MOUNT_LOCATION + "/" + random_string
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                 await C1ftp.make1(mount_location_new)
                 mountPaths.append(mount_location_new)
                 await C1socket.socket_dump(mount_location_new, realSave)
@@ -656,7 +645,7 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
                 emb13.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                 emb13.set_footer(text="Made with expertise by HTOP")
 
-                await extra_decrypt(ctx, title_id_grab, destination_directory)
+                await extra_decrypt(ctx, title_id_grab, destination_directory, save)
 
                 await ctx.edit(embed=emb13)
 
@@ -678,9 +667,9 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
         size_check1 = os.path.getsize(zip_in_THIS_path)
         size_in_mb = size_check1 / (1024 * 1024)
 
-        if len(savename3) == 1:
-            finishedFiles = "".join(savename3)
-        else: finishedFiles = ", ".join(savename3)
+        if len(savenames) == 1:
+            finishedFiles = "".join(savenames)
+        else: finishedFiles = ", ".join(savenames)
 
         embDdone = discord.Embed(title="Decryption process: Successful",
                             description=f"**{finishedFiles}** has been decrypted.",
@@ -707,7 +696,7 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Swap the decrypted savefile from the encrypted ones you upload.")
-async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC), upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder.")) -> None:
+async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC), upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder.")) -> None: # type: ignore # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -721,7 +710,7 @@ async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_
         user_id = await psusername(ctx, playstation_id)
         await asyncio.sleep(0.5)
         await ctx.edit(embed=emb14)
-        uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=2, sys_files=False, ps_save_pair_upload=True)
+        uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
         print(e)
         await ctx.edit(embed=embhttp)
@@ -731,113 +720,119 @@ async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
 
-    savename6 = []
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
+    full_completed = []
 
-    file_name_10 = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_name11 in file_name_10:
-        if not file_name11.endswith(".bin"):
-            savename6.append(file_name11)
-
-    savename6 = "".join(savename6)
-
-    if len(uploaded_file_paths) == 2:
+    if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        savename6 += f"_{random_string}"
-        try:
-            for file in os.listdir(newUPLOAD_ENCRYPTED):
-                if file.endswith(".bin"):
-                    os.rename(os.path.join(newUPLOAD_ENCRYPTED, file), os.path.join(newUPLOAD_ENCRYPTED, os.path.splitext(file)[0] + f"_{random_string}" + ".bin"))
-                else:
-                    os.rename(os.path.join(newUPLOAD_ENCRYPTED, file), os.path.join(newUPLOAD_ENCRYPTED, file + f"_{random_string}"))
-            await ctx.edit(embed=emb17)
-            await C1ftp.uploadencrypted()
-            mount_location_new = MOUNT_LOCATION + "/" + random_string
-            await C1ftp.make1(mount_location_new)
-            mountPaths.append(mount_location_new)
-            await C1socket.socket_dump(mount_location_new, savename6)
-           
-            files = await C1ftp.ftpListContents(mount_location_new)
+        for save in savenames:
+            realSave = f"{save}_{random_string}"
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
+            try:
+                os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
+                os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
+                await ctx.edit(embed=emb17)
+                await C1ftp.uploadencrypted_bulk(realSave)
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
+                await C1ftp.make1(mount_location_new)
+                mountPaths.append(mount_location_new)
+                await C1socket.socket_dump(mount_location_new, realSave)
+            
+                files = await C1ftp.ftpListContents(mount_location_new)
 
-            if len(files) == 0: raise Exception("Could not list any decrypted saves!")
-            location_to_scesys = mount_location_new + "/sce_sys"
-            await C1ftp.dlparamonly_grab(location_to_scesys)
-            title_id = await obtainCUSA(newPARAM_PATH)
+                if len(files) == 0: raise Exception("Could not list any decrypted saves!")
+                location_to_scesys = mount_location_new + "/sce_sys"
+                await C1ftp.dlparamonly_grab(location_to_scesys)
+                title_id = await obtainCUSA(newPARAM_PATH)
 
-            if upload_individually: completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, True, newUPLOAD_DECRYPTED)
-            else: completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, False, newUPLOAD_DECRYPTED)
+                if upload_individually: 
+                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, True, newUPLOAD_DECRYPTED, save)
+                else: 
+                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, False, newUPLOAD_DECRYPTED, save)
 
-            if include_sce_sys:
-                if len(os.listdir(newUPLOAD_DECRYPTED)) > 0:
-                    shutil.rmtree(newUPLOAD_DECRYPTED)
-                    os.mkdir(newUPLOAD_DECRYPTED)
+                if include_sce_sys:
+                    if len(os.listdir(newUPLOAD_DECRYPTED)) > 0:
+                        shutil.rmtree(newUPLOAD_DECRYPTED)
+                        os.mkdir(newUPLOAD_DECRYPTED)
+                        
+                    embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{save}",
+                        description="Please attach the sce_sys files you want to upload.",
+                        colour=0x854bf7)
+                    embSceSys.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+                    embSceSys.set_footer(text="Made with expertise by HTOP")
+
+                    await ctx.edit(embed=embSceSys)
+                    uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False)
+
+                    if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths) >= 1:
+                        filesToUpload = os.listdir(newUPLOAD_DECRYPTED)
+                        await C1ftp.upload_scesysContents(ctx, filesToUpload, location_to_scesys)
                     
-                embSceSys = discord.Embed(title="Upload: sce_sys contents",
-                      description="Please attach the sce_sys files you want to upload.",
-                      colour=0x854bf7)
-                embSceSys.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                embSceSys.set_footer(text="Made with expertise by HTOP")
+                location_to_scesys = mount_location_new + "/sce_sys"
+                await C1ftp.dlparam(location_to_scesys, user_id)
+                await C1socket.socket_update(mount_location_new, realSave)
+                await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
-                await ctx.edit(embed=embSceSys)
-                uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False)
+                if len(completed) == 1: completed = "".join(completed)
+                else: completed = ", ".join(completed)
+                full_completed.append(completed)
 
-                if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths) >= 1:
-                    filesToUpload = os.listdir(newUPLOAD_DECRYPTED)
-                    await C1ftp.upload_scesysContents(ctx, filesToUpload, location_to_scesys)
-                
-            location_to_scesys = mount_location_new + "/sce_sys"
-            await C1ftp.dlparam(location_to_scesys, user_id)
-            await C1socket.socket_update(mount_location_new, savename6)
-            await C1ftp.dlencrypted_new(savename6, user_id)
-            if len(completed) == 1: completed = "".join(completed)
-            else: completed = ", ".join(completed)
+                embmidComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
+                            description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id}**.",
+                            colour=0x854bf7)
+                embmidComplete.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+                embmidComplete.set_footer(text="Made with expertise by HTOP")
 
-            emb19 = discord.Embed(title="Resigning Process (Decrypted): Successful",
-                          description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id}**.",
-                          colour=0x854bf7)
-            emb19.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-            emb19.set_footer(text="Made with expertise by HTOP")
+                await ctx.edit(embed=embmidComplete)
+            except HTTPError as e:
+                print(e)
+                await ctx.edit(embed=embhttp)
+                cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+                return
+            except (SocketError, FTPError, OrbisError, FileError, CryptoError, OSError) as e:
+                if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
+                    e = "PS4 not connected!"
+                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                return
+            
+        if len(full_completed) == 1: full_completed = "".join(full_completed)
+        else: full_completed = ", ".join(full_completed)
 
-            await ctx.edit(embed=emb19)
+        embComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
+                        description=f"Resigned **{full_completed}** to **{playstation_id}**.",
+                        colour=0x854bf7)
+        embComplete.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embComplete.set_footer(text="Made with expertise by HTOP")
 
-            final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-            final_size = os.path.getsize(final_file)
-            file_size_mb = final_size / (1024 * 1024)
+        await ctx.edit(embed=embComplete)
 
-            if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
-                await ctx.respond(file=discord.File(final_file))
-            else:
-                reenc = final_file
-                reenc_name = "PS4.zip"
-                file_url = await GDapi.uploadzip(reenc, reenc_name)
+        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_size = os.path.getsize(final_file)
+        file_size_mb = final_size / (1024 * 1024)
 
-                embg = discord.Embed(title="Google Drive: Upload complete",
-                          description=f"Here is your save:\n<{file_url}>",
-                          colour=0x854bf7)
-                embg.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                embg.set_footer(text="Made with expertise by HTOP")
-                await ctx.edit(embed=embg)
+        if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
+            await ctx.respond(file=discord.File(final_file))
+        else:
+            reenc = final_file
+            reenc_name = "PS4.zip"
+            file_url = await GDapi.uploadzip(reenc, reenc_name)
 
-            await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+            embg = discord.Embed(title="Google Drive: Upload complete",
+                        description=f"Here is your save:\n<{file_url}>",
+                        colour=0x854bf7)
+            embg.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+            embg.set_footer(text="Made with expertise by HTOP")
+            await ctx.edit(embed=embg)
 
-        except HTTPError as e:
-            print(e)
-            await ctx.edit(embed=embhttp)
-            cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
-            return
-        except (SocketError, FTPError, OrbisError, FileError, CryptoError, OSError) as e:
-            if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
-                e = "PS4 not connected!"
-            await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-            return
-
+        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
     else:
         await ctx.edit(embed=emb6)
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Change the region of a save (Must be from the same game).")
-async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None: 
+async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None:  # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -861,20 +856,13 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
         
-    savename__ = []
-
-    file_name_10 = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_name11 in file_name_10:
-        if not file_name11.endswith(".bin"):
-            savename__.append(file_name11)
-
-    savename__ = "".join(savename__)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
+    savename = "".join(savenames)
 
     if len(uploaded_file_paths) == 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        savename__ += f"_{random_string}"
+        savename += f"_{random_string}"
         try:
             for file in os.listdir(newUPLOAD_ENCRYPTED):
                 if file.endswith(".bin"):
@@ -887,7 +875,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
             mount_location_new = MOUNT_LOCATION + "/" + random_string
             await C1ftp.make1(mount_location_new)
             mountPaths.append(mount_location_new)
-            await C1socket.socket_dump(mount_location_new, savename__)
+            await C1socket.socket_dump(mount_location_new, savename)
             location_to_scesys = mount_location_new + "/sce_sys"
             await C1ftp.retrievekeystone(location_to_scesys)
             await C1ftp.dlparamonly_grab(location_to_scesys)
@@ -905,7 +893,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
             shutil.rmtree(newUPLOAD_ENCRYPTED)
             os.makedirs(newUPLOAD_ENCRYPTED)
 
-            await C1ftp.deleteuploads(savename__)
+            await C1ftp.deleteuploads(savename)
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
             if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
@@ -930,19 +918,14 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
         await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
         return
         
-    savename__ = []
-
-    file_name_10 = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_name11 in file_name_10:
-        if not file_name11.endswith(".bin"):
-            savename__.append(file_name11)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        for save in savename__:
+        for save in savenames:
             realSave = f"{save}_{random_string}"
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
             try:
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin")) 
@@ -953,7 +936,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
                 emb4.set_footer(text="Made with expertise by HTOP")
                 await ctx.edit(embed=emb4)
                 await C1ftp.uploadencrypted_bulk(realSave)
-                mount_location_new = MOUNT_LOCATION + "/" + random_string
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                 await C1ftp.make1(mount_location_new)
                 mountPaths.append(mount_location_new)
                 location_to_scesys = mount_location_new + "/sce_sys"
@@ -977,9 +960,9 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 return
             
-        if len(savename__) == 1:
-            finishedFiles = "".join(savename__)
-        else: finishedFiles = ", ".join(savename__)
+        if len(savenames) == 1:
+            finishedFiles = "".join(savenames)
+        else: finishedFiles = ", ".join(savenames)
 
         embRgdone = discord.Embed(title="Re-regioning & Resigning process (Encrypted): Successful",
                             description=f"**{finishedFiles}** resigned to **{playstation_id}** (**{target_titleid}**).",
@@ -1043,13 +1026,7 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
             
-    savenamepng = []
-
-    file_name_png = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_namepng1 in file_name_png:
-        if not file_namepng1.endswith(".bin"):
-            savenamepng.append(file_namepng1)
+    savenames = obtain_savenames(newDOWNLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         # png handling
@@ -1057,15 +1034,15 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         pngprocess(pngfile, size)
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        for save in savenamepng:
+        for save in savenames:
             realSave = f"{save}_{random_string}"
-
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
             try:
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
                 await ctx.edit(embed=embpng1)
                 await C1ftp.uploadencrypted_bulk(realSave)
-                mount_location_new = MOUNT_LOCATION + "/" + random_string
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                 await C1ftp.make1(mount_location_new)
                 mountPaths.append(mount_location_new)
                 await C1socket.socket_dump(mount_location_new, realSave)
@@ -1091,9 +1068,9 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 return
         
-        if len(savenamepng) == 1:
-            finishedFiles = "".join(savenamepng)
-        else: finishedFiles = ", ".join(savenamepng)
+        if len(savenames) == 1:
+            finishedFiles = "".join(savenames)
+        else: finishedFiles = ", ".join(savenames)
 
         embPdone = discord.Embed(title="PNG process: Successful",
                             description=f"Altered the save png of **{finishedFiles}**.",
@@ -1130,7 +1107,7 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Resign pre stored saves.")
-async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None:
+async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -1229,7 +1206,7 @@ async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) 
     await cleanup(C1ftp, workspaceFolders, files, mountPaths)
 
 @bot.slash_command(description="Change the titles of your save.")
-async def changetitle(ctx, maintitle: Option(str, description="For example Grand Theft Auto V."), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).")) -> None:
+async def changetitle(ctx, maintitle: Option(str, description="For example Grand Theft Auto V."), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -1251,19 +1228,14 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
             
-    savenamepng = []
-
-    file_name_png = os.listdir(newUPLOAD_ENCRYPTED)
-
-    for file_namepng1 in file_name_png:
-        if not file_namepng1.endswith(".bin"):
-            savenamepng.append(file_namepng1)
+    savenames = obtain_savenames(newDOWNLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-        for save in savenamepng:
+        for save in savenames:
             realSave = f"{save}_{random_string}"
+            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
 
             embTitleChange1 = discord.Embed(title="Change title: Processing",
                                 description=f"Processing {save}.",
@@ -1276,7 +1248,7 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
                 os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
                 await ctx.edit(embed=embTitleChange1)
                 await C1ftp.uploadencrypted_bulk(realSave)
-                mount_location_new = MOUNT_LOCATION + "/" + random_string
+                mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                 await C1ftp.make1(mount_location_new)
                 mountPaths.append(mount_location_new)
                 await C1socket.socket_dump(mount_location_new, realSave)
@@ -1302,9 +1274,9 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 return
         
-        if len(savenamepng) == 1:
-            finishedFiles = "".join(savenamepng)
-        else: finishedFiles = ", ".join(savenamepng)
+        if len(savenames) == 1:
+            finishedFiles = "".join(savenames)
+        else: finishedFiles = ", ".join(savenames)
 
         embTdone = discord.Embed(title="Title altering process: Successful",
                             description=f"Altered the save titles of **{finishedFiles}**.",
@@ -1341,7 +1313,7 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Convert a ps4 savefile to pc or vice versa on supported games that needs converting.")
-async def convert(ctx, game: Option(str, choices=["GTA V", "RDR 2"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None:
+async def convert(ctx, game: Option(str, choices=["GTA V", "RDR 2"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
