@@ -121,12 +121,15 @@ class CustomCrypto:
                     data_before = await file.read(start_offset)  # Read data before the encrypted part
                     await file.seek(start_offset)  # Move the file pointer to the start_offset
                     data_to_decrypt = await file.read()  # Read the part to decrypt
+                    
+                # Pad the data to be a multiple of the block size
+                block_size = AES.block_size
+                padded_data = data_to_decrypt + b"\x00" * (block_size - len(data_to_decrypt) % block_size)
 
                 # Decrypt the data
-                decrypted_data = CustomCrypto.decrypt_aes_ecb(data_to_decrypt, key)
+                decrypted_data = CustomCrypto.decrypt_aes_ecb(padded_data, key)
 
                 # Save the decrypted data to a new file (e.g., "decrypted_SGTA50000")
-                decrypted_file_name = file_target
                 async with aiofiles.open(file_name, "wb") as decrypted_file:
                     await decrypted_file.write(data_before)
                     await decrypted_file.write(decrypted_data)
