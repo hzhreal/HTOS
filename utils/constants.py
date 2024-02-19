@@ -92,7 +92,7 @@ emb12.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/7
 emb12.set_footer(text="Made with expertise by HTOP")
 
 emb14 = discord.Embed(title="Resigning process: Decrypted",
-                      description="Please attach two encrypted savefiles that you want to upload (.bin and non bin).",
+                      description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=0x854bf7)
 emb14.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
 emb14.set_footer(text="Made with expertise by HTOP")
