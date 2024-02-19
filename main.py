@@ -1026,7 +1026,7 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
             
-    savenames = obtain_savenames(newDOWNLOAD_ENCRYPTED)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         # png handling
@@ -1228,7 +1228,7 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
             
-    savenames = obtain_savenames(newDOWNLOAD_ENCRYPTED)
+    savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
 
     if len(uploaded_file_paths) >= 2:
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
