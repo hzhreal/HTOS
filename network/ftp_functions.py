@@ -308,7 +308,7 @@ class FTPps:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
-    async def upload_scesysContents(self, ctx, filepaths: list, sce_sysPath: str) -> None:
+    async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list, sce_sysPath: str) -> None:
         
         for filepath in filepaths:
             fullPath = os.path.join(self.UPLOAD_DECRYPTED_REPLACE, filepath)
