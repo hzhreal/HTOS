@@ -1,27 +1,34 @@
 import discord
 import os, shutil
-from discord.ext import commands
-from discord import Option
-import asyncio
-from dotenv import load_dotenv
-from network import FTPps, FTPError, SocketPS, SocketError
-from google_drive import GDapi, GDapiError
-from aiogoogle import HTTPError
-import aiosqlite
-from utils.constants import (
-    bot, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, DATABASENAME, 
-    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID,
-    NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
-    emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv, embnv1, embnt, embUtimeout, embinit, embTitleChange)
-from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError
-from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, obtainID, handleTitles
-from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_savenames
-from utils.exceptions import FileError, PSNIDError
-from data import Converter, ConverterError, CustomCrypto, CryptoError
 import aiofiles
 import aiohttp
 import re
 import json
+import asyncio
+from discord.ext import commands
+from discord import Option
+from dotenv import load_dotenv
+from network import FTPps, FTPError, SocketPS, SocketError
+from google_drive import GDapi, GDapiError
+from aiogoogle import HTTPError
+from utils.constants import (
+    bot, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
+    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID,
+    NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
+    emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
+from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
+from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, handleTitles
+from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_savenames
+from utils.exceptions import FileError, PSNIDError
+from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper
+from data.converter import Converter_Rstar, Converter_BL3, ConverterError
+from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, CryptoError
+from types import SimpleNamespace
+
+Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
+Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
+Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2)
+
 if NPSSO is not None:
     from psnawp_api import PSNAWP
     from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound
@@ -33,7 +40,7 @@ load_dotenv()
 
 C1socket = SocketPS(IP, PORTSOCKET)
 
-async def errorHandling(ctx, error: str, workspaceFolders: list, uploaded_file_paths: list, mountPaths: list, C1ftp: FTPps) -> None:
+async def errorHandling(ctx: discord.ApplicationContext, error: str, workspaceFolders: list, uploaded_file_paths: list, mountPaths: list, C1ftp: FTPps) -> None:
     embe = discord.Embed(title="Error",
                             description=error,
                     colour=0x854bf7)
@@ -45,9 +52,9 @@ async def errorHandling(ctx, error: str, workspaceFolders: list, uploaded_file_p
     else:
         cleanupSimple(workspaceFolders)
 
-async def upload2(ctx, saveLocation: str, max_files: int, sys_files: bool, ps_save_pair_upload: bool) -> list | None:
+async def upload2(ctx: discord.ApplicationContext, saveLocation: str, max_files: int, sys_files: bool, ps_save_pair_upload: bool) -> list | None:
 
-    def check(message, ctx) -> discord.Attachment | str:
+    def check(message: discord.Message, ctx: discord.ApplicationContext) -> discord.Attachment | str:
         if message.author == ctx.author and message.channel == ctx.channel:
             return len(message.attachments) >= 1 or (message.content and GDapi.is_google_drive_link(message.content))
 
@@ -91,9 +98,9 @@ async def upload2(ctx, saveLocation: str, max_files: int, sys_files: bool, ps_sa
         
     return uploaded_file_paths
 
-async def upload1(ctx, saveLocation: str) -> str | None:
+async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str | None:
 
-    def check(message, ctx) -> discord.Attachment | str:
+    def check(message: discord.Message, ctx: discord.ApplicationContext) -> discord.Attachment | str:
         if message.author == ctx.author and message.channel == ctx.channel:
             return len(message.attachments) == 1 or (message.content and GDapi.is_google_drive_link(message.content))
         
@@ -147,12 +154,7 @@ async def upload1(ctx, saveLocation: str) -> str | None:
 
     return name_of_file
 
-async def extra_decrypt(ctx, title_id: str, destination_directory: str, savePairName: str) -> None:
-    TIMEOUT = 60 # seconds
-    ENCRYPTION_EMOJI = "<:catishochilling:1141168937208397944>"
-    DECRYPTION_EMOJI = "<:ratisho:1141168619842191410>"
-    done = False
-
+async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destination_directory: str, savePairName: str) -> None:
     embedTimeout = discord.Embed(title="Timeout Error:", description="You took too long, sending the file with the format: Encrypted", color=0x854bf7)
     embedTimeout.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         
@@ -160,130 +162,90 @@ async def extra_decrypt(ctx, title_id: str, destination_directory: str, savePair
     embedFormat.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
     embedFormat.set_footer(text="If you want to use the file in a save editor, choose decrypted")
 
-    async def handle_timeout() -> None:
-        nonlocal done
-            
-        if not done:
-            await ctx.edit(embed=embedTimeout, view=None)
-            await asyncio.sleep(2)
-            done = True
+    helper = TimeoutHelper(embedTimeout)
 
-    async def awaitDone() -> None:
-        nonlocal done
-
-        try:
-            while not done:  # Continue waiting until done is True
-                await asyncio.sleep(1)  # Sleep for 1 second to avoid busy-waiting
-        except asyncio.CancelledError:
-            pass  # Handle cancellation if needed
-
-    class CryptoButton(discord.ui.View):
+    class CryptChoiceButton(discord.ui.View):
         def __init__(self, game: str, start_offset: int) -> None:
             self.game = game
             self.offset = start_offset
-            super().__init__(timeout=TIMEOUT)
+            super().__init__(timeout=OTHER_TIMEOUT)
                 
         async def on_timeout(self) -> None:
             self.disable_all_items()
-            await handle_timeout()
+            await helper.handle_timeout(ctx)
             
-        @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, emoji=DECRYPTION_EMOJI, custom_id="decrypt")
-        async def decryption_callback(self, _, interaction) -> None:
-            nonlocal done
-                
+        @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
+        async def decryption_callback(self, _, interaction: discord.Interaction) -> None:  
             await interaction.response.edit_message(view=None)
             try:
-                if self.game == "GTAV" or self.game == "RDR2": await CustomCrypto.Rstar.decryptFile(destination_directory, self.offset)
-                elif self.game == "XENO2": await CustomCrypto.Xeno2.decryptFile(destination_directory)
-                elif self.game == "BL3": await CustomCrypto.BL3.decryptFile(destination_directory)
+                match self.game:
+                    case "GTAV" | "RDR2":
+                        await Crypto.Rstar.decryptFile(destination_directory, self.offset)
+                    case "XENO2":
+                        await Crypto.Xeno2.decryptFile(destination_directory)
+                    case "BL3":
+                        await Crypto.BL3.decryptFile(destination_directory)
             except CryptoError as e:
                 raise CryptoError(e)
-            except Exception:
+            except (ValueError, IOError):
                 raise CryptoError("Invalid save!")
             
-            done = True
+            helper.done = True
             
-        @discord.ui.button(label="Encrypted", style=discord.ButtonStyle.blurple, emoji=ENCRYPTION_EMOJI, custom_id="encrypt")
-        async def encryption_callback(self, _, interaction):
-            nonlocal done
-
+        @discord.ui.button(label="Encrypted", style=discord.ButtonStyle.blurple, custom_id="encrypt")
+        async def encryption_callback(self, _, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message(view=None)
-
-            done = True
+            helper.done = True
 
     if title_id in GTAV_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptoButton("GTAV", start_offset=0x114))
-
-        await awaitDone()
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
+        await helper.await_done()
 
     elif title_id in RDR2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptoButton("RDR2", start_offset=0x120))
-
-        await awaitDone()
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
+        await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptoButton("XENO2", start_offset=None))
-
-        await awaitDone()
-
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None))
+        await helper.await_done()
+    
     elif title_id in BL3_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptoButton("BL3", start_offset=None))
-
-        await awaitDone()
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None))
+        await helper.await_done()
 
 async def extra_import(title_id: str, file_name: str) -> None:
-    if title_id in GTAV_TITLEID:
-        offset_to_check_gta5 = 0x114
-        check_for = b"PSIN"
+    try:
+        if title_id in GTAV_TITLEID:
+            await Crypto.Rstar.checkEnc_ps(file_name, GTAV_TITLEID)
+           
+        elif title_id in RDR2_TITLEID:
+            await Crypto.Rstar.checkEnc_ps(file_name, RDR2_TITLEID)
+            
+        elif title_id in XENO2_TITLEID:
+            await Crypto.Xeno2.checkEnc_ps(file_name)
 
-        async with aiofiles.open(file_name, "rb") as file:
-            await file.seek(offset_to_check_gta5)
-            header = await file.read(4)
+        elif title_id in BL3_TITLEID:
+            await Crypto.BL3.checkEnc_ps(file_name)
 
-        if header == check_for:
-            try: await CustomCrypto.Rstar.encryptFile(file_name, offset_to_check_gta5)
-            except Exception: raise CryptoError("Invalid save!")
-
-    elif title_id in RDR2_TITLEID:
-        offset_to_check_rdr2 = 0x120
-        check_for = b"RSAV"
-
-        async with aiofiles.open(file_name, "rb") as file:
-            await file.seek(offset_to_check_rdr2)
-            header = await file.read(4)
-
-        if header == check_for:
-            try: await CustomCrypto.Rstar.encryptFile(file_name, offset_to_check_rdr2)
-            except Exception: raise CryptoError("Invalid save!")
-
-    elif title_id in XENO2_TITLEID:
-        check_for = b"#SAV"
-
-        async with aiofiles.open(file_name, "rb") as file:
-            first_bytes = await file.read(4)
-
-        if first_bytes == check_for:
-            try: await CustomCrypto.Xeno2.encryptFile(file_name)
-            except CryptoError as e: raise CryptoError(e)
-            except Exception: raise CryptoError("Invalid save!")
-
-    elif title_id in BL3_TITLEID:
-        check_for = b"Player"
-
-        async with aiofiles.open(file_name, "rb") as file:
-            data = await file.read()
-
-        if CustomCrypto.BL3.searchData(data, check_for):
-            try: await CustomCrypto.BL3.encryptFile(file_name)
-            except CryptoError as e: raise CryptoError(e)
-            except Exception: raise CryptoError("Invalid save!")
+    except CryptoError as e:
+        raise CryptoError(e)
+    except (ValueError, IOError):
+        raise CryptoError("Invalid save!")
     
-async def psusername(ctx, username: str) -> str | None:
+async def psusername(ctx: discord.ApplicationContext, username: str) -> str | None:
     await ctx.defer()
 
-    def check1(message, ctx):
+    if username == "":
+        user_id = await fetch_accountid_db(ctx.author.id)
+        if user_id is not None:
+            user_id = hex(user_id)
+            return user_id
+        else:
+            raise PSNIDError("Could not find previously stored account ID.")
+
+    def check(message: discord.Message, ctx: discord.ApplicationContext) -> str:
         if message.author == ctx.author and message.channel == ctx.channel:
-            return message.content
+            return message.content and checkid(message.content)
 
     limit = 0
     usernamePattern = r"^[a-zA-Z0-9_-]+$"
@@ -307,18 +269,12 @@ async def psusername(ctx, username: str) -> str | None:
             delmsg = True
 
             try:
-                response = await bot.wait_for('message', check=lambda message: check1(message, ctx), timeout=60)
-                if checkid(response.content):
-                    user_id = response.content
-                    await response.delete()
-                else:
-                    await ctx.edit(embed=embnv)
-                    await response.delete()
-                    raise PSNIDError("ACCOUNT ID DID NOT PASS CHECK!")
+                response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=OTHER_TIMEOUT)
+                user_id = response.content
+                await response.delete()
             except asyncio.TimeoutError:
                 await ctx.edit(embed=embnt)
                 raise TimeoutError("TIMED OUT!")
-
     else:
         while True:
 
@@ -342,16 +298,10 @@ async def psusername(ctx, username: str) -> str | None:
                 delmsg = True
 
                 try:
-                    response = await bot.wait_for('message', check=lambda message: check1(message, ctx), timeout=60)
-
-                    if checkid(response.content):
-                        user_id = response.content
-                        await response.delete()
-                        break
-                    else:
-                        await ctx.edit(embed=embnv)
-                        await response.delete()
-                        raise PSNIDError("ACCOUNT ID DID NOT PASS CHECK!")
+                    response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=OTHER_TIMEOUT)
+                    user_id = response.content
+                    await response.delete()
+                    break
                 except asyncio.TimeoutError:
                     await ctx.edit(embed=embnt)
                     raise TimeoutError("TIMED OUT!")
@@ -363,9 +313,10 @@ async def psusername(ctx, username: str) -> str | None:
         await ctx.respond(embed=embvalidpsn)
 
     await asyncio.sleep(0.5)
+    await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()
 
-async def replaceDecrypted(ctx, fInstance: FTPps, files: list, titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str, savePairName: str) -> list | None:
+async def replaceDecrypted(ctx: discord.ApplicationContext, fInstance: FTPps, files: list, titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str, savePairName: str) -> list | None:
     completed = []
     if upload_individually or len(files) == 1:
         for file in files:
@@ -442,17 +393,14 @@ class threadButton(discord.ui.View):
         super().__init__(timeout=None)
     
     @discord.ui.button(label="Create thread", style=discord.ButtonStyle.primary, custom_id="CreateThread")
-    async def callback(self, _, interaction) -> None:
+    async def callback(self, _, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("Creating thread...", ephemeral=True)
         
         try:
             thread = await interaction.channel.create_thread(name=generate_random_string(RANDOMSTRING_LENGTH), auto_archive_duration=10080)
             await thread.send(interaction.user.mention)
-            async with aiosqlite.connect(DATABASENAME) as db:
-                cursor = await db.cursor()
-                await cursor.execute("INSERT INTO Threads (id) VALUES (?)", (thread.id,))
-                await db.commit()
-        except Exception as e:
+            await write_threadid_db(thread.id) 
+        except (WorkspaceError, Exception) as e:
             print(f"Can not create thread: {e}")
 
 @bot.event
@@ -464,7 +412,7 @@ async def on_ready() -> None:
     )
 
 @bot.event
-async def on_message(message) -> None:
+async def on_message(message: discord.Message) -> None:
     if message.author.bot:
         return
 
@@ -474,11 +422,11 @@ async def on_message(message) -> None:
     await bot.process_commands(message)
 
 @bot.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
-async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None: # type: ignore
+async def resign_encrypted_save(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -527,7 +475,7 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
                 await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
                 emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
-                            description=f"**{save}** resigned to **{playstation_id}**",
+                            description=f"**{save}** resigned to **{playstation_id or user_id}**",
                             colour=0x854bf7)
                 emb5.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                 emb5.set_footer(text="Made with expertise by HTOP")
@@ -545,7 +493,7 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
         else: finishedFiles = ", ".join(savenames)
         
         embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
-                            description=f"**{finishedFiles}** resigned to **{playstation_id}**.",
+                            description=f"**{finishedFiles}** resigned to **{playstation_id or user_id}**.",
                             colour=0x854bf7)
         embRdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embRdone.set_footer(text="Made with expertise by HTOP")
@@ -578,11 +526,11 @@ async def resign_encrypted_save(ctx, playstation_id: Option(str, description=PS_
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Decrypt a savefile and download the contents.")
-async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None: # type: ignore
+async def decrypt_save(ctx: discord.ApplicationContext, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -696,11 +644,11 @@ async def decrypt_save(ctx, include_sce_sys: Option(bool, description="Choose if
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Swap the decrypted savefile from the encrypted ones you upload.")
-async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_ID_DESC), upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder.")) -> None: # type: ignore # type: ignore
+async def resign_decrypted_save(ctx: discord.ApplicationContext, upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -779,7 +727,7 @@ async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_
                 full_completed.append(completed)
 
                 embmidComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
-                            description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id}**.",
+                            description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id or user_id}**.",
                             colour=0x854bf7)
                 embmidComplete.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                 embmidComplete.set_footer(text="Made with expertise by HTOP")
@@ -800,7 +748,7 @@ async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_
         else: full_completed = ", ".join(full_completed)
 
         embComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
-                        description=f"Resigned **{full_completed}** to **{playstation_id}**.",
+                        description=f"Resigned **{full_completed}** to **{playstation_id or user_id}**.",
                         colour=0x854bf7)
         embComplete.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embComplete.set_footer(text="Made with expertise by HTOP")
@@ -832,11 +780,11 @@ async def resign_decrypted_save(ctx, playstation_id: Option(str, description=PS_
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Change the region of a save (Must be from the same game).")
-async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None:  # type: ignore
+async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None:  # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -947,7 +895,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
                 await C1ftp.dlencrypted_bulk(True, user_id, realSave)
 
                 emb5 = discord.Embed(title="Re-regioning & Resigning process (Encrypted): Successful",
-                            description=f"**{save}** resigned to **{playstation_id}** (**{target_titleid}**).",
+                            description=f"**{save}** resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
                             colour=0x854bf7)
                 emb5.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                 emb5.set_footer(text="Made with expertise by HTOP")
@@ -965,7 +913,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
         else: finishedFiles = ", ".join(savenames)
 
         embRgdone = discord.Embed(title="Re-regioning & Resigning process (Encrypted): Successful",
-                            description=f"**{finishedFiles}** resigned to **{playstation_id}** (**{target_titleid}**).",
+                            description=f"**{finishedFiles}** resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
                             colour=0x854bf7)
         embRgdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embRgdone.set_footer(text="Made with expertise by HTOP")
@@ -985,7 +933,7 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
             file_url = await GDapi.uploadzip(reenc, reenc_name)
 
             embg = discord.Embed(title="Google Drive: Upload complete",
-                    description=f"Here is **{finishedFiles}** re-regioned and resigned to **{playstation_id}** with title id **{target_titleid}**:\n<{file_url}>",
+                    description=f"Here is **{finishedFiles}** re-regioned and resigned to **{playstation_id or user_id}** with title id **{target_titleid}**:\n<{file_url}>",
                     colour=0x854bf7)
             embg.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
             embg.set_footer(text="Made with expertise by HTOP")
@@ -1002,11 +950,11 @@ async def reregion(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> 
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Changes the picture of your save, this is just cosmetic.")
-async def changepic(ctx, picture: discord.Attachment) -> None:
+async def changepic(ctx: discord.ApplicationContext, picture: discord.Attachment, playstation_id: Option(str, description=PS_ID_DESC, defualt="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -1014,9 +962,11 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
     pngfile = os.path.join(newPNG_PATH, "icon0.png")
     size = (228, 128)
 
-    await ctx.respond(embed=embpng)
-
-    try: uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
+    try:
+        user_id = await psusername(ctx, playstation_id)
+        await asyncio.sleep(0.5)
+        await ctx.edit(embed=embpng)
+        uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
         print(e)
         await ctx.edit(embed=embhttp)
@@ -1049,10 +999,9 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
                 await ctx.edit(embed=embpng2)
                 location_to_scesys = mount_location_new + "/sce_sys"
                 await C1ftp.swappng(location_to_scesys)
-                await C1ftp.dlparamonly_grab(location_to_scesys)
-                png_accid = await obtainID(newPARAM_PATH)
+                await C1ftp.dlparam(location_to_scesys, user_id)
                 await C1socket.socket_update(mount_location_new, realSave)
-                await C1ftp.dlencrypted_bulk(False, png_accid, realSave)
+                await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
                 embpngs = discord.Embed(title="PNG process: Successful",
                             description=f"Altered the save png of **{save}**.",
@@ -1073,7 +1022,7 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         else: finishedFiles = ", ".join(savenames)
 
         embPdone = discord.Embed(title="PNG process: Successful",
-                            description=f"Altered the save png of **{finishedFiles}**.",
+                            description=f"Altered the save png of **{finishedFiles} and resigned to {playstation_id or user_id}**.",
                             colour=0x854bf7)
         embPdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embPdone.set_footer(text="Made with expertise by HTOP")
@@ -1107,11 +1056,11 @@ async def changepic(ctx, picture: discord.Attachment) -> None:
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Resign pre stored saves.")
-async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) -> None: # type: ignore
+async def quickresign(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
@@ -1160,7 +1109,7 @@ async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) 
         await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
         emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
-                    description=f"**{saveName}** resigned to **{playstation_id}**",
+                    description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
                     colour=0x854bf7)
         emb5.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         emb5.set_footer(text="Made with expertise by HTOP")
@@ -1176,7 +1125,7 @@ async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) 
         return
     
     embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
-                            description=f"**{saveName}** resigned to **{playstation_id}**",
+                            description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
                             colour=0x854bf7)
     embRdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
     embRdone.set_footer(text="Made with expertise by HTOP")
@@ -1206,19 +1155,24 @@ async def quickresign(ctx, playstation_id: Option(str, description=PS_ID_DESC)) 
     await cleanup(C1ftp, workspaceFolders, files, mountPaths)
 
 @bot.slash_command(description="Change the titles of your save.")
-async def changetitle(ctx, maintitle: Option(str, description="For example Grand Theft Auto V."), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).")) -> None: # type: ignore
+async def changetitle(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default=""), maintitle: Option(str, description="For example Grand Theft Auto V.", default=None), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=None)) -> None: # type: ignore
+    if maintitle == "" and subtitle == "":
+        await ctx.respond(embed=embTitleErr)
+        return
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
     mountPaths = []
 
-    await ctx.respond(embed=embTitleChange)
-
-    try: uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
+    try: 
+        user_id = await psusername(ctx, playstation_id)
+        await asyncio.sleep(0.5)
+        await ctx.edit(embed=embTitleChange)
+        uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
         print(e)
         await ctx.edit(embed=embhttp)
@@ -1254,11 +1208,10 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
                 await C1socket.socket_dump(mount_location_new, realSave)
                 location_to_scesys = mount_location_new + "/sce_sys"
                 await C1ftp.dlparamonly_grab(location_to_scesys)
-                accid = await obtainID(newPARAM_PATH)
-                await handleTitles(newPARAM_PATH, maintitle, subtitle)
+                await handleTitles(newPARAM_PATH, user_id, maintitle, subtitle)
                 await C1ftp.upload_sfo(newPARAM_PATH, location_to_scesys)
                 await C1socket.socket_update(mount_location_new, realSave)
-                await C1ftp.dlencrypted_bulk(False, accid, realSave)
+                await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
                 embTitleSuccess = discord.Embed(title="Title altering process: Successful",
                             description=f"Altered the save titles of **{save}**.",
@@ -1279,7 +1232,7 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
         else: finishedFiles = ", ".join(savenames)
 
         embTdone = discord.Embed(title="Title altering process: Successful",
-                            description=f"Altered the save titles of **{finishedFiles}**.",
+                            description=f"Altered the save titles of **{finishedFiles} and resigned to {playstation_id or user_id}**.",
                             colour=0x854bf7)
         embTdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embTdone.set_footer(text="Made with expertise by HTOP")
@@ -1313,11 +1266,11 @@ async def changetitle(ctx, maintitle: Option(str, description="For example Grand
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Convert a ps4 savefile to pc or vice versa on supported games that needs converting.")
-async def convert(ctx, game: Option(str, choices=["GTA V", "RDR 2"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None: # type: ignore
+async def convert(ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2", "BL 3"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-    try: await makeWorkspace(ctx, workspaceFolders)
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
 
     embConverting = discord.Embed(title="Converting",
@@ -1337,11 +1290,16 @@ async def convert(ctx, game: Option(str, choices=["GTA V", "RDR 2"], description
     await savefile.save(savegame)
 
     try:
-        if game == "GTA V":
-            result = await Converter.Rstar.convertFile_GTAV(savegame)
+        match game:
+            case "GTA V":
+                result = await Converter.Rstar.convertFile_GTAV(savegame)
         
-        elif game == "RDR 2":
-            result = await Converter.Rstar.convertFile_RDR2(savegame)
+            case "RDR 2":
+                result = await Converter.Rstar.convertFile_RDR2(savegame)
+
+            case "BL 3":
+                helper = TimeoutHelper(embTimedOut)
+                result = await Converter.BL3.convertFile(ctx, helper, savegame)
     
     except ConverterError as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
@@ -1358,8 +1316,57 @@ async def convert(ctx, game: Option(str, choices=["GTA V", "RDR 2"], description
 
     cleanupSimple(workspaceFolders)
 
+@bot.slash_command(description="Add cheats to your save.")
+async def cheats(ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
+    newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
+    workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+                        newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+    except WorkspaceError: return
+
+    embLoading = discord.Embed(title="Loading",
+                        description=f"Loading cheats process for {game}...",
+                        colour=0x854bf7)
+    embLoading.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+    embLoading.set_footer(text="Made with expertise by HTOP")
+
+    await ctx.respond(embed=embLoading)
+
+    if savefile.size / (1024 * 1024) > BOT_DISCORD_UPLOAD_LIMIT:
+        e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
+        await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        return
+
+    savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
+    await savefile.save(savegame)
+
+    helper = TimeoutHelper(embTimedOut)
+
+    try:
+        match game:
+            case "GTA V":
+                platform = await Cheats.GTAV.initSavefile(savegame)
+                stats = await Cheats.GTAV.fetchStats(savegame, platform)
+                embLoaded = Cheats.GTAV.loaded_embed(stats)
+                await ctx.edit(embed=embLoaded, view=Cheats.GTAV.CheatsButton(ctx, helper, savegame, platform))
+            case "RDR 2":
+                platform = await Cheats.RDR2.initSavefile(savegame)
+                stats = await Cheats.RDR2.fetchStats(savegame, platform)
+                embLoaded = Cheats.RDR2.loaded_embed(stats)
+                await ctx.edit(embed=embLoaded, view=Cheats.RDR2.CheatsButton(ctx, helper, savegame, platform))
+        await helper.await_done()
+    
+    except QuickCheatsError as e:
+        await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        return
+    
+    await ctx.respond(file=discord.File(savegame))
+    await asyncio.sleep(1)
+
+    cleanupSimple(workspaceFolders)
+
 @bot.slash_command(description="Checks if the bot is functional.")
-async def ping(ctx) -> None:
+async def ping(ctx: discord.ApplicationContext) -> None:
     await ctx.defer()
     result = 0
     latency = bot.latency * 1000
@@ -1389,7 +1396,7 @@ async def ping(ctx) -> None:
 
 @bot.command()
 @commands.is_owner()
-async def init(ctx) -> None:
+async def init(ctx: discord.ApplicationContext) -> None:
     try: 
         await ctx.channel.purge(limit=1)
     except Exception as e:
