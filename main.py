@@ -1,6 +1,5 @@
 import discord
 import os, shutil
-import aiofiles
 import aiohttp
 import re
 import json
