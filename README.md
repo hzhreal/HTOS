@@ -8,8 +8,9 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Change the picture of encrypted saves
 - Change the titles of encrypted saves
 - Quickly resign pre stored saves
-- Convert GTA V & RDR 2 gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will 
+- Convert GTA V & RDR 2 & BL 3 gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will 
   get added over time)
+- Add quick cheats to your games (currently only for GTA V & RDR 2)
 
 ## Functionalities
 - File uploads through discord and google drive (bulk uploads are supported)
@@ -20,6 +21,9 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Bot will guide you with what do to in each command
 - All commands except ping will only work in private threads created by the bot, thread IDs are stored in .db file
 - Everything will get cleaned up locally and on the PS4
+- All commands that takes save pairs will resign
+- Account ID database, do not include playstation_id parameter if you want to use previously stored account ID
+- Interactive user interface
 
 ## Requirements
 - A jailbroken PS4 running atleast GoldHEN v2.4b14 payload
