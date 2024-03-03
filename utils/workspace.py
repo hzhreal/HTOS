@@ -2,7 +2,7 @@ import os
 from ftplib import FTP, error_perm
 from .constants import (UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
                         DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT, MOUNT_LOCATION, PS_UPLOADDIR,
-                        DATABASENAME, RANDOMSTRING_LENGTH, UPLOAD_TIMEOUT, bot)
+                        DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot)
 from .extras import generate_random_string
 import sqlite3
 import time
@@ -14,7 +14,7 @@ import discord
 class WorkspaceError(Exception):
     """Exception raised for errors to the workspace."""
     def __init__(self, message: str) -> None:
-        self.message = message    
+        self.message = message   
 
 def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
     try:
@@ -75,16 +75,32 @@ def startup():
                 ftp.quit()
         except:
             pass
+    try:
+        conn = sqlite3.connect(DATABASENAME_THREADS)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Threads (
+                    id INTEGER
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
 
-    conn = sqlite3.connect(DATABASENAME)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Threads (
-                   id INTEGER
-        )
-    """)
-    conn.commit()
-    conn.close()
+        conn = sqlite3.connect(DATABASENAME_ACCIDS)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Account_IDs (
+                    disc_userid INTEGER PRIMARY KEY,
+                    ps_accountid INTEGER
+            )
+        """)
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Error creating databases: {e}\nExiting...")
+        exit(-1)
 
     time.sleep(1)
     os.system("cls" if os.name == "nt" else "clear")
@@ -125,25 +141,27 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
 
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
     
-async def makeWorkspace(ctx, workspaceList: list) -> None:
+async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list, thread_id: int) -> None:
     embChannelError = discord.Embed(title="Error",
                                     description="Invalid channel!",
                                     colour=0x854bf7)
     embChannelError.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
     embChannelError.set_footer(text="Made with expertise by HTOP")
 
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT * FROM Threads WHERE id = ?", (thread_id,))
+            row = await cursor.fetchone()
 
-    async with aiosqlite.connect(DATABASENAME) as db:
-        cursor = await db.cursor()
-        await cursor.execute("SELECT * FROM Threads")
-        rows = await cursor.fetchall()
-
-        if any(ctx.channel.id == row[0] for row in rows):
-            for paths in workspaceList:
-                os.makedirs(paths)
-        else:
-            await ctx.respond(embed=embChannelError)
-            raise WorkspaceError("Invalid channel!")
+            if row:
+                for paths in workspaceList:
+                    os.makedirs(paths)
+            else:
+                await ctx.respond(embed=embChannelError)
+                raise WorkspaceError("Invalid channel!")
+    except aiosqlite.Error:
+        raise WorkspaceError("Please try again.")
 
 def enumerateFiles(fileList: list, randomString: str) -> list:
     for i, name in enumerate(fileList):
@@ -154,7 +172,7 @@ def enumerateFiles(fileList: list, randomString: str) -> list:
 
     return fileList
 
-async def listStoredSaves(ctx) -> str | None:
+async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
     gameList = os.listdir(STORED_SAVES_FOLDER)
     description = ""
     save_paths = []
@@ -192,7 +210,7 @@ async def listStoredSaves(ctx) -> str | None:
 
     await ctx.edit(embed=embList)
 
-    def check(message, ctx, max_index: int) -> int | bool:
+    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> int | bool:
         if message.author == ctx.author and message.channel == ctx.channel:
             if message.content == "EXIT":
                 return message.content
@@ -205,7 +223,7 @@ async def listStoredSaves(ctx) -> str | None:
         return False
         
     try:
-        message = await bot.wait_for('message', check=lambda message: check(message, ctx, len(save_paths)), timeout=UPLOAD_TIMEOUT) 
+        message = await bot.wait_for("message", check=lambda message: check(message, ctx, len(save_paths)), timeout=OTHER_TIMEOUT) 
     except asyncio.TimeoutError:
         raise TimeoutError("TIMED OUT!")
     
@@ -223,3 +241,35 @@ async def listStoredSaves(ctx) -> str | None:
                 selected_save = os.path.join(selected_save, save)
 
         return selected_save
+    
+async def write_threadid_db(thread_id: int) -> None:
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("INSERT INTO Threads (id) VALUES (?)", (thread_id,))
+            await db.commit()
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
+    
+async def fetch_accountid_db(disc_userid: int) -> str | None:
+    try:
+        async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT ps_accountid FROM Account_IDs WHERE disc_userid = ?", (disc_userid,))
+            row = await cursor.fetchone()
+            if row:
+                return row[0]
+            else:
+                return None
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
+    
+async def write_accountid_db(disc_userid: int, account_id: str) -> None:
+    account_id = int(account_id, 16)
+    try:
+        async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("INSERT INTO Account_IDs (disc_userid, ps_accountid) VALUES (?, ?)", (disc_userid, account_id,))
+            await db.commit()
+    except aiosqlite.Error as e:
+        print(f"Could not write account ID to database {e}")
