@@ -145,7 +145,7 @@ def handle_accid(user_id: str) -> str:
 
     return user_id
     
-async def checkSaves(ctx, attachments: discord.message.Attachment, ps_save_pair_upload: bool, sys_files: bool) -> list:
+async def checkSaves(ctx: discord.ApplicationContext, attachments: discord.message.Attachment, ps_save_pair_upload: bool, sys_files: bool) -> list:
     valid_files = []
     if ps_save_pair_upload:
         valid_files = await save_pair_check(ctx, attachments)
@@ -175,7 +175,7 @@ async def checkSaves(ctx, attachments: discord.message.Attachment, ps_save_pair_
     
     return valid_files
 
-async def save_pair_check(ctx, attachments: discord.message.Attachment) -> list:
+async def save_pair_check(ctx: discord.ApplicationContext, attachments: discord.message.Attachment) -> list:
     valid_attachments_check1 = []
     for attachment in attachments:
         filename = attachment.filename
@@ -300,10 +300,12 @@ def xeno2Check(title_id: str, savePath: str, original_savePath: str, original_sa
             os.rename(original_savePath, newnameFile)
             os.rename(original_savePath1, newnameBin)
 
-async def handleTitles(paramPath: str, maintitle: str, subtitle: str) -> None:
+async def handleTitles(paramPath: str, account_id: str, maintitle: str, subtitle: str) -> None:
     paramPath = os.path.join(paramPath, PARAM_NAME)
     toPatch = {"MAINTITLE": maintitle, "SUBTITLE": subtitle}
-
+    # maintitle or subtitle may be None because the user can choose one or both to edit, therefore we remove the key that is None
+    toPatch = {key: value for key, value in toPatch.items() if value != ""}
+ 
     async with aiofiles.open(paramPath, "rb") as file_param:
         sfo_data = bytearray(await file_param.read())
     
@@ -312,7 +314,9 @@ async def handleTitles(paramPath: str, maintitle: str, subtitle: str) -> None:
 
     for key in toPatch:
         context.sfo_patch_parameter(key, toPatch[key].encode("utf-8"))
-    
+
+    context.sfo_patch_account_id(account_id)
+
     new_sfo_data = context.sfo_write()
 
     async with aiofiles.open(paramPath, "wb") as file_param:
