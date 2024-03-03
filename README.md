@@ -13,7 +13,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Add quick cheats to your games (currently only for GTA V & RDR 2)
 
 ## Functionalities
-- File uploads through discord and google drive (bulk uploads are supported)
+- File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
 - File security checks
 - Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, Borderlands 3 & Xenoverse 2
 - Param.sfo parser
