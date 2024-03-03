@@ -25,7 +25,8 @@ PARAM_PATH = os.path.join("UserSaves", "param")
 DOWNLOAD_DECRYPTED = os.path.join("UserSaves", "downloaddecrypted")
 KEYSTONE_PATH = os.path.join("UserSaves", "keystone")
 RANDOMSTRING_LENGTH = 10
-DATABASENAME = "valid_threads.db"
+DATABASENAME_THREADS = "valid_threads.db"
+DATABASENAME_ACCIDS = "account_ids.db"
 NPSSO = os.getenv("NPSSO") 
 # how to obtain NPSSO:
 # go to playstation.com and login
@@ -42,12 +43,13 @@ BL3_TITLEID = ["CUSA07823", "CUSA08025"]
 FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit
 SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB
 MAX_FILES = 100
-UPLOAD_TIMEOUT = 300 # seconds
+UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
+OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
 BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
 
 SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
 
-PS_ID_DESC = "Your Playstation Network username."
+PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
@@ -159,12 +161,6 @@ emb8 = discord.Embed(title="Error: PSN username",
 emb8.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
 emb8.set_footer(text="Made with expertise by HTOP")
 
-embnv = discord.Embed(title="Error: Account ID not valid",
-                description="This account ID is not in a valid format.",
-                colour=0x854bf7)
-embnv.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embnv.set_footer(text="Made with expertise by HTOP")
-
 embnt = discord.Embed(title="Error: Time limit reached",
                     description="You did not send your account ID in time.",
                     colour=0x854bf7)
@@ -188,3 +184,27 @@ embTitleChange = discord.Embed(title="Change title: Upload",
                                 colour=0x854bf7)
 embTitleChange.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
 embTitleChange.set_footer(text="Made with expertise by HTOP")
+
+embTitleErr = discord.Embed(title="Change title: Error",
+                                description="Please select a maintitle or subtitle.",
+                                colour=0x854bf7)
+embTitleErr.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+embTitleErr.set_footer(text="Made with expertise by HTOP")
+
+embTimedOut = discord.Embed(title="Timed out!",
+                                description="Sending file.",
+                                colour=0x854bf7)
+embTimedOut.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+embTimedOut.set_footer(text="Made with expertise by HTOP")
+
+embDone_G = discord.Embed(title="Success",
+                        description=f"Please report any errors.",
+                        colour=0x854bf7)
+embDone_G.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+embDone_G.set_footer(text="Made with expertise by HTOP")
+
+emb_conv_choice = discord.Embed(title="Converter: Choice",
+                        description=f"Could not recognize the platform of the save, please choose what platform to convert the save to.",
+                        colour=0x854bf7)
+emb_conv_choice.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+emb_conv_choice.set_footer(text="Made with expertise by HTOP")
