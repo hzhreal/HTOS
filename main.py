@@ -441,7 +441,7 @@ async def resign_encrypted_save(ctx: discord.ApplicationContext, playstation_id:
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
         return
-    except (PSNIDError, TimeoutError, GDapiError):
+    except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         return
 
