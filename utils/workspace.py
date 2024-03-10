@@ -91,7 +91,7 @@ def startup():
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Account_IDs (
-                    disc_userid INTEGER PRIMARY KEY,
+                    disc_userid INTEGER,
                     ps_accountid INTEGER
             )
         """)
@@ -269,7 +269,8 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
     try:
         async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
             cursor = await db.cursor()
+            await cursor.execute("DELETE FROM Account_IDs WHERE disc_userid = ?", (disc_userid,))
             await cursor.execute("INSERT INTO Account_IDs (disc_userid, ps_accountid) VALUES (?, ?)", (disc_userid, account_id,))
             await db.commit()
     except aiosqlite.Error as e:
-        print(f"Could not write account ID to database {e}")
+        print(f"Could not write account ID to database: {e}")
