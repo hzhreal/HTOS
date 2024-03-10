@@ -12,7 +12,7 @@ from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
     bot, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
-    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID,
+    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
@@ -21,12 +21,12 @@ from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_sa
 from utils.exceptions import FileError, PSNIDError
 from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper
 from data.converter import Converter_Rstar, Converter_BL3, ConverterError
-from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, CryptoError
+from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, CryptoError
 from types import SimpleNamespace
 
 Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
 Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
-Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2)
+Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2, Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev=Crypt_Rev2)
 
 if NPSSO is not None:
     from psnawp_api import PSNAWP
@@ -164,9 +164,10 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
     helper = TimeoutHelper(embedTimeout)
 
     class CryptChoiceButton(discord.ui.View):
-        def __init__(self, game: str, start_offset: int) -> None:
+        def __init__(self, game: str, start_offset: int, title_id: str) -> None:
             self.game = game
             self.offset = start_offset
+            self.title_id = title_id
             super().__init__(timeout=OTHER_TIMEOUT)
                 
         async def on_timeout(self) -> None:
@@ -183,7 +184,15 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                     case "XENO2":
                         await Crypto.Xeno2.decryptFile(destination_directory)
                     case "BL3":
-                        await Crypto.BL3.decryptFile(destination_directory)
+                        await Crypto.BL3.decryptFile(destination_directory, False)
+                    case "TTWL":
+                        await Crypto.BL3.decryptFile(destination_directory, True)
+                    case "NDOG":
+                        await Crypto.Ndog.decryptFile(destination_directory)
+                    case "MGSV":
+                        await Crypto.MGSV.decryptFile(destination_directory, self.title_id)
+                    case "REV2":
+                        await Crypto.Rev2.decryptFile(destination_directory)
             except CryptoError as e:
                 raise CryptoError(e)
             except (ValueError, IOError):
@@ -197,19 +206,35 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
             helper.done = True
 
     if title_id in GTAV_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET, title_id=None))
         await helper.await_done()
-
+        
     elif title_id in RDR2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET, title_id=None))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None))
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None, title_id=None))
         await helper.await_done()
-    
+
     elif title_id in BL3_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None))
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None, title_id=None))
+        await helper.await_done()
+
+    elif title_id in WONDERLANDS_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("TTWL", start_offset=None, title_id=None))
+        await helper.await_done()
+
+    elif title_id in NDOG_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=None, title_id=None))
+        await helper.await_done()
+
+    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", start_offset=None, title_id=title_id))
+        await helper.await_done()
+
+    elif title_id in REV2_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
         await helper.await_done()
 
 async def extra_import(title_id: str, file_name: str) -> None:
@@ -224,7 +249,19 @@ async def extra_import(title_id: str, file_name: str) -> None:
             await Crypto.Xeno2.checkEnc_ps(file_name)
 
         elif title_id in BL3_TITLEID:
-            await Crypto.BL3.checkEnc_ps(file_name)
+            await Crypto.BL3.checkEnc_ps(file_name, False)
+        
+        elif title_id in WONDERLANDS_TITLEID:
+            await Crypto.BL3.checkEnc_ps(file_name, True)
+
+        elif title_id in NDOG_TITLEID:
+            await Crypto.Ndog.checkEnc_ps(file_name)
+
+        elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+            await Crypto.MGSV.checkEnc_ps(file_name, title_id)
+
+        elif title_id in REV2_TITLEID:
+            await Crypto.Rev2.checkEnc_ps(file_name)
 
     except CryptoError as e:
         raise CryptoError(e)
@@ -237,7 +274,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str | No
     if username == "":
         user_id = await fetch_accountid_db(ctx.author.id)
         if user_id is not None:
-            user_id = hex(user_id)
+            user_id = hex(user_id)[2:]
             return user_id
         else:
             raise PSNIDError("Could not find previously stored account ID.")
@@ -343,9 +380,9 @@ async def replaceDecrypted(ctx: discord.ApplicationContext, fInstance: FTPps, fi
     
     else:
         SPLITVALUE = "SLASH"
-        patterned = '\n'.join(files)
+        patterned = "\n".join(files)
         emb18 = discord.Embed(title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-                            description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:\n{patterned}",
+                            description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:\n\n**{patterned}**",
                             colour=0x854bf7)
         emb18.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         emb18.set_footer(text="Made with expertise by HTOP")
@@ -591,7 +628,7 @@ async def decrypt_save(ctx: discord.ApplicationContext, include_sce_sys: Option(
                             colour=0x854bf7)
                 emb13.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                 emb13.set_footer(text="Made with expertise by HTOP")
-
+                
                 await extra_decrypt(ctx, title_id_grab, destination_directory, save)
 
                 await ctx.edit(embed=emb13)
@@ -888,7 +925,7 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
                 mountPaths.append(mount_location_new)
                 location_to_scesys = mount_location_new + "/sce_sys"
                 await C1socket.socket_dump(mount_location_new, realSave)
-                await C1ftp.reregioner(location_to_scesys, target_titleid, user_id)
+                await C1ftp.reregioner(mount_location_new, target_titleid, user_id)
                 await C1ftp.keystoneswap(location_to_scesys)
                 await C1socket.socket_update(mount_location_new, realSave)
                 await C1ftp.dlencrypted_bulk(True, user_id, realSave)
@@ -938,7 +975,7 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
             embg.set_footer(text="Made with expertise by HTOP")
             await ctx.respond(embed=embg)
 
-        if target_titleid in XENO2_TITLEID:
+        if target_titleid in XENO2_TITLEID or target_titleid in MGSV_TPP_TITLEID or target_titleid in MGSV_GZ_TITLEID:
             await ctx.respond("Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once.", ephemeral=True)
 
         await asyncio.sleep(1)
@@ -1265,7 +1302,7 @@ async def changetitle(ctx: discord.ApplicationContext, playstation_id: Option(st
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Convert a ps4 savefile to pc or vice versa on supported games that needs converting.")
-async def convert(ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2", "BL 3"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None: # type: ignore
+async def convert(ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2", "BL 3", "TTWL"], description="Choose what game the savefile belongs to."), savefile: discord.Attachment) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -1298,7 +1335,11 @@ async def convert(ctx: discord.ApplicationContext, game: Option(str, choices=["G
 
             case "BL 3":
                 helper = TimeoutHelper(embTimedOut)
-                result = await Converter.BL3.convertFile(ctx, helper, savegame)
+                result = await Converter.BL3.convertFile(ctx, helper, savegame, False)
+            
+            case "TTWL":
+                helper = TimeoutHelper(embTimedOut)
+                result = await Converter.BL3.convertFile(ctx, helper, savegame, True)
     
     except ConverterError as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
