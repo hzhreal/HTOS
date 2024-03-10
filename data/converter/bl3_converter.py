@@ -10,10 +10,11 @@ from utils.constants import OTHER_TIMEOUT, emb_conv_choice
 
 class BL3_conv_button(discord.ui.View):
     """Discord button that is called when a decrypted BL3 save needs converting, gives user the choice of what platform to convert the save to."""
-    def __init__(self, helper: TimeoutHelper, filePath: str) -> None:
+    def __init__(self, helper: TimeoutHelper, filePath: str, ttwl: bool) -> None:
         self.helper = helper
         self.filePath = filePath
         self.result = ""
+        self.ttwl = ttwl
         super().__init__(timeout=OTHER_TIMEOUT)
                 
     async def on_timeout(self) -> None:
@@ -27,7 +28,7 @@ class BL3_conv_button(discord.ui.View):
         platform = "ps4"
         await interaction.response.edit_message(view=None)
         try:
-            await crypt.encryptFile(self.filePath, "pc")
+            await crypt.encryptFile(self.filePath, "pc", self.ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError):
@@ -41,7 +42,7 @@ class BL3_conv_button(discord.ui.View):
         platform = "pc"
         await interaction.response.edit_message(view=None)
         try:
-            await crypt.encryptFile(self.filePath, "ps4")
+            await crypt.encryptFile(self.filePath, "ps4", self.ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError):
@@ -52,19 +53,19 @@ class BL3_conv_button(discord.ui.View):
 
 class Converter_BL3:
     @staticmethod
-    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str) -> str | None:
+    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool) -> str | None:
         async with aiofiles.open(filePath, "rb") as savegame:
             original_saveData = await savegame.read()
         
         if crypt.searchData(original_saveData, crypt.COMMON):
-            conv_button = BL3_conv_button(helper, filePath)
+            conv_button = BL3_conv_button(helper, filePath, ttwl)
             await ctx.edit(embed=emb_conv_choice, view=conv_button)
             await helper.await_done()
             return conv_button.result
         
         # try decrypting it with ps4 keys
         try: 
-            await crypt.decryptFile(os.path.dirname(filePath), "ps4")
+            await crypt.decryptFile(os.path.dirname(filePath), "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError):
@@ -78,7 +79,7 @@ class Converter_BL3:
         if crypt.searchData(saveData, crypt.COMMON):
             platform = "ps4"
             try:
-                await crypt.encryptFile(filePath, "pc")
+                await crypt.encryptFile(filePath, "pc", ttwl)
             except CryptoError as e:
                 raise ConverterError(e)
             except (ValueError, IOError):
@@ -91,7 +92,7 @@ class Converter_BL3:
         
         # try decrypting with pc keys instead 
         try:
-            await crypt.decryptFile(os.path.dirname(filePath), "pc")
+            await crypt.decryptFile(os.path.dirname(filePath), "pc", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError):
@@ -105,7 +106,7 @@ class Converter_BL3:
         if crypt.searchData(saveData, crypt.COMMON):
             platform = "pc"
             try:
-                await crypt.encryptFile(filePath, "ps4")
+                await crypt.encryptFile(filePath, "ps4", ttwl)
             except CryptoError as e:
                 raise ConverterError(e)
             except (ValueError, IOError):
