@@ -41,7 +41,6 @@ class TimeoutHelper:
     def __init__(self, embTimeout: discord.Embed) -> None:
         self.done = False
         self.embTimeout = embTimeout
-        
 
     async def await_done(self) -> None:
         try:
