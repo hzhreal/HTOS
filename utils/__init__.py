@@ -21,6 +21,11 @@ from .constants import (
     RDR2_TITLEID, 
     XENO2_TITLEID, 
     BL3_TITLEID, 
+    WONDERLANDS_TITLEID,
+    NDOG_TITLEID,
+    MGSV_TPP_TITLEID,
+    MGSV_GZ_TITLEID,
+    REV2_TITLEID,
     FILE_LIMIT_DISCORD, 
     SCE_SYS_CONTENTS,
     MAX_FILES,
@@ -57,6 +62,6 @@ from .constants import (
     emb_conv_choice
 )
 from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames
-from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, xeno2Check, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext
+from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
 from .exceptions import FileError, PSNIDError
