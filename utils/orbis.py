@@ -1,11 +1,12 @@
 import re
 import aiofiles
 import os
-from .constants import XENO2_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX
-from .extras import generate_random_string
 import discord
 import asyncio
 import struct
+from .constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX
+from .extras import generate_random_string
+from data.crypto.mgsv_crypt import Crypt_MGSV
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -253,7 +254,7 @@ async def resign(paramPath: str, account_id: str) -> None:
     async with aiofiles.open(paramPath, "wb") as file_param:
         await file_param.write(new_sfo_data)
 
-async def reregion_write(paramPath: str, title_id: str) -> None:
+async def reregion_write(paramPath: str, title_id: str, decFilesPath: str) -> None:
     title_id_bytes = title_id.encode("utf-8")
     async with aiofiles.open(paramPath, "rb") as file_param:
        sfo_data = bytearray(await file_param.read())
@@ -264,8 +265,16 @@ async def reregion_write(paramPath: str, title_id: str) -> None:
 
     if title_id in XENO2_TITLEID:
         newname = title_id + "01"
-        newnameBytes = newname.encode("utf-8")
-        context.sfo_patch_parameter("SAVEDATA_DIRECTORY", newnameBytes)
+        context.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname.encode("utf-8"))
+    
+    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+        try: 
+            await Crypt_MGSV.reregion_changeCrypt(decFilesPath, title_id)
+        except (ValueError, IOError):
+            raise OrbisError("Error changing MGSV crypt!")
+        
+        newname = Crypt_MGSV.KEYS[title_id]["name"]
+        context.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname.encode("utf-8"))
     
     new_sfo_data = context.sfo_write()
 
@@ -288,7 +297,7 @@ async def obtainID(paramPath: str) -> str | None:
 
     return account_id
 
-def xeno2Check(title_id: str, savePath: str, original_savePath: str, original_savePath1: str) -> None:
+def reregionCheck(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
     if title_id in XENO2_TITLEID:
         newnameFile = os.path.join(savePath, title_id + "01")
         newnameBin = os.path.join(savePath, title_id + "01.bin")
@@ -296,15 +305,29 @@ def xeno2Check(title_id: str, savePath: str, original_savePath: str, original_sa
             randomString = generate_random_string(5)
             newnameFile = os.path.join(savePath, title_id + f"01_{randomString}")
             newnameBin = os.path.join(savePath, title_id + f"01_{randomString}.bin")
-        if os.path.exists(original_savePath) and os.path.exists(original_savePath1):
+        if os.path.exists(original_savePath) and os.path.exists(original_savePath_bin):
             os.rename(original_savePath, newnameFile)
-            os.rename(original_savePath1, newnameBin)
+            os.rename(original_savePath_bin, newnameBin)
+
+    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_TPP_TITLEID:
+        new_regionName = Crypt_MGSV.KEYS[title_id]["name"]
+        newnameFile = os.path.join(savePath, new_regionName)
+        newnameBin = os.path.join(savePath, new_regionName + ".bin")
+        if os.path.exists(newnameFile) and os.path.exists(newnameBin):
+            randomString = generate_random_string(5)
+            newnameFile = os.path.join(savePath, new_regionName + f"_{randomString}")
+            newnameBin = os.path.join(savePath, new_regionName + f"_{randomString}.bin")
+        if os.path.exists(original_savePath) and os.path.exists(original_savePath_bin):
+            os.rename(original_savePath, newnameFile)
+            os.rename(original_savePath_bin, newnameBin)
 
 async def handleTitles(paramPath: str, account_id: str, maintitle: str, subtitle: str) -> None:
     paramPath = os.path.join(paramPath, PARAM_NAME)
     toPatch = {"MAINTITLE": maintitle, "SUBTITLE": subtitle}
     # maintitle or subtitle may be None because the user can choose one or both to edit, therefore we remove the key that is None
-    toPatch = {key: value for key, value in toPatch.items() if value != ""}
+    for key, value in toPatch.items():
+        if value != "":
+            toPatch[key] = value
  
     async with aiofiles.open(paramPath, "rb") as file_param:
         sfo_data = bytearray(await file_param.read())
