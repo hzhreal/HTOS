@@ -1,11 +1,10 @@
 import aioftp
 import os
-import zipfile
 import discord
 import shutil
 import aiofiles
-from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, xeno2Check, OrbisError
-from utils.constants import SYS_FILE_MAX
+from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -83,8 +82,10 @@ class FTPps:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
-    async def reregioner(self, location_to_scesys: str, title_id: str, account_id: str) -> None:
+    async def reregioner(self, mount_location: str, title_id: str, account_id: str) -> None:
         paramPath = os.path.join(self.PARAM_PATH, self.PARAMSFO_NAME)
+        location_to_scesys = mount_location + "/sce_sys"
+        decFilesPath = "" # used by MGSV re regioning to change crypt
 
         if not check_titleid(title_id):
             raise FTPError("Invalid title id!")
@@ -100,9 +101,22 @@ class FTPps:
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
+        
+        if title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+            try:
+                decFilesPath = self.DESTINATION_DIRECTORY
+                await self.ftp_download_folder(mount_location, decFilesPath, ignoreSceSys=True)
+            except FTPError as e:
+                raise FTPError(e)
 
-        await reregion_write(paramPath, title_id)
+        await reregion_write(paramPath, title_id, decFilesPath)
         await resign(paramPath, account_id)
+
+        if decFilesPath:
+            try:
+                await self.ftp_upload_folder(mount_location, decFilesPath)
+            except FTPError as e:
+                raise FTPError(e)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -264,6 +278,15 @@ class FTPps:
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
+        
+    async def ftp_upload_folder(self, folderpath: str, local_path: str) -> None:
+        try:
+            async with aioftp.Client.context(self.IP, self.PORT) as ftp:
+                await ftp.change_directory(folderpath)
+                await ftp.upload(local_path, write_into=True)
+        except aioftp.errors.AIOFTPException as e:
+            print(f"[FTP ERROR]: {e}")
+            raise FTPError("An unexpected error!")
             
     async def dlencrypted_bulk(self, reregion: bool, account_id: str, savenames: str) -> None:
     
@@ -287,7 +310,8 @@ class FTPps:
                 fulldl_process1 = os.path.join(savefilespath, newsavenames_bin)
                 await self.downloadStream(ftp, savenames_bin, fulldl_process1)
             
-            if reregion: xeno2Check(title_id, savefilespath, fulldl_process, fulldl_process1)
+            if reregion: 
+                reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
 
         except aioftp.errors.AIOFTPException as e:
             print(f"[FTP ERROR]: {e}")
