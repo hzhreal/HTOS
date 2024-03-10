@@ -10,6 +10,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
+change_group = discord.SlashCommandGroup("change")
 
 IP = str(os.getenv("IP"))
 PORT = int(os.getenv("FTP_PORT"))
