@@ -4,8 +4,12 @@ import aiofiles
 from .common import CustomCrypto, CryptoError
 
 class Crypt_BL3:
-    SAVEGAME_STRING = "OakSaveGame"
-    PROFILE_STRING = "BP_DefaultOakProfile_C"
+    SAVEGAME_STRING_BL3 = "OakSaveGame"
+    PROFILE_STRING_BL3 = "BP_DefaultOakProfile_C"
+
+    SAVEGAME_STRING_TTWL = "BPSaveGame_Default_C"
+    PROFILE_STRING_TTWL = "OakProfile"
+
     COMMON = b"Player"
 
     PS4_PROFILE_PREFIX_MAGIC = bytearray([
@@ -78,6 +82,16 @@ class Crypt_BL3:
         }
     }
 
+    IDENTIFIER_STRIGNS = {
+        "BL3": {
+            "profile": PROFILE_STRING_BL3,
+            "savegame": SAVEGAME_STRING_BL3
+        },
+        "TTWL": {
+            "profile": PROFILE_STRING_TTWL,
+            "savegame": SAVEGAME_STRING_TTWL
+        }
+    }
 
     @staticmethod
     def __searchData(data: bytearray, search: bytes, length: int) -> int:
@@ -106,8 +120,11 @@ class Crypt_BL3:
         return buffer
 
     @staticmethod
-    async def decryptFile(folderPath: str, platform: str) -> None:
+    async def decryptFile(folderPath: str, platform: str, ttwl: bool) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
+        game = "TTWL" if ttwl else "BL3"
+        profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
+        savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]
 
         for fileName in files:
             filePath = os.path.join(folderPath, fileName)
@@ -115,10 +132,10 @@ class Crypt_BL3:
             async with aiofiles.open(filePath, "rb") as encrypted_file:
                 encrypted_data = bytearray(await encrypted_file.read())
 
-            if (offset := Crypt_BL3.__searchData(encrypted_data, Crypt_BL3.PROFILE_STRING.encode(), len(Crypt_BL3.PROFILE_STRING))) > 0:
+            if (offset := Crypt_BL3.__searchData(encrypted_data, profile_string.encode("utf-8"), len(profile_string))) > 0:
                 pre = Crypt_BL3.KEYS_PROFILE[platform]["pre"]
                 xor = Crypt_BL3.KEYS_PROFILE[platform]["xor"]
-            elif (offset := Crypt_BL3.__searchData(encrypted_data, Crypt_BL3.SAVEGAME_STRING.encode(), len(Crypt_BL3.SAVEGAME_STRING))) > 0:
+            elif (offset := Crypt_BL3.__searchData(encrypted_data, savegame_string.encode("utf-8"), len(savegame_string))) > 0:
                 pre = Crypt_BL3.KEYS_SAVEGAME[platform]["pre"]
                 xor = Crypt_BL3.KEYS_SAVEGAME[platform]["xor"]
             else:
@@ -135,14 +152,18 @@ class Crypt_BL3:
                 await decrypted_file_soon.write(decrypted_data)
 
     @staticmethod
-    async def encryptFile(filePath: str, platform: str) -> None:
+    async def encryptFile(filePath: str, platform: str, ttwl: bool) -> None:
+        game = "TTWL" if ttwl else "BL3"
+        profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
+        savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]
+
         async with aiofiles.open(filePath, "rb") as decrypted_file:
             decrypted_data = bytearray(await decrypted_file.read())
 
-        if (offset := Crypt_BL3.__searchData(decrypted_data, Crypt_BL3.PROFILE_STRING.encode(), len(Crypt_BL3.PROFILE_STRING))) > 0:
+        if (offset := Crypt_BL3.__searchData(decrypted_data, profile_string.encode("utf-8"), len(profile_string))) > 0:
             pre = Crypt_BL3.KEYS_PROFILE[platform]["pre"]
             xor = Crypt_BL3.KEYS_PROFILE[platform]["xor"]
-        elif (offset := Crypt_BL3.__searchData(decrypted_data, Crypt_BL3.SAVEGAME_STRING.encode(), len(Crypt_BL3.SAVEGAME_STRING))) > 0:
+        elif (offset := Crypt_BL3.__searchData(decrypted_data, savegame_string.encode("utf-8"), len(savegame_string))) > 0:
             pre = Crypt_BL3.KEYS_SAVEGAME[platform]["pre"]
             xor = Crypt_BL3.KEYS_SAVEGAME[platform]["xor"]
         else:
@@ -159,12 +180,12 @@ class Crypt_BL3:
             await encrypted_file_soon.write(encrypted_data)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
+    async def checkEnc_ps(fileName: str, ttwl: bool) -> None:
         async with aiofiles.open(fileName, "rb") as savegame:
            data = await savegame.read()
 
         if Crypt_BL3.searchData(data, Crypt_BL3.COMMON): 
-            await Crypt_BL3.encryptFile(fileName, "ps4")
+            await Crypt_BL3.encryptFile(fileName, "ps4", ttwl)
            
     @staticmethod
     def searchData(data: bytes | bytearray, search: bytes) -> bool:
