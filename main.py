@@ -11,7 +11,7 @@ from network import FTPps, FTPError, SocketPS, SocketError
 from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
-    bot, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
+    bot, change_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
     FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
@@ -458,7 +458,7 @@ async def on_message(message: discord.Message) -> None:
     await bot.process_commands(message)
 
 @bot.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
-async def resign_encrypted_save(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
+async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -562,7 +562,7 @@ async def resign_encrypted_save(ctx: discord.ApplicationContext, playstation_id:
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Decrypt a savefile and download the contents.")
-async def decrypt_save(ctx: discord.ApplicationContext, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None: # type: ignore
+async def decrypt(ctx: discord.ApplicationContext, include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -680,7 +680,7 @@ async def decrypt_save(ctx: discord.ApplicationContext, include_sce_sys: Option(
         cleanupSimple(workspaceFolders)
 
 @bot.slash_command(description="Swap the decrypted savefile from the encrypted ones you upload.")
-async def resign_decrypted_save(ctx: discord.ApplicationContext, upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore # type: ignore
+async def encrypt(ctx: discord.ApplicationContext, upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -985,8 +985,8 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
         await ctx.edit(embed=emb6)
         cleanupSimple(workspaceFolders)
 
-@bot.slash_command(description="Changes the picture of your save, this is just cosmetic.")
-async def changepic(ctx: discord.ApplicationContext, picture: discord.Attachment, playstation_id: Option(str, description=PS_ID_DESC, defualt="")) -> None: # type: ignore
+@change_group.command(description="Changes the picture of your save, this is just cosmetic.")
+async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, playstation_id: Option(str, description=PS_ID_DESC, defualt="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -1190,8 +1190,8 @@ async def quickresign(ctx: discord.ApplicationContext, playstation_id: Option(st
     # await asyncio.sleep(1)
     await cleanup(C1ftp, workspaceFolders, files, mountPaths)
 
-@bot.slash_command(description="Change the titles of your save.")
-async def changetitle(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default=""), maintitle: Option(str, description="For example Grand Theft Auto V.", default=None), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=None)) -> None: # type: ignore
+@change_group.command(description="Change the titles of your save.")
+async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default=""), maintitle: Option(str, description="For example Grand Theft Auto V.", default=None), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=None)) -> None: # type: ignore
     if maintitle == "" and subtitle == "":
         await ctx.respond(embed=embTitleErr)
         return
@@ -1444,4 +1444,5 @@ async def init(ctx: discord.ApplicationContext) -> None:
 
     await ctx.send(embed=embinit, view=threadButton())
 
+bot.add_application_command(change_group)
 bot.run(str(os.getenv("TOKEN")))
