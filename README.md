@@ -2,20 +2,20 @@
 A discord bot with tons of functionalities that can handle PS4 saves using a jailbroken PS4.
 
 ## Purposes
-- Resign encrypted saves (both with or without replacing the decrypted contents)
+- Resign encrypted saves (both with or without replacing the decrypted contents, also known as encrypting)
 - Decrypt encrypted saves
 - Re-region encrypted saves
 - Change the picture of encrypted saves
 - Change the titles of encrypted saves
 - Quickly resign pre stored saves
-- Convert GTA V & RDR 2 & BL 3 gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will 
+- Convert GTA V & RDR 2, BL 3 & TTWL gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will 
   get added over time)
 - Add quick cheats to your games (currently only for GTA V & RDR 2)
 
 ## Functionalities
 - File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
 - File security checks
-- Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, Borderlands 3 & Xenoverse 2
+- Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, BL 3, TTWL, Xenoverse 2, TLOU, MGSV (TPP & GZ) & RE-REV2
 - Param.sfo parser
 - Asynchronous, can handle multiple operations at once
 - Bot will guide you with what do to in each command
@@ -43,7 +43,7 @@ How to obtain NPPSO:
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
 ### Everything else
-- Download the pkg from https://github.com/Team-Alua/cecie.nim/releases/tag/v1.00 and install it on your PS4
+- Download the pkg from https://github.com/Team-Alua/cecie.nim/releases/tag/v2.00 and install it on your PS4
 - Download the config.ini file from https://github.com/Team-Alua/cecie.nim/blob/main/examples/config.ini and edit it with your desired 
   socket port and upload folder (path on PS4)
 - Upload the config.ini file to /data/cecie on your PS4.
@@ -70,6 +70,7 @@ How to obtain NPPSO:
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example /data/example/mount & 
   /data/example/upload, these paths will get deleted and remade so you should not store anything there
 - Saves created using this application will work on SaveWizard as long as you copy it from your PS4
+- Make sure to use the latest cecie.nim release
 
 ### No jailbroken PS4?
 - Join my discord where I host the bot, free to use and often hosted
