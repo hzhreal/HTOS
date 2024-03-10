@@ -1,5 +1,6 @@
 from .constants import (
-    bot, 
+    bot,
+    change_group,
     IP, 
     PORT, 
     PORTSOCKET, 
