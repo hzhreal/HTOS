@@ -436,7 +436,7 @@ class threadButton(discord.ui.View):
             thread = await interaction.channel.create_thread(name=interaction.user.name, auto_archive_duration=10080)
             await thread.send(interaction.user.mention)
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
-            print(ids_to_remove)
+            
         except (WorkspaceError, discord.Forbidden) as e:
             print(f"Can not create thread: {e}")
         
