@@ -254,7 +254,7 @@ async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int] | lis
 
             await cursor.execute("SELECT disc_threadid from Threads WHERE disc_userid = ?", (disc_userid,)) # obtain thread id to delete from disc server, fetchall incase of any errors when deleting
             rows = await cursor.fetchall()
-            print(rows)
+        
             await cursor.execute("DELETE FROM Threads WHERE disc_userid = ?", (disc_userid,)) # delete all thread ids from a user in the database, limit to 1 thread per user
             await cursor.execute("INSERT INTO Threads (disc_userid, disc_threadid) VALUES (?, ?)", (disc_userid, thread_id,)) # finally, write
             await db.commit()
