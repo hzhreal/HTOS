@@ -58,7 +58,7 @@ class CustomCrypto:
         return swapped_data
      
     @staticmethod
-    def obtainFiles(folder: str, exclude: list[str] = [""]) -> list:
+    def obtainFiles(folder: str, exclude: list[str] = [""]) -> list[str]:
         # File details
         files = []
         filelist = os.listdir(folder)
