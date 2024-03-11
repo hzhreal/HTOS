@@ -433,11 +433,19 @@ class threadButton(discord.ui.View):
         await interaction.response.send_message("Creating thread...", ephemeral=True)
         
         try:
-            thread = await interaction.channel.create_thread(name=generate_random_string(RANDOMSTRING_LENGTH), auto_archive_duration=10080)
+            thread = await interaction.channel.create_thread(name=interaction.user.name, auto_archive_duration=10080)
             await thread.send(interaction.user.mention)
-            await write_threadid_db(thread.id) 
-        except (WorkspaceError, Exception) as e:
+            ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
+            print(ids_to_remove)
+        except (WorkspaceError, discord.Forbidden) as e:
             print(f"Can not create thread: {e}")
+        
+        try:
+            for thread_id in ids_to_remove:
+                old_thread = bot.get_channel(thread_id)
+                await old_thread.delete() 
+        except discord.Forbidden:
+            pass
 
 @bot.event
 async def on_ready() -> None:
@@ -1191,7 +1199,7 @@ async def quickresign(ctx: discord.ApplicationContext, playstation_id: Option(st
     await cleanup(C1ftp, workspaceFolders, files, mountPaths)
 
 @change_group.command(description="Change the titles of your save.")
-async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default=""), maintitle: Option(str, description="For example Grand Theft Auto V.", default=None), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=None)) -> None: # type: ignore
+async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default=""), maintitle: Option(str, description="For example Grand Theft Auto V.", default=""), subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default="")) -> None: # type: ignore
     if maintitle == "" and subtitle == "":
         await ctx.respond(embed=embTitleErr)
         return
@@ -1439,7 +1447,7 @@ async def ping(ctx: discord.ApplicationContext) -> None:
 async def init(ctx: discord.ApplicationContext) -> None:
     try: 
         await ctx.channel.purge(limit=1)
-    except Exception as e:
+    except discord.Forbidden as e:
         print(f"Can not purge message sent: {e}")
 
     await ctx.send(embed=embinit, view=threadButton())
