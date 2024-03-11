@@ -324,10 +324,8 @@ def reregionCheck(title_id: str, savePath: str, original_savePath: str, original
 async def handleTitles(paramPath: str, account_id: str, maintitle: str, subtitle: str) -> None:
     paramPath = os.path.join(paramPath, PARAM_NAME)
     toPatch = {"MAINTITLE": maintitle, "SUBTITLE": subtitle}
-    # maintitle or subtitle may be None because the user can choose one or both to edit, therefore we remove the key that is None
-    for key, value in toPatch.items():
-        if value != "":
-            toPatch[key] = value
+    # maintitle or subtitle may be None because the user can choose one or both to edit, therefore we remove the key that is an empty str
+    toPatch = {key: value for key, value in toPatch.items() if value}
  
     async with aiofiles.open(paramPath, "rb") as file_param:
         sfo_data = bytearray(await file_param.read())
