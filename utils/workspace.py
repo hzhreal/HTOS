@@ -155,7 +155,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list, th
     try:
         async with aiosqlite.connect(DATABASENAME_THREADS) as db:
             cursor = await db.cursor()
-            await cursor.execute("SELECT * FROM Threads WHERE id = ?", (thread_id,))
+            await cursor.execute("SELECT * FROM Threads WHERE disc_threadid = ?", (thread_id,))
             row = await cursor.fetchone()
 
             if row:
