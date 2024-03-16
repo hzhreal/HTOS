@@ -12,3 +12,4 @@ from data.crypto.xeno2_crypt import Crypt_Xeno2
 from data.crypto.ndog_crypt import Crypt_Ndog
 from data.crypto.mgsv_crypt import Crypt_MGSV
 from data.crypto.rev2_crypt import Crypt_Rev2
+from data.crypto.dl2_crypt import Crypt_DL2
