@@ -5,3 +5,4 @@ from .bl3_crypt import Crypt_BL3
 from .ndog_crypt import Crypt_Ndog
 from .mgsv_crypt import Crypt_MGSV
 from .rev2_crypt import Crypt_Rev2
+from .dl2_crypt import Crypt_DL2
