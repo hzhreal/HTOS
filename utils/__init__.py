@@ -27,6 +27,7 @@ from .constants import (
     MGSV_TPP_TITLEID,
     MGSV_GZ_TITLEID,
     REV2_TITLEID,
+    DL2_TITLEID,
     FILE_LIMIT_DISCORD, 
     SCE_SYS_CONTENTS,
     MAX_FILES,
