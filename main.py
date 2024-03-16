@@ -457,7 +457,8 @@ class threadButton(discord.ui.View):
         try:
             for thread_id in ids_to_remove:
                 old_thread = bot.get_channel(thread_id)
-                await old_thread.delete() 
+                if old_thread is not None:
+                    await old_thread.delete() 
         except discord.Forbidden:
             pass
 
