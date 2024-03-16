@@ -58,12 +58,15 @@ class CustomCrypto:
         return swapped_data
      
     @staticmethod
-    def obtainFiles(folder: str, exclude: list[str] = [""]) -> list[str]:
-        # File details
+    def obtainFiles(folder: str, exclude: list[str] | None = None) -> list[str]:
         files = []
+        if exclude is None:
+            exclude = []
+
         filelist = os.listdir(folder)
+
         for file in filelist:
-            if file != "sce_sys" or file not in exclude:
+            if file != "sce_sys" and file not in exclude:
                 files.append(file)
 
         return files
