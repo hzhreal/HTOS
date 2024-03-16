@@ -16,27 +16,36 @@ class Crypt_Ndog:
     HEADER = b"The Last of Us"
 
     @staticmethod
-    def get_last_4(data_len: int) -> bytes:
-        return struct.pack("<I", data_len)
-
-    @staticmethod
     async def decryptFile(folderPath: str) -> None:
         exclude = ["ICN-ID"]
         files = CustomCrypto.obtainFiles(folderPath, exclude)
-
+       
         for fileName in files:
             filePath = os.path.join(folderPath, fileName)
             
             async with aiofiles.open(filePath, "rb") as savegame:
+                first_8 = await savegame.read(8)
                 await savegame.seek(0x08)
                 encrypted_data = await savegame.read()
 
+            dsize = struct.unpack("<I", encrypted_data[-4:])[0]
+
             # Pad the data to be a multiple of the block size
             block_size = Blowfish.block_size
-            padded_data = encrypted_data + b"\x00" * (block_size - len(encrypted_data) % block_size)
+            padding = b"\x00" * (block_size - len(encrypted_data) % block_size)
+            padded_data = encrypted_data + padding
 
             decrypted_data = bytearray(CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-            new_dsize = Crypt_Ndog.get_last_4(len(decrypted_data))
+            new_dsize = struct.pack("<I", dsize)
+
+            tmp_decrypted_data = bytearray(first_8 + decrypted_data)
+
+            # make bytes after hmac sha1 checksum zero
+            for i in range((dsize - 0xC) + 20, len(tmp_decrypted_data)):
+                tmp_decrypted_data[i] = 0
+
+            decrypted_data = tmp_decrypted_data[8:]
+            decrypted_data = decrypted_data[:-len(padding)] # remove padding that we added to avoid exception
             decrypted_data[-4:] = new_dsize
 
             async with aiofiles.open(filePath, "r+b") as savegame:
@@ -68,10 +77,13 @@ class Crypt_Ndog:
 
         # Pad the data to be a multiple of the block size
         block_size = Blowfish.block_size
-        padded_data = decrypted_data + b"\x00" * (block_size - len(decrypted_data) % block_size)
+        padding = b"\x00" * (block_size - len(decrypted_data) % block_size)
+        padded_data = decrypted_data + padding
         
         encrypted_data = bytearray(CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-        new_dsize = Crypt_Ndog.get_last_4(len(encrypted_data))
+        new_dsize = struct.pack("<I", dsize)
+
+        encrypted_data = encrypted_data[:-len(padding)] # remove padding that we added to avoid exception
         encrypted_data[-4:] = new_dsize
 
         async with aiofiles.open(fileToEncrypt, "wb") as savegame:
