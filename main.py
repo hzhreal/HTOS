@@ -12,7 +12,7 @@ from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
     bot, change_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
-    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID,
+    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
@@ -21,12 +21,14 @@ from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_sa
 from utils.exceptions import FileError, PSNIDError
 from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper
 from data.converter import Converter_Rstar, Converter_BL3, ConverterError
-from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, CryptoError
+from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, Crypt_DL2, CryptoError
 from types import SimpleNamespace
 
 Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
 Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
-Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2, Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev=Crypt_Rev2)
+Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2, 
+                         Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev=Crypt_Rev2,
+                         DL2=Crypt_DL2)
 
 if NPSSO is not None:
     from psnawp_api import PSNAWP
@@ -193,6 +195,8 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                         await Crypto.MGSV.decryptFile(destination_directory, self.title_id)
                     case "REV2":
                         await Crypto.Rev2.decryptFile(destination_directory)
+                    case "DL2":
+                        await Crypto.DL2.decryptFile(destination_directory)
             except CryptoError as e:
                 raise CryptoError(e)
             except (ValueError, IOError):
@@ -237,6 +241,10 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
         await ctx.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
         await helper.await_done()
 
+    elif title_id in DL2_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("DL2", start_offset=None, title_id=None))
+        await helper.await_done()
+
 async def extra_import(title_id: str, file_name: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -262,6 +270,9 @@ async def extra_import(title_id: str, file_name: str) -> None:
 
         elif title_id in REV2_TITLEID:
             await Crypto.Rev2.checkEnc_ps(file_name)
+
+        elif title_id in DL2_TITLEID:
+            await Crypto.DL2.checkEnc_ps(file_name)
 
     except CryptoError as e:
         raise CryptoError(e)
@@ -297,6 +308,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str | No
         try:
             userSearch = psnawp.user(online_id=username)
             user_id = userSearch.account_id
+            print(userSearch.profile())
             user_id = handle_accid(user_id)
             delmsg = False
         
@@ -431,6 +443,8 @@ class threadButton(discord.ui.View):
     @discord.ui.button(label="Create thread", style=discord.ButtonStyle.primary, custom_id="CreateThread")
     async def callback(self, _, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("Creating thread...", ephemeral=True)
+
+        ids_to_remove = []
         
         try:
             thread = await interaction.channel.create_thread(name=interaction.user.name, auto_archive_duration=10080)
@@ -475,7 +489,7 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
     C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                   newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
     mountPaths = []
-
+    
     try:
         user_id = await psusername(ctx, playstation_id)
         await asyncio.sleep(0.5)
