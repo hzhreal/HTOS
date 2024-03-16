@@ -308,7 +308,6 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str | No
         try:
             userSearch = psnawp.user(online_id=username)
             user_id = userSearch.account_id
-            print(userSearch.profile())
             user_id = handle_accid(user_id)
             delmsg = False
         
