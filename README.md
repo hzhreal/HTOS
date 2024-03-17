@@ -15,7 +15,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 ## Functionalities
 - File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
 - File security checks
-- Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, BL 3, TTWL, Xenoverse 2, TLOU, MGSV (TPP & GZ) & RE-REV2
+- Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, BL 3, TTWL, Xenoverse 2, TLOU, Uncharted- 4 & The Lost Legacy, MGSV (TPP & GZ), RE-REV2 & DL2 (compression only)
 - Param.sfo parser
 - Asynchronous, can handle multiple operations at once
 - Bot will guide you with what do to in each command
