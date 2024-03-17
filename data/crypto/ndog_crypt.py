@@ -13,7 +13,8 @@ class Crypt_Ndog:
     SECRET_KEY = b"(SH[@2>r62%5+QKpy|g6"
     SHA1_HMAC_KEY = b"xM;6X%/p^L/:}-5QoA+K8:F*M!~sb(WK<E%6sW_un0a[7Gm6,()kHoXY+yI/s;Ba"
 
-    HEADER = b"The Last of Us"
+    HEADER_TLOU = b"The Last of Us"
+    HEADER_UNCHARTED = b"Uncharted"
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
@@ -95,5 +96,5 @@ class Crypt_Ndog:
             await savegame.seek(0x08)
             header = await savegame.read(len(Crypt_Ndog.HEADER))
         
-        if header == Crypt_Ndog.HEADER:
+        if header == Crypt_Ndog.HEADER_TLOU or header == Crypt_Ndog.HEADER_UNCHARTED:
             await Crypt_Ndog.encryptFile(fileName)
