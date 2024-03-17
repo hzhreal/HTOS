@@ -8,7 +8,7 @@ from .common import QuickCheatsError, QuickCheats, TimeoutHelper
 from data.crypto import Crypt_Rstar as crypt
 
 class Cheats_GTAV:
-    MONEY_LIMIT = 2147483647
+    MONEY_LIMIT = 0x7FFFFFFF
     CHARACTERS = ["FRANKLIN", "MICHAEL", "TREVOR"]
     MONEY_OFFSET_IDENTIFIER_BEFORE = {
         "Franklin": b"\x44\xBD\x69\x82",
