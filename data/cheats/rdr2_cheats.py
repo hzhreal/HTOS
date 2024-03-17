@@ -8,7 +8,7 @@ from utils.constants import OTHER_TIMEOUT, embDone_G
 from .common import QuickCheatsError, QuickCheats, TimeoutHelper
 
 class Cheats_RDR2:
-    MONEY_LIMIT = 2147483647
+    MONEY_LIMIT = 0x7FFFFFFF
     MONEY_OFFSET_IDENTIFIER_BEFORE = b"\xCE\x54\x8C\xF5"
     BYTES_BETWEEN_IDENTIFIER = 16
 
