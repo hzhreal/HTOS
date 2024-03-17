@@ -25,9 +25,11 @@ class Crypt_Rev2:
             
             # Pad the data to be a multiple of the block size
             block_size = Blowfish.block_size
-            padded_data = encrypted_data + b"\x00" * (block_size - len(encrypted_data) % block_size)
+            padding = b"\x00" * (block_size - len(encrypted_data) % block_size)
+            padded_data = encrypted_data + padding
 
-            decrypted_data = CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY)
+            decrypted_data = bytearray(CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY))
+            decrypted_data = decrypted_data[:-len(padding)] # remove padding that we added to avoid exception
 
             # endian swap after
             decrypted_data = CustomCrypto.ES32(decrypted_data)
@@ -58,9 +60,11 @@ class Crypt_Rev2:
 
         # Pad the data to be a multiple of the block size
         block_size = Blowfish.block_size
-        padded_data = decrypted_data + b"\x00" * (block_size - len(decrypted_data) % block_size)
+        padding = b"\x00" * (block_size - len(decrypted_data) % block_size)
+        padded_data = decrypted_data + padding
 
-        encrypted_data = CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY)
+        encrypted_data = bytearray(CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY))
+        encrypted_data = encrypted_data[:len(padding)] # remove padding that we added to avoid exception
 
         # endian swap after
         encrypted_data = CustomCrypto.ES32(encrypted_data)
