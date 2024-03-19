@@ -8,14 +8,13 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Change the picture of encrypted saves
 - Change the titles of encrypted saves
 - Quickly resign pre stored saves
-- Convert GTA V & RDR 2, BL 3 & TTWL gamesaves from PS4 to PC or vice versa (some games do require need conversion, but the other ones that do will 
-  get added over time)
-- Add quick cheats to your games (currently only for GTA V & RDR 2)
+- Convert gamesaves from PS4 to PC or vice versa (some games require extra conversion, those implemented are in table below) 
+- Add quick cheats to your games (available games are in table below)
 
 ## Functionalities
 - File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
 - File security checks
-- Game custom cryptography handling (extra encryption layer based on game), currently only GTA V, RDR 2, BL 3, TTWL, Xenoverse 2, TLOU, Uncharted- 4, The Lost Legacy & The Nathan Drake Collection, MGSV (TPP & GZ), RE-REV2 & DL2 (compression only)
+- Game custom cryptography handling (extra encryption layer based on game, in table below)
 - Param.sfo parser
 - Asynchronous, can handle multiple operations at once
 - Bot will guide you with what do to in each command
@@ -40,6 +39,8 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Metal Gear Solid V: Ground Zeroes        | 
 | Resident Evil Revelations 2              |
 | Dying Light 2 (compression only)         | 
+
+If you wanna contribute to this list, please let me know!
 
 ## Requirements
 - A jailbroken PS4 running atleast GoldHEN v2.4b14 payload
