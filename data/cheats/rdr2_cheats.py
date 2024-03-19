@@ -6,6 +6,7 @@ import os
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 from utils.constants import OTHER_TIMEOUT, embDone_G
 from .common import QuickCheatsError, QuickCheats, TimeoutHelper
+from typing import Literal
 
 class Cheats_RDR2:
     MONEY_LIMIT = 0x7FFFFFFF
@@ -13,7 +14,7 @@ class Cheats_RDR2:
     BYTES_BETWEEN_IDENTIFIER = 16
 
     class MoneyModal(discord.ui.Modal):
-        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: str) -> None:
+        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(title="Alter money", timeout=None)
             self.ctx = ctx
             self.helper = helper
@@ -49,7 +50,7 @@ class Cheats_RDR2:
                     await self.ctx.edit(embed=embLoaded)
 
     class CheatsButton(discord.ui.View):
-        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: str) -> None:
+        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(timeout=OTHER_TIMEOUT)
             self.ctx = ctx
             self.helper = helper
@@ -108,7 +109,7 @@ class Cheats_RDR2:
         return platform 
 
     @staticmethod
-    async def changeMoney(filePath: str, money: int, platform: str) -> None:
+    async def changeMoney(filePath: str, money: int, platform: Literal["ps4", "pc"]) -> None:
         if money > Cheats_RDR2.MONEY_LIMIT or money < 0:
             raise QuickCheatsError(f"Invalid money limit, maximum is {Cheats_RDR2.MONEY_LIMIT: ,} and it must be positive.")
         
@@ -128,7 +129,7 @@ class Cheats_RDR2:
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
-    async def fetchStats(filePath: str, platform: str) -> dict | None:
+    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict | None:
         stats = {}
         try:
             async with aiofiles.open(filePath, "rb") as savegame:
