@@ -5,6 +5,7 @@ import re
 from Crypto.Cipher import AES
 from .common import CustomCrypto
 from utils.constants import GTAV_TITLEID
+from typing import Literal
 
 class Crypt_Rstar:
     # GTA V & RDR 2
@@ -51,7 +52,7 @@ class Crypt_Rstar:
         return ((checksum >> 11 ^ checksum) * 0x8001) & 0xFFFFFFFF
 
     @staticmethod
-    async def encryptFile(fileToEncrypt: str, start_offset: int) -> None:
+    async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
         key = Crypt_Rstar.KEYS[start_offset]
 
         # Read the entire plaintext data from the file
@@ -93,7 +94,7 @@ class Crypt_Rstar:
             await encrypted_file.write(encrypted_data)
 
     @staticmethod
-    async def decryptFile(upload_decrypted: str, start_offset: int) -> None:
+    async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
         files = CustomCrypto.obtainFiles(upload_decrypted)
         key = Crypt_Rstar.KEYS[start_offset]
 
