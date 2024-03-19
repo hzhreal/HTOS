@@ -25,6 +25,22 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Account ID database, do not include playstation_id parameter if you want to use previously stored account ID
 - Interactive user interface
 
+| Second layer encryption game list        | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support (more than keystone & title id swapping) |
+| ---------------------------------------- | ----------------------------------- | ------------------------ | ---------------------------------------------------------------- |
+| Grand Theft Auto V                       | Grand Theft Auto V                  | Grand Theft Auto V       | Xenoverse 2                                                      |
+| Red Dead Redemption 2                    | Red Dead Redemption 2               | Red Dead Redemption 2    | Metal Gear Solid V: The Phantom Pain                             |
+| Borderlands 3                            | Borderlands 3                       |                          | Metal Gear Solid V: Ground Zeroes                                |
+| Tiny Tina's Wonderlands                  | Tiny Tina's Wonderlands             |
+| Xenoverse 2                              | 
+| The Last of Us                           | 
+| Uncharted 4                              |
+| Uncharted: The Lost Legacy               | 
+| Uncharted: The Nathan Drake Collection   |
+| Metal Gear Solid V: The Phantom Pain     | 
+| Metal Gear Solid V: Ground Zeroes        | 
+| Resident Evil Revelations 2              |
+| Dying Light 2 (compression only)         | 
+
 ## Requirements
 - A jailbroken PS4 running atleast GoldHEN v2.4b14 payload
 - Give the bot permsisions to manage threads and delete messages in addition to the message content intents.
