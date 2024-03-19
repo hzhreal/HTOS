@@ -12,7 +12,7 @@ from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
     bot, change_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
-    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID,
+    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
@@ -190,7 +190,7 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                     case "TTWL":
                         await Crypto.BL3.decryptFile(destination_directory, True)
                     case "NDOG":
-                        await Crypto.Ndog.decryptFile(destination_directory)
+                        await Crypto.Ndog.decryptFile(destination_directory, self.offset)
                     case "MGSV":
                         await Crypto.MGSV.decryptFile(destination_directory, self.title_id)
                     case "REV2":
@@ -230,7 +230,11 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=None, title_id=None))
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET, title_id=None))
+        await helper.await_done()
+
+    elif title_id in NDOG_COL_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL, title_id=None))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
@@ -263,7 +267,10 @@ async def extra_import(title_id: str, file_name: str) -> None:
             await Crypto.BL3.checkEnc_ps(file_name, True)
 
         elif title_id in NDOG_TITLEID:
-            await Crypto.Ndog.checkEnc_ps(file_name)
+            await Crypto.Ndog.checkEnc_ps(file_name, Crypto.Ndog.START_OFFSET)
+
+        elif title_id in NDOG_COL_TITLEID:
+            await Crypto.Ndog.checkEnc_ps(file_name, Crypto.Ndog.START_OFFSET_COL)
 
         elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
             await Crypto.MGSV.checkEnc_ps(file_name, title_id)
