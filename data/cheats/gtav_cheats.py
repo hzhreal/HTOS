@@ -6,6 +6,7 @@ import struct
 from utils.constants import OTHER_TIMEOUT, embDone_G
 from .common import QuickCheatsError, QuickCheats, TimeoutHelper
 from data.crypto import Crypt_Rstar as crypt
+from typing import Literal
 
 class Cheats_GTAV:
     MONEY_LIMIT = 0x7FFFFFFF
@@ -18,7 +19,7 @@ class Cheats_GTAV:
     BYTES_BETWEEN_IDENTIFIER = 4
 
     class MoneyModal(discord.ui.Modal):
-        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: str) -> None:
+        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(title="Alter money", timeout=None)
             self.ctx = ctx
             self.helper = helper
@@ -65,7 +66,7 @@ class Cheats_GTAV:
                     await self.ctx.edit(embed=embLoaded)
 
     class CheatsButton(discord.ui.View):
-        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: str) -> None:
+        def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(timeout=OTHER_TIMEOUT)
             self.ctx = ctx
             self.helper = helper
@@ -124,7 +125,7 @@ class Cheats_GTAV:
         return platform 
     
     @staticmethod
-    async def changeMoney(filePath: str, money: int, character: str, platform: str) -> None:
+    async def changeMoney(filePath: str, money: int, character: str, platform: Literal["ps4", "pc"]) -> None:
         if money > Cheats_GTAV.MONEY_LIMIT or money < 0:
             raise QuickCheatsError(f"Invalid money limit, maximum is {Cheats_GTAV.MONEY_LIMIT: ,} and it must be positive.")
         
@@ -144,7 +145,7 @@ class Cheats_GTAV:
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
-    async def fetchStats(filePath: str, platform: str) -> dict | None:
+    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict | None:
         values = {}
         try:
             async with aiofiles.open(filePath, "rb") as savegame:
