@@ -1,100 +1,138 @@
 import os
-import aiofiles 
+import aiofiles
 import struct
-import hashlib
-import hmac
-import zlib
+import re
+from Crypto.Cipher import AES
 from .common import CustomCrypto
-from Crypto.Cipher import Blowfish
+from utils.constants import GTAV_TITLEID
+from typing import Literal
 
-# notes: start 0x08, last 4 bytes is size (without header)
+class Crypt_Rstar:
+    # GTA V & RDR 2
+    PS4_KEY = bytes([
+        0x16,  0x85,  0xff,  0xa3,  0x8d,  0x01,  0x0f,  0x0d,
+        0xfe,  0x66,  0x1c,  0xf9,  0xb5,  0x57,  0x2c,  0x50,
+        0x0d,  0x80,  0x26,  0x48,  0xdb,  0x37,  0xb9,  0xed,
+        0x0f,  0x48,  0xc5,  0x73,  0x42,  0xc0,  0x22,  0xf5
+    ])
 
-class Crypt_Ndog:
-    SECRET_KEY = b"(SH[@2>r62%5+QKpy|g6"
-    SHA1_HMAC_KEY = b"xM;6X%/p^L/:}-5QoA+K8:F*M!~sb(WK<E%6sW_un0a[7Gm6,()kHoXY+yI/s;Ba"
+    PC_KEY = bytes([
+        0x46,  0xed,  0x8d,  0x3f,  0x94,  0x35,  0xe4,  0xec,
+        0x12,  0x2c,  0xb2,  0xe2,  0xaf,  0x97,  0xc5,  0x7e,
+        0x4c,  0x5a,  0x8c,  0x30,  0x92,  0xc7,  0x84,  0x4e,
+        0x11,  0xc6,  0x86,  0xff,  0x41,  0xdf,  0x41,  0x0f
+    ])
 
-    HEADER_TLOU = b"The Last of Us"
-    HEADER_UNCHARTED = b"Uncharted"
+    GTAV_PS_HEADER_OFFSET = 0x114
+    GTAV_PC_HEADER_OFFSET = 0x108
+    GTAV_HEADER = b"PSIN"
+
+    RDR2_PS_HEADER_OFFSET = 0x120
+    RDR2_PC_HEADER_OFFSET = 0x110
+    RDR2_HEADER = b"RSAV"
+
+    KEYS = {
+        GTAV_PS_HEADER_OFFSET: PS4_KEY,
+        RDR2_PS_HEADER_OFFSET: PS4_KEY,
+
+        GTAV_PC_HEADER_OFFSET: PC_KEY,
+        RDR2_PC_HEADER_OFFSET: PC_KEY
+    }
+
+    @staticmethod 
+    def calculate_checksum(data: bytes) -> int:
+        checksum = 0x3fac7125
+
+        for char in data:
+            char = (char + 128) % 256 - 128 # casting to signed char
+            checksum = ((char + checksum) * 0x401) & 0xFFFFFFFF
+            checksum = (checksum >> 6 ^ checksum) & 0xFFFFFFFF
+        checksum = (checksum*9) & 0xFFFFFFFF
+        
+        return ((checksum >> 11 ^ checksum) * 0x8001) & 0xFFFFFFFF
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        exclude = ["ICN-ID"]
-        files = CustomCrypto.obtainFiles(folderPath, exclude)
-       
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+    async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
+        key = Crypt_Rstar.KEYS[start_offset]
+
+        # Read the entire plaintext data from the file
+        async with aiofiles.open(fileToEncrypt, "r+b") as file:
+            data_before = await file.read(start_offset)  # Read data before the encrypted part
+            await file.seek(start_offset)  # Move the file pointer to the start_offset
+            data_to_encrypt = await file.read()  # Read the part to encrypt
+
+            # checksum handling
+            for chunk in [m.start() for m in re.finditer(b"CHKS\x00", data_to_encrypt)]: # calculate checksums for each chunk
+                await file.seek(start_offset + chunk + 4, 0) # 4 bytes for the magic CHKS
+                header_size = struct.unpack(">I", await file.read(4))[0]
+                data_length = struct.unpack(">I", await file.read(4))[0]
+                await file.seek(header_size - 4 - 4 - 4, 1) # 4 for the header size num, 4 for the data length num and 4 for the checksum
+
+                await file.seek(-data_length, 1)
+                data_to_be_hashed = bytearray(await file.read(data_length))
+
+                chks_offset = len(data_to_be_hashed) - header_size + (4 + 4)
+                data_to_be_hashed[chks_offset:chks_offset + (4 + 4)] = b"\x00" * (4 + 4) # remove the length and hash
+                new_hash = struct.pack(">I", Crypt_Rstar.calculate_checksum(data_to_be_hashed))
+                
+                await file.seek(start_offset + chunk + (4 + 4 + 4), 0) # 4 bytes for header size num, 4 bytes for the data length and 4 bytes for the checksum
+                await file.write(new_hash)
             
-            async with aiofiles.open(filePath, "rb") as savegame:
-                first_8 = await savegame.read(8)
-                await savegame.seek(0x08)
-                encrypted_data = await savegame.read()
-
-            dsize = struct.unpack("<I", encrypted_data[-4:])[0]
-
-            # Pad the data to be a multiple of the block size
-            block_size = Blowfish.block_size
-            padding = b"\x00" * (block_size - len(encrypted_data) % block_size)
-            padded_data = encrypted_data + padding
-
-            decrypted_data = bytearray(CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-            new_dsize = struct.pack("<I", dsize)
-
-            tmp_decrypted_data = bytearray(first_8 + decrypted_data)
-
-            # make bytes after hmac sha1 checksum zero
-            for i in range((dsize - 0xC) + 20, len(tmp_decrypted_data)):
-                tmp_decrypted_data[i] = 0
-
-            decrypted_data = tmp_decrypted_data[8:]
-            decrypted_data = decrypted_data[:-len(padding)] # remove padding that we added to avoid exception
-            decrypted_data[-4:] = new_dsize
-
-            async with aiofiles.open(filePath, "r+b") as savegame:
-                await savegame.seek(0x08)
-                await savegame.write(decrypted_data)
-    
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            decrypted_data = bytearray(await savegame.read())
-
-        first_8 = decrypted_data[:8]
-        dsize = struct.unpack("<I", decrypted_data[-4:])[0]
-
-        # crc32 checksum
-        crc_bl = struct.unpack("<I", decrypted_data[0x58C:0x58C + 4])[0]
-        crc_data = decrypted_data[0x58C:0x58C + (crc_bl - 4)]
-        crc = zlib.crc32(crc_data)
-        crc_final = struct.pack("<I", crc)
-        decrypted_data[0x588:0x588 + 4] = crc_final
-
-        # sha1 hmac checksum
-        chks_msg = decrypted_data[0x08:0x08 + (dsize - 0x14)]
-        hmac_sha1_hash = hmac.new(Crypt_Ndog.SHA1_HMAC_KEY, chks_msg, hashlib.sha1).digest()
-        decrypted_data[dsize - 0xC:(dsize - 0xC) + len(hmac_sha1_hash)] = hmac_sha1_hash
-
-        # remove first 8 static bytes
-        decrypted_data = decrypted_data[8:]
+            await file.seek(start_offset)
+            data_to_encrypt = await file.read()
 
         # Pad the data to be a multiple of the block size
-        block_size = Blowfish.block_size
-        padding = b"\x00" * (block_size - len(decrypted_data) % block_size)
-        padded_data = decrypted_data + padding
-        
-        encrypted_data = bytearray(CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-        new_dsize = struct.pack("<I", dsize)
+        block_size = AES.block_size
+        padded_data = data_to_encrypt + b"\x00" * (block_size - len(data_to_encrypt) % block_size)
 
-        encrypted_data = encrypted_data[:-len(padding)] # remove padding that we added to avoid exception
-        encrypted_data[-4:] = new_dsize
+        # Encrypt the data
+        encrypted_data = CustomCrypto.encrypt_aes_ecb(padded_data, key)
 
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(first_8 + encrypted_data)                   
+        # Combine all the parts and save the new encrypted data to a new file (e.g., "encrypted_SGTA50000")
+        async with aiofiles.open(fileToEncrypt, "wb") as encrypted_file:
+            await encrypted_file.write(data_before)
+            await encrypted_file.write(encrypted_data)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
+    async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
+        files = CustomCrypto.obtainFiles(upload_decrypted)
+        key = Crypt_Rstar.KEYS[start_offset]
+
+        for file_target in files:
+
+            file_name = os.path.join(upload_decrypted, file_target)
+
+            # Read the entire ciphertext data from the file
+            async with aiofiles.open(file_name, "rb") as file:
+                data_before = await file.read(start_offset)  # Read data before the encrypted part
+                await file.seek(start_offset)  # Move the file pointer to the start_offset
+                data_to_decrypt = await file.read()  # Read the part to decrypt
+                
+            # Pad the data to be a multiple of the block size
+            block_size = AES.block_size
+            padded_data = data_to_decrypt + b"\x00" * (block_size - len(data_to_decrypt) % block_size)
+
+            # Decrypt the data
+            decrypted_data = CustomCrypto.decrypt_aes_ecb(padded_data, key)
+
+            # Save the decrypted data to a new file (e.g., "decrypted_SGTA50000")
+            async with aiofiles.open(file_name, "wb") as decrypted_file:
+                await decrypted_file.write(data_before)
+                await decrypted_file.write(decrypted_data)
+    
+    @staticmethod
+    async def checkEnc_ps(fileName: str, title_ids: list) -> None:
         async with aiofiles.open(fileName, "rb") as savegame:
-            await savegame.seek(0x08)
-            header = await savegame.read(len(Crypt_Ndog.HEADER))
+            if title_ids == GTAV_TITLEID:
+                await savegame.seek(Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
+                header = await savegame.read(len(Crypt_Rstar.GTAV_HEADER))
+    
+            else:
+                await savegame.seek(Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
+                header = await savegame.read(len(Crypt_Rstar.RDR2_HEADER))
         
-        if header == Crypt_Ndog.HEADER_TLOU or header == Crypt_Ndog.HEADER_UNCHARTED:
-            await Crypt_Ndog.encryptFile(fileName)
+        match header:
+            case Crypt_Rstar.GTAV_HEADER:
+                await Crypt_Rstar.encryptFile(fileName, Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
+            case Crypt_Rstar.RDR2_HEADER:
+                await Crypt_Rstar.encryptFile(fileName, Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
