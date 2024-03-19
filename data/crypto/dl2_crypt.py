@@ -34,5 +34,5 @@ class Crypt_DL2:
         async with aiofiles.open(fileName, "rb") as savegame:
             magic = await savegame.read(3)
         
-        if magic == b"\x1F\x8B\x08":
+        if magic != b"\x1F\x8B\x08":
             await Crypt_DL2.encryptFile(fileName)
