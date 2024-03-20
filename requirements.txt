@@ -7,3 +7,4 @@ pillow
 aioftp
 aiogoogle
 psnawp
+crc32c
