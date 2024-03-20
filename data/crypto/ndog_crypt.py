@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import zlib
 import crc32c
-from common import CustomCrypto
+from .common import CustomCrypto
 from Crypto.Cipher import Blowfish
 from typing import Literal
 
