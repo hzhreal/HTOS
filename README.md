@@ -31,7 +31,8 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Borderlands 3                            | Borderlands 3                       |                          | Metal Gear Solid V: Ground Zeroes                                |
 | Tiny Tina's Wonderlands                  | Tiny Tina's Wonderlands             |
 | Xenoverse 2                              | 
-| The Last of Us                           | 
+| The Last of Us                           |
+| The Last of Us Part II                   |
 | Uncharted 4                              |
 | Uncharted: The Lost Legacy               | 
 | Uncharted: The Nathan Drake Collection   |
