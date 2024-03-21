@@ -15,36 +15,36 @@ If it fails you will get prompted to write in your accound ID, you can find it i
 
 Your account ID will be saved and you do not need to include the parameter if you want to use the previously stored one.
 
-**resign**: Accepts save pairs that will get resigned to your account ID, so you can use them on your account.
+**resign**: Accepts save pairs that will get resigned to your account ID, so you can use them on your account.  
 
 
 **decrypt**: Accept save pairs that will get decrypted so you can obtain the files inside it.   
 **Parameter**: include_sce_sys, this is just if you want the system files of the save
-If the game has second layer of encryption that is implemented, you will get prompted if you want it removed or not.
+If the game has second layer of encryption that is implemented, you will get prompted if you want it removed or not.  
 
 
 **encrypt**: Accepts save pairs that will get resigned, and you will get prompted to replace the files inside the save.  
 **Parameters**:
 - upload_individually, Choose if you want to upload the decrypted files one by one, or the ones you want at once. Put to true if you want to swap all the files in the save. If you put it to false, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format. The bot will prompt you on the details.
 - include_sce_sys, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.
-If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.
+If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 
 
-**reregion**: First accepts a save pair from your region (upload 1 save pair only), then obtains the keystone file and prompts you to upload the files you want to resign and re-region.
+**reregion**: First accepts a save pair from your region (upload 1 save pair only), then obtains the keystone file and prompts you to upload the files you want to resign and re-region.  
 
 
 **change picture**: Accepts a save pair that will get resigned and the save png will get swapped.  
-**Parameter**: picture, this is the file you want to swap the picture with
+**Parameter**: picture, this is the file you want to swap the picture with  
 
 
-**quickresign**: Brings up a list with stored saves by the hoster, you can choose which one you want resigned. You will be prompted on which numbers to type in chat to choose save.
+**quickresign**: Brings up a list with stored saves by the hoster, you can choose which one you want resigned. You will be prompted on which numbers to type in chat to choose save.  
 
 
 **change title**: Accepts a save pair that will get resigned, and the titles of the save will be swapped.  
 **Parameters**: 
 - maintitle, for example Grand Theft Auto V
 - subtitle, for example Franklin and Lamar (1.6%)
-These are changed in the param.sfo file.
+These are changed in the param.sfo file.  
 
 
 **convert**: Accepts a savegame that is decrypted (second layer of encryption can be present). The savefile will be converted from PS4 to PC or vice versa.   
@@ -54,16 +54,16 @@ These are changed in the param.sfo file.
 The platform will get automatically detected, if not you will be prompted.  
 **If your game is not available**:  
 **PS4 -> PC**: Try to decrypt the PS4 save and use the decrypted file on PC.  
-**PC -> PS4**: Try to encrypt the PC savefile into a PS4 save pair.  
+**PC -> PS4**: Try to encrypt the PC savefile into a PS4 save pair.    
 
 
-**cheats**: Accepts a savegame that you can add quick cheats to (second layer of encryption can be present). The bot will prompt you with a UI that you can use to add whatever cheats that is available.  
+**cheats**: Accepts a savegame that you can add quick cheats to (second layer of encryption can be present). The bot will prompt you with a UI that you can use to add whatever cheats that is available.   
 **Parameters**
 - game, select the game of the savefile
-- savefile, the file itself
+- savefile, the file itself   
 
 
-**ping**: Check if the bot is functional!
+**ping**: Check if the bot is functional!  
 
 ## Examples
 ![image](https://github.com/hzhreal/HTOS/assets/142254293/19c7a4f6-1838-4bcf-872c-f087c0c5a9be)
