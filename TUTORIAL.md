@@ -1,5 +1,5 @@
 # Quick tutorial for the end user
-The bot only takes file, no zips or any other compression like that.
+The bot only takes files, no zips or any other compression like that.
 
 ## Uploads
 When you do a command that takes save pairs (encrypted saves which is a file and .bin corresponding to it), you can upload it straight through discord or send a public google drive folder link.
