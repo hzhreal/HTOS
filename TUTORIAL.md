@@ -1,6 +1,9 @@
 # Quick tutorial for the end user
 The bot only takes files, no zips or any other compression like that.
 
+## Threads
+Click the create thread button in the channel that the bot's message is in, thereafter enter the thread you receive. You can do the commands there.
+
 ## Uploads
 When you do a command that takes save pairs (encrypted saves which is a file and .bin corresponding to it), you can upload it straight through discord or send a public google drive folder link.
 
