@@ -23,6 +23,8 @@ class Crypt_Ndog:
     START_OFFSET_TLOU2 = 0x10 # tlou part 2
     START_OFFSET_COL = 0xC # the nathan drake collection
 
+    EXCLUDE = ["ICN-ID"]
+
     @staticmethod
     def calc_size(data: bytearray | bytes, start_offset: Literal[0x08, 0x10, 0xC]) -> tuple[int, bytes]:
         if start_offset == Crypt_Ndog.START_OFFSET_TLOU2: # 0x10
@@ -90,8 +92,7 @@ class Crypt_Ndog:
 
     @staticmethod
     async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        exclude = ["ICN-ID"]
-        files = CustomCrypto.obtainFiles(folderPath, exclude)
+        files = CustomCrypto.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
 
         for fileName in files:
             filePath = os.path.join(folderPath, fileName)
@@ -172,6 +173,9 @@ class Crypt_Ndog:
 
     @staticmethod
     async def checkEnc_ps(fileName: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
+        if fileName in Crypt_Ndog.EXCLUDE:
+            return
+
         async with aiofiles.open(fileName, "rb") as savegame:
             await savegame.seek(start_offset)
             header = await savegame.read(len(Crypt_Ndog.HEADER_TLOU))
