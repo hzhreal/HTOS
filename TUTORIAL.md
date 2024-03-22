@@ -11,7 +11,7 @@ When you do a command that takes save pairs (encrypted saves which is a file and
 All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning (you can upload in bulk when you upload the ones you want to resign and re-region. 
 
 ## Commands
-**common parameter**: playstation_id, YOUR PLAYSTATION NETWORK USERNAME
+**common parameter**: playstation_id, YOUR PLAYSTATION NETWORK USERNAME  
 It will get converted to your account ID using the psn api. 
 
 If it fails you will get prompted to write in your accound ID, you can find it in the folders by looking into the folders of a savefile from your account. 
@@ -25,7 +25,7 @@ Your account ID will be saved and you do not need to include the parameter if yo
 //
 
 **decrypt**: Accept save pairs that will get decrypted so you can obtain the files inside it.   
-**Parameter**: include_sce_sys, this is just if you want the system files of the save
+**Parameter**: include_sce_sys, this is just if you want the system files of the save   
 If the game has second layer of encryption that is implemented, you will get prompted if you want it removed or not.  
 
 //
@@ -33,7 +33,7 @@ If the game has second layer of encryption that is implemented, you will get pro
 **encrypt**: Accepts save pairs that will get resigned, and you will get prompted to replace the files inside the save.  
 **Parameters**:
 - upload_individually, Choose if you want to upload the decrypted files one by one, or the ones you want at once. Put to true if you want to swap all the files in the save. If you put it to false, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format. The bot will prompt you on the details.
-- include_sce_sys, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.
+- include_sce_sys, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.  
 If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 
 //
