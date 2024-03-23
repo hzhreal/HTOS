@@ -8,7 +8,7 @@ Click the create thread button in the channel that the bot's message is in, ther
 When you do a command that takes save pairs (encrypted saves which is a file and .bin corresponding to it), you can upload it straight through discord or send a public google drive folder link.
 
 ## Bulk uploads
-All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning (you can upload in bulk when you upload the ones you want to resign and re-region. 
+All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning (you can upload in bulk when you upload the ones you want to resign and re-region. Quick code command also accepts multiple savegames.
 
 ## Commands
 **common parameter**: playstation_id, YOUR PLAYSTATION NETWORK USERNAME  
@@ -77,10 +77,9 @@ The platform will get automatically detected, if not you will be prompted.
 
 //
 
-**quick codes**: Accepts a savegame that you can apply save wizard quick codes to (must be fully decrypted).  
+**quick codes**: Accepts savegames that you can apply save wizard quick codes to (must be fully decrypted).  
 **Paremeters**
 - codes, the save wizard quick codes
-- savegame, the file itself, must be fully decrypted
 - endianness, try without this parameter first, if it does not work put it to big  
 The save you input must be fully decrypted, then you can encrypt with the bot, however if there is a type of encryption/checksum that is not implemented in the bot it will not work.
 
