@@ -62,7 +62,7 @@ class GDapi:
         return count
     
     @staticmethod
-    async def fileCheck(ctx: discord.ApplicationContext, file_data: list, sys_files: list[str] | None, ps_save_pair_upload: bool) -> list:
+    async def fileCheck(ctx: discord.ApplicationContext, file_data: list[dict[str, str | int]], sys_files: list[str] | None, ps_save_pair_upload: bool) -> list:
         valid_files_data = []
         if ps_save_pair_upload:
             valid_files_data = await GDapi.save_pair_check(ctx, file_data)
@@ -97,7 +97,7 @@ class GDapi:
         return valid_files_data     
 
     @staticmethod
-    async def save_pair_check(ctx: discord.ApplicationContext, file_data: list) -> list:
+    async def save_pair_check(ctx: discord.ApplicationContext, file_data: list[dict[str, str | int]]) -> list[dict[str, str]]:
         valid_saves_check1 = []
         for file_info in file_data:
             file_name = file_info["filename"]
@@ -167,7 +167,7 @@ class GDapi:
         return file_url
 
     @classmethod
-    async def downloadsaves_gd(cls, ctx: discord.ApplicationContext, folder_id: str, download_dir: str, max_files: int, sys_files: list[str, str, str, str , str] | None, ps_save_pair_upload: bool) -> list | str | None:
+    async def downloadsaves_gd(cls, ctx: discord.ApplicationContext, folder_id: str, download_dir: str, max_files: int, sys_files: list[str] | None, ps_save_pair_upload: bool) -> tuple[list[str], str] | None:
         uploaded_file_paths = []
 
         async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
