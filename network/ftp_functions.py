@@ -332,7 +332,7 @@ class FTPps:
             print(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
-    async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list, sce_sysPath: str) -> None:
+    async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list[str], sce_sysPath: str) -> None:
         
         for filepath in filepaths:
             fullPath = os.path.join(self.UPLOAD_DECRYPTED_REPLACE, filepath)
@@ -350,7 +350,7 @@ class FTPps:
                 print(f"[FTP ERROR]: {e}")
                 raise FTPError("An unexpected error!")
     
-    async def ftpListContents(self, mountpath: str) -> list:
+    async def ftpListContents(self, mountpath: str) -> list[str]:
         files = []
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -374,7 +374,7 @@ class FTPps:
 
         return files
     
-    async def deleteList(self, uploadDir: str, fileList: list) -> None:
+    async def deleteList(self, uploadDir: str, fileList: list[str]) -> None:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(uploadDir)
