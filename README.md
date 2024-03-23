@@ -100,5 +100,6 @@ How to obtain NPPSO:
 - https://github.com/dylanbbk & https://github.com/iCrazeiOS for help
 - https://github.com/bucanero/save-decrypters for the extra encryption methods
 - https://github.com/bucanero/pfd_sfo_tools/blob/master/sfopatcher/src/sfo.c for the param.sfo parser
+- https://github.com/bucanero/apollo-lib/blob/main/source/patches.c#L2724C5-L2724C28 for the quick codes implementation
 - https://github.com/Zhaxxy/rdr2_enc_dec/blob/main/rdr2_enc_dec.py for the checksum
 - https://github.com/Zhaxxy/xenoverse2_ps4_decrypt for Xenoverse 2 extra layer of encryption
