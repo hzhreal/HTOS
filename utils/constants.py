@@ -1,7 +1,7 @@
-from dotenv import load_dotenv
 import os
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -11,6 +11,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
 change_group = discord.SlashCommandGroup("change")
+quick_group = discord.SlashCommandGroup("quick")
 
 IP = str(os.getenv("IP"))
 PORT = int(os.getenv("FTP_PORT"))
