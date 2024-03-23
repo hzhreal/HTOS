@@ -8,3 +8,4 @@ aioftp
 aiogoogle
 psnawp
 crc32c
+numpy
