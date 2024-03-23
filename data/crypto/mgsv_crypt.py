@@ -2,6 +2,7 @@ import hashlib
 import aiofiles
 import os
 from .common import CustomCrypto
+from typing import Literal
 
 class Crypt_MGSV:
     MGSV_TPP_PS4KEY_CUSA01140 = 0x4131F8BE        
@@ -26,7 +27,7 @@ class Crypt_MGSV:
     HEADER_GZ = b"gz"
 
     @staticmethod
-    def crypt_data(data: list[int], length: int, title_id: str) -> bytearray:
+    def crypt_data(data: list[int], length: int, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> bytearray:
         key = Crypt_MGSV.KEYS[title_id]["key"]
 
         for i in range(length >> 2):
@@ -38,7 +39,7 @@ class Crypt_MGSV:
         return data
 
     @staticmethod
-    async def decryptFile(folderPath: str, title_id: str) -> None:
+    async def decryptFile(folderPath: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
         for fileName in files:
@@ -56,7 +57,7 @@ class Crypt_MGSV:
                 await savegame.write(decrypted_data)
 
     @staticmethod
-    async def encryptFile(fileToEncrypt: str, title_id: str) -> None:
+    async def encryptFile(fileToEncrypt: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
             decrypted_data = bytearray(savegame.read())
 
@@ -75,7 +76,7 @@ class Crypt_MGSV:
             await savegame.write(encrypted_data)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str, title_id: str) -> None:
+    async def checkEnc_ps(fileName: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         async with aiofiles.open(fileName, "rb") as savegame:
             await savegame.seek(0x10)
             header = await savegame.read(2)
@@ -84,7 +85,7 @@ class Crypt_MGSV:
             await Crypt_MGSV.encryptFile(fileName, title_id)
 
     @staticmethod
-    async def reregion_changeCrypt(folderPath: str, target_titleid: str) -> None:
+    async def reregion_changeCrypt(folderPath: str, target_titleid: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         for fileName in os.listdir(folderPath):
             filePath = os.path.join(folderPath, fileName)
 
@@ -115,5 +116,3 @@ class Crypt_MGSV:
                             await savegame.write(encrypted_data)
                         
                         break
-
-                    
