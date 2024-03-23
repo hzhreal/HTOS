@@ -6,7 +6,7 @@ from PIL import Image
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
-    def get_all_file_paths(directory: str) -> list: 
+    def get_all_file_paths(directory: str) -> list[tuple[str, str]]: 
   
         # initializing empty file paths list 
         file_paths = [] 
@@ -50,7 +50,7 @@ def pngprocess(path: str, size: tuple[int, int]) -> None:
     except Exception as e:
         print(f"Error processing {path}: {e}")
 
-def obtain_savenames(dir_: str) -> list:
+def obtain_savenames(dir_: str) -> list[str]:
     savenames = []
     saves = os.listdir(dir_)
 
