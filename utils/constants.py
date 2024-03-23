@@ -168,7 +168,7 @@ embnv1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/
 embnv1.set_footer(text="Made with expertise by HTOP")
 
 emb8 = discord.Embed(title="Error: PSN username",
-                description="Your input was not a valid PSN username, you have 60 seconds to reply with your account ID instead.",
+                description=f"Your input was not a valid PSN username, you have {OTHER_TIMEOUT} seconds to reply with your account ID instead.",
                 colour=0x854bf7)
 emb8.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
 emb8.set_footer(text="Made with expertise by HTOP")
