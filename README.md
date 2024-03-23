@@ -92,7 +92,7 @@ How to obtain NPPSO:
 - Make sure to use the latest cecie.nim release
 
 ### No jailbroken PS4?
-- Join my discord where I host the bot, free to use and often hosted
+- Join my discord where the bot is hosted, free to use and often hosted
   https://discord.gg/fHfmjaCXtb
 
 ## Credits
