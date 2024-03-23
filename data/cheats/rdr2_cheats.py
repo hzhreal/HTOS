@@ -129,7 +129,7 @@ class Cheats_RDR2:
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
-    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict | None:
+    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict[str, str] | None:
         stats = {}
         try:
             async with aiofiles.open(filePath, "rb") as savegame:
@@ -153,7 +153,7 @@ class Cheats_RDR2:
         return stats
     
     @staticmethod
-    def loaded_embed(stats: dict) -> discord.Embed:
+    def loaded_embed(stats: dict[str, str]) -> discord.Embed:
         embLoaded = discord.Embed(title=f"Save loaded: RDR 2",
                     description=(
                         f"Platform: **{stats['Platform']}**\n"
