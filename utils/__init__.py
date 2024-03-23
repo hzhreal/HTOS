@@ -64,7 +64,8 @@ from .constants import (
     embTitleErr,
     embTimedOut,
     embDone_G,
-    emb_conv_choice
+    emb_conv_choice,
+    emb_upl_savegame
 )
 from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames
 from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext
