@@ -1,4 +1,5 @@
 from data.cheats.common import QuickCheatsError, QuickCheats, TimeoutHelper
+from data.cheats.quickcodes import QuickCodes, QuickCodesError
 from data.cheats.gtav_cheats import Cheats_GTAV
 from data.cheats.rdr2_cheats import Cheats_RDR2
 
