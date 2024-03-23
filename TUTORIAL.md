@@ -47,7 +47,7 @@ If the game has second layer of encryption that is implemented, the savefiles yo
 
 //
 
-**quickresign**: Brings up a list with stored saves by the hoster, you can choose which one you want resigned. You will be prompted on which numbers to type in chat to choose save.  
+**quick resign**: Brings up a list with stored saves by the hoster, you can choose which one you want resigned. You will be prompted on which numbers to type in chat to choose save.  
 
 //
 
@@ -70,10 +70,19 @@ The platform will get automatically detected, if not you will be prompted.
 
 //
 
-**cheats**: Accepts a savegame that you can add quick cheats to (second layer of encryption can be present). The bot will prompt you with a UI that you can use to add whatever cheats that is available.   
+**quick cheats**: Accepts a savegame that you can add quick cheats to (second layer of encryption can be present). The bot will prompt you with a UI that you can use to add whatever cheats that is available.   
 **Parameters**
 - game, select the game of the savefile
 - savefile, the file itself   
+
+//
+
+**quick codes**: Accepts a savegame that you can apply save wizard quick codes to (must be fully decrypted).  
+**Paremeters**
+- codes, the save wizard quick codes
+- savegame, the file itself, must be fully decrypted
+- endianness, try without this parameter first, if it does not work put it to big  
+The save you input must be fully decrypted, then you can encrypt with the bot, however if there is a type of encryption/checksum that is not implemented in the bot it will not work.
 
 //
 
