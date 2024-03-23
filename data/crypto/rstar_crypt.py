@@ -121,7 +121,7 @@ class Crypt_Rstar:
                 await decrypted_file.write(decrypted_data)
     
     @staticmethod
-    async def checkEnc_ps(fileName: str, title_ids: list) -> None:
+    async def checkEnc_ps(fileName: str, title_ids: list[str]) -> None:
         async with aiofiles.open(fileName, "rb") as savegame:
             if title_ids == GTAV_TITLEID:
                 await savegame.seek(Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
