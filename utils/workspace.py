@@ -109,7 +109,7 @@ def startup():
     time.sleep(1)
     os.system("cls" if os.name == "nt" else "clear")
 
-async def cleanup(fInstance, clean_list: list, saveList: list, mountPaths: list) -> None:
+async def cleanup(fInstance, clean_list: list[str], saveList: list[str], mountPaths: list[str]) -> None:
     for folderpath in clean_list:
         try:
             shutil.rmtree(folderpath)
@@ -126,7 +126,7 @@ async def cleanup(fInstance, clean_list: list, saveList: list, mountPaths: list)
         except AIOFTPException as e:
             print(f"An error occurred when cleaning up (FTP): {e}")
 
-def cleanupSimple(clean_list: list) -> None:
+def cleanupSimple(clean_list: list[str]) -> None:
     for folderpath in clean_list:
         try:
             shutil.rmtree(folderpath)
@@ -145,7 +145,7 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
 
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
     
-async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list, thread_id: int) -> None:
+async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
     embChannelError = discord.Embed(title="Error",
                                     description="Invalid channel!",
                                     colour=0x854bf7)
@@ -167,7 +167,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list, th
     except aiosqlite.Error:
         raise WorkspaceError("Please try again.")
 
-def enumerateFiles(fileList: list, randomString: str) -> list:
+def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
     for i, name in enumerate(fileList):
         if name.endswith("bin"):
             fileList[i] = os.path.splitext(os.path.basename(name))[0] + f"_{randomString}.bin" 
