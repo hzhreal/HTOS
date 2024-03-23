@@ -145,7 +145,7 @@ class Cheats_GTAV:
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
-    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict | None:
+    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict[str, int | str]:
         values = {}
         try:
             async with aiofiles.open(filePath, "rb") as savegame:
@@ -163,7 +163,7 @@ class Cheats_GTAV:
         return values
     
     @staticmethod
-    def loaded_embed(stats: dict) -> discord.Embed:
+    def loaded_embed(stats: dict[str, int | str]) -> discord.Embed:
         embLoaded = discord.Embed(title=f"Save loaded: GTA V",
                     description=(
                         f"Platform: **{stats['Platform']}**\n"
