@@ -220,3 +220,9 @@ emb_conv_choice = discord.Embed(title="Converter: Choice",
                         colour=0x854bf7)
 emb_conv_choice.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
 emb_conv_choice.set_footer(text="Made with expertise by HTOP")
+
+emb_upl_savegame = discord.Embed(title="Upload files",
+                        description=f"Please attach atleast 1 savefile, it must be fully decrypted.",
+                        colour=0x854bf7)
+emb_upl_savegame.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+emb_upl_savegame.set_footer(text="Made with expertise by HTOP")
