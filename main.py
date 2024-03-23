@@ -14,7 +14,7 @@ from utils.constants import (
     bot, change_group, quick_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
     FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
-    emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
+    emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut, emb_upl_savegame)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
 from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, handleTitles
 from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_savenames
@@ -572,17 +572,16 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
         
         await ctx.edit(embed=embRdone)
         
-        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_file_name = "PS4.zip"
+        zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
         final_size = os.path.getsize(final_file)
         file_size_mb = final_size / (1024 * 1024)
 
         if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
             await ctx.respond(file=discord.File(final_file))
         else:
-            reenc = final_file
-            reenc_name = "PS4.zip"
-            file_url = await GDapi.uploadzip(reenc, reenc_name)
+            file_url = await GDapi.uploadzip(final_file, final_file_name)
             embg = discord.Embed(title="Google Drive: Upload complete",
                         description=f"Here is **{finishedFiles}** resigned:\n<{file_url}>.",
                         colour=0x854bf7)
@@ -827,17 +826,16 @@ async def encrypt(ctx: discord.ApplicationContext, upload_individually: Option(b
 
         await ctx.edit(embed=embComplete)
 
-        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_file_name = "PS4.zip"
+        zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
         final_size = os.path.getsize(final_file)
         file_size_mb = final_size / (1024 * 1024)
 
         if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
             await ctx.respond(file=discord.File(final_file))
         else:
-            reenc = final_file
-            reenc_name = "PS4.zip"
-            file_url = await GDapi.uploadzip(reenc, reenc_name)
+            file_url = await GDapi.uploadzip(final_file, final_file_name)
 
             embg = discord.Embed(title="Google Drive: Upload complete",
                         description=f"Here is your save:\n<{file_url}>",
@@ -991,18 +989,17 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
         embRgdone.set_footer(text="Made with expertise by HTOP")
         
         await ctx.edit(embed=embRgdone)
-            
-        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        
+        final_file_name = "PS4.zip"
+        zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
         final_size = os.path.getsize(final_file)
         file_size_mb = final_size / (1024 * 1024)
 
         if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
             await ctx.respond(file=discord.File(final_file))
         else:
-            reenc = final_file
-            reenc_name = "PS4.zip"
-            file_url = await GDapi.uploadzip(reenc, reenc_name)
+            file_url = await GDapi.uploadzip(final_file, final_file_name)
 
             embg = discord.Embed(title="Google Drive: Upload complete",
                     description=f"Here is **{finishedFiles}** re-regioned and resigned to **{playstation_id or user_id}** with title id **{target_titleid}**:\n<{file_url}>",
@@ -1101,17 +1098,16 @@ async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, 
 
         await ctx.edit(embed=embPdone)
         
-        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_file_name = "PS4.zip"
+        zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
         final_size = os.path.getsize(final_file)
         file_size_mb = final_size / (1024 * 1024)
 
         if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
             await ctx.respond(file=discord.File(final_file))
         else:
-            reenc = final_file
-            reenc_name = "PS4.zip"
-            file_url = await GDapi.uploadzip(reenc, reenc_name)
+            file_url = await GDapi.uploadzip(final_file, final_file_name)
 
             embg = discord.Embed(title="Google Drive: Upload complete",
                     description=f"Here is **{finishedFiles}** with altered save png:\n<{file_url}>",
@@ -1204,17 +1200,16 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
     
     await ctx.edit(embed=embRdone)
     
-    zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-    final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+    final_file_name = "PS4.zip"
+    zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+    final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
     final_size = os.path.getsize(final_file)
     file_size_mb = final_size / (1024 * 1024)
 
     if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
         await ctx.respond(file=discord.File(final_file))
     else:
-        reenc = final_file
-        reenc_name = "PS4.zip"
-        file_url = await GDapi.uploadzip(reenc, reenc_name)
+        file_url = await GDapi.uploadzip(final_file, final_file_name)
 
         embg = discord.Embed(title="Google Drive: Upload complete",
                     description=f"Here is **{saveName}** resigned:\n<{file_url}>.",
@@ -1311,17 +1306,16 @@ async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, des
 
         await ctx.edit(embed=embTdone)
         
-        zipfiles(newDOWNLOAD_ENCRYPTED, "PS4.zip")
-        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4.zip")
+        final_file_name = "PS4.zip"
+        zipfiles(newDOWNLOAD_ENCRYPTED, final_file_name)
+        final_file = os.path.join(newDOWNLOAD_ENCRYPTED, final_file_name)
         final_size = os.path.getsize(final_file)
         file_size_mb = final_size / (1024 * 1024)
 
         if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
             await ctx.respond(file=discord.File(final_file))
         else:
-            reenc = final_file
-            reenc_name = "PS4.zip"
-            file_url = await GDapi.uploadzip(reenc, reenc_name)
+            file_url = await GDapi.uploadzip(final_file, final_file_name)
 
             embg = discord.Embed(title="Google Drive: Upload complete",
                     description=f"Here is **{finishedFiles}** with altered save titles:\n<{file_url}>",
@@ -1442,44 +1436,86 @@ async def cheats(ctx: discord.ApplicationContext, game: Option(str, choices=["GT
     cleanupSimple(workspaceFolders)
 
 @quick_group.command(description="Apply save wizard quick codes to your save.")
-async def codes(ctx: discord.ApplicationContext, codes: str, savefile: discord.Attachment, endianness: Option(str, choices=["little", "big"], description="Little is default, if little does not work use this option and try big.", default="little")) -> None: # type: ignore
+async def codes(ctx: discord.ApplicationContext, codes: str, endianness: Option(str, choices=["little", "big"], description="Little is default, if little does not work use this option and try big.", default="little")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
     try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
     except WorkspaceError: return
 
-    embLoading = discord.Embed(title="Loading",
-                        description=f"Loading {savefile.filename}...",
-                        colour=0x854bf7)
-    embLoading.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embLoading.set_footer(text="Made with expertise by HTOP")
-
-    embApplied = discord.Embed(title="Success!",
-                        description=f"Quick codes applied to {savefile.filename}.",
-                        colour=0x854bf7)
-    embApplied.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embApplied.set_footer(text="Made with expertise by HTOP")
-
-    await ctx.respond(embed=embLoading)
-
-    if savefile.size / (1024 * 1024) > BOT_DISCORD_UPLOAD_LIMIT:
-        e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
-        await errorHandling(ctx, e, workspaceFolders, None, None, None)
-        return
-
-    savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
-    await savefile.save(savegame)
+    await ctx.respond(embed=emb_upl_savegame)
 
     try:
-        qc = QuickCodes(savegame, codes, endianness)
-        await qc.apply_code()  
-    except QuickCodesError as e:
+        uploaded_file_paths = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False)
+    except HTTPError as e:
+        print(e)
+        await ctx.edit(embed=embhttp)
+        cleanupSimple(workspaceFolders)
+        return
+    except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        return
     
-    await ctx.edit(embed=embApplied)
+    completed = []
+
+    if len(uploaded_file_paths) >= 1:
+        savefiles = os.listdir(newUPLOAD_DECRYPTED)
+
+        for savefile in savefiles:
+            savegame = os.path.join(newUPLOAD_DECRYPTED, savefile)
+            
+            embLoading = discord.Embed(title="Loading",
+                                description=f"Loading {savefile}...",
+                                colour=0x854bf7)
+            embLoading.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+            embLoading.set_footer(text="Made with expertise by HTOP")
+
+            embApplied = discord.Embed(title="Success!",
+                                description=f"Quick codes applied to {savefile}.",
+                                colour=0x854bf7)
+            embApplied.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+            embApplied.set_footer(text="Made with expertise by HTOP")
+
+            await ctx.edit(embed=embLoading)
+
+            try:
+                qc = QuickCodes(savegame, codes, endianness)
+                await qc.apply_code()  
+            except QuickCodesError as e:
+                e += "\nThe code has to work on all the savefiles you uploaded!"
+                await errorHandling(ctx, e, workspaceFolders, None, None, None)
+                return
     
-    await ctx.respond(file=discord.File(savegame))
+            await ctx.edit(embed=embApplied)
+            completed.append(savefile)
+
+    if len(completed) == 1:
+        finishedFiles = "".join(completed)
+    else: finishedFiles = ", ".join(completed)
+
+    embCompleted = discord.Embed(title="Success!",
+                                description=f"Quick codes applied to {finishedFiles}.",
+                                colour=0x854bf7)
+    embCompleted.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+    embCompleted.set_footer(text="Made with expertise by HTOP")
+    await ctx.edit(embed=embCompleted)
+
+    savezipName = "savegame_CodeApplied.zip"
+    zipfiles(newUPLOAD_DECRYPTED, savezipName)
+    final_file = os.path.join(newUPLOAD_DECRYPTED, savezipName)
+    final_size = os.path.getsize(final_file)
+    file_size_mb = final_size / (1024 * 1024)
+    
+    if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
+            await ctx.respond(file=discord.File(final_file))
+    else:
+        file_url = await GDapi.uploadzip(final_file, savezipName)
+        embg = discord.Embed(title="Google Drive: Upload complete",
+                    description=f"Here is **{finishedFiles}** with the applied quick code.:\n<{file_url}>.",
+                    colour=0x854bf7)
+        embg.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embg.set_footer(text="Made with expertise by HTOP")
+        await ctx.respond(embed=embg)
     await asyncio.sleep(1)
 
     cleanupSimple(workspaceFolders)
