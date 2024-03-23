@@ -11,7 +11,7 @@ from network import FTPps, FTPError, SocketPS, SocketError
 from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
-    bot, change_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
+    bot, change_group, quick_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
     FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut)
@@ -19,7 +19,7 @@ from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, clea
 from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, handleTitles
 from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_savenames
 from utils.exceptions import FileError, PSNIDError
-from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper
+from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper, QuickCodes, QuickCodesError
 from data.converter import Converter_Rstar, Converter_BL3, ConverterError
 from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, Crypt_DL2, CryptoError
 from types import SimpleNamespace
@@ -41,7 +41,7 @@ load_dotenv()
 
 C1socket = SocketPS(IP, PORTSOCKET)
 
-async def errorHandling(ctx: discord.ApplicationContext, error: str, workspaceFolders: list, uploaded_file_paths: list, mountPaths: list, C1ftp: FTPps) -> None:
+async def errorHandling(ctx: discord.ApplicationContext, error: str, workspaceFolders: list[str], uploaded_file_paths: list[str], mountPaths: list[str], C1ftp: FTPps) -> None:
     embe = discord.Embed(title="Error",
                             description=error,
                     colour=0x854bf7)
@@ -377,7 +377,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str | No
     await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()
 
-async def replaceDecrypted(ctx: discord.ApplicationContext, fInstance: FTPps, files: list, titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str, savePairName: str) -> list | None:
+async def replaceDecrypted(ctx: discord.ApplicationContext, fInstance: FTPps, files: list[str], titleid: str, mountLocation: str , upload_individually: bool, upload_decrypted: str, savePairName: str) -> list[str] | None:
     completed = []
     if upload_individually or len(files) == 1:
         for file in files:
@@ -1127,8 +1127,8 @@ async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, 
         await ctx.edit(embed=emb6)
         cleanupSimple(workspaceFolders)
 
-@bot.slash_command(description="Resign pre stored saves.")
-async def quickresign(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
+@quick_group.command(description="Resign pre stored saves.")
+async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
     newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
     workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                         newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -1441,6 +1441,49 @@ async def cheats(ctx: discord.ApplicationContext, game: Option(str, choices=["GT
 
     cleanupSimple(workspaceFolders)
 
+@quick_group.command(description="Apply save wizard quick codes to your save.")
+async def codes(ctx: discord.ApplicationContext, codes: str, savefile: discord.Attachment, endianness: Option(str, choices=["little", "big"], description="Little is default, if little does not work use this option and try big.", default="little")) -> None: # type: ignore
+    newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
+    workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+                        newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
+    try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+    except WorkspaceError: return
+
+    embLoading = discord.Embed(title="Loading",
+                        description=f"Loading {savefile.filename}...",
+                        colour=0x854bf7)
+    embLoading.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+    embLoading.set_footer(text="Made with expertise by HTOP")
+
+    embApplied = discord.Embed(title="Success!",
+                        description=f"Quick codes applied to {savefile.filename}.",
+                        colour=0x854bf7)
+    embApplied.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+    embApplied.set_footer(text="Made with expertise by HTOP")
+
+    await ctx.respond(embed=embLoading)
+
+    if savefile.size / (1024 * 1024) > BOT_DISCORD_UPLOAD_LIMIT:
+        e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
+        await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        return
+
+    savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
+    await savefile.save(savegame)
+
+    try:
+        qc = QuickCodes(savegame, codes, endianness)
+        await qc.apply_code()  
+    except QuickCodesError as e:
+        await errorHandling(ctx, e, workspaceFolders, None, None, None)
+    
+    await ctx.edit(embed=embApplied)
+    
+    await ctx.respond(file=discord.File(savegame))
+    await asyncio.sleep(1)
+
+    cleanupSimple(workspaceFolders)
+
 @bot.slash_command(description="Checks if the bot is functional.")
 async def ping(ctx: discord.ApplicationContext) -> None:
     await ctx.defer()
@@ -1481,4 +1524,5 @@ async def init(ctx: discord.ApplicationContext) -> None:
     await ctx.send(embed=embinit, view=threadButton())
 
 bot.add_application_command(change_group)
+bot.add_application_command(quick_group)
 bot.run(str(os.getenv("TOKEN")))
