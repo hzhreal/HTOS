@@ -67,7 +67,7 @@ class QuickCodes:
 
     async def apply_code(self) -> None:
         fmt_s = "<" if self.endianness == "little" else ">"
-        pointer = end_pointer = 0
+        pointer = end_pointer = np.int_(0)
         ptr_value = np.uint32(0)
 
         await self.read_file()
@@ -82,7 +82,7 @@ class QuickCodes:
                         bytes_ = np.uint8(1 << (int(line[0], 16) - 0x30))
 
                         tmp6 = line[2:8]
-                        off = int(tmp6, 16)
+                        off = np.intc(int(tmp6, 16))
                         if line[1] == "8":
                             off += pointer
 
@@ -97,7 +97,7 @@ class QuickCodes:
                         t = line[1]
 
                         tmp6 = line[2:8]
-                        off = int(tmp6, 16)
+                        off = np.intc(int(tmp6, 16))
                         if t in ["8", "9", "A", "C", "D", "E"]:
                             off += pointer
                         
@@ -147,7 +147,7 @@ class QuickCodes:
                                 ... # Not Implemented! Sub-Write 8 bytes (%08X) to 0x%X", val, off
                             
                     case "4":
-                        off = int(line[2:8], 16)
+                        off = np.intc(int(line[2:8], 16))
                         t = line[1]
                         if t in ["8", "9", "A"]:
                             off += pointer
@@ -157,8 +157,8 @@ class QuickCodes:
                         line = self.lines[line_index + 1]
                         line_index += 1
 
-                        n = int(line[1:4], 16)
-                        incoff = int(line[4:8], 16)
+                        n = np.intc(int(line[1:4], 16))
+                        incoff = np.intc(int(line[4:8], 16))
                         incval = np.uint32(int(line[9:17], 16))
 
                         for i in range(len(n)):
@@ -185,7 +185,7 @@ class QuickCodes:
                             val += incval
 
                     case "5":
-                        off_src = int(line[2:8], 16)
+                        off_src = np.intc(int(line[2:8], 16))
                         val = np.uint32(int(line[9:17], 16))
                         src = 0
 
@@ -195,7 +195,7 @@ class QuickCodes:
                         line = self.lines[line_index + 1]
                         line_index += 1
 
-                        off_dst = int(line[2:8], 16)
+                        off_dst = np.intc(int(line[2:8], 16))
                         dst = 0
                         
                         if line[i] == "8":
@@ -294,7 +294,7 @@ class QuickCodes:
                     case "7":
                         t = line[1]
                         tmp6 = line[2:8]
-                        off = int(tmp6, 16)
+                        off = np.intc(int(tmp6, 16))
 
                         if t in ["8", "9", "A", "C", "D", "E"]:
                             off += pointer
@@ -353,10 +353,10 @@ class QuickCodes:
                         t = line[1]
 
                         tmp3 = line[2:4]
-                        cnt = int(tmp3, 16)
+                        cnt = np.intc(int(tmp3, 16))
 
                         tmp4 = line[4:8]
-                        length = int(tmp4, 16)
+                        length = np.intc(int(tmp4, 16))
 
                         tmp8 = line[9:17]
                         val = np.uint32(int(tmp8, 16))
@@ -437,7 +437,7 @@ class QuickCodes:
                         t = line[1]
                         tmp6 = line[2:8]
 
-                        off = int(tmp6, 16)
+                        off = np.intc(int(tmp6, 16))
                         if t == "8":
                             off += pointer
 
@@ -467,10 +467,10 @@ class QuickCodes:
 
                     case "B":
                         tmp3 = line[2:4] 
-                        cnt = int(tmp3, 16)
+                        cnt = np.intc(int(tmp3, 16))
 
                         tmp4 = line[4:8]
-                        length = int(tmp4, 16)
+                        length = np.intc(int(tmp4, 16))
 
                         tmp8 = line[9:17]
                         val = np.uint32(int(tmp8, 16))
@@ -517,10 +517,10 @@ class QuickCodes:
                         t = line[1]
 
                         tmp3 = line[2:4]
-                        cnt = int(tmp3, 16)
+                        cnt = np.intc(int(tmp3, 16))
 
                         tmp4 = line[4:8]
-                        length = int(tmp4, 16)
+                        length = np.intc(int(tmp4, 16))
 
                         tmp8 = line[9:17]
                         addr = np.uint32(int(tmp8, 16))
@@ -553,7 +553,7 @@ class QuickCodes:
                         bit = line[11]
 
                         tmp6 = line[2:8]
-                        off = int(tmp6, 16)
+                        off = np.intc(int(tmp6, 16))
                         if t == "8":
                             off += pointer
 
@@ -561,7 +561,7 @@ class QuickCodes:
                         l = int(tmp3, 16)
 
                         tmp4 = line[13:17]
-                        val = int(tmp4, 16)
+                        val = np.intc(int(tmp4, 16))
 
                         src = np.uint16(off)
 
