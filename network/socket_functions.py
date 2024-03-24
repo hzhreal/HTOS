@@ -1,5 +1,4 @@
 import asyncio
-import json
 
 class SocketError(Exception):
   """Exception raised for errors relating to the socket."""
