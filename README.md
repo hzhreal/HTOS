@@ -40,7 +40,8 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Metal Gear Solid V: The Phantom Pain     | 
 | Metal Gear Solid V: Ground Zeroes        | 
 | Resident Evil Revelations 2              |
-| Dying Light 2 (compression only)         | 
+| Dying Light 2 (compression only)         |
+| Like a Dragon: Ishin                     |
 
 If you wanna contribute to this list, please let me know!
 
