@@ -93,7 +93,7 @@ class Cheats_RDR2:
                 else: # pc if true or invalid 
                     platform = "pc"
                     header = await file.read(len(crypt.RDR2_HEADER))
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
         
         if header == crypt.RDR2_HEADER:
@@ -105,7 +105,7 @@ class Cheats_RDR2:
         if encrypted:
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET  
             try: await crypt.decryptFile(os.path.dirname(filePath), start_offset)
-            except (ValueError, IOError): raise QuickCheatsError("File not supported!")
+            except (ValueError, IOError, IndexError): raise QuickCheatsError("File not supported!")
         return platform 
 
     @staticmethod
@@ -125,7 +125,7 @@ class Cheats_RDR2:
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             await crypt.encryptFile(filePath, start_offset)
             await crypt.decryptFile(os.path.dirname(filePath), start_offset) # for better compatability 
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
@@ -139,7 +139,7 @@ class Cheats_RDR2:
                 
                 await savegame.seek(money_offset)
                 money = struct.unpack(">I", await savegame.read(4))[0]
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
         
         # display money like for example 555500 as 5,555.00

@@ -109,7 +109,7 @@ class Cheats_GTAV:
                 else: # pc if true or invalid 
                     platform = "pc"
                     header = await file.read(len(crypt.GTAV_HEADER))
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
         
         if header == crypt.GTAV_HEADER:
@@ -121,7 +121,7 @@ class Cheats_GTAV:
         if encrypted:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET  
             try: await crypt.decryptFile(os.path.dirname(filePath), start_offset)
-            except (ValueError, IOError): raise QuickCheatsError("File not supported!")
+            except (ValueError, IOError, IndexError): raise QuickCheatsError("File not supported!")
         return platform 
     
     @staticmethod
@@ -141,7 +141,7 @@ class Cheats_GTAV:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
             await crypt.encryptFile(filePath, start_offset)
             await crypt.decryptFile(os.path.dirname(filePath), start_offset) 
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
@@ -156,7 +156,7 @@ class Cheats_GTAV:
                     await savegame.seek(money_offset)
                     money = struct.unpack(">I", await savegame.read(4))[0] 
                     values[key + "_cash"] = money
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
         
         values["Platform"] = platform

@@ -31,7 +31,7 @@ class BL3_conv_button(discord.ui.View):
             await crypt.encryptFile(self.filePath, "pc", self.ttwl)
         except CryptoError as e:
             raise ConverterError(e)
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("Invalid save!")
         
         self.helper.done = True
@@ -45,7 +45,7 @@ class BL3_conv_button(discord.ui.View):
             await crypt.encryptFile(self.filePath, "ps4", self.ttwl)
         except CryptoError as e:
             raise ConverterError(e)
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("Invalid save!")
         
         self.helper.done = True
@@ -68,7 +68,7 @@ class Converter_BL3:
             await crypt.decryptFile(os.path.dirname(filePath), "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("File not supported!")
 
         # read new data and check if its decrypted
@@ -82,7 +82,7 @@ class Converter_BL3:
                 await crypt.encryptFile(filePath, "pc", ttwl)
             except CryptoError as e:
                 raise ConverterError(e)
-            except (ValueError, IOError):
+            except (ValueError, IOError, IndexError):
                 raise ConverterError("File not supported!")
             return Converter_BL3.obtain_ret_val(platform)
         
@@ -95,7 +95,7 @@ class Converter_BL3:
             await crypt.decryptFile(os.path.dirname(filePath), "pc", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("File not supported!")
 
         # read new data and check if its decrypted
@@ -109,7 +109,7 @@ class Converter_BL3:
                 await crypt.encryptFile(filePath, "ps4", ttwl)
             except CryptoError as e:
                 raise ConverterError(e)
-            except (ValueError, IOError):
+            except (ValueError, IOError, IndexError):
                 raise ConverterError("File not supported!")
             return Converter_BL3.obtain_ret_val(platform)
         else:

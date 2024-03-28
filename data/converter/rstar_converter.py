@@ -88,7 +88,7 @@ class Converter_Rstar:
                 else: 
                     return "CONVERTED: PC -> PS4"
 
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("File not supported!")
     
     @staticmethod
@@ -138,5 +138,5 @@ class Converter_Rstar:
             else:
                 return "CONVERTED: PC -> PS4"
         
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise ConverterError("File not supported!")

@@ -201,7 +201,7 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                        await Crypto.RGG.decryptFile(destination_directory) 
             except CryptoError as e:
                 raise CryptoError(e)
-            except (ValueError, IOError):
+            except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
             
             helper.done = True
@@ -299,7 +299,7 @@ async def extra_import(title_id: str, file_name: str) -> None:
 
     except CryptoError as e:
         raise CryptoError(e)
-    except (ValueError, IOError):
+    except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
     
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str | None:
