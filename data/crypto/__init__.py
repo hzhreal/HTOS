@@ -7,3 +7,4 @@ from .mgsv_crypt import Crypt_MGSV
 from .rev2_crypt import Crypt_Rev2
 from .dl2_crypt import Crypt_DL2
 from .rgg_crypt import Crypt_RGG
+from .di2_crypt import Crypt_DI2

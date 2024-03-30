@@ -32,6 +32,7 @@ from .constants import (
     REV2_TITLEID,
     DL2_TITLEID,
     RGG_TITLEID,
+    DI2_TITLEID,
     FILE_LIMIT_DISCORD, 
     SCE_SYS_CONTENTS,
     MAX_FILES,

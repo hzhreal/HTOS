@@ -15,3 +15,4 @@ from data.crypto.mgsv_crypt import Crypt_MGSV
 from data.crypto.rev2_crypt import Crypt_Rev2
 from data.crypto.dl2_crypt import Crypt_DL2
 from data.crypto.rgg_crypt import Crypt_RGG
+from data.crypto.di2_crypt import Crypt_DI2
