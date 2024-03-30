@@ -42,6 +42,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Resident Evil Revelations 2              |
 | Dying Light 2 (compression only)         |
 | Like a Dragon: Ishin                     |
+| Dead Island 2 (compression only)         |
 
 If you wanna contribute to this list, please let me know!
 
