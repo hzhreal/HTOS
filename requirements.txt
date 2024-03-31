@@ -9,3 +9,4 @@ aiogoogle
 psnawp
 crc32c
 numpy
+zstandard
