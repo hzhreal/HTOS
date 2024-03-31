@@ -12,7 +12,7 @@ from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
     bot, change_group, quick_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
-    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL2_TITLEID, RGG_TITLEID, DI2_TITLEID,
+    FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID,
     NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut, emb_upl_savegame)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
@@ -21,14 +21,14 @@ from utils.extras import generate_random_string, zipfiles, pngprocess, obtain_sa
 from utils.exceptions import FileError, PSNIDError
 from data.cheats import Cheats_GTAV, Cheats_RDR2, QuickCheatsError, TimeoutHelper, QuickCodes, QuickCodesError
 from data.converter import Converter_Rstar, Converter_BL3, ConverterError
-from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, Crypt_DL2, Crypt_RGG, Crypt_DI2, CryptoError
+from data.crypto import Crypt_BL3, Crypt_Rstar, Crypt_Xeno2, Crypt_Ndog, Crypt_MGSV, Crypt_Rev2, Crypt_DL, Crypt_RGG, Crypt_DI2, CryptoError
 from types import SimpleNamespace
 
 Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
 Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
 Crypto = SimpleNamespace(BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2, 
                          Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev=Crypt_Rev2,
-                         DL2=Crypt_DL2, RGG=Crypt_RGG, DI2=Crypt_DI2)
+                         DL=Crypt_DL, RGG=Crypt_RGG, DI2=Crypt_DI2)
 
 if NPSSO is not None:
     from psnawp_api import PSNAWP
@@ -195,8 +195,8 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                         await Crypto.MGSV.decryptFile(destination_directory, self.title_id)
                     case "REV2":
                         await Crypto.Rev2.decryptFile(destination_directory)
-                    case "DL2":
-                        await Crypto.DL2.decryptFile(destination_directory)
+                    case "DL1" | "DL2" | "DI1":
+                        await Crypto.DL.decryptFile(destination_directory)
                     case "RGG":
                        await Crypto.RGG.decryptFile(destination_directory)
                     case "DI2":
@@ -253,7 +253,7 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
         await ctx.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
         await helper.await_done()
 
-    elif title_id in DL2_TITLEID:
+    elif title_id in DL1_TITLEID or title_id in DL2_TITLEID or title_id in DL1_TITLEID:
         await ctx.edit(embed=embedFormat, view=CryptChoiceButton("DL2", start_offset=None, title_id=None))
         await helper.await_done()
     
@@ -297,11 +297,17 @@ async def extra_import(title_id: str, file_name: str) -> None:
         elif title_id in REV2_TITLEID:
             await Crypto.Rev2.checkEnc_ps(file_name)
 
+        elif title_id in DL1_TITLEID:
+            await Crypto.DL.checkEnc_ps(file_name, "DL1")
+
         elif title_id in DL2_TITLEID:
-            await Crypto.DL2.checkEnc_ps(file_name)
+            await Crypto.DL.checkEnc_ps(file_name, "DL2")
 
         elif title_id in RGG_TITLEID:
             await Crypto.RGG.checkEnc_ps(file_name)
+
+        elif title_id in DI1_TITLEID:
+            await Crypto.DL.checkEnc_ps(file_name, "DI1")
         
         elif title_id in DI2_TITLEID:
             await Crypto.DI2.checkEnc_ps(file_name)
