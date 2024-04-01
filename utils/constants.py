@@ -1,7 +1,52 @@
 import os
 import discord
+import logging.config
 from discord.ext import commands
 from dotenv import load_dotenv
+
+def setup_logger() -> logging.Logger:
+    LOGGER_FOLDER = "logs"
+    LOGGER_PATH = os.path.join(LOGGER_FOLDER, "HTOS.log")
+    if not os.path.exists(LOGGER_FOLDER):
+        os.makedirs(LOGGER_FOLDER)
+    if not os.path.exists(LOGGER_PATH):
+        with open(LOGGER_PATH, "w"):
+            ...
+
+    logger = logging.getLogger("HTOS_LOGS")
+
+    logging_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "detailed": {
+                "format": "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s",
+                "datefmt": "%Y-%m-%d - %H:%M:%S%z"
+            }
+        },
+        "handlers": {
+            "file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "level": "DEBUG",
+                "formatter": "detailed",
+                "filename": LOGGER_PATH,
+                "maxBytes": 25 * 1024 * 1024,
+                "backupCount": 3
+            }
+        },
+        "loggers": {
+            "HTOS_LOGS": {
+                "level": "INFO",
+                "handlers": [
+                    "file"
+                ]
+            }
+        }
+    }
+    logging.config.dictConfig(config=logging_config)
+
+    return logger
+logger = setup_logger()
 
 load_dotenv()
 
@@ -66,6 +111,8 @@ BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
 SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
+
+BASE_ERROR_MSG = "An unexpected error has occurred!"
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",

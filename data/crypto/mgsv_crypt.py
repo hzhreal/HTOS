@@ -1,6 +1,5 @@
 import hashlib
 import aiofiles
-import os
 from .common import CustomCrypto
 from typing import Literal
 
@@ -42,8 +41,7 @@ class Crypt_MGSV:
     async def decryptFile(folderPath: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as savegame:
                 encrypted_data = await savegame.read()
@@ -86,15 +84,16 @@ class Crypt_MGSV:
 
     @staticmethod
     async def reregion_changeCrypt(folderPath: str, target_titleid: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
-        for fileName in os.listdir(folderPath):
-            filePath = os.path.join(folderPath, fileName)
+        files = CustomCrypto.obtainFiles(folderPath)
 
+        for filePath in files:
+        
             async with aiofiles.open(filePath, "rb") as savegame:
                 await savegame.seek(0x10)
                 header = await savegame.read(2)
         
             if header == Crypt_MGSV.HEADER_TPP or header == Crypt_MGSV.HEADER_GZ:
-                await Crypt_MGSV.encryptFile(fileName, target_titleid)
+                await Crypt_MGSV.encryptFile(filePath, target_titleid)
 
             else:
                 for title_id, _ in Crypt_MGSV.KEYS.items():

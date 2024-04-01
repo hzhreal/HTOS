@@ -1,4 +1,3 @@
-import os
 import aiofiles 
 import struct
 import hashlib
@@ -94,8 +93,7 @@ class Crypt_Ndog:
     async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
         files = CustomCrypto.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as savegame:
                 encrypted_data = bytearray(await savegame.read())

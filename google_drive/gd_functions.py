@@ -6,7 +6,7 @@ from aiogoogle import Aiogoogle
 import json
 import aiofiles
 import re
-from utils.constants import SYS_FILE_MAX
+from utils.constants import SYS_FILE_MAX, logger
 
 load_dotenv()
 
@@ -164,6 +164,8 @@ class GDapi:
             )
         file_url = f"https://drive.google.com/file/d/{response['id']}"
         
+        logger.info(f"Uploaded {pathToFile} to google drive")
+        
         return file_url
 
     @classmethod
@@ -211,6 +213,7 @@ class GDapi:
                 
                     uploaded_file_paths.append(file_name)
 
+                    logger.info(f"Saved {file_name} to {download_path}")
                     embeddone = discord.Embed(title="Google drive upload: Retrieved file",
                         description=f"{file_name} has been uploaded and saved.",
                         colour=0x854bf7)

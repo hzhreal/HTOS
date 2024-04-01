@@ -1,6 +1,5 @@
 import zlib
 import aiofiles
-import os
 import struct
 from .common import CustomCrypto
 
@@ -18,8 +17,7 @@ class Crypt_RGG:
     async def decryptFile(folderPath: str) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as savegame:
                 encrypted_data = bytearray(await savegame.read())

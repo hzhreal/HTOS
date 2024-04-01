@@ -1,16 +1,17 @@
 import aiofiles
 import os
 import discord
-import asyncio
+from discord.ui.item import Item
 from .common import ConverterError
 from data.crypto.bl3_crypt import Crypt_BL3 as crypt
 from data.crypto.common import CryptoError
 from data.cheats.common import TimeoutHelper
-from utils.constants import OTHER_TIMEOUT, emb_conv_choice
+from utils.constants import OTHER_TIMEOUT, emb_conv_choice, logger
 
 class BL3_conv_button(discord.ui.View):
     """Discord button that is called when a decrypted BL3 save needs converting, gives user the choice of what platform to convert the save to."""
-    def __init__(self, helper: TimeoutHelper, filePath: str, ttwl: bool) -> None:
+    def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool) -> None:
+        self.ctx = ctx
         self.helper = helper
         self.filePath = filePath
         self.result = ""
@@ -18,13 +19,22 @@ class BL3_conv_button(discord.ui.View):
         super().__init__(timeout=OTHER_TIMEOUT)
                 
     async def on_timeout(self) -> None:
-        await asyncio.sleep(3)
-        if not self.helper.done:
-            self.disable_all_items()
-            raise ConverterError("TIMED OUT!")
+        self.disable_all_items()
+        await self.helper.handle_timeout(self.ctx)
+        self.result = "TIMED OUT"
+
+    async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
+        self.disable_all_items()
+        embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not convert: {error}.", color=0x854bf7)
+        embedErrb.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embedErrb.set_footer(text="Made with expertise by HTOP")
+        self.helper.embTimeout = embedErrb
+        await self.helper.handle_timeout(self.ctx)
+        logger.error(f"{error} - {self.ctx.user.name}")
+        self.result = "ERROR"
             
     @discord.ui.button(label="PS4 -> PC", style=discord.ButtonStyle.blurple, custom_id="BL3_PS4_TO_PC_CONV")
-    async def decryption_callback(self, _, interaction: discord.Interaction) -> None:  
+    async def ps4_to_pc_callback(self, _, interaction: discord.Interaction) -> None:
         platform = "ps4"
         await interaction.response.edit_message(view=None)
         try:
@@ -38,7 +48,7 @@ class BL3_conv_button(discord.ui.View):
         self.result = Converter_BL3.obtain_ret_val(platform)
         
     @discord.ui.button(label="PC -> PS4", style=discord.ButtonStyle.blurple, custom_id="BL3_PC_TO_PS4_CONV")
-    async def encryption_callback(self, _, interaction: discord.Interaction) -> None:
+    async def pc_to_ps4_callback(self, _, interaction: discord.Interaction) -> None:
         platform = "pc"
         await interaction.response.edit_message(view=None)
         try:
@@ -58,7 +68,7 @@ class Converter_BL3:
             original_saveData = await savegame.read()
         
         if crypt.searchData(original_saveData, crypt.COMMON):
-            conv_button = BL3_conv_button(helper, filePath, ttwl)
+            conv_button = BL3_conv_button(ctx, helper, filePath, ttwl)
             await ctx.edit(embed=emb_conv_choice, view=conv_button)
             await helper.await_done()
             return conv_button.result

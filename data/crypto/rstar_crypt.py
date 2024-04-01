@@ -1,4 +1,3 @@
-import os
 import aiofiles
 import struct
 import re
@@ -98,9 +97,7 @@ class Crypt_Rstar:
         files = CustomCrypto.obtainFiles(upload_decrypted)
         key = Crypt_Rstar.KEYS[start_offset]
 
-        for file_target in files:
-
-            file_name = os.path.join(upload_decrypted, file_target)
+        for file_name in files:
 
             # Read the entire ciphertext data from the file
             async with aiofiles.open(file_name, "rb") as file:

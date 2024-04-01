@@ -1,0 +1,13 @@
+.env
+valid_threads.db
+account_ids.db
+google_drive/service_account.json
+data/__pycache__
+data/cheats/__pycache__
+data/converter/__pycache__
+data/crypto/__pycache__
+google_drive/__pycache__
+logs
+network/__pycache__
+utils/__pycache__
+UserSaves

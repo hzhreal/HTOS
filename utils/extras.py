@@ -3,6 +3,7 @@ import zipfile
 import random
 import string
 from PIL import Image
+from utils.constants import logger
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
@@ -48,7 +49,7 @@ def pngprocess(path: str, size: tuple[int, int]) -> None:
 
         image.close()
     except Exception as e:
-        print(f"Error processing {path}: {e}")
+        logger.exception(f"Error processing {path}: {e} - (unexpected)")
 
 def obtain_savenames(dir_: str) -> list[str]:
     savenames = []

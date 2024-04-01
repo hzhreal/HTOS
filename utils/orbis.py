@@ -270,7 +270,7 @@ async def reregion_write(paramPath: str, title_id: str, decFilesPath: str) -> No
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
         try: 
             await Crypt_MGSV.reregion_changeCrypt(decFilesPath, title_id)
-        except (ValueError, IOError):
+        except (ValueError, IOError, IndexError):
             raise OrbisError("Error changing MGSV crypt!")
         
         newname = Crypt_MGSV.KEYS[title_id]["name"]

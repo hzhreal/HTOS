@@ -8,7 +8,7 @@ import discord
 from ftplib import FTP, error_perm
 from .constants import (UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
                         DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT, MOUNT_LOCATION, PS_UPLOADDIR,
-                        DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot)
+                        DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger)
 from .extras import generate_random_string
 from aioftp.errors import AIOFTPException
 
@@ -32,13 +32,13 @@ def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
                 try:
                     ftp.delete(namew)
                 except error_perm as e:
-                    print(f"Permission error for {namew}: {e}")
+                    logger.error(f"Permission error for {namew}: {e}")
 
         ftp.cwd("..")
         ftp.rmd(folder_path)
-        print(f"Folder contents of '{folder_path}' deleted successfully.")
+        logger.info(f"Folder contents of '{folder_path}' deleted successfully.")
     except error_perm as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 
 def startup():
     FOLDERS = [UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, 
@@ -104,6 +104,7 @@ def startup():
         conn.close()
     except sqlite3.Error as e:
         print(f"Error creating databases: {e}\nExiting...")
+        logger.exception(f"Error creating databases: {e}")
         exit(-1)
 
     time.sleep(1)
@@ -114,7 +115,7 @@ async def cleanup(fInstance, clean_list: list[str], saveList: list[str], mountPa
         try:
             shutil.rmtree(folderpath)
         except OSError as e:
-            print(f"Error accessing {folderpath} when cleaning up: {e}")
+            logger.error(f"Error accessing {folderpath} when cleaning up: {e}")
 
     if mountPaths is not None and len(mountPaths) > 0:
         for mountlocation in mountPaths:
@@ -124,14 +125,14 @@ async def cleanup(fInstance, clean_list: list[str], saveList: list[str], mountPa
         try:
             await fInstance.deleteList(PS_UPLOADDIR, saveList)
         except AIOFTPException as e:
-            print(f"An error occurred when cleaning up (FTP): {e}")
+            logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
 def cleanupSimple(clean_list: list[str]) -> None:
     for folderpath in clean_list:
         try:
             shutil.rmtree(folderpath)
         except OSError as e:
-            print(f"Error accessing {folderpath} when cleaning up (simple): {e}")
+            logger.error(f"Error accessing {folderpath} when cleaning up (simple): {e}")
 
 def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     randomString = generate_random_string(RANDOMSTRING_LENGTH)
@@ -291,4 +292,4 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
             await cursor.execute("INSERT INTO Account_IDs (disc_userid, ps_accountid) VALUES (?, ?)", (disc_userid, account_id,))
             await db.commit()
     except aiosqlite.Error as e:
-        print(f"Could not write account ID to database: {e}")
+        logger.error(f"Could not write account ID to database: {e}")

@@ -4,7 +4,7 @@ import discord
 import shutil
 import aiofiles
 from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, logger
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -60,8 +60,10 @@ class FTPps:
             async with aiofiles.open(recieve_path, "wb") as f:
                 async for chunk in stream.iter_by_block(self.CHUNKSIZE):
                     await f.write(chunk)
+        logger.info(f"Downloaded {file_to_download} to {recieve_path}")
 
     async def uploadStream(self, ftp: aioftp.Client.context, file_to_upload: str, recieve_path: str) -> None:
+        # Upload the file
         async with aiofiles.open(file_to_upload, "rb") as f:
             stream = await ftp.upload_stream(recieve_path)
             while True:
@@ -70,6 +72,7 @@ class FTPps:
                     break
                 await stream.write(chunk)
             await stream.finish()
+        logger.info(f"Uploaded {file_to_upload} to {recieve_path}")
 
     async def replacer(self, mount_location: str, replaceName: str) -> None:
         try:
@@ -79,7 +82,7 @@ class FTPps:
                 await self.uploadStream(ftp, local_file_path_replace, replaceName)
                 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def reregioner(self, mount_location: str, title_id: str, account_id: str) -> None:
@@ -99,7 +102,7 @@ class FTPps:
                 await self.downloadStream(ftp, self.PARAMSFO_NAME, paramPath)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
         if title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
@@ -124,7 +127,7 @@ class FTPps:
                 await self.uploadStream(ftp, paramPath, self.PARAMSFO_NAME)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def retrievekeystone(self, location_to_scesys: str) -> None:
@@ -140,7 +143,7 @@ class FTPps:
                 await self.downloadStream(ftp, self.KEYSTONE_NAME, full_keystone_path)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def keystoneswap(self, location_to_scesys: str) -> None:
@@ -151,7 +154,7 @@ class FTPps:
                 await self.uploadStream(ftp, full_keystone_path, self.KEYSTONE_NAME)
 
         except aioftp.errors as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def uploadencrypted(self) -> None:
@@ -166,7 +169,7 @@ class FTPps:
                     await self.uploadStream(ftp, encrypted_local, files)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def dlparam(self, location_to_scesys: str, account_id: str) -> None:
@@ -181,7 +184,7 @@ class FTPps:
                 await self.downloadStream(ftp, self.PARAMSFO_NAME, fullparam_dl)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
         await resign(fullparam_dl, account_id)
@@ -192,7 +195,7 @@ class FTPps:
                 await self.uploadStream(ftp, fullparam_dl, self.PARAMSFO_NAME)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def deleteuploads(self, savenames: str) -> None:
@@ -206,7 +209,7 @@ class FTPps:
                 await ftp.remove(savenames_bin)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def dlparamonly_grab(self, location_to_scesys: str) -> None:
@@ -223,7 +226,7 @@ class FTPps:
                 await self.downloadStream(ftp, self.PARAMSFO_NAME, fullparam_dl)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def delete_folder_contents_ftp(self, folder_path: str) -> None:
@@ -232,7 +235,7 @@ class FTPps:
                 await ftp.remove(folder_path)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def makemount(self, folder1: str, folder2: str) -> None:
@@ -242,7 +245,7 @@ class FTPps:
                 await ftp.make_directory(folder2)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def make1(self, path: str) -> None:
@@ -251,7 +254,7 @@ class FTPps:
                 await ftp.make_directory(path)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def swappng(self, location_to_scesys: str) -> None:
@@ -264,7 +267,7 @@ class FTPps:
                 await self.uploadStream(ftp, full_pngpath, pngname)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
     
     async def ftp_download_folder(self, folder_path: str, downloadpath: str, ignoreSceSys: bool) -> None:
@@ -272,11 +275,13 @@ class FTPps:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.download(folder_path, downloadpath, write_into=True)
 
+            logger.info(f"Downloaded {folder_path} to {downloadpath}")
+
             if ignoreSceSys: 
                 shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def ftp_upload_folder(self, folderpath: str, local_path: str) -> None:
@@ -284,8 +289,11 @@ class FTPps:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(folderpath)
                 await ftp.upload(local_path, write_into=True)
+            
+            logger.info(f"Uploaded {local_path} to {folderpath}")
+
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
             
     async def dlencrypted_bulk(self, reregion: bool, account_id: str, savenames: str) -> None:
@@ -314,7 +322,7 @@ class FTPps:
                 reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")   
             
     async def uploadencrypted_bulk(self, savename: str) -> None:
@@ -329,7 +337,7 @@ class FTPps:
                     await self.uploadStream(ftp, file, basename)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list[str], sce_sysPath: str) -> None:
@@ -347,7 +355,7 @@ class FTPps:
 
                     await ctx.edit(embed=embSuccess)
             except aioftp.errors.AIOFTPException as e:
-                print(f"[FTP ERROR]: {e}")
+                logger.error(f"[FTP ERROR]: {e}")
                 raise FTPError("An unexpected error!")
     
     async def ftpListContents(self, mountpath: str) -> list[str]:
@@ -358,7 +366,7 @@ class FTPps:
                 async for path in ftp.list(recursive=True):
                     files.append(path)
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
         # exclude sce_sys, parent- and working directory)
@@ -383,7 +391,7 @@ class FTPps:
                         await ftp.remove(fileName)
 
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def testConnection(self) -> None:
@@ -397,5 +405,5 @@ class FTPps:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, paramPath, self.PARAMSFO_NAME)
         except aioftp.errors.AIOFTPException as e:
-            print(f"[FTP ERROR]: {e}")
+            logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")

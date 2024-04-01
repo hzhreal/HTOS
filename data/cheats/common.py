@@ -50,7 +50,8 @@ class TimeoutHelper:
             pass  # Handle cancellation if needed
     
     async def handle_timeout(self, ctx: discord.ApplicationContext) -> None:
+        await asyncio.sleep(2)
         if not self.done:
             await ctx.edit(embed=self.embTimeout, view=None)
-            await asyncio.sleep(2)
+            await asyncio.sleep(4) # make sure user is aware of msg
             self.done = True

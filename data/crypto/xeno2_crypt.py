@@ -1,4 +1,3 @@
-import os
 import aiofiles
 import hashlib
 import struct
@@ -48,8 +47,7 @@ class Crypt_Xeno2:
     async def decryptFile(folderPath: str) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as encrypted_file:
                 if await encrypted_file.read(4) != Crypt_Xeno2.SAVE_MAGIC_HEADER:

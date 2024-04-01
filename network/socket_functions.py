@@ -1,4 +1,5 @@
 import asyncio
+from utils.constants import logger
 
 class SocketError(Exception):
   """Exception raised for errors relating to the socket."""
@@ -22,10 +23,11 @@ class SocketPS:
       
         response = await reader.read(1024)
 
+        logger.info(response)
         return response.decode("utf-8")
     
     except (ConnectionError, asyncio.TimeoutError) as e:
-      print(f"An error occured while sending tcp message: {e}")
+      logger.error(f"An error occured while sending tcp message: {e}")
       raise SocketError("An unexpected error!")
     
     finally:

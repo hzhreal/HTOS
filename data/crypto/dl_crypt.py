@@ -1,6 +1,5 @@
 import aiofiles
 import gzip
-import os
 from typing import Literal
 from .common import CustomCrypto
 
@@ -11,9 +10,8 @@ class Crypt_DL:
     async def decryptFile(folderPath: str) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
-
+        for filePath in files:
+            
             async with aiofiles.open(filePath, "rb") as savegame:
                 compressed_data = await savegame.read()
 

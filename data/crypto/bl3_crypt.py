@@ -1,7 +1,7 @@
 import struct
-import os
 import aiofiles
 from .common import CustomCrypto, CryptoError
+from typing import Literal
 
 class Crypt_BL3:
     SAVEGAME_STRING_BL3 = "OakSaveGame"
@@ -120,14 +120,13 @@ class Crypt_BL3:
         return buffer
 
     @staticmethod
-    async def decryptFile(folderPath: str, platform: str, ttwl: bool) -> None:
+    async def decryptFile(folderPath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as encrypted_file:
                 encrypted_data = bytearray(await encrypted_file.read())
@@ -152,7 +151,7 @@ class Crypt_BL3:
                 await decrypted_file_soon.write(decrypted_data)
 
     @staticmethod
-    async def encryptFile(filePath: str, platform: str, ttwl: bool) -> None:
+    async def encryptFile(filePath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]

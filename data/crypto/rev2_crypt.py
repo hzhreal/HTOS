@@ -1,5 +1,4 @@
 import aiofiles
-import os
 import hashlib
 from .common import CustomCrypto
 from Crypto.Cipher import Blowfish
@@ -13,8 +12,7 @@ class Crypt_Rev2:
     async def decryptFile(folderPath: str) -> None:
         files = CustomCrypto.obtainFiles(folderPath)
 
-        for fileName in files:
-            filePath = os.path.join(folderPath, fileName)
+        for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as savegame:
                 await savegame.seek(0x20)

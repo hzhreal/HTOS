@@ -6,14 +6,15 @@ import json
 import asyncio
 from discord.ext import commands
 from discord import Option
+from discord.ui.item import Item
 from dotenv import load_dotenv
 from network import FTPps, FTPError, SocketPS, SocketError
 from google_drive import GDapi, GDapiError
 from aiogoogle import HTTPError
 from utils.constants import (
-    bot, change_group, quick_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
+    logger, bot, change_group, quick_group, IP, PORT, PORTSOCKET, MOUNT_LOCATION, PS_UPLOADDIR, RANDOMSTRING_LENGTH, 
     FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID,
-    NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
+    NPSSO, MAX_FILES, UPLOAD_TIMEOUT, PS_ID_DESC, BASE_ERROR_MSG, BOT_DISCORD_UPLOAD_LIMIT, OTHER_TIMEOUT, emb12, emb14, emb17, emb20, emb21, emb22, embgdt, embEncrypted1, embDecrypt1,
     emb6, embhttp, embpng, embpng1, embpng2, emb8, embvalidpsn, embnv1, embnt, embUtimeout, embinit, embTitleChange, embTitleErr, embTimedOut, emb_upl_savegame)
 from utils.workspace import startup, initWorkspace, makeWorkspace, cleanup, cleanupSimple, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db
 from utils.orbis import obtainCUSA, checkid, checkSaves, handle_accid, OrbisError, handleTitles
@@ -78,6 +79,8 @@ async def upload2(ctx: discord.ApplicationContext, saveLocation: str, max_files:
             emb1 = discord.Embed(title="Upload alert: Successful", description=f"File '{attachment.filename}' has been successfully uploaded and saved.",colour=0x854bf7)
             emb1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
             emb1.set_footer(text="Made with expertise by HTOP")
+
+            logger.info(f"Saved {attachment.filename} to {file_path}")
             
             await ctx.edit(embed=emb1)
             uploaded_file_paths.append(file_path)
@@ -130,6 +133,7 @@ async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str | N
             save_path = saveLocation
             file_path = os.path.join(save_path, attachment.filename)
             await attachment.save(file_path)
+            logger.info(f"Saved {attachment.filename} to {file_path}")
             emb16 = discord.Embed(title="Upload alert: Successful", description=f"File '{attachment.filename}' has been successfully uploaded and saved.", colour=0x854bf7)
             emb16.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
             emb16.set_footer(text="Made with expertise by HTOP")
@@ -175,9 +179,18 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
         async def on_timeout(self) -> None:
             self.disable_all_items()
             await helper.handle_timeout(ctx)
+
+        async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
+            self.disable_all_items()
+            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not decrypt: {error}.", color=0x854bf7)
+            embedErrb.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+            embedErrb.set_footer(text="Made with expertise by HTOP")
+            helper.embTimeout = embedErrb
+            await helper.handle_timeout(ctx)
+            logger.error(f"{error} - {ctx.user.name}")
             
         @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
-        async def decryption_callback(self, _, interaction: discord.Interaction) -> None:  
+        async def decryption_callback(self, _, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message(view=None)
             try:
                 match self.game:
@@ -186,9 +199,9 @@ async def extra_decrypt(ctx: discord.ApplicationContext, title_id: str, destinat
                     case "XENO2":
                         await Crypto.Xeno2.decryptFile(destination_directory)
                     case "BL3":
-                        await Crypto.BL3.decryptFile(destination_directory, False)
+                        await Crypto.BL3.decryptFile(destination_directory, "ps4", False)
                     case "TTWL":
-                        await Crypto.BL3.decryptFile(destination_directory, True)
+                        await Crypto.BL3.decryptFile(destination_directory, "ps4", True)
                     case "NDOG":
                         await Crypto.Ndog.decryptFile(destination_directory, self.offset)
                     case "MGSV":
@@ -277,10 +290,10 @@ async def extra_import(title_id: str, file_name: str) -> None:
             await Crypto.Xeno2.checkEnc_ps(file_name)
 
         elif title_id in BL3_TITLEID:
-            await Crypto.BL3.checkEnc_ps(file_name, False)
+            await Crypto.BL3.checkEnc_ps(file_name, "ps4", False)
         
         elif title_id in WONDERLANDS_TITLEID:
-            await Crypto.BL3.checkEnc_ps(file_name, True)
+            await Crypto.BL3.checkEnc_ps(file_name, "ps4", True)
 
         elif title_id in NDOG_TITLEID:
             await Crypto.Ndog.checkEnc_ps(file_name, Crypto.Ndog.START_OFFSET)
@@ -489,7 +502,7 @@ class threadButton(discord.ui.View):
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
             
         except (WorkspaceError, discord.Forbidden) as e:
-            print(f"Can not create thread: {e}")
+            logger.error(f"Can not create thread: {e}")
         
         try:
             for thread_id in ids_to_remove:
@@ -534,12 +547,17 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
         await ctx.edit(embed=embEncrypted1)
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
 
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -582,8 +600,13 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
-        
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                return
+            
         if len(savenames) == 1:
             finishedFiles = "".join(savenames)
         else: finishedFiles = ", ".join(savenames)
@@ -635,12 +658,17 @@ async def decrypt(ctx: discord.ApplicationContext, include_sce_sys: Option(bool,
     try:
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
             
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -696,6 +724,11 @@ async def decrypt(ctx: discord.ApplicationContext, include_sce_sys: Option(bool,
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
         
         if len(os.listdir(newDOWNLOAD_DECRYPTED)) == 1:
@@ -755,12 +788,17 @@ async def encrypt(ctx: discord.ApplicationContext, upload_individually: Option(b
         await ctx.edit(embed=emb14)
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
 
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -784,7 +822,7 @@ async def encrypt(ctx: discord.ApplicationContext, upload_individually: Option(b
             
                 files = await C1ftp.ftpListContents(mount_location_new)
 
-                if len(files) == 0: raise Exception("Could not list any decrypted saves!")
+                if len(files) == 0: raise FileError("Could not list any decrypted saves!")
                 location_to_scesys = mount_location_new + "/sce_sys"
                 await C1ftp.dlparamonly_grab(location_to_scesys)
                 title_id = await obtainCUSA(newPARAM_PATH)
@@ -829,14 +867,19 @@ async def encrypt(ctx: discord.ApplicationContext, upload_individually: Option(b
 
                 await ctx.edit(embed=embmidComplete)
             except HTTPError as e:
-                print(e)
                 await ctx.edit(embed=embhttp)
                 cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
             except (SocketError, FTPError, OrbisError, FileError, CryptoError, OSError) as e:
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
             
         if len(full_completed) == 1: full_completed = "".join(full_completed)
@@ -890,12 +933,17 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
         await ctx.edit(embed=emb21)
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=2, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
         
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -941,6 +989,11 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
             if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                 e = "PS4 not connected!"
             await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            return
+        except Exception as e:
+            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
        
     else: 
@@ -952,12 +1005,17 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
 
     try: uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
         
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -1000,6 +1058,11 @@ async def reregion(ctx: discord.ApplicationContext, playstation_id: Option(str, 
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
             
         if len(savenames) == 1:
@@ -1061,12 +1124,17 @@ async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, 
         await ctx.edit(embed=embpng)
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
             
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -1108,8 +1176,13 @@ async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, 
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
-        
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                return
+
         if len(savenames) == 1:
             finishedFiles = "".join(savenames)
         else: finishedFiles = ", ".join(savenames)
@@ -1164,6 +1237,11 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
         response = await listStoredSaves(ctx)
     except (PSNIDError, TimeoutError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
     
     if response == "EXIT":
@@ -1212,8 +1290,13 @@ async def resign(ctx: discord.ApplicationContext, playstation_id: Option(str, de
         if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
             e = "PS4 not connected!"
         elif isinstance(e, OrbisError): 
-            print(f"{response} is invalid") # If OrbisError is raised you have stored an invalid save
+            logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
         await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, files, mountPaths, C1ftp)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
     
     embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
@@ -1265,12 +1348,17 @@ async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, des
         await ctx.edit(embed=embTitleChange)
         uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
             
     savenames = obtain_savenames(newUPLOAD_ENCRYPTED)
@@ -1316,6 +1404,11 @@ async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, des
                 if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
                     e = "PS4 not connected!"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
         
         if len(savenames) == 1:
@@ -1397,13 +1490,27 @@ async def convert(ctx: discord.ApplicationContext, game: Option(str, choices=["G
     
     except ConverterError as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
     
-    embCDone = discord.Embed(title="Success",
-                        description=f"{result}\nPlease report any errors.",
-                        colour=0x854bf7)
-    embCDone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embCDone.set_footer(text="Made with expertise by HTOP")
+    if result == "TIMED OUT":
+        embCDone = discord.Embed(title="TIMED OUT!", colour=0x854bf7)
+        embCDone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embCDone.set_footer(text="Made with expertise by HTOP")
+    elif result == "ERROR":
+        embCDone = discord.Embed(title="ERROR!", description="Invalid save!", colour=0x854bf7)
+        embCDone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embCDone.set_footer(text="Made with expertise by HTOP")
+    else:
+        embCDone = discord.Embed(title="Success",
+                            description=f"{result}\nPlease report any errors.",
+                            colour=0x854bf7)
+        embCDone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+        embCDone.set_footer(text="Made with expertise by HTOP")
 
     await ctx.edit(embed=embCDone)
     await ctx.respond(file=discord.File(savegame))
@@ -1452,6 +1559,11 @@ async def cheats(ctx: discord.ApplicationContext, game: Option(str, choices=["GT
     
     except QuickCheatsError as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
     
     await ctx.respond(file=discord.File(savegame))
@@ -1472,12 +1584,17 @@ async def codes(ctx: discord.ApplicationContext, codes: str, endianness: Option(
     try:
         uploaded_file_paths = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False)
     except HTTPError as e:
-        print(e)
         await ctx.edit(embed=embhttp)
         cleanupSimple(workspaceFolders)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
     except (TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (expected)")
+        return
+    except Exception as e:
+        await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+        logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         return
     
     completed = []
@@ -1508,6 +1625,11 @@ async def codes(ctx: discord.ApplicationContext, codes: str, endianness: Option(
             except QuickCodesError as e:
                 e += "\nThe code has to work on all the savefiles you uploaded!"
                 await errorHandling(ctx, e, workspaceFolders, None, None, None)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+            except Exception as e:
+                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
     
             await ctx.edit(embed=embApplied)
@@ -1554,13 +1676,13 @@ async def ping(ctx: discord.ApplicationContext) -> None:
         await C1ftp.testConnection()
         result += 1
     except OSError as e:
-        print(f"PING: FTP could not connect: {e}")
+        logger.exception(f"PING: FTP could not connect: {e}")
 
     try:
         await C1socket.testConnection()
         result += 1
     except (OSError) as e:
-        print(f"PING: SOCKET could not connect: {e}")
+        logger.exception(f"PING: SOCKET could not connect: {e}")
 
     if result == 2:
         func = discord.Embed(title=f"Connections: 2/2\nLatency: {latency: .2f}ms", color=0x22EA0D)
@@ -1579,7 +1701,7 @@ async def init(ctx: discord.ApplicationContext) -> None:
     try: 
         await ctx.channel.purge(limit=1)
     except discord.Forbidden as e:
-        print(f"Can not purge message sent: {e}")
+        logger.error(f"Can not purge message sent: {e}")
 
     await ctx.send(embed=embinit, view=threadButton())
 

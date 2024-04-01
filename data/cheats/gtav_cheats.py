@@ -3,7 +3,8 @@ import asyncio
 import aiofiles
 import os
 import struct
-from utils.constants import OTHER_TIMEOUT, embDone_G
+from discord.ui.item import Item
+from utils.constants import OTHER_TIMEOUT, embDone_G, logger
 from .common import QuickCheatsError, QuickCheats, TimeoutHelper
 from data.crypto import Crypt_Rstar as crypt
 from typing import Literal
@@ -44,7 +45,7 @@ class Cheats_GTAV:
             if isinstance(err, QuickCheatsError):
                 await self.ctx.respond(err, ephemeral=True)
             else:
-                print(f"Error with modal: {err}")
+                logger.error(f"Error with modal: {err}")
 
         async def callback(self, interaction: discord.Interaction) -> None:
             await interaction.response.defer()
@@ -72,15 +73,21 @@ class Cheats_GTAV:
             self.helper = helper
             self.filePath = filePath
             self.platform = platform
-            self.closed = False
 
         async def on_timeout(self) -> None:
-            await asyncio.sleep(3)
-            if not self.closed:
-                self.disable_all_items()
-                if self.platform == "pc":
-                    await crypt.encryptFile(self.filePath, crypt.GTAV_PC_HEADER_OFFSET)
-                await self.helper.handle_timeout(self.ctx)
+            self.disable_all_items()
+            if self.platform == "pc":
+                await crypt.encryptFile(self.filePath, crypt.GTAV_PC_HEADER_OFFSET)
+            await self.helper.handle_timeout(self.ctx)
+        
+        async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
+            self.disable_all_items()
+            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", color=0x854bf7)
+            embedErrb.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
+            embedErrb.set_footer(text="Made with expertise by HTOP")
+            self.helper.embTimeout = embedErrb
+            await self.helper.handle_timeout(self.ctx)
+            logger.error(f"{error} - {self.ctx.user.name}")
 
         @discord.ui.button(label="Change money", style=discord.ButtonStyle.primary, custom_id="ChangeMoney_GTAV")
         async def changeMoney_callback(self, _, interaction: discord.Interaction) -> None:
@@ -92,7 +99,6 @@ class Cheats_GTAV:
             if self.platform == "pc":
                 await crypt.encryptFile(self.filePath, crypt.GTAV_PC_HEADER_OFFSET)
             self.helper.done = True
-            self.closed = True
 
     @staticmethod
     async def initSavefile(filePath: str) -> str | None:
