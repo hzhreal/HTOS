@@ -1,4 +1,3 @@
-.env
 valid_threads.db
 account_ids.db
 google_drive/service_account.json
