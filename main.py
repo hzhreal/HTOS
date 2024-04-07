@@ -290,10 +290,10 @@ async def extra_import(title_id: str, file_name: str) -> None:
             await Crypto.Xeno2.checkEnc_ps(file_name)
 
         elif title_id in BL3_TITLEID:
-            await Crypto.BL3.checkEnc_ps(file_name, "ps4", False)
+            await Crypto.BL3.checkEnc_ps(file_name, False)
         
         elif title_id in WONDERLANDS_TITLEID:
-            await Crypto.BL3.checkEnc_ps(file_name, "ps4", True)
+            await Crypto.BL3.checkEnc_ps(file_name, True)
 
         elif title_id in NDOG_TITLEID:
             await Crypto.Ndog.checkEnc_ps(file_name, Crypto.Ndog.START_OFFSET)
@@ -1416,7 +1416,7 @@ async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, des
         else: finishedFiles = ", ".join(savenames)
 
         embTdone = discord.Embed(title="Title altering process: Successful",
-                            description=f"Altered the save titles of **{finishedFiles} and resigned to {playstation_id or user_id}**.",
+                            description=f"Altered the save titles of **{finishedFiles}**, and resigned to ***{playstation_id or user_id}**.",
                             colour=0x854bf7)
         embTdone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
         embTdone.set_footer(text="Made with expertise by HTOP")
@@ -1623,7 +1623,7 @@ async def codes(ctx: discord.ApplicationContext, codes: str, endianness: Option(
                 qc = QuickCodes(savegame, codes, endianness)
                 await qc.apply_code()  
             except QuickCodesError as e:
-                e += "\nThe code has to work on all the savefiles you uploaded!"
+                e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                 await errorHandling(ctx, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return

@@ -27,7 +27,7 @@ class Crypt_Xeno2:
             new_key = AES.new(key, AES.MODE_CTR, initial_value=initial_value, nonce=b"")
             await decrypted_file.seek(0)
 
-            enc_header = AES.NEW(CustomCrypto.Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=CustomCrypto.Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await decrypted_file.read(0x80))
+            enc_header = AES.NEW(Crypt_Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await decrypted_file.read(0x80))
             enc_save = new_key.encrypt(decrypted_file.read(decrypted_file_sub1) + b"\x00")
 
         md5_hash = hashlib.md5()
@@ -35,7 +35,7 @@ class Crypt_Xeno2:
         md5_hash.update(enc_save)
 
         async with aiofiles.open(filePath, "wb") as encrypted_file_soon:
-            await encrypted_file_soon.write(CustomCrypto.Xeno2.SAVE_MAGIC_HEADER)
+            await encrypted_file_soon.write(Crypt_Xeno2.SAVE_MAGIC_HEADER)
             await encrypted_file_soon.write(struct.pack("<i", len(enc_save) + len(enc_header) + 0x20))
             await encrypted_file_soon.write(struct.pack("<i", len(enc_save) + len(enc_header)))
             await encrypted_file_soon.write(b"\x00\x00\x00\x00")
@@ -62,7 +62,7 @@ class Crypt_Xeno2:
                     raise CryptoError("MD5 HASH MISMATCH!")
                 await encrypted_file.seek(0x20)
 
-                dec_header = AES.new(CustomCrypto.Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=CustomCrypto.Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await encrypted_file.read(0x80))
+                dec_header = AES.new(Crypt_Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await encrypted_file.read(0x80))
                 enc_data_test = await encrypted_file.read(16)
 
                 for key_offset in Crypt_Xeno2.INTERNAL_KEY_OFFSETS:
@@ -71,7 +71,7 @@ class Crypt_Xeno2:
                     new_key = AES.new(key, AES.MODE_CTR, initial_value=initial_value, nonce=b"")
                     test_data = new_key.decrypt(enc_data_test)
 
-                    if test_data.startswith(CustomCrypto.Xeno2.HEADER):
+                    if test_data.startswith(Crypt_Xeno2.HEADER):
                         break
                     else:
                         raise CryptoError("INTERNAL SAVE ENCRYPTION KEY NOT FOUND!")
@@ -87,7 +87,7 @@ class Crypt_Xeno2:
     
     @staticmethod
     async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles(fileName, "rb") as savegame:
+        async with aiofiles.open(fileName, "rb") as savegame:
             header = await savegame.read(len(Crypt_Xeno2.HEADER))
 
         if header == Crypt_Xeno2.HEADER:
