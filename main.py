@@ -1128,7 +1128,7 @@ async def picture(ctx: discord.ApplicationContext, picture: discord.Attachment, 
         cleanupSimple(workspaceFolders)
         logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
-    except (TimeoutError, GDapiError) as e:
+    except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
@@ -1352,7 +1352,7 @@ async def title(ctx: discord.ApplicationContext, playstation_id: Option(str, des
         cleanupSimple(workspaceFolders)
         logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
-    except (TimeoutError, GDapiError) as e:
+    except (PSNIDError, TimeoutError, GDapiError) as e:
         await errorHandling(ctx, e, workspaceFolders, None, None, None)
         logger.exception(f"{e} - {ctx.user.name} - (expected)")
         return
