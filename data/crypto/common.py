@@ -1,4 +1,5 @@
 import os
+import aiofiles.os
 from Crypto.Cipher import AES, Blowfish
 from typing import Literal
 
@@ -58,20 +59,20 @@ class CustomCrypto:
         return swapped_data
      
     @staticmethod
-    def obtainFiles(folder: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
+    async def obtainFiles(folder: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
         if files is None:
             files = []
         if exclude is None:
             exclude = []
 
-        filelist = os.listdir(folder)
+        filelist = await aiofiles.os.listdir(folder)
 
         for entry in filelist:
             entry_path = os.path.join(folder, entry)
 
-            if os.path.isfile(entry_path) and entry_path not in exclude:
+            if await aiofiles.os.path.isfile(entry_path) and entry_path not in exclude:
                 files.append(entry_path)
-            elif os.path.isdir(entry_path) and entry_path != os.path.join(folder, "sce_sys"):
-                CustomCrypto.obtainFiles(entry_path, exclude, files)
+            elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(folder, "sce_sys"):
+                await CustomCrypto.obtainFiles(entry_path, exclude, files)
 
         return files

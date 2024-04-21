@@ -2,11 +2,12 @@ import os
 import discord
 import asyncio
 from dotenv import load_dotenv
-from aiogoogle import Aiogoogle
 import json
 import aiofiles
 import re
-from utils.constants import SYS_FILE_MAX, logger
+from utils.constants import SYS_FILE_MAX, logger, Color
+from dotenv import load_dotenv
+from aiogoogle import Aiogoogle
 
 load_dotenv()
 
@@ -16,6 +17,7 @@ class GDapiError(Exception):
         self.message = message
 
 class GDapi:
+    """Async functions to interact with the Google Drive API."""
     SAVEGAME_MAX = 1000 * 1024 * 1024 # max for savegames 1000 MB
     credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
 
@@ -26,19 +28,16 @@ class GDapi:
 
     embednf = discord.Embed(title="Error: Google drive upload",
                         description="Could not locate any files inside your google drive folder. Are you sure I have permissions or that there is no folders inside?",
-                        colour=0x854bf7)
-
-    embednf.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embednf.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+    embednf.set_footer(text="Made by hzh.")
 
     emblinkwrong = discord.Embed(title="Google drive upload: Error",
                       description="Could not obtain folder id from inputted link!",
-                      colour=0x854bf7)
-    emblinkwrong.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    emblinkwrong.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+    emblinkwrong.set_footer(text="Made by hzh.")
     
     @staticmethod
-    async def grabfolderid(folder_link: str, ctx) -> str | bool:
+    async def grabfolderid(folder_link: str, ctx: discord.ApplicationContext) -> str | bool:
         pattern = r"/folders/([\w-]+)" # regex pattern
         match = re.search(pattern, folder_link)
 
@@ -76,18 +75,16 @@ class GDapi:
             if file_size > GDapi.SAVEGAME_MAX:
                 embFileLarge = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
-                    colour=0x854bf7)
-                embFileLarge.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                embFileLarge.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+                embFileLarge.set_footer(text="Made by hzh.")
                 await ctx.edit(embed=embFileLarge)
                 await asyncio.sleep(1)
 
             elif sys_files is not None and (file_size > SYS_FILE_MAX or file_name not in sys_files): # sce_sys files are not that big
                 embnvSys = discord.Embed(title="Upload alert: Error",
                     description=f"{file_name} is not a valid sce_sys file!",
-                    colour=0x854bf7)
-                embnvSys.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                embnvSys.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+                embnvSys.set_footer(text="Made by hzh.")
                 await ctx.edit(embed=embnvSys)
                 await asyncio.sleep(1)
             
@@ -108,9 +105,8 @@ class GDapi:
                 if file_size != 96:
                     embnvBin = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file size of '{file_name}' is not 96 bytes.",
-                        colour=0x854bf7)
-                    embnvBin.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                    embnvBin.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+                    embnvBin.set_footer(text="Made by hzh.")
                     await ctx.edit(embed=embnvBin)
                     await asyncio.sleep(1)
 
@@ -121,9 +117,8 @@ class GDapi:
                 if file_size > GDapi.SAVEGAME_MAX:
                     embFileLarge = discord.Embed(title="Upload alert: Error",
                             description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
-                            colour=0x854bf7)
-                    embFileLarge.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                    embFileLarge.set_footer(text="Made with expertise by HTOP")
+                            colour=Color.DEFAULT.value)
+                    embFileLarge.set_footer(text="Made by hzh.")
                     await ctx.edit(embed=embFileLarge)
                     await asyncio.sleep(1)
                 else:
@@ -162,6 +157,7 @@ class GDapi:
             await aiogoogle.as_service_account(
                 drive_v3.permissions.create(fileId=response["id"], json={"role": "reader", "type": "anyone", "allowFileDiscovery": False})
             )
+
         file_url = f"https://drive.google.com/file/d/{response['id']}"
         
         logger.info(f"Uploaded {pathToFile} to google drive")
@@ -200,7 +196,7 @@ class GDapi:
                     file_data_storage.append(file_data)
 
                 valid_file_data = await GDapi.fileCheck(ctx, file_data_storage, sys_files, ps_save_pair_upload)
-              
+            
                 for file_info in valid_file_data:
                     file_name = file_info["filename"]
                     file_id = file_info["fileid"]
@@ -216,9 +212,8 @@ class GDapi:
                     logger.info(f"Saved {file_name} to {download_path}")
                     embeddone = discord.Embed(title="Google drive upload: Retrieved file",
                         description=f"{file_name} has been uploaded and saved.",
-                        colour=0x854bf7)
-                    embeddone.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-                    embeddone.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+                    embeddone.set_footer(text="Made by hzh.")
                     await ctx.edit(embed=embeddone)
                     
             else:

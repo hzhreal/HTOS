@@ -1,6 +1,6 @@
 import hashlib
 import aiofiles
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 from typing import Literal
 
 class Crypt_MGSV:
@@ -39,7 +39,7 @@ class Crypt_MGSV:
 
     @staticmethod
     async def decryptFile(folderPath: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
-        files = CustomCrypto.obtainFiles(folderPath)
+        files = await CustomCrypto.obtainFiles(folderPath)
 
         for filePath in files:
 
@@ -84,7 +84,7 @@ class Crypt_MGSV:
 
     @staticmethod
     async def reregion_changeCrypt(folderPath: str, target_titleid: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
-        files = CustomCrypto.obtainFiles(folderPath)
+        files = await CustomCrypto.obtainFiles(folderPath)
 
         for filePath in files:
         

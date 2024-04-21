@@ -1,7 +1,7 @@
 import struct
 import aiofiles
 import zstandard as zstd
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 
 class Crypt_DI2:
     ZSTD_MAGIC = 0xFD2FB528
@@ -49,7 +49,7 @@ class Crypt_DI2:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = CustomCrypto.obtainFiles(folderPath)
+        files = await CustomCrypto.obtainFiles(folderPath)
 
         for filePath in files:
 

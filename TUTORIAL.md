@@ -78,10 +78,31 @@ The platform will get automatically detected, if not you will be prompted.
 //
 
 **quick codes**: Accepts savegames that you can apply save wizard quick codes to (must be fully decrypted).  
-**Paremeters**
+**Parameters**
 - codes, the save wizard quick codes
 - endianness, try without this parameter first, if it does not work put it to big  
 The save you input must be fully decrypted, then you can encrypt with the bot, however if there is a type of encryption/checksum that is not implemented in the bot it will not work.
+
+//
+
+**sfo read**: Accepts a param.sfo file, the data it contains will be shown.
+**Parameters**:
+- sfo, the file itself
+
+//
+
+**sfo write**: Accepts a param.sfo file, you can patch the keys it contains
+**Parameters**:
+- sfo, the file itself
+- The rest of the parameters are keys in the param.sfo file that you can choose to patch
+
+//
+
+**init**: Bot owner command to set up the bot panel to create threads
+
+//
+
+**clear_threads**: Bot owner command to delete all threads created by the bot
 
 //
 

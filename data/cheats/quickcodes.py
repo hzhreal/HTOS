@@ -15,6 +15,7 @@ class QuickCodesError(Exception):
         self.message = message
 
 class QuickCodes:
+    """Functions to handle Save Wizard quick codes."""
     def __init__(self, filePath: str, codes: str, endianness: Literal["little", "big"]) -> None:
         self.filePath = filePath
         self.codes = codes

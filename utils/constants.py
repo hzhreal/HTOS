@@ -3,7 +3,10 @@ import discord
 import logging.config
 from discord.ext import commands
 from dotenv import load_dotenv
+from enum import Enum
+from psnawp_api import PSNAWP
 
+# LOGGER
 def setup_logger() -> logging.Logger:
     LOGGER_FOLDER = "logs"
     LOGGER_PATH = os.path.join(LOGGER_FOLDER, "HTOS.log")
@@ -48,16 +51,10 @@ def setup_logger() -> logging.Logger:
     return logger
 logger = setup_logger()
 
+# ENVIROMENT VARIABLES
 load_dotenv()
 
-activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
-intents = discord.Intents.default()
-intents.message_content = True
-
-bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
-change_group = discord.SlashCommandGroup("change")
-quick_group = discord.SlashCommandGroup("quick")
-
+# CONFIG
 IP = str(os.getenv("IP"))
 PORT = int(os.getenv("FTP_PORT"))
 PORTSOCKET = int(os.getenv("SOCKET_PORT"))
@@ -74,7 +71,8 @@ KEYSTONE_PATH = os.path.join("UserSaves", "keystone")
 RANDOMSTRING_LENGTH = 10
 DATABASENAME_THREADS = "valid_threads.db"
 DATABASENAME_ACCIDS = "account_ids.db"
-NPSSO = os.getenv("NPSSO") 
+TOKEN = str(os.getenv("TOKEN"))
+NPSSO = str(os.getenv("NPSSO"))
 # how to obtain NPSSO:
 # go to playstation.com and login
 # go to this link https://ca.account.sony.com/api/v1/ssocookie
@@ -82,6 +80,20 @@ NPSSO = os.getenv("NPSSO")
 
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
 
+if NPSSO is not None:
+    psnawp = PSNAWP(NPSSO)
+    print("psnawp initialized")
+else:
+    print("It is recommended that you register a NPSSO token.")
+
+# BOT INITIALIZATION 
+activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
+
+# TITLE IDS FOR CRYPT HANDLING
 GTAV_TITLEID = ["CUSA00411", "CUSA00419", "CUSA00880"] 
 RDR2_TITLEID = ["CUSA03041", "CUSA08519", "CUSA08568", "CUSA15698"]
 XENO2_TITLEID = ["CUSA05350", "CUSA05088", "CUSA04904", "CUSA05085", "CUSA05774"]
@@ -101,8 +113,9 @@ RGG_TITLEID = ["CUSA32173", "CUSA32174", "CUSA32171"]
 DI1_TITLEID = ["CUSA03291", "CUSA03290", "CUSA03684", "CUSA03685"]
 DI2_TITLEID = ["CUSA27043", "CUSA01104", "CUSA35681"]
 
+# BOT CONFIG
 FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit
-SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB
+SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
@@ -114,166 +127,152 @@ PS_ID_DESC = "Your Playstation Network username. Do not include if you want to u
 
 BASE_ERROR_MSG = "An unexpected error has occurred!"
 
+# EMBEDS
+class Color(Enum):
+    DEFAULT = 0x854bf7
+    GREEN = 0x22EA0D
+    RED = 0xF42B00
+
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
-                      colour=0x854bf7)
-embUtimeout.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embUtimeout.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embUtimeout.set_footer(text="Made by hzh.")
 
 embgdt = discord.Embed(title="Google drive upload: Error",
                       description="You did not respond with the link in time!",
-                      colour=0x854bf7)
-embgdt.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embgdt.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embgdt.set_footer(text="Made by hzh.")
 
 emb6 = discord.Embed(title="Upload alert: Error",
                       description="You did not upload 2 savefiles in one response to the bot, or you uploaded invalid files!",
-                      colour=0x854bf7)
-emb6.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb6.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+emb6.set_footer(text="Made by hzh.")
 
 embhttp = discord.Embed(title="HttpError",
                                 description="Are you sure that you uploaded binary content?",
-                                colour=0x854bf7)
-embhttp.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embhttp.set_footer(text="Made with expertise by HTOP")
+                                colour=Color.DEFAULT.value)
+embhttp.set_footer(text="Made by hzh.")
 
 embEncrypted1 = discord.Embed(title="Resigning process: Encrypted",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                      colour=0x854bf7)
-embEncrypted1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embEncrypted1.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embEncrypted1.set_footer(text="Made by hzh.")
 
 embDecrypt1 = discord.Embed(title="Decrypt Process",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                      colour=0x854bf7)
-embDecrypt1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embDecrypt1.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embDecrypt1.set_footer(text="Made by hzh.")
 
 emb12 = discord.Embed(title="Decrypt process: Downloading",
                       description="Save mounted, downloading decrypted savefile.",
-                      colour=0x854bf7) 
-emb12.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb12.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value) 
+emb12.set_footer(text="Made by hzh.")
 
 emb14 = discord.Embed(title="Resigning process: Decrypted",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                      colour=0x854bf7)
-emb14.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb14.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+emb14.set_footer(text="Made by hzh.")
 
 emb17 = discord.Embed(title="Resigning Process (Decrypted): Initializing",
                       description="Mounting save.",
-                      colour=0x854bf7) 
-emb17.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb17.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value) 
+emb17.set_footer(text="Made by hzh.")
 
 emb20 = discord.Embed(title="Re-region process: Upload encrypted files from the FOREIGN region",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                      colour=0x854bf7)
+                      colour=Color.DEFAULT.value)
+emb20.set_footer(text="Made by hzh.")
 
-emb20.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb20.set_footer(text="Made with expertise by HTOP")
 emb4 = discord.Embed(title="Resigning process: Encrypted",
                     description="Your save is being resigned, please wait...",
-                    colour=0x854bf7)
+                    colour=Color.DEFAULT.value)
+emb4.set_footer(text="Made by hzh.")
 
-emb4.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb4.set_footer(text="Made with expertise by HTOP")
 emb21 = discord.Embed(title="Re-region process: Upload encrypted files from YOUR region",
                     description="Please attach two encrypted savefiles that you want to upload (.bin and non bin).",
-                    colour=0x854bf7)
+                    colour=Color.DEFAULT.value)
 
-emb21.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb21.set_footer(text="Made with expertise by HTOP")
+emb21.set_footer(text="Made by hzh.")
 
 emb22 = discord.Embed(title="Obtain process: Keystone",
                           description="Obtaining keystone, please wait...",
-                          colour=0x854bf7)
-emb22.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb22.set_footer(text="Made with expertise by HTOP")
+                          colour=Color.DEFAULT.value)
+emb22.set_footer(text="Made by hzh.")
 
 embpng = discord.Embed(title="PNG Process",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                      colour=0x854bf7)
-embpng.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embpng.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embpng.set_footer(text="Made by hzh.")
 
 embpng1 = discord.Embed(title="PNG process: Initializing",
                       description="Mounting save.",
-                      colour=0x854bf7) 
-embpng1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embpng1.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value) 
+embpng1.set_footer(text="Made by hzh.")
 
 embpng2 = discord.Embed(title="PNG process: Downloading",
                     description="Save mounted",
-                    colour=0x854bf7)
-embpng2.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embpng2.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+embpng2.set_footer(text="Made by hzh.")
 
 embnv1 = discord.Embed(title="Error: PS username not valid",
                       description="This PS username is not in a valid format.",
-                      colour=0x854bf7)
-
-embnv1.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embnv1.set_footer(text="Made with expertise by HTOP")
+                      colour=Color.DEFAULT.value)
+embnv1.set_footer(text="Made by hzh.")
 
 emb8 = discord.Embed(title="Error: PSN username",
                 description=f"Your input was not a valid PSN username, you have {OTHER_TIMEOUT} seconds to reply with your account ID instead.",
-                colour=0x854bf7)
-emb8.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb8.set_footer(text="Made with expertise by HTOP")
+                colour=Color.DEFAULT.value)
+emb8.set_footer(text="Made by hzh.")
 
 embnt = discord.Embed(title="Error: Time limit reached",
                     description="You did not send your account ID in time.",
-                    colour=0x854bf7)
-embnt.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embnt.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+embnt.set_footer(text="Made by hzh.")
 
 embvalidpsn = discord.Embed(title="Obtained: PSN username",
                     description="Your input was a valid PSN username.",
-                    colour=0x854bf7)
-embvalidpsn.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embvalidpsn.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+embvalidpsn.set_footer(text="Made by hzh.")
 
 embinit = discord.Embed(title="Instance creator",
                                 description="Click button to get started!\nYou can also use old threads that you have created with the bot.",
-                                colour=0x854bf7)
-embinit.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embinit.set_footer(text="Made with expertise by HTOP")
+                                colour=Color.DEFAULT.value)
+embinit.set_footer(text="Made by hzh.")
 
 embTitleChange = discord.Embed(title="Change title: Upload",
                                 description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
-                                colour=0x854bf7)
-embTitleChange.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embTitleChange.set_footer(text="Made with expertise by HTOP")
+                                colour=Color.DEFAULT.value)
+embTitleChange.set_footer(text="Made by hzh.")
 
 embTitleErr = discord.Embed(title="Change title: Error",
                                 description="Please select a maintitle or subtitle.",
-                                colour=0x854bf7)
-embTitleErr.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embTitleErr.set_footer(text="Made with expertise by HTOP")
+                                colour=Color.DEFAULT.value)
+embTitleErr.set_footer(text="Made by hzh.")
 
 embTimedOut = discord.Embed(title="Timed out!",
                                 description="Sending file.",
-                                colour=0x854bf7)
-embTimedOut.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embTimedOut.set_footer(text="Made with expertise by HTOP")
+                                colour=Color.DEFAULT.value)
+embTimedOut.set_footer(text="Made by hzh.")
 
 embDone_G = discord.Embed(title="Success",
                         description=f"Please report any errors.",
-                        colour=0x854bf7)
-embDone_G.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-embDone_G.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+embDone_G.set_footer(text="Made by hzh.")
 
 emb_conv_choice = discord.Embed(title="Converter: Choice",
                         description=f"Could not recognize the platform of the save, please choose what platform to convert the save to.",
-                        colour=0x854bf7)
-emb_conv_choice.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb_conv_choice.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+emb_conv_choice.set_footer(text="Made by hzh.")
 
 emb_upl_savegame = discord.Embed(title="Upload files",
                         description=f"Please attach atleast 1 savefile, it must be fully decrypted.",
-                        colour=0x854bf7)
-emb_upl_savegame.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-emb_upl_savegame.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+emb_upl_savegame.set_footer(text="Made by hzh.")
+
+loadSFO_emb = discord.Embed(title="Initializing",
+                                 description="Loading param.sfo...",
+                                 color=Color.DEFAULT.value)
+loadSFO_emb.set_footer(text="Made by hzh.")
+
+finished_emb = discord.Embed(title="Finished", color=Color.DEFAULT.value)
+finished_emb.set_footer(text="Made by hzh.")

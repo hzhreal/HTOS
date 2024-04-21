@@ -2,6 +2,7 @@ import os
 import zipfile
 import random
 import string
+import aiofiles.os
 from PIL import Image
 from utils.constants import logger
 
@@ -51,9 +52,9 @@ def pngprocess(path: str, size: tuple[int, int]) -> None:
     except Exception as e:
         logger.exception(f"Error processing {path}: {e} - (unexpected)")
 
-def obtain_savenames(dir_: str) -> list[str]:
+async def obtain_savenames(dir_: str) -> list[str]:
     savenames = []
-    saves = os.listdir(dir_)
+    saves = await aiofiles.os.listdir(dir_)
 
     for fileName in saves:
         if not fileName.endswith(".bin"):

@@ -5,9 +5,10 @@ import struct
 import os
 from discord.ui.item import Item
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
-from utils.constants import OTHER_TIMEOUT, embDone_G, logger
-from .common import QuickCheatsError, QuickCheats, TimeoutHelper
+from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color
+from data.cheats.common import QuickCheatsError, QuickCheats
 from typing import Literal
+from utils.helpers import TimeoutHelper
 
 class Cheats_RDR2:
     MONEY_LIMIT = 0x7FFFFFFF
@@ -15,6 +16,7 @@ class Cheats_RDR2:
     BYTES_BETWEEN_IDENTIFIER = 16
 
     class MoneyModal(discord.ui.Modal):
+        """Modal to modify money value for RDR 2."""
         def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(title="Alter money", timeout=None)
             self.ctx = ctx
@@ -51,6 +53,7 @@ class Cheats_RDR2:
                     await self.ctx.edit(embed=embLoaded)
 
     class CheatsButton(discord.ui.View):
+        """Button used for RDR 2 cheats."""
         def __init__(self, ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, platform: Literal["ps4", "pc"]) -> None:
             super().__init__(timeout=OTHER_TIMEOUT)
             self.ctx = ctx
@@ -66,9 +69,8 @@ class Cheats_RDR2:
 
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
-            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", color=0x854bf7)
-            embedErrb.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-            embedErrb.set_footer(text="Made with expertise by HTOP")
+            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", colour=Color.DEFAULT.value)
+            embedErrb.set_footer(text="Made by hzh.")
             self.helper.embTimeout = embedErrb
             await self.helper.handle_timeout(self.ctx)
             logger.error(f"{error} - {self.ctx.user.name}")
@@ -165,7 +167,6 @@ class Cheats_RDR2:
                         f"Platform: **{stats['Platform']}**\n"
                         f"Money: **{stats['Money']}**"
                     ),
-                    colour=0x854bf7)
-        embLoaded.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-        embLoaded.set_footer(text="Made with expertise by HTOP")
+                    colour=Color.DEFAULT.value)
+        embLoaded.set_footer(text="Made by hzh.")
         return embLoaded

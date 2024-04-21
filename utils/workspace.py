@@ -5,11 +5,16 @@ import shutil
 import asyncio
 import aiosqlite
 import discord
+import aiofiles
+import aiofiles.os
 from ftplib import FTP, error_perm
-from .constants import (UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
-                        DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT, MOUNT_LOCATION, PS_UPLOADDIR,
-                        DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger)
-from .extras import generate_random_string
+from network import FTPps
+from utils.constants import (
+    UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
+    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT, MOUNT_LOCATION, PS_UPLOADDIR,
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger, Color
+)
+from utils.extras import generate_random_string
 from aioftp.errors import AIOFTPException
 
 class WorkspaceError(Exception):
@@ -18,6 +23,7 @@ class WorkspaceError(Exception):
         self.message = message   
 
 def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
+    """Blocking FTP function to delete folders, used in startup to cleanup."""
     try:
         ftp.cwd(folder_path)
         items9 = ftp.mlsd()
@@ -41,6 +47,7 @@ def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
         logger.error(f"An error occurred: {e}")
 
 def startup():
+    """Makes sure everything exists and cleans up unnecessary files, used when starting up bot."""
     FOLDERS = [UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, 
                 DOWNLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED,
                 PNG_PATH, PARAM_PATH, KEYSTONE_PATH, STORED_SAVES_FOLDER]
@@ -62,7 +69,7 @@ def startup():
 
     with FTP() as ftp:
         try:
-            ftp.connect(IP, PORT)
+            ftp.connect(IP, PORT, timeout=10)
             login_result = ftp.login()  # Call the login method and get its return value
             if login_result == "230 User logged in, proceed.":
                 try:
@@ -76,6 +83,7 @@ def startup():
                 ftp.quit()
         except:
             pass
+
     try:
         conn = sqlite3.connect(DATABASENAME_THREADS)
         cursor = conn.cursor()
@@ -110,7 +118,8 @@ def startup():
     time.sleep(1)
     os.system("cls" if os.name == "nt" else "clear")
 
-async def cleanup(fInstance, clean_list: list[str], saveList: list[str], mountPaths: list[str]) -> None:
+async def cleanup(fInstance: FTPps, clean_list: list[str], saveList: list[str], mountPaths: list[str]) -> None:
+    """Used to cleanup after a command utilizing the ps4 (remote)."""
     for folderpath in clean_list:
         try:
             shutil.rmtree(folderpath)
@@ -128,6 +137,7 @@ async def cleanup(fInstance, clean_list: list[str], saveList: list[str], mountPa
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
 def cleanupSimple(clean_list: list[str]) -> None:
+    """Used to cleanup after a command that does not utilize the ps4 (local only)."""
     for folderpath in clean_list:
         try:
             shutil.rmtree(folderpath)
@@ -135,6 +145,7 @@ def cleanupSimple(clean_list: list[str]) -> None:
             logger.error(f"Error accessing {folderpath} when cleaning up (simple): {e}")
 
 def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
+    """Obtains the local paths for an user, used when initializing a command that needs the local filesystem."""
     randomString = generate_random_string(RANDOMSTRING_LENGTH)
     newUPLOAD_ENCRYPTED = os.path.join(UPLOAD_ENCRYPTED, randomString)
     newUPLOAD_DECRYPTED = os.path.join(UPLOAD_DECRYPTED, randomString)
@@ -147,11 +158,11 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
     
 async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
+    """Used for checking if a command is being run in a valid thread."""
     embChannelError = discord.Embed(title="Error",
                                     description="Invalid channel!",
-                                    colour=0x854bf7)
-    embChannelError.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embChannelError.set_footer(text="Made with expertise by HTOP")
+                                    colour=Color.DEFAULT.value)
+    embChannelError.set_footer(text="Made by hzh.")
 
     try:
         async with aiosqlite.connect(DATABASENAME_THREADS) as db:
@@ -161,7 +172,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
 
             if row:
                 for paths in workspaceList:
-                    os.makedirs(paths)
+                    await aiofiles.os.makedirs(paths)
             else:
                 await ctx.respond(embed=embChannelError)
                 raise WorkspaceError("Invalid channel!")
@@ -169,6 +180,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         raise WorkspaceError("Please try again.")
 
 def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
+    """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
     for i, name in enumerate(fileList):
         if name.endswith("bin"):
             fileList[i] = os.path.splitext(os.path.basename(name))[0] + f"_{randomString}.bin" 
@@ -178,7 +190,8 @@ def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
     return fileList
 
 async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
-    gameList = os.listdir(STORED_SAVES_FOLDER)
+    """Lists the saves in the stored folder, used in the quick resign command."""
+    gameList = await aiofiles.os.listdir(STORED_SAVES_FOLDER)
     description = ""
     save_paths = []
     index = 1
@@ -189,7 +202,7 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
     for game in gameList:
         gamePath = os.path.join(STORED_SAVES_FOLDER, game)
 
-        if os.path.isdir(gamePath):
+        if await aiofiles.os.path.isdir(gamePath):
             description += f"**{game}**\n"
 
             gameRegions = os.listdir(gamePath)
@@ -199,19 +212,18 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
                 if os.path.isdir(regionPath):
                     description += f"- {region}\n"
                     
-                    gameSaves = os.listdir(regionPath)
+                    gameSaves = await aiofiles.os.listdir(regionPath)
                     for save in gameSaves:
                         savePath = os.path.join(STORED_SAVES_FOLDER, game, region, save)
-                        if os.path.isdir(savePath):
+                        if await aiofiles.os.path.isdir(savePath):
                             description += f"-- {index}. {save}\n"
                             save_paths.append(savePath)
                             index += 1
 
     embList = discord.Embed(title="List of available saves",
                         description=f"{description}\nType in the number associated to the save to resign it, or send 'EXIT' to cancel.",
-                        colour=0x854bf7)
-    embList.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
-    embList.set_footer(text="Made with expertise by HTOP")
+                        colour=Color.DEFAULT.value)
+    embList.set_footer(text="Made by hzh.")
 
     await ctx.edit(embed=embList)
 
@@ -239,7 +251,7 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
     
     else:
         selected_save = save_paths[int(message.content) - 1]
-        saves = os.listdir(selected_save)
+        saves = await aiofiles.os.listdir(selected_save)
 
         for save in saves:
             if not save.endswith(".bin"):
@@ -247,7 +259,8 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
 
         return selected_save
     
-async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int] | list:
+async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int]:
+    """Used to write thread IDs into the db on behalf of a user, if an entry exists it will be overwritten."""
     delete_these = []
     try:
         async with aiosqlite.connect(DATABASENAME_THREADS) as db:
@@ -266,8 +279,34 @@ async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int] | lis
         delete_these.append(thread_id[0])
     return delete_these
 
+async def fetchall_threadid_db() -> dict[int, int]:
+    db_dict = {}
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+
+            await cursor.execute("SELECT disc_userid, disc_threadid FROM Threads")
+            ids = await cursor.fetchall()
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
+
+    for user_id, thread_id in ids:
+        db_dict[user_id] = thread_id
+    return db_dict
+
+async def delall_threadid_db(db_dict: dict[int, int]) -> None:
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+
+            for user_id, thread_id in db_dict.items():
+                await cursor.execute("DELETE FROM Threads WHERE disc_userid = ? AND disc_threadid = ?", (user_id, thread_id,))
+            await db.commit()
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
     
 async def fetch_accountid_db(disc_userid: int) -> str | None:
+    """Used to obtain an account ID stored in the db to user."""
     try:
         async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
             cursor = await db.cursor()
@@ -283,6 +322,7 @@ async def fetch_accountid_db(disc_userid: int) -> str | None:
         return None
     
 async def write_accountid_db(disc_userid: int, account_id: str) -> None:
+    """Used to store the user's account ID in the db, removing the previously stored one."""
     account_id = int(account_id, 16)
     try:
         async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:

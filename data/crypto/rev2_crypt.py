@@ -1,6 +1,6 @@
 import aiofiles
 import hashlib
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 from Crypto.Cipher import Blowfish
 
 # notes: start at 0x20
@@ -10,7 +10,7 @@ class Crypt_Rev2:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = CustomCrypto.obtainFiles(folderPath)
+        files = await CustomCrypto.obtainFiles(folderPath)
 
         for filePath in files:
 

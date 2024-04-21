@@ -1,6 +1,7 @@
 valid_threads.db
 account_ids.db
 google_drive/service_account.json
+cogs/__pycache__
 data/__pycache__
 data/cheats/__pycache__
 data/converter/__pycache__

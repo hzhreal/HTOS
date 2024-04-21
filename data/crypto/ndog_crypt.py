@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import zlib
 import crc32c
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 from Crypto.Cipher import Blowfish
 from typing import Literal
 
@@ -91,7 +91,7 @@ class Crypt_Ndog:
 
     @staticmethod
     async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        files = CustomCrypto.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
+        files = await CustomCrypto.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
 
         for filePath in files:
 

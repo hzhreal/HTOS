@@ -1,5 +1,3 @@
-import discord
-import asyncio
 import aiofiles
 
 class QuickCheatsError(Exception):
@@ -10,8 +8,9 @@ class QuickCheatsError(Exception):
 class QuickCheats:
     @staticmethod
     async def findOffset_with_identifier32(savegame: aiofiles.threadpool.binary.AsyncFileIO, savegame_data: bytes | None, before_offset: bytes, after_offset: bytes | None, bytes_between: int) -> int:
+        """Used to find an offset using values that identify the location (32 bit / 4 byte)."""
         index = 0
-        money_offset = -1
+        target_offset = -1
         if savegame_data is None:
             savegame_data = await savegame.read()
 
@@ -26,32 +25,13 @@ class QuickCheats:
                 second_identifier_data = await savegame.read(4)
 
                 if second_identifier_data == after_offset:
-                    money_offset = identifier_offset + bytes_between
+                    target_offset = identifier_offset + bytes_between
                     break
 
                 index = identifier_offset + 1
             
             else:
-                money_offset = identifier_offset + bytes_between
+                target_offset = identifier_offset + bytes_between
                 break
         
-        return money_offset
-
-class TimeoutHelper:
-    def __init__(self, embTimeout: discord.Embed) -> None:
-        self.done = False
-        self.embTimeout = embTimeout
-
-    async def await_done(self) -> None:
-        try:
-            while not self.done:  # Continue waiting until done is True
-                await asyncio.sleep(1)  # Sleep for 1 second to avoid busy-waiting
-        except asyncio.CancelledError:
-            pass  # Handle cancellation if needed
-    
-    async def handle_timeout(self, ctx: discord.ApplicationContext) -> None:
-        await asyncio.sleep(2)
-        if not self.done:
-            await ctx.edit(embed=self.embTimeout, view=None)
-            await asyncio.sleep(4) # make sure user is aware of msg
-            self.done = True
+        return target_offset

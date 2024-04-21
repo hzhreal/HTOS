@@ -1,7 +1,7 @@
 import time
 import aiofiles
 import os
-from .common import Converter, ConverterError
+from data.converter.common import Converter, ConverterError
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 
 class Converter_Rstar:

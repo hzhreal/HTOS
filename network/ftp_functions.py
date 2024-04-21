@@ -3,8 +3,10 @@ import os
 import discord
 import shutil
 import aiofiles
-from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, logger
+import aiofiles.os
+import utils.orbis as orbis
+# from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, logger, Color
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -12,6 +14,7 @@ class FTPError(Exception):
         self.message = message
 
 class FTPps:
+    """Async functions to interact with the FTP server."""
     def __init__(self, IP: str, PORT: int, ENCRYPTED_LOCATION: str, DESTINATION_DIRECTORY: str, 
                  UPLOAD_DECRYPTED_REPLACE: str, UPLOAD_ENCRYPTED_PATH: str,
                  DOWNLOAD_ENCRYPTED_PATH: str, PARAM_PATH: str, KEYSTONEDIR: str, PNGPATH: str) -> None:
@@ -90,7 +93,7 @@ class FTPps:
         location_to_scesys = mount_location + "/sce_sys"
         decFilesPath = "" # used by MGSV re regioning to change crypt
 
-        if not check_titleid(title_id):
+        if not orbis.check_titleid(title_id):
             raise FTPError("Invalid title id!")
         
         try:
@@ -112,8 +115,8 @@ class FTPps:
             except FTPError as e:
                 raise FTPError(e)
 
-        await reregion_write(paramPath, title_id, decFilesPath)
-        await resign(paramPath, account_id)
+        await orbis.reregion_write(paramPath, title_id, decFilesPath)
+        await orbis.resign(paramPath, account_id)
 
         if decFilesPath:
             try:
@@ -158,7 +161,7 @@ class FTPps:
             raise FTPError("An unexpected error!")
 
     async def uploadencrypted(self) -> None:
-        encrypts = os.listdir(self.UPLOAD_ENCRYPTED_PATH)
+        encrypts = await aiofiles.os.listdir(self.UPLOAD_ENCRYPTED_PATH)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -187,7 +190,7 @@ class FTPps:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
-        await resign(fullparam_dl, account_id)
+        await orbis.resign(fullparam_dl, account_id)
         
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -298,13 +301,13 @@ class FTPps:
             
     async def dlencrypted_bulk(self, reregion: bool, account_id: str, savenames: str) -> None:
     
-        try: title_id = await obtainCUSA(self.PARAM_PATH)
-        except OrbisError as e: raise OrbisError(e)
+        try: title_id = await orbis.obtainCUSA(self.PARAM_PATH)
+        except orbis.OrbisError as e: raise orbis.OrbisError(e)
 
         savefilespath = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, "PS4", "SAVEDATA", account_id, title_id)
 
-        if not os.path.exists(savefilespath):
-            os.makedirs(savefilespath)
+        if not await aiofiles.ospath.exists(savefilespath):
+            await aiofiles.os.makedirs(savefilespath)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -319,7 +322,7 @@ class FTPps:
                 await self.downloadStream(ftp, savenames_bin, fulldl_process1)
             
             if reregion: 
-                reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
+                await orbis.reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -344,9 +347,10 @@ class FTPps:
         
         for filepath in filepaths:
             fullPath = os.path.join(self.UPLOAD_DECRYPTED_REPLACE, filepath)
-            embSuccess = discord.Embed(title="Upload alert: Successful", description=f"File '{filepath}' has been successfully uploaded and saved.",colour=0x854bf7)        
-            embSuccess.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")     
-            embSuccess.set_footer(text="Made with expertise by HTOP")
+            embSuccess = discord.Embed(title="Upload alert: Successful", 
+                                       description=f"File '{filepath}' has been successfully uploaded and saved.", 
+                                       colour=Color.DEFAULT.value)            
+            embSuccess.set_footer(text="Made by hzh.")
 
             try:
                 async with aioftp.Client.context(self.IP, self.PORT) as ftp:
@@ -395,7 +399,7 @@ class FTPps:
             raise FTPError("An unexpected error!")
         
     async def testConnection(self) -> None:
-        async with aioftp.Client.context(self.IP, self.PORT):
+        async with aioftp.Client.context(self.IP, self.PORT, connection_timeout=10):
            pass
 
     async def upload_sfo(self, paramPath: str, location_to_scesys: str) -> None:

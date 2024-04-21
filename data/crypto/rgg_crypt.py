@@ -1,7 +1,7 @@
 import zlib
 import aiofiles
 import struct
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 
 class Crypt_RGG:
     KEY = b"fuEw5rWN8MBS"
@@ -15,7 +15,7 @@ class Crypt_RGG:
     
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = CustomCrypto.obtainFiles(folderPath)
+        files = await CustomCrypto.obtainFiles(folderPath)
 
         for filePath in files:
 

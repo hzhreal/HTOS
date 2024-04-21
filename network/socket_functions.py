@@ -7,6 +7,7 @@ class SocketError(Exception):
     self.message = message
 
 class SocketPS:
+  """Async functions to interact with cecie."""
   SUCCESS = '{"ResponseType": "srOk"}\r\n'
   def __init__(self, HOST: str, PORT: int, maxConnections: int = 16) -> None:
     self.HOST = HOST
@@ -28,7 +29,7 @@ class SocketPS:
     
     except (ConnectionError, asyncio.TimeoutError) as e:
       logger.error(f"An error occured while sending tcp message: {e}")
-      raise SocketError("An unexpected error!")
+      raise SocketError("Error communicating with socket.")
     
     finally:
       if writer is not None:
@@ -36,7 +37,7 @@ class SocketPS:
         await writer.wait_closed()
       
   async def testConnection(self) -> None:
-    _, writer = await asyncio.open_connection(self.HOST, self.PORT)
+    _, writer = await asyncio.wait_for(asyncio.open_connection(self.HOST, self.PORT), timeout=10)
     writer.close()
     await writer.wait_closed()
 

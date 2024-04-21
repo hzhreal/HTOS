@@ -2,7 +2,7 @@ import aiofiles
 import struct
 import re
 from Crypto.Cipher import AES
-from .common import CustomCrypto
+from data.crypto.common import CustomCrypto
 from utils.constants import GTAV_TITLEID
 from typing import Literal
 
@@ -94,7 +94,7 @@ class Crypt_Rstar:
 
     @staticmethod
     async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        files = CustomCrypto.obtainFiles(upload_decrypted)
+        files = await CustomCrypto.obtainFiles(upload_decrypted)
         key = Crypt_Rstar.KEYS[start_offset]
 
         for file_name in files:
