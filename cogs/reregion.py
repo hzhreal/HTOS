@@ -63,7 +63,7 @@ class ReRegion(commands.Cog):
             uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
             savename += f"_{random_string}"
             try:
-                for file in aiofiles.os.listdir(newUPLOAD_ENCRYPTED):
+                for file in await aiofiles.os.listdir(newUPLOAD_ENCRYPTED):
                     if file.endswith(".bin"):
                         await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, file), os.path.join(newUPLOAD_ENCRYPTED, os.path.splitext(file)[0] + f"_{random_string}" + ".bin"))
                     else:
