@@ -45,11 +45,7 @@ class Misc(commands.Cog):
     @discord.slash_command(description="Send the panel to create threads.")
     @commands.is_owner()
     async def init(self, ctx: discord.ApplicationContext) -> None:
-        try: 
-            await ctx.channel.purge(limit=1)
-        except discord.Forbidden as e:
-            logger.error(f"Can not purge message sent: {e}")
-
+        await ctx.respond("Sending panel...", ephemeral=True)
         await ctx.send(embed=embinit, view=threadButton())
 
     @init.error
@@ -60,7 +56,6 @@ class Misc(commands.Cog):
     @discord.slash_command(description="Remove all threads created by the bot.")
     @commands.is_owner()
     async def clear_threads(self, ctx: discord.ApplicationContext) -> None:
-        await ctx.channel.purge(limit=1)
         await ctx.respond("Clearing threads...", ephemeral=True)
         try:
             db_dict = await fetchall_threadid_db()
