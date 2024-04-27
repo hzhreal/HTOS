@@ -11,7 +11,7 @@ from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
     IP, PORT, PS_UPLOADDIR, PORTSOCKET, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION,
     logger, Color,
-    embhttp, emb6, embDecrypt1, emb12
+    embhttp, emb6, embDecrypt1
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
@@ -82,7 +82,12 @@ class Decrypt(commands.Cog):
                     await C1ftp.make1(mount_location_new)
                     mountPaths.append(mount_location_new)
                     await C1socket.socket_dump(mount_location_new, realSave)
-                    await ctx.edit(embed=emb12)
+
+                    emb_dl = discord.Embed(title="Decrypt process: Downloading",
+                      description=f"{save} mounted, downloading decrypted savefile.",
+                      colour=Color.DEFAULT.value) 
+                    emb_dl.set_footer(text="Made by hzh.")
+                    await ctx.edit(embed=emb_dl)
 
                     if include_sce_sys:
                         await C1ftp.ftp_download_folder(mount_location_new, destination_directory, False)

@@ -10,3 +10,4 @@ psnawp
 crc32c
 numpy
 zstandard
+lz4

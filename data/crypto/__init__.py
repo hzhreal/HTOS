@@ -9,3 +9,4 @@ from .rev2_crypt import Crypt_Rev2
 from .dl_crypt import Crypt_DL
 from .rgg_crypt import Crypt_RGG
 from .di2_crypt import Crypt_DI2
+from .nms_crypt import Crypt_NMS

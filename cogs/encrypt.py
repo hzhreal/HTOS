@@ -12,7 +12,7 @@ from data.crypto import CryptoError
 from utils.constants import (
     IP, PORT, PS_UPLOADDIR, PORTSOCKET, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC,
     logger, Color,
-    embhttp, emb6, emb14, emb17
+    embhttp, emb6, emb14
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
@@ -75,7 +75,13 @@ class Encrypt(commands.Cog):
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
-                    await ctx.edit(embed=emb17)
+
+                    embmo = discord.Embed(title="Encryption & Resigning process: Initializing",
+                        description=f"Mounting {save}.",
+                        colour=Color.DEFAULT.value)
+                    embmo.set_footer(text="Made by hzh.")
+                    await ctx.edit(embed=embmo)
+
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                     await C1ftp.make1(mount_location_new)
@@ -88,11 +94,8 @@ class Encrypt(commands.Cog):
                     location_to_scesys = mount_location_new + "/sce_sys"
                     await C1ftp.dlparamonly_grab(location_to_scesys)
                     title_id = await obtainCUSA(newPARAM_PATH)
-
-                    if upload_individually: 
-                        completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, True, newUPLOAD_DECRYPTED, save)
-                    else: 
-                        completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, False, newUPLOAD_DECRYPTED, save)
+ 
+                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save)
 
                     if include_sce_sys:
                         if len(await aiofiles.os.listdir(newUPLOAD_DECRYPTED)) > 0:
@@ -121,7 +124,7 @@ class Encrypt(commands.Cog):
                     else: completed = ", ".join(completed)
                     full_completed.append(completed)
 
-                    embmidComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
+                    embmidComplete = discord.Embed(title="Encrypting & Resigning Process: Successful",
                                 description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
                     embmidComplete.set_footer(text="Made by hzh.")
@@ -146,7 +149,7 @@ class Encrypt(commands.Cog):
             if len(full_completed) == 1: full_completed = "".join(full_completed)
             else: full_completed = ", ".join(full_completed)
 
-            embComplete = discord.Embed(title="Resigning Process (Decrypted): Successful",
+            embComplete = discord.Embed(title="Encrypting & Resigning Process: Successful: Successful",
                             description=f"Resigned **{full_completed}** to **{playstation_id or user_id}**.",
                             colour=Color.DEFAULT.value)
             embComplete.set_footer(text="Made by hzh.")

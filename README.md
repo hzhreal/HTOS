@@ -45,6 +45,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Like a Dragon: Ishin                     |
 | Dead Island 1 (compression only)         |
 | Dead Island 2 (compression only)         |
+| No Man's Sky (savedata.hg)               |
 
 If you wanna contribute to this list, please let me know!
 
@@ -107,3 +108,4 @@ How to obtain NPPSO:
 - https://github.com/bucanero/apollo-lib/blob/main/source/patches.c#L2724C5-L2724C28 for the quick codes implementation
 - https://github.com/Zhaxxy/rdr2_enc_dec/blob/main/rdr2_enc_dec.py for the checksum
 - https://github.com/Zhaxxy/xenoverse2_ps4_decrypt for Xenoverse 2 extra layer of encryption
+- https://github.com/monkeyman192/MBINCompiler/releases/tag/v4.64.0-pre3 for No Man's Sky obfuscation (mapping.json)

@@ -112,6 +112,7 @@ DL2_TITLEID = ["CUSA12555", "CUSA12584", "CUSA28617", "CUSA28743"]
 RGG_TITLEID = ["CUSA32173", "CUSA32174", "CUSA32171"]
 DI1_TITLEID = ["CUSA03291", "CUSA03290", "CUSA03684", "CUSA03685"]
 DI2_TITLEID = ["CUSA27043", "CUSA01104", "CUSA35681"]
+NMS_TITLEID = ["CUSA03952", "CUSA04841", "CUSA05777", "CUSA05965"]
 
 # BOT CONFIG
 FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit
@@ -163,20 +164,10 @@ embDecrypt1 = discord.Embed(title="Decrypt Process",
                       colour=Color.DEFAULT.value)
 embDecrypt1.set_footer(text="Made by hzh.")
 
-emb12 = discord.Embed(title="Decrypt process: Downloading",
-                      description="Save mounted, downloading decrypted savefile.",
-                      colour=Color.DEFAULT.value) 
-emb12.set_footer(text="Made by hzh.")
-
 emb14 = discord.Embed(title="Resigning process: Decrypted",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
 emb14.set_footer(text="Made by hzh.")
-
-emb17 = discord.Embed(title="Resigning Process (Decrypted): Initializing",
-                      description="Mounting save.",
-                      colour=Color.DEFAULT.value) 
-emb17.set_footer(text="Made by hzh.")
 
 emb20 = discord.Embed(title="Re-region process: Upload encrypted files from the FOREIGN region",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
