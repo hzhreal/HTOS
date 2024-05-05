@@ -57,7 +57,10 @@ load_dotenv()
 # CONFIG
 IP = str(os.getenv("IP"))
 PORT = int(os.getenv("FTP_PORT"))
-PORTSOCKET = int(os.getenv("SOCKET_PORT"))
+PORTSOCKET = int(os.getenv("CECIE_PORT"))
+PORTSOCKET_SEALEDKEY = os.getenv("SDKEYUNSEALER_PORT")
+if PORTSOCKET_SEALEDKEY is not None:
+    PORTSOCKET_SEALEDKEY = int(PORTSOCKET_SEALEDKEY)
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))

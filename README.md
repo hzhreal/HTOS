@@ -66,6 +66,9 @@ How to obtain NPPSO:
 - Find {"npsso":"<64 character npsso code>"}
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
+### SDKeyUnsealer
+This is a payload that enables the sealed_key decrypt command, it is optional to run. The command itself is not so useful either. However, it is available if you want to experiment. Read the README.md if you want to set it up.
+
 ### Everything else
 - Download the pkg from https://github.com/Team-Alua/cecie.nim/releases/tag/v2.00 and install it on your PS4
 - Download the config.ini file from https://github.com/Team-Alua/cecie.nim/blob/main/examples/config.ini and edit it with your desired 
@@ -76,7 +79,8 @@ How to obtain NPPSO:
 - Download the code from the bot and go to the .env file, edit it as follows:  
   IP: PS4 IP address  
   FTP_PORT: The port that your FTP payload uses  
-  SOCKET_PORT: The port that you used in the config.ini file  
+  CECIE_PORT: The port that you used in the config.ini file 
+  SDKEYUNSEALER_PORT: The port for the SDKeyUnsealer payload, it is optional
   UPLOAD_PATH: The path that you used in the config.ini file  
   MOUNT_PATH: The path on your PS4 where the saves will be mounted  
   GOOGLE_DRIVE_JSON_PATH: The path to the Google Drive Service Account json file  

@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
-from network import FTPps, SocketPS
+from network import FTPps, SocketPS, SDKeyUnsealer
 from utils.constants import (
-    IP, PORT, PORTSOCKET,
+    IP, PORT, PORTSOCKET, PORTSOCKET_SEALEDKEY,
     logger, Color, bot,
     embinit
 )
@@ -16,29 +16,50 @@ class Misc(commands.Cog):
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:
         await ctx.defer()
-        result = 0
         latency = self.bot.latency * 1000
+        result = 0
+
         C1ftp = FTPps(IP, PORT, None, None, None, None, None, None, None, None)
         C1socket = SocketPS(IP, PORTSOCKET)
+
+        ftp_result = socket_result = unsealer_result = "Unavailable"
 
         try:
             await C1ftp.testConnection()
             result += 1
+            ftp_result = "Available"
         except OSError as e:
             logger.exception(f"PING: FTP could not connect: {e}")
 
         try:
             await C1socket.testConnection()
             result += 1
+            socket_result = "Available"
         except OSError as e:
-            logger.exception(f"PING: SOCKET could not connect: {e}")
+            logger.exception(f"PING: SOCKET (Cecie) could not connect: {e}")
 
+        if PORTSOCKET_SEALEDKEY is not None:
+            unsealer = SDKeyUnsealer(IP, PORTSOCKET_SEALEDKEY)
+            try:
+                await unsealer.testConnection()
+                unsealer_result = "Available"
+            except OSError as e:
+                logger.exception(f"PING: SOCKET (SDKeyUnsealer) could not connect: {e}")
+
+        # this is for main functionality, SDKeyUnsealer is optional
         if result == 2:
             color = Color.GREEN.value
         else:
             color = Color.RED.value
         
-        embResult = discord.Embed(title=f"Connections: {result}/2\nLatency: {latency: .2f}ms", colour=color)
+        desc = (
+            f"FTP: {ftp_result}\n"
+            f"CECIE: {socket_result}\n"
+            f"SDKeyUnsealer: {unsealer_result}\n"
+            f"Latency: {latency: .2f}"
+        )
+
+        embResult = discord.Embed(title=desc, colour=color)
         embResult.set_footer(text="Made by hzh.")
         await ctx.respond(embed=embResult)
     

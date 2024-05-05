@@ -98,6 +98,12 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 
 //
 
+**sealed_key decrypt**: Accepts a .bin file that you can find in a save pair. It will return the secret key it contains.
+**Parameter**:
+- sealed_key, the file itself
+
+//
+
 **init**: Bot owner command to set up the bot panel to create threads
 
 //

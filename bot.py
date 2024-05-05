@@ -30,6 +30,7 @@ cogs_list = [
     "quick",
     "reregion",
     "resign",
+    "sealed_key",
     "sfo"
 ]
 

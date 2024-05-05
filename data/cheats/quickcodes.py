@@ -129,7 +129,8 @@ class QuickCodes:
                                 self.data[write:write + 4] = wv32
 
                             case "3" | "8":
-                                ... # Not Implemented! Add-Wrote 8 bytes (%08X) to 0x%X", val, off
+                                # Not Implemented! Add-Wrote 8 bytes (%08X) to 0x%X", val, off
+                                raise NotImplementedError
 
                             case "4" | "C":
                                 wv8 = np.uint8(write)
@@ -145,7 +146,8 @@ class QuickCodes:
                                 self.data[write:write + 4] = wv32
                             
                             case "7" | "F":
-                                ... # Not Implemented! Sub-Write 8 bytes (%08X) to 0x%X", val, off
+                                # Not Implemented! Sub-Write 8 bytes (%08X) to 0x%X", val, off
+                                raise NotImplementedError
                             
                     case "4":
                         off = np.intc(int(line[2:8], 16))
@@ -591,6 +593,8 @@ class QuickCodes:
                                 l -= 1
                                 line = self.lines[line_index + 1]
                                 line_index += 1
+            except NotImplementedError:
+                raise QuickCodesError("A code-type you entered has not yet been implemented!")
             except (ValueError, IOError, IndexError):
                 raise QuickCodesError("Invalid code!")
 
