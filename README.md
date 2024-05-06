@@ -79,7 +79,7 @@ This is a payload that enables the sealed_key decrypt command, it is optional to
 - Download the code from the bot and go to the .env file, edit it as follows:  
   IP: PS4 IP address  
   FTP_PORT: The port that your FTP payload uses  
-  CECIE_PORT: The port that you used in the config.ini file 
+  CECIE_PORT: The port that you used in the config.ini file  
   SDKEYUNSEALER_PORT: The port for the SDKeyUnsealer payload, it is optional
   UPLOAD_PATH: The path that you used in the config.ini file  
   MOUNT_PATH: The path on your PS4 where the saves will be mounted  
