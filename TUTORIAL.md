@@ -85,20 +85,20 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 
 //
 
-**sfo read**: Accepts a param.sfo file, the data it contains will be shown.
+**sfo read**: Accepts a param.sfo file, the data it contains will be shown.  
 **Parameters**:
 - sfo, the file itself
 
 //
 
-**sfo write**: Accepts a param.sfo file, you can patch the keys it contains
+**sfo write**: Accepts a param.sfo file, you can patch the keys it contains  
 **Parameters**:
 - sfo, the file itself
 - The rest of the parameters are keys in the param.sfo file that you can choose to patch
 
 //
 
-**sealed_key decrypt**: Accepts a .bin file that you can find in a save pair. It will return the secret key it contains.
+**sealed_key decrypt**: Accepts a .bin file that you can find in a save pair. It will return the secret key it contains.  
 **Parameter**:
 - sealed_key, the file itself
 
