@@ -67,7 +67,8 @@ How to obtain NPPSO:
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
 ### SDKeyUnsealer
-This is a payload that enables the sealed_key decrypt command, it is optional to run. The command itself is not so useful either. However, it is available if you want to experiment. Read the README.md if you want to set it up.
+This is a payload that enables the sealed_key decrypt command, it is optional to run. The command itself is not so useful either. However, it is available if you want to experiment. Read the README.md if you want to set it up.  
+https://github.com/hzhreal/SDKeyUnsealer
 
 ### Everything else
 - Download the pkg from https://github.com/Team-Alua/cecie.nim/releases/tag/v2.00 and install it on your PS4
