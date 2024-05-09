@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from network import FTPps, SocketPS, SDKeyUnsealer
 from utils.constants import (
-    IP, PORT, PORTSOCKET, PORTSOCKET_SEALEDKEY,
+    IP, PORT_FTP, PORT_CECIE, PORT_SDKEYUNSEALER,
     logger, Color, bot,
     embinit
 )
@@ -19,8 +19,8 @@ class Misc(commands.Cog):
         latency = self.bot.latency * 1000
         result = 0
 
-        C1ftp = FTPps(IP, PORT, None, None, None, None, None, None, None, None)
-        C1socket = SocketPS(IP, PORTSOCKET)
+        C1ftp = FTPps(IP, PORT_FTP, None, None, None, None, None, None, None, None)
+        C1socket = SocketPS(IP, PORT_CECIE)
 
         ftp_result = socket_result = unsealer_result = "Unavailable"
 
@@ -38,8 +38,8 @@ class Misc(commands.Cog):
         except OSError as e:
             logger.exception(f"PING: SOCKET (Cecie) could not connect: {e}")
 
-        if PORTSOCKET_SEALEDKEY is not None:
-            unsealer = SDKeyUnsealer(IP, PORTSOCKET_SEALEDKEY)
+        if PORT_SDKEYUNSEALER is not None:
+            unsealer = SDKeyUnsealer(IP, PORT_SDKEYUNSEALER)
             try:
                 await unsealer.testConnection()
                 unsealer_result = "Available"
@@ -53,10 +53,10 @@ class Misc(commands.Cog):
             color = Color.RED.value
         
         desc = (
-            f"FTP: {ftp_result}\n"
-            f"CECIE: {socket_result}\n"
-            f"SDKeyUnsealer: {unsealer_result}\n"
-            f"Latency: {latency: .2f}"
+            f"FTP: **{ftp_result}**\n"
+            f"CECIE: **{socket_result}**\n"
+            f"SDKeyUnsealer: **{unsealer_result}**\n"
+            f"Latency: **{latency: .2f}**"
         )
 
         embResult = discord.Embed(title=desc, colour=color)

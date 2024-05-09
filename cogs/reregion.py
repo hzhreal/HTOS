@@ -9,7 +9,7 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapiError
 from utils.constants import (
-    IP, PORT, PS_UPLOADDIR, PORTSOCKET, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC,
     XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
     logger, Color,
     embhttp, emb6, emb22, emb21, emb20
@@ -31,9 +31,9 @@ class ReRegion(commands.Cog):
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
-        C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
+        C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORTSOCKET)
+        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
         try:

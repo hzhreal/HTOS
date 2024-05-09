@@ -6,7 +6,7 @@ import aiofiles
 import aiofiles.os
 import utils.orbis as orbis
 # from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, logger, Color
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, logger, Color
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -31,13 +31,9 @@ class FTPps:
         self.PNGPATH = PNGPATH
     
     CHUNKSIZE = 15 * 1024 * 1024 # 15MB
-    PARAMSFO_NAME = "param.sfo"
-    KEYSTONE_NAME = "keystone"
-
     
     @staticmethod
     async def checkSysFileSize(ftp: aioftp.Client.context, file: str, keystone: bool) -> bool:
-        KEYSTONE_SIZE = 96
         file_data = await ftp.stat(file)
 
         file_type = file_data["type"]
@@ -89,7 +85,7 @@ class FTPps:
             raise FTPError("An unexpected error!")
         
     async def reregioner(self, mount_location: str, title_id: str, account_id: str) -> None:
-        paramPath = os.path.join(self.PARAM_PATH, self.PARAMSFO_NAME)
+        paramPath = os.path.join(self.PARAM_PATH, PARAM_NAME)
         location_to_scesys = mount_location + "/sce_sys"
         decFilesPath = "" # used by MGSV re regioning to change crypt
 
@@ -99,10 +95,10 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                if not await FTPps.checkSysFileSize(ftp, self.PARAMSFO_NAME, keystone=False): 
+                if not await FTPps.checkSysFileSize(ftp, PARAM_NAME, keystone=False): 
                     raise FTPError("Invalid param.sfo size!")
                 
-                await self.downloadStream(ftp, self.PARAMSFO_NAME, paramPath)
+                await self.downloadStream(ftp, PARAM_NAME, paramPath)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -127,34 +123,34 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                await self.uploadStream(ftp, paramPath, self.PARAMSFO_NAME)
+                await self.uploadStream(ftp, paramPath, PARAM_NAME)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
         
     async def retrievekeystone(self, location_to_scesys: str) -> None:
-        full_keystone_path = os.path.join(self.KEYSTONEDIR, self.KEYSTONE_NAME)
+        full_keystone_path = os.path.join(self.KEYSTONEDIR, KEYSTONE_NAME)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
             
-                if not await FTPps.checkSysFileSize(ftp, self.KEYSTONE_NAME, keystone=True):
+                if not await FTPps.checkSysFileSize(ftp, KEYSTONE_NAME, keystone=True):
                     raise FTPError("Invalid keystone size!")
                 
-                await self.downloadStream(ftp, self.KEYSTONE_NAME, full_keystone_path)
+                await self.downloadStream(ftp, KEYSTONE_NAME, full_keystone_path)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")
 
     async def keystoneswap(self, location_to_scesys: str) -> None:
-        full_keystone_path = os.path.join(self.KEYSTONEDIR, self.KEYSTONE_NAME)
+        full_keystone_path = os.path.join(self.KEYSTONEDIR, KEYSTONE_NAME)
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                await self.uploadStream(ftp, full_keystone_path, self.KEYSTONE_NAME)
+                await self.uploadStream(ftp, full_keystone_path, KEYSTONE_NAME)
 
         except aioftp.errors as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -176,15 +172,15 @@ class FTPps:
             raise FTPError("An unexpected error!")
 
     async def dlparam(self, location_to_scesys: str, account_id: str) -> None:
-        fullparam_dl = os.path.join(self.PARAM_PATH, self.PARAMSFO_NAME)
+        fullparam_dl = os.path.join(self.PARAM_PATH, PARAM_NAME)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                if not await FTPps.checkSysFileSize(ftp, self.PARAMSFO_NAME, keystone=False):
+                if not await FTPps.checkSysFileSize(ftp, PARAM_NAME, keystone=False):
                     raise FTPError("Invalid param.sfo size!")
                 
-                await self.downloadStream(ftp, self.PARAMSFO_NAME, fullparam_dl)
+                await self.downloadStream(ftp, PARAM_NAME, fullparam_dl)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -195,7 +191,7 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                await self.uploadStream(ftp, fullparam_dl, self.PARAMSFO_NAME)
+                await self.uploadStream(ftp, fullparam_dl, PARAM_NAME)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -217,16 +213,16 @@ class FTPps:
 
     async def dlparamonly_grab(self, location_to_scesys: str) -> None:
         param_local = self.PARAM_PATH
-        fullparam_dl = os.path.join(param_local, self.PARAMSFO_NAME)
+        fullparam_dl = os.path.join(param_local, PARAM_NAME)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                if not await FTPps.checkSysFileSize(ftp, self.PARAMSFO_NAME, keystone=False):
+                if not await FTPps.checkSysFileSize(ftp, PARAM_NAME, keystone=False):
                     raise FTPError("Invalid param.sfo size!")
 
-                fullparam_dl = os.path.join(param_local, self.PARAMSFO_NAME)
-                await self.downloadStream(ftp, self.PARAMSFO_NAME, fullparam_dl)
+                fullparam_dl = os.path.join(param_local, PARAM_NAME)
+                await self.downloadStream(ftp, PARAM_NAME, fullparam_dl)
 
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -403,11 +399,11 @@ class FTPps:
            pass
 
     async def upload_sfo(self, paramPath: str, location_to_scesys: str) -> None:
-        paramPath = os.path.join(paramPath, self.PARAMSFO_NAME)
+        paramPath = os.path.join(paramPath, PARAM_NAME)
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                await self.uploadStream(ftp, paramPath, self.PARAMSFO_NAME)
+                await self.uploadStream(ftp, paramPath, PARAM_NAME)
         except aioftp.errors.AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("An unexpected error!")

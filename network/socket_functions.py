@@ -7,7 +7,7 @@ class SocketError(Exception):
     self.message = message
 
 class SocketPS:
-  """Async functions to interact with cecie."""
+  """Async functions to mainly interact with cecie."""
   SUCCESS = '{"ResponseType": "srOk"}\r\n'
   def __init__(self, HOST: str, PORT: int, maxConnections: int = 16) -> None:
     self.HOST = HOST
@@ -56,10 +56,12 @@ class SocketPS:
       raise SocketError("Invalid save!")
     
 class SDKeyUnsealer(SocketPS):
+  """Interact with SDKeyUnsealer if used."""
   def __init__(self, HOST: str, PORT: int, maxConnections: int = 5) -> None:
     super().__init__(HOST, PORT, maxConnections)
-    self.DEC_KEY_LEN = 32
-    self.CHKS_LEN = 2
+    
+  DEC_KEY_LEN = 32
+  CHKS_LEN = 2
 
   async def send_tcp_message_with_response(self, data: bytearray | bytes) -> bytes | str | None:
     writer = None

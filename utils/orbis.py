@@ -5,7 +5,7 @@ import os
 import discord
 import asyncio
 import struct
-from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, Color
+from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, Color
 from utils.extras import generate_random_string
 from data.crypto.mgsv_crypt import Crypt_MGSV
 from dataclasses import dataclass
@@ -13,7 +13,6 @@ from numpy import uint32
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
-PARAM_NAME = "param.sfo"
 
 class OrbisError(Exception):
     """Exception raised for errors relating to Orbis."""

@@ -56,11 +56,11 @@ load_dotenv()
 
 # CONFIG
 IP = str(os.getenv("IP"))
-PORT = int(os.getenv("FTP_PORT"))
-PORTSOCKET = int(os.getenv("CECIE_PORT"))
-PORTSOCKET_SEALEDKEY = os.getenv("SDKEYUNSEALER_PORT")
-if PORTSOCKET_SEALEDKEY is not None:
-    PORTSOCKET_SEALEDKEY = int(PORTSOCKET_SEALEDKEY)
+PORT_FTP = int(os.getenv("FTP_PORT"))
+PORT_CECIE = int(os.getenv("CECIE_PORT"))
+PORT_SDKEYUNSEALER = os.getenv("SDKEYUNSEALER_PORT")
+if PORT_SDKEYUNSEALER is not None:
+    PORT_SDKEYUNSEALER = int(PORT_SDKEYUNSEALER)
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
@@ -130,6 +130,17 @@ SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 
 BASE_ERROR_MSG = "An unexpected error has occurred!"
+
+# ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
+
+ICON0_MAXSIZE = 0x1C800
+ICON0_FORMAT = (228, 128)
+ICON0_NAME = "icon0.png"
+
+KEYSTONE_SIZE = SEALED_KEY_ENC_SIZE = 0x60
+KEYSTONE_NAME = "keystone"
+
+PARAM_NAME = "param.sfo"
 
 # EMBEDS
 class Color(Enum):

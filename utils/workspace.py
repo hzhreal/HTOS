@@ -11,7 +11,7 @@ from ftplib import FTP, error_perm
 from network import FTPps
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
-    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT, MOUNT_LOCATION, PS_UPLOADDIR,
+    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
     DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger, Color
 )
 from utils.extras import generate_random_string
@@ -69,7 +69,7 @@ def startup():
 
     with FTP() as ftp:
         try:
-            ftp.connect(IP, PORT, timeout=10)
+            ftp.connect(IP, PORT_FTP, timeout=10)
             login_result = ftp.login()  # Call the login method and get its return value
             if login_result == "230 User logged in, proceed.":
                 try:

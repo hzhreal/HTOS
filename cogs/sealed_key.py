@@ -4,7 +4,31 @@ from io import BytesIO
 from network.socket_functions import SDKeyUnsealer, SocketError
 from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, BASE_ERROR_MSG, IP, PORTSOCKET_SEALEDKEY
+from utils.constants import logger, Color, BASE_ERROR_MSG, IP, PORT_SDKEYUNSEALER, SEALED_KEY_ENC_SIZE
+
+class PfsSKKey:
+    def __init__(self, data: bytearray) -> None:
+        assert len(data) == self.SIZE
+
+        self.MAGIC   = data[:0x08]
+        self.VERSION = data[0x08:0x10]
+        self.IV      = data[0x10:0x20]
+        self.KEY     = data[0x20:0x40]
+        self.SHA256  = data[0x40:0x60]
+
+        self.data    = data
+
+    SIZE = 0x60
+    MAGIC_VALUE = b"pfsSKKey"
+
+    def validate(self) -> bool:
+        if self.MAGIC != self.MAGIC_VALUE:
+            return False
+        return True
+    
+    def as_bytearray(self) -> bytearray:
+        return self.data
+        
 
 class Sealed_Key(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -25,21 +49,27 @@ class Sealed_Key(commands.Cog):
 
         await ctx.respond(embed=embLoad)
 
-        if sealed_key.size != 96:
-            e = "Invalid size: must be 96 bytes!"
+        if sealed_key.size != SEALED_KEY_ENC_SIZE:
+            e = f"Invalid size: must be {SEALED_KEY_ENC_SIZE} bytes!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return
         
-        elif PORTSOCKET_SEALEDKEY is None:
+        elif PORT_SDKEYUNSEALER is None:
             e = "Unavailable."
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return
 
         enc_key = bytearray(await sealed_key.read())
+        enc_key = PfsSKKey(enc_key)
+    
+        if not enc_key.validate():
+            e = f"Invalid sealed key!"
+            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            return
 
         try:
-            unsealer = SDKeyUnsealer(IP, PORTSOCKET_SEALEDKEY)
-            dec_key = await unsealer.upload_key(enc_key)
+            unsealer = SDKeyUnsealer(IP, PORT_SDKEYUNSEALER)
+            dec_key = await unsealer.upload_key(enc_key.as_bytearray())
 
             if isinstance(dec_key, str):
                 # this means error message, so raise expected error

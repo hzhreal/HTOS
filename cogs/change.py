@@ -8,9 +8,10 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapiError
 from utils.constants import (
-    IP, PORT, PS_UPLOADDIR, PORTSOCKET, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC,
     logger, Color,
-    embpng, embhttp, emb6, embpng1, embpng2, embTitleChange, embTitleErr
+    embpng, embhttp, emb6, embpng1, embpng2, embTitleChange, embTitleErr,
+    ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames, pngprocess
@@ -37,12 +38,11 @@ class Change(commands.Cog):
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
-        C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
+        C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORTSOCKET)
+        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
-        pngfile = os.path.join(newPNG_PATH, "icon0.png")
-        size = (228, 128)
+        pngfile = os.path.join(newPNG_PATH, ICON0_NAME)
 
         try:
             user_id = await psusername(ctx, playstation_id)
@@ -67,8 +67,11 @@ class Change(commands.Cog):
 
         if len(uploaded_file_paths) >= 2:
             # png handling
+            if picture.size > ICON0_MAXSIZE:
+                raise OrbisError(f"Icon0 exceeded max size of {ICON0_MAXSIZE}.")
             await picture.save(pngfile)
-            pngprocess(pngfile, size)
+            pngprocess(pngfile, ICON0_FORMAT)
+
             random_string = generate_random_string(RANDOMSTRING_LENGTH)
             uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
             for save in savenames:
@@ -151,9 +154,9 @@ class Change(commands.Cog):
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
-        C1ftp = FTPps(IP, PORT, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
+        C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORTSOCKET)
+        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
         try: 
