@@ -27,8 +27,7 @@ class PfsSKKey:
         return True
     
     def as_bytearray(self) -> bytearray:
-        return self.data
-        
+        return self.data       
 
 class Sealed_Key(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -63,7 +62,7 @@ class Sealed_Key(commands.Cog):
         enc_key = PfsSKKey(enc_key)
     
         if not enc_key.validate():
-            e = f"Invalid sealed key!"
+            e = "Invalid sealed key!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return
 
