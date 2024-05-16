@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import zlib
 import crc32c
+import os
 from data.crypto.common import CustomCrypto
 from Crypto.Cipher import Blowfish
 from typing import Literal
@@ -133,6 +134,9 @@ class Crypt_Ndog:
     
     @staticmethod
     async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
+        if os.path.basename(fileToEncrypt) in Crypt_Ndog.EXCLUDE:
+            return
+
         async with aiofiles.open(fileToEncrypt, "rb") as savegame:
             decrypted_data = bytearray(await savegame.read())
 

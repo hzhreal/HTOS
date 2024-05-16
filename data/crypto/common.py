@@ -70,7 +70,7 @@ class CustomCrypto:
         for entry in filelist:
             entry_path = os.path.join(folder, entry)
 
-            if await aiofiles.os.path.isfile(entry_path) and entry_path not in exclude:
+            if await aiofiles.os.path.isfile(entry_path) and entry not in exclude:
                 files.append(entry_path)
             elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(folder, "sce_sys"):
                 await CustomCrypto.obtainFiles(entry_path, exclude, files)
