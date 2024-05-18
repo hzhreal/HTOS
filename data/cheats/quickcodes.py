@@ -164,7 +164,7 @@ class QuickCodes:
                         incoff = np.intc(int(line[4:8], 16))
                         incval = np.uint32(int(line[9:17], 16))
 
-                        for i in range(len(n)):
+                        for i in range(n):
                             write = off + (incoff * i)
 
                             match t:
