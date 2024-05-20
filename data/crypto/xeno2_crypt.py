@@ -17,7 +17,7 @@ class Crypt_Xeno2:
             await decrypted_file.seek(-1, 2)
             decrypted_file_sub1 = await decrypted_file.tell() - 0x80
 
-            key_offset = await decrypted_file.read(1)[0]
+            key_offset = bytearray(await decrypted_file.read(1))[0]
             if key_offset not in Crypt_Xeno2.INTERNAL_KEY_OFFSETS:
                 raise CryptoError("KEY OFFSET NOT FOUND!")
 
@@ -27,8 +27,8 @@ class Crypt_Xeno2:
             new_key = AES.new(key, AES.MODE_CTR, initial_value=initial_value, nonce=b"")
             await decrypted_file.seek(0)
 
-            enc_header = AES.NEW(Crypt_Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await decrypted_file.read(0x80))
-            enc_save = new_key.encrypt(decrypted_file.read(decrypted_file_sub1) + b"\x00")
+            enc_header = AES.new(Crypt_Xeno2.SAVE_HEADER_KEY, AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=b"").decrypt(await decrypted_file.read(0x80))
+            enc_save = new_key.encrypt(await decrypted_file.read(decrypted_file_sub1) + b"\x00")
 
         md5_hash = hashlib.md5()
         md5_hash.update(enc_header)
@@ -66,8 +66,8 @@ class Crypt_Xeno2:
                 enc_data_test = await encrypted_file.read(16)
 
                 for key_offset in Crypt_Xeno2.INTERNAL_KEY_OFFSETS:
-                    key = dec_header[key_offset: key_offset + 0x20]
-                    initial_value = dec_header[key_offset + 0x20: key_offset + (0x20 + 0x10)]
+                    key = dec_header[key_offset:key_offset + 0x20]
+                    initial_value = dec_header[key_offset + 0x20:key_offset + (0x20 + 0x10)]
                     new_key = AES.new(key, AES.MODE_CTR, initial_value=initial_value, nonce=b"")
                     test_data = new_key.decrypt(enc_data_test)
 
