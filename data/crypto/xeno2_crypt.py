@@ -15,7 +15,7 @@ class Crypt_Xeno2:
     async def encryptFile(filePath: str) -> None:
         async with aiofiles.open(filePath, "rb") as decrypted_file:
             await decrypted_file.seek(-1, 2)
-            decrypted_file_sub1 = decrypted_file.tell() - 0x80
+            decrypted_file_sub1 = await decrypted_file.tell() - 0x80
 
             key_offset = await decrypted_file.read(1)[0]
             if key_offset not in Crypt_Xeno2.INTERNAL_KEY_OFFSETS:
