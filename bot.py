@@ -5,8 +5,10 @@ from utils.helpers import threadButton
 
 @bot.event
 async def on_ready() -> None:
+    from google_drive import checkGDrive
     startup()
     bot.add_view(threadButton()) # make view persistent
+    checkGDrive.start() # start gd daemon
     print(
         f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot"
     )
@@ -24,6 +26,7 @@ async def on_message(message: discord.Message) -> None:
 cogs_list = [
     "change",
     "convert",
+    #"createsave", im working on this, stay tuned
     "decrypt",
     "encrypt",
     "misc",

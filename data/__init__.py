@@ -18,3 +18,4 @@ from data.crypto.dl_crypt import Crypt_DL
 from data.crypto.rgg_crypt import Crypt_RGG
 from data.crypto.di2_crypt import Crypt_DI2
 from data.crypto.nms_crypt import Crypt_NMS
+from data.crypto.terraria_crypt import Crypt_Terraria

@@ -22,6 +22,18 @@ class CustomCrypto:
         return decrypted_data
     
     @staticmethod
+    def encrypt_aes_cbc(plaintext: bytes | bytearray, key: bytes | bytearray, iv: bytes | bytearray) -> bytes:
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        encrypted_data = cipher.encrypt(plaintext)
+        return encrypted_data
+    
+    @staticmethod
+    def decrypt_aes_cbc(ciphertext: bytes | bytearray, key: bytes | bytearray, iv: bytes | bytearray) -> bytes:
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        decrypted_data = cipher.decrypt(ciphertext)
+        return decrypted_data
+    
+    @staticmethod
     def encrypt_blowfish_ecb(plaintext: bytes | bytearray, key: bytes | bytearray) -> bytes:
         cipher = Blowfish.new(key, Blowfish.MODE_ECB)
         encrypted_data = cipher.encrypt(plaintext)

@@ -1,8 +1,8 @@
 import aiofiles
 import struct
-import re
 import numpy as np
 from typing import Literal
+from utils.constants import QC_RE
 
 # Example
 # 80010008 EA372703
@@ -56,7 +56,7 @@ class QuickCodes:
     
     @staticmethod
     def validate_code(line: str) -> bool:
-        return bool(re.match(r"^([0-9a-fA-F]){8} ([0-9a-fA-F]){8}$", line))
+        return bool(QC_RE.fullmatch(line))
 
     async def read_file(self) -> None:
         async with aiofiles.open(self.filePath, "rb") as savegame:

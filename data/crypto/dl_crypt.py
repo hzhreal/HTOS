@@ -26,12 +26,13 @@ class Crypt_DL:
             uncompressed_data = await savegame.read()
 
         # checksum handling in the future
-        if version == "DL1":
-            ...
-        elif version == "DL2":
-            ...
-        else:
-            ...
+        match version:
+            case "DL1":
+                ...
+            case "DL2":
+                ...
+            case "DI1":
+                ...
 
         compressed_data = gzip.compress(uncompressed_data)
 

@@ -1,6 +1,8 @@
 import os
 import discord
 import logging.config
+import re
+import errno
 from discord.ext import commands
 from dotenv import load_dotenv
 from enum import Enum
@@ -116,6 +118,7 @@ RGG_TITLEID = ["CUSA32173", "CUSA32174", "CUSA32171"]
 DI1_TITLEID = ["CUSA03291", "CUSA03290", "CUSA03684", "CUSA03685"]
 DI2_TITLEID = ["CUSA27043", "CUSA01104", "CUSA35681"]
 NMS_TITLEID = ["CUSA03952", "CUSA04841", "CUSA05777", "CUSA05965"]
+TERRARIA_TITLEID = ["CUSA00737", "CUSA00740"]
 
 # BOT CONFIG
 FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit
@@ -125,13 +128,13 @@ UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
 BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
 
-SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
-
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 
 BASE_ERROR_MSG = "An unexpected error has occurred!"
 
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
+
+SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
 
 ICON0_MAXSIZE = 0x1C800
 ICON0_FORMAT = (228, 128)
@@ -142,11 +145,24 @@ KEYSTONE_NAME = "keystone"
 
 PARAM_NAME = "param.sfo"
 
+SAVEBLOCKS_MAX = 2**15 # SAVESIZE WILL BE SAVEBLOCKS * 2¹⁵
+SAVESIZE_MAX = SAVEBLOCKS_MAX**2
+
+MAX_PATH_LEN = 1024
+MAX_FILENAME_LEN = 255
+
+# regex
+PSN_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+QC_RE = re.compile(r"^([0-9a-fA-F]){8} ([0-9a-fA-F]){8}$")
+
 # EMBEDS
 class Color(Enum):
     DEFAULT = 0x854bf7
     GREEN = 0x22EA0D
     RED = 0xF42B00
+
+# ERRNO
+CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETUNREACH]
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
@@ -281,3 +297,8 @@ loadSFO_emb.set_footer(text="Made by hzh.")
 
 finished_emb = discord.Embed(title="Finished", color=Color.DEFAULT.value)
 finished_emb.set_footer(text="Made by hzh.")
+
+loadkeyset_emb = discord.Embed(title="Initializing",
+                                 description="Obtaining keyset...",
+                                 color=Color.DEFAULT.value)
+loadkeyset_emb.set_footer(text="Made by hzh.")

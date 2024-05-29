@@ -1,4 +1,5 @@
 import asyncio
+import json
 from utils.constants import logger
 
 class SocketError(Exception):
@@ -14,7 +15,7 @@ class SocketPS:
     self.PORT = PORT
     self.semaphore = asyncio.Semaphore(maxConnections) # Maximum 16 mounts at once
   
-  async def send_tcp_message_with_response(self, message: str) -> str | None:
+  async def send_tcp_message_with_response(self, message: str) -> str:
     writer = None
     try:
       async with self.semaphore:
@@ -41,15 +42,29 @@ class SocketPS:
     writer.close()
     await writer.wait_closed()
 
-  async def socket_dump(self, random_string: str, savename: str) -> None: 
-    request = f'{{"RequestType": "rtDumpSave", "dump": {{"saveName": "{savename}", "targetFolder": "{random_string}", "selectOnly": []}}}}\r\n'
+  async def socket_dump(self, folder: str, savename: str) -> None: 
+    request = f'{{"RequestType": "rtDumpSave", "dump": {{"saveName": "{savename}", "targetFolder": "{folder}", "selectOnly": []}}}}\r\n'
     response = await self.send_tcp_message_with_response(request)
     
     if response != self.SUCCESS:
       raise SocketError("Invalid save!")
 
-  async def socket_update(self, random_string: str, savename: str) -> None: 
-    message = f'{{"RequestType": "rtUpdateSave", "update": {{"saveName": "{savename}", "sourceFolder": "{random_string}", "selectOnly": []}}}}\r\n'
+  async def socket_update(self, folder: str, savename: str) -> None: 
+    message = f'{{"RequestType": "rtUpdateSave", "update": {{"saveName": "{savename}", "sourceFolder": "{folder}", "selectOnly": []}}}}\r\n'
+    response = await self.send_tcp_message_with_response(message)
+
+    if response != self.SUCCESS:
+      raise SocketError("Invalid save!")
+  
+  async def socket_keyset(self) -> int:
+    message = '{"RequestType": "rtKeySet"}\r\n'
+    response = await self.send_tcp_message_with_response(message)
+    parsed_response = json.loads(response)
+
+    return parsed_response["keyset"]
+  
+  async def socket_createsave(self, folder: str, savename: str, blocks: int) -> None:
+    message = f'{{"RequestType": "rtCreateSave", "create": {{"saveName": "{savename}", "sourceFolder": "{folder}", "blocks": {blocks}, "selectOnly": []}}}}\r\n'
     response = await self.send_tcp_message_with_response(message)
 
     if response != self.SUCCESS:
@@ -63,7 +78,7 @@ class SDKeyUnsealer(SocketPS):
   DEC_KEY_LEN = 32
   CHKS_LEN = 2
 
-  async def send_tcp_message_with_response(self, data: bytearray | bytes) -> bytes | str | None:
+  async def send_tcp_message_with_response(self, data: bytearray | bytes) -> bytes | str:
     writer = None
     try:
       async with self.semaphore:
@@ -91,14 +106,14 @@ class SDKeyUnsealer(SocketPS):
         writer.close()
         await writer.wait_closed()
 
-  async def upload_key(self, enc_key: bytearray) -> bytes | str | None:
+  async def upload_key(self, enc_key: bytearray) -> bytes | str:
     chks_val = self.chks(enc_key)
     enc_key.extend(chks_val)
 
     response = await self.send_tcp_message_with_response(enc_key)
     return response
       
-  def parse_response(self, response: bytes) -> bytes | str | None:
+  def parse_response(self, response: bytes) -> bytes | str:
     if len(response) == self.DEC_KEY_LEN + self.CHKS_LEN:
       # check if checksum is correct
       chks_val = self.chks(bytearray(response[:self.DEC_KEY_LEN]))

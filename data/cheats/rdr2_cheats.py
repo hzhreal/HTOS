@@ -87,7 +87,7 @@ class Cheats_RDR2:
             self.helper.done = True
 
     @staticmethod
-    async def initSavefile(filePath: str) -> str | None:
+    async def initSavefile(filePath: str) -> str:
         try:
             async with aiofiles.open(filePath, "rb") as file:
                 await file.seek(crypt.RDR2_PC_HEADER_OFFSET)
@@ -137,7 +137,7 @@ class Cheats_RDR2:
             raise QuickCheatsError("File not supported!")
     
     @staticmethod
-    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict[str, str] | None:
+    async def fetchStats(filePath: str, platform: Literal["ps4", "pc"]) -> dict[str, str]:
         stats = {}
         try:
             async with aiofiles.open(filePath, "rb") as savegame:

@@ -7,17 +7,17 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
-from google_drive import GDapiError
+from google_drive import GDapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, CON_FAIL,
     logger, Color,
-    embhttp, emb6, emb14
+    emb6, emb14
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
 from utils.helpers import psusername, upload2, errorHandling, send_final
-from utils.orbis import obtainCUSA, OrbisError
+from utils.orbis import obtainCUSA, parse_pfs_header, OrbisError
 from utils.exceptions import PSNIDError, FileError
 from utils.helpers import replaceDecrypted
 
@@ -48,13 +48,13 @@ class Encrypt(commands.Cog):
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
             await ctx.edit(embed=emb14)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
+            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
-            await ctx.edit(embed=embhttp)
-            cleanupSimple(workspaceFolders)
+            err = GDapi.getErrStr_HTTPERROR(e)
+            await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
-        except (PSNIDError, TimeoutError, GDapiError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -73,8 +73,10 @@ class Encrypt(commands.Cog):
                 realSave = f"{save}_{random_string}"
                 random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
                 try:
-                    await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
-                    await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
+                    pfs_path = os.path.join(newUPLOAD_ENCRYPTED, save)
+                    pfs_header = await parse_pfs_header(pfs_path)
+                    await aiofiles.os.rename(pfs_path, os.path.join(newUPLOAD_ENCRYPTED, realSave))
+                    await aiofiles.os.rename(pfs_path + ".bin", os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
 
                     embmo = discord.Embed(title="Encryption & Resigning process: Initializing",
                         description=f"Mounting {save}.",
@@ -95,7 +97,7 @@ class Encrypt(commands.Cog):
                     await C1ftp.dlparamonly_grab(location_to_scesys)
                     title_id = await obtainCUSA(newPARAM_PATH)
  
-                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save)
+                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save, pfs_header["size"])
 
                     if include_sce_sys:
                         if len(await aiofiles.os.listdir(newUPLOAD_DECRYPTED)) > 0:
@@ -105,13 +107,12 @@ class Encrypt(commands.Cog):
                         embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{save}",
                             description="Please attach the sce_sys files you want to upload.",
                             colour=Color.DEFAULT.value)
-                        embSceSys.set_thumbnail(url="https://cdn.discordapp.com/avatars/248104046924267531/743790a3f380feaf0b41dd8544255085.png?size=1024")
                         embSceSys.set_footer(text="Made by hzh.")
 
                         await ctx.edit(embed=embSceSys)
-                        uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False)
+                        uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
 
-                        if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths) >= 1:
+                        if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths_sys) >= 1:
                             filesToUpload = await aiofiles.os.listdir(newUPLOAD_DECRYPTED)
                             await C1ftp.upload_scesysContents(ctx, filesToUpload, location_to_scesys)
                         
@@ -131,12 +132,12 @@ class Encrypt(commands.Cog):
 
                     await ctx.edit(embed=embmidComplete)
                 except HTTPError as e:
-                    await ctx.edit(embed=embhttp)
-                    cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+                    err = GDapi.getErrStr_HTTPERROR(e)
+                    await errorHandling(ctx, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
-                except (SocketError, FTPError, OrbisError, FileError, CryptoError, OSError) as e:
-                    if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
+                except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError) as e:
+                    if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = "PS4 not connected!"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
@@ -158,9 +159,8 @@ class Encrypt(commands.Cog):
 
             try: 
                 await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
-            except HTTPError as e:
-                errmsg = "HTTPError while uploading file to Google Drive, if problem reoccurs storage may be full."
-                await errorHandling(ctx, errmsg, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            except GDapiError as e:
+                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 

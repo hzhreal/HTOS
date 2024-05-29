@@ -175,7 +175,7 @@ class Crypt_Ndog:
 
     @staticmethod
     async def checkEnc_ps(fileName: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        if fileName in Crypt_Ndog.EXCLUDE:
+        if os.path.basename(fileName) in Crypt_Ndog.EXCLUDE:
             return
 
         async with aiofiles.open(fileName, "rb") as savegame:

@@ -1,14 +1,16 @@
 import discord
 from discord.ui.item import Item
+from types import SimpleNamespace
 from data.crypto import CryptoError
 from utils.helpers import TimeoutHelper
 from utils.constants import (
     logger, Color, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
-    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID
+    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
+    TERRARIA_TITLEID
 )
 
-async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: type, title_id: str, destination_directory: str, savePairName: str) -> None:
+async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
     embedTimeout = discord.Embed(title="Timeout Error:", 
                                  description="You took too long, sending the file with the format: Encrypted",
                                  colour=Color.DEFAULT.value)
@@ -67,6 +69,8 @@ async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: type, title_id:
                         await Crypto.DI2.decryptFile(destination_directory)
                     case "NMS":
                         await Crypto.NMS.decryptFile(destination_directory)
+                    case "TERRARIA":
+                        await Crypto.TERRARIA.decryptFile(destination_directory)
             except CryptoError as e:
                 raise CryptoError(e)
             except (ValueError, IOError, IndexError):
@@ -134,8 +138,12 @@ async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: type, title_id:
     elif title_id in NMS_TITLEID:
         await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NMS", start_offset=None, title_id=None))
         await helper.await_done()
+    
+    elif title_id in TERRARIA_TITLEID:
+        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA", start_offset=None, title_id=None))
+        await helper.await_done()
 
-async def extra_import(Crypto: type, title_id: str, file_name: str) -> None:
+async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
             await Crypto.Rstar.checkEnc_ps(file_name, GTAV_TITLEID)
@@ -184,6 +192,9 @@ async def extra_import(Crypto: type, title_id: str, file_name: str) -> None:
 
         elif title_id in NMS_TITLEID:
             await Crypto.NMS.checkEnc_ps(file_name)
+        
+        elif title_id in TERRARIA_TITLEID:
+            await Crypto.TERRARIA.checkEnc_ps(file_name)
 
     except CryptoError as e:
         raise CryptoError(e)

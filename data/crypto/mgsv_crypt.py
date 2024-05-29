@@ -26,7 +26,7 @@ class Crypt_MGSV:
     HEADER_GZ = b"gz"
 
     @staticmethod
-    def crypt_data(data: list[int], length: int, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> bytearray:
+    def crypt_data(data: list[int], length: int, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> list[int]:
         key = Crypt_MGSV.KEYS[title_id]["key"]
 
         for i in range(length >> 2):

@@ -1,1 +1,1 @@
-from .gd_functions import GDapi, GDapiError
+from .gd_functions import checkGDrive, GDapi, GDapiError

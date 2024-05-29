@@ -7,6 +7,7 @@ import aiosqlite
 import discord
 import aiofiles
 import aiofiles.os
+from typing import Literal
 from ftplib import FTP, error_perm
 from network import FTPps
 from utils.constants import (
@@ -189,7 +190,7 @@ def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
 
     return fileList
 
-async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
+async def listStoredSaves(ctx: discord.ApplicationContext) -> str:
     """Lists the saves in the stored folder, used in the quick resign command."""
     gameList = await aiofiles.os.listdir(STORED_SAVES_FOLDER)
     description = ""
@@ -227,7 +228,7 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str | None:
 
     await ctx.edit(embed=embList)
 
-    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> int | bool:
+    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> Literal["EXIT"] | bool:
         if message.author == ctx.author and message.channel == ctx.channel:
             if message.content == "EXIT":
                 return message.content

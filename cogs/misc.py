@@ -1,17 +1,52 @@
 import discord
 from discord.ext import commands
-from network import FTPps, SocketPS, SDKeyUnsealer
+from network import FTPps, SocketPS, SDKeyUnsealer, SocketError
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PORT_SDKEYUNSEALER,
+    IP, PORT_FTP, PORT_CECIE, PORT_SDKEYUNSEALER, CON_FAIL,
     logger, Color, bot,
-    embinit
+    embinit, loadkeyset_emb,
+    BASE_ERROR_MSG
 )
-from utils.helpers import threadButton
-from utils.workspace import fetchall_threadid_db, delall_threadid_db, WorkspaceError
+from utils.helpers import threadButton, errorHandling
+from utils.workspace import fetchall_threadid_db, delall_threadid_db, WorkspaceError, makeWorkspace
+from utils.orbis import keyset_to_fw
 
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+
+    info_group = discord.SlashCommandGroup("info")
+
+    @info_group.command(description="Display the maximum firmware/keyset the hoster's console can mount/unmount a save from.")
+    async def keyset(self, ctx: discord.ApplicationContext) -> None:
+        workspaceFolders = []
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        except WorkspaceError: return
+
+        await ctx.respond(embed=loadkeyset_emb)
+
+        C1socket = SocketPS(IP, PORT_CECIE)
+
+        try:
+            keyset = await C1socket.socket_keyset()
+            fw = keyset_to_fw(keyset)
+
+            keyset_emb = discord.Embed(title="Success",
+                                 description=f"Keyset: {keyset}\nFW: {fw}",
+                                 color=Color.DEFAULT.value)
+            keyset_emb.set_footer(text="Made by hzh.")   
+            await ctx.edit(embed=keyset_emb)
+
+        except (SocketError, OSError) as e:
+            if isinstance(e, OSError) and e.errno in CON_FAIL:
+                e = "PS4 not connected!"
+            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            return
+        except Exception as e:
+            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            return
 
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:

@@ -6,18 +6,19 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
-from google_drive import GDapiError
+from google_drive import GDapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, CON_FAIL,
     logger, Color,
-    embhttp, emb6, embDecrypt1
+    emb6, embDecrypt1
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
 from utils.helpers import upload2, errorHandling, send_final
 from utils.orbis import obtainCUSA, OrbisError
 from utils.namespaces import Crypto
+from utils.exceptions import FileError
 
 class Decrypt(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -42,13 +43,13 @@ class Decrypt(commands.Cog):
 
         await ctx.respond(embed=embDecrypt1)
         try:
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True)
+            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
-            await ctx.edit(embed=embhttp)
-            cleanupSimple(workspaceFolders)
+            err = GDapi.getErrStr_HTTPERROR(e)
+            await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
-        except (TimeoutError, GDapiError) as e:
+        except (TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -110,7 +111,7 @@ class Decrypt(commands.Cog):
                     await ctx.edit(embed=emb13)
 
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:
-                    if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
+                    if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = "PS4 not connected!"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
@@ -139,9 +140,8 @@ class Decrypt(commands.Cog):
 
             try: 
                 await send_final(ctx, zip_name, newDOWNLOAD_DECRYPTED)
-            except HTTPError as e:
-                errmsg = "HTTPError while uploading file to Google Drive, if problem reoccurs storage may be full."
-                await errorHandling(ctx, errmsg, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            except GDapiError as e:
+                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
             

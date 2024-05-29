@@ -104,6 +104,17 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 
 //
 
+**createsave**: Create a save from scratch, will resign aswell. Follow instructions by bot on how to upload the files to put inside the save.
+**Parameters**:  
+- savename, the name you want to give the save  
+- saveblocks, the size of the save (saveblocks * 2¹⁵) 
+
+//
+
+**info keyset**: Display the max the maximum keyset the hoster's console can mount/unmount and the firmware version associated
+
+//
+
 **init**: Bot owner command to set up the bot panel to create threads
 
 //

@@ -42,7 +42,7 @@ class Converter_Rstar:
             await file.write(chks_bytes)
 
     @staticmethod
-    async def convertFile_GTAV(filePath: str) -> str | None:
+    async def convertFile_GTAV(filePath: str) -> str:
         try:
             async with aiofiles.open(filePath, "rb") as file:
                 await file.seek(crypt.GTAV_PC_HEADER_OFFSET)

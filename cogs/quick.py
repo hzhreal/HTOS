@@ -7,12 +7,12 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
-from google_drive import GDapiError
+from google_drive import GDapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL,
     logger, Color,
-    emb_upl_savegame, embhttp, embTimedOut
+    emb_upl_savegame, embTimedOut
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
 from utils.extras import generate_random_string
@@ -20,6 +20,7 @@ from utils.helpers import psusername, upload2, errorHandling, TimeoutHelper, sen
 from utils.orbis import OrbisError
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
+from utils.exceptions import FileError
 
 class Quick(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -92,7 +93,7 @@ class Quick(commands.Cog):
             await ctx.edit(embed=emb5)
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
-            if isinstance(e, OSError) and hasattr(e, "winerror") and e.winerror == 121: 
+            if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = "PS4 not connected!"
             elif isinstance(e, OrbisError): 
                 logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
@@ -113,9 +114,8 @@ class Quick(commands.Cog):
 
         try: 
             await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
-        except HTTPError as e:
-            errmsg = "HTTPError while uploading file to Google Drive, if problem reoccurs storage may be full."
-            await errorHandling(ctx, errmsg, workspaceFolders, files, mountPaths, C1ftp)
+        except GDapiError as e:
+            await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 
@@ -139,13 +139,13 @@ class Quick(commands.Cog):
         await ctx.respond(embed=emb_upl_savegame)
 
         try:
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False)
+            uploaded_file_paths = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False)
         except HTTPError as e:
-            await ctx.edit(embed=embhttp)
-            cleanupSimple(workspaceFolders)
+            err = GDapi.getErrStr_HTTPERROR(e)
+            await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
-        except (TimeoutError, GDapiError) as e:
+        except (TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -202,9 +202,8 @@ class Quick(commands.Cog):
 
         try: 
             await send_final(ctx, "savegame_CodeApplied.zip", newUPLOAD_DECRYPTED)
-        except HTTPError as e:
-            errmsg = "HTTPError while uploading file to Google Drive, if problem reoccurs storage may be full."
-            await errorHandling(ctx, errmsg, workspaceFolders, None, None, None)
+        except GDapiError as e:
+            await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 

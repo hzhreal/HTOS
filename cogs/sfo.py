@@ -1,10 +1,9 @@
 import discord
 import asyncio
-import aiofiles
-import os
+from io import BytesIO
 from discord import Option
 from discord.ext import commands
-from utils.workspace import makeWorkspace, WorkspaceError, cleanupSimple, initWorkspace
+from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, SYS_FILE_MAX, BASE_ERROR_MSG, loadSFO_emb, finished_emb
 from utils.orbis import SFOContext, OrbisError, PARAM_NAME
@@ -19,10 +18,8 @@ class SFO_Editor(SFOContext):
         self.sfo_read(self.sfo_data)
         self.param_data = self.sfo_get_param_data()
     
-    async def write(self, path: str) -> None:
+    def write(self) -> None:
         self.sfo_data = self.sfo_write()
-        async with aiofiles.open(path, "wb") as sfo_file:
-            await sfo_file.write(self.sfo_data)
 
     def dict_embed(self) -> list[discord.Embed]:
         embeds = []
@@ -112,12 +109,10 @@ class SFO(commands.Cog):
             "SUBTITLE": subtitle,
             "TITLE_ID": title_id
         }
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
-                            newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
+        workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
-        end_sfo_path = os.path.join(newPARAM_PATH, PARAM_NAME)
+
         await ctx.respond(embed=loadSFO_emb)
 
         if sfo.size / (1024 * 1024) > SYS_FILE_MAX:
@@ -138,10 +133,10 @@ class SFO(commands.Cog):
                         sfo_ctx.sfo_patch_account_id(val)
                     case _:
                         sfo_ctx.sfo_patch_parameter(key, val)
-            await sfo_ctx.write(end_sfo_path)
+            sfo_ctx.write()
 
             await ctx.edit(embed=finished_emb)
-            await ctx.respond(file=discord.File(end_sfo_path))
+            await ctx.respond(file=discord.File(BytesIO(sfo_ctx.sfo_data), filename=sfo.filename))
         except OrbisError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
@@ -151,7 +146,7 @@ class SFO(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
 
-        cleanupSimple(workspaceFolders)
+        # cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(SFO(bot))

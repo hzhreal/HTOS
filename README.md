@@ -46,6 +46,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Dead Island 1 (compression only)         |
 | Dead Island 2 (compression only)         |
 | No Man's Sky (savedata.hg)               |
+| Terraria (.plr & some .wld)              |
 
 If you wanna contribute to this list, please let me know!
 

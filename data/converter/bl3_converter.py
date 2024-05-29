@@ -62,7 +62,7 @@ class BL3_conv_button(discord.ui.View):
 
 class Converter_BL3:
     @staticmethod
-    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool) -> str | None:
+    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool) -> str:
         async with aiofiles.open(filePath, "rb") as savegame:
             original_saveData = await savegame.read()
         
