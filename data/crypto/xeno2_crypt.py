@@ -73,8 +73,9 @@ class Crypt_Xeno2:
 
                     if test_data.startswith(Crypt_Xeno2.HEADER):
                         break
-                    else:
-                        raise CryptoError("INTERNAL SAVE ENCRYPTION KEY NOT FOUND!")
+
+                else:
+                    raise CryptoError("INTERNAL SAVE ENCRYPTION KEY NOT FOUND!")
                     
                 await encrypted_file.seek(0x20 + 0x80)
                 new_key = AES.new(key, AES.MODE_CTR, initial_value=initial_value, nonce=b"")
