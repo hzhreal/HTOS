@@ -5,7 +5,7 @@ import os
 import discord
 import asyncio
 import struct
-from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, Color
+from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, Color
 from utils.extras import generate_random_string
 from data.crypto.mgsv_crypt import Crypt_MGSV
 from dataclasses import dataclass
@@ -13,6 +13,10 @@ from numpy import uint32
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
+
+SAVEDIR_RE = re.compile(r"^[a-zA-Z0-9\-.\@]+$")
+TITLE_ID_RE = re.compile(r"^CUSA\d{5}$")
+ACCID_RE = re.compile(r"^[0-9a-fA-F]+$")
 
 class OrbisError(Exception):
     """Exception raised for errors relating to Orbis."""
@@ -172,6 +176,7 @@ class SFOContext:
             new_data_utf8 = new_data.encode("utf-8", errors="ignore")
             if param.max_length > len(new_data_utf8): # last byte is for null terminating
                 param.value = new_data_utf8
+                param.length = len(new_data_utf8) + 1
             else:
                 raise OrbisError(f"{parameter} max length ({param.max_length}) exceeded in param.sfo! Remember, last byte is reserved for this parameter.")
 
@@ -189,9 +194,34 @@ class SFOContext:
 
             param_data.append(param.as_dict())
         return param_data
+    
+def keyset_to_fw(keyset: int) -> str:
+    match keyset:
+        case 1:
+            return "Any"
+        case 2:
+            return "4.50+"
+        case 3:
+            return "4.70+"
+        case 4:
+            return "5.00+"
+        case 5:
+            return "5.50+"
+        case 6:
+            return "6.00+"
+        case 7:
+            return "6.50+"
+        case 8:
+            return "7.00+"
+        case 9:
+            return "7.50+"
+        case 10:
+            return "8.00+"
+        case _:
+            return "?"
 
 def checkid(accid: str) -> bool:
-    if len(accid) != 16 or not bool(re.match("^[0-9a-fA-F]+$", accid)):
+    if len(accid) != 16 or not bool(ACCID_RE.fullmatch(accid)):
         return False
     else:
         return True
@@ -203,15 +233,32 @@ def handle_accid(user_id: str) -> str:
 
     return user_id
     
-async def checkSaves(ctx: discord.ApplicationContext, attachments: discord.message.Attachment, ps_save_pair_upload: bool, sys_files: bool) -> list:
+async def checkSaves(
+          ctx: discord.ApplicationContext, 
+          attachments: list[discord.message.Attachment], 
+          ps_save_pair_upload: bool, 
+          sys_files: bool, 
+          ignore_filename_check: bool, 
+          savesize: int | None = None
+        ) -> list[discord.message.Attachment]:
+
     """Handles file checks universally through discord upload."""
     valid_files = []
+    total_count = 0
     if ps_save_pair_upload:
         valid_files = await save_pair_check(ctx, attachments)
         return valid_files
 
     for attachment in attachments:
-        if attachment.size > FILE_LIMIT_DISCORD:
+        if len(attachment.filename) > MAX_FILENAME_LEN and not ignore_filename_check:
+            embfn = discord.Embed(title="Upload alert: Error",
+                    description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
+                    colour=Color.DEFAULT.value)
+            embfn.set_footer(text="Made by hzh.")
+            await ctx.edit(embed=embfn)
+            await asyncio.sleep(1)
+
+        elif attachment.size > FILE_LIMIT_DISCORD:
             embFileLarge = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
                     colour=Color.DEFAULT.value)
@@ -226,21 +273,42 @@ async def checkSaves(ctx: discord.ApplicationContext, attachments: discord.messa
             embnvSys.set_footer(text="Made by hzh.")
             await ctx.edit(embed=embnvSys)
             await asyncio.sleep(1)
+
+        elif total_count > savesize:
+            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
         
-        else: valid_files.append(attachment)
+        else: 
+            total_count += attachment.size
+            valid_files.append(attachment)
     
     return valid_files
 
-async def save_pair_check(ctx: discord.ApplicationContext, attachments: discord.message.Attachment) -> list:
-    """Maimport aiofiles.ospathkes sure the save pair through discord upload is valid."""
+async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
+    """Makes sure the save pair through discord upload is valid."""
     valid_attachments_check1 = []
     for attachment in attachments:
-        filename = attachment.filename
-        size = attachment.size
-        if filename.endswith(".bin"):
-            if size != 96:
+        path_len = len(PS_UPLOADDIR + "/" + attachment.filename + "/")
+
+        if len(attachment.filename) > MAX_FILENAME_LEN:
+            embfn = discord.Embed(title="Upload alert: Error",
+                    description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
+                    colour=Color.DEFAULT.value)
+            embfn.set_footer(text="Made by hzh.")
+            await ctx.edit(embed=embfn)
+            await asyncio.sleep(1)
+
+        elif path_len > MAX_PATH_LEN:
+            embpn = discord.Embed(title="Upload alert: Error",
+                    description=f"Sorry, the path '{attachment.filename}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
+                    colour=Color.DEFAULT.value)
+            embpn.set_footer(text="Made by hzh.")
+            await ctx.edit(embed=embpn)
+            await asyncio.sleep(1)
+
+        elif attachment.filename.endswith(".bin"):
+            if attachment.size != SEALED_KEY_ENC_SIZE:
                 embnvBin = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{filename}' is not 96 bytes.",
+                    description=f"Sorry, the file size of '{attachment.filename}' is not {SEALED_KEY_ENC_SIZE} bytes.",
                     colour=Color.DEFAULT.value)
                 embnvBin.set_footer(text="Made by hzh.")
                 await ctx.edit(embed=embnvBin)
@@ -248,9 +316,9 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: discord.
             else:
                 valid_attachments_check1.append(attachment)
         else:
-            if size > FILE_LIMIT_DISCORD:
+            if attachment.size > FILE_LIMIT_DISCORD:
                 embFileLarge = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file size of '{filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
+                        description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
                         colour=Color.DEFAULT.value)
                 embFileLarge.set_footer(text="Made by hzh.")
                 await ctx.edit(embed=embFileLarge)
@@ -260,21 +328,19 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: discord.
     
     valid_attachments_final = []
     for attachment in valid_attachments_check1:
-        filename = attachment.filename
-        if filename.endswith(".bin"): # look for corresponding file
-
+        if attachment.filename.endswith(".bin"): # look for corresponding file
             for attachment_nested in valid_attachments_check1:
                 filename_nested = attachment_nested.filename
-                if filename_nested == filename: continue
+                if filename_nested == attachment.filename: continue
 
-                elif filename_nested == os.path.splitext(filename)[0]:
+                elif filename_nested == os.path.splitext(attachment.filename)[0]:
                     valid_attachments_final.append(attachment)
                     valid_attachments_final.append(attachment_nested)
                     break
     
     return valid_attachments_final 
 
-async def obtainCUSA(param_path: str) -> str | None:
+async def obtainCUSA(param_path: str) -> str:
     """Obtains TITLE_ID from sfo file."""
     param_local_path = os.path.join(param_path, PARAM_NAME)
 
@@ -295,11 +361,11 @@ async def obtainCUSA(param_path: str) -> str | None:
     return title_id
 
 def check_titleid(titleid: str) -> bool:
-    return bool(re.match(r'^CUSA\d{5}$', titleid))
+    return bool(TITLE_ID_RE.fullmatch(titleid))
 
 async def resign(paramPath: str, account_id: str) -> None:
     """Traditional resigning."""
-    async with aiofiles.open(paramPath, "r+b") as file_param:
+    async with aiofiles.open(paramPath, "rb") as file_param:
         sfo_data = bytearray(await file_param.read())
 
     context = SFOContext()
@@ -407,3 +473,28 @@ async def handleTitles(paramPath: str, account_id: str, maintitle: str, subtitle
 
     async with aiofiles.open(paramPath, "wb") as file_param:
         await file_param.write(new_sfo_data)
+
+def validate_savedirname(savename: str) -> bool:
+    return bool(SAVEDIR_RE.fullmatch(savename))
+
+# Thanks to https://github.com/B-a-t-a-n-g for showing me how to parse the header
+async def parse_pfs_header(pfs_path: str) -> dict[str, int]:
+    async with aiofiles.open(pfs_path, "rb") as pfs:
+        await pfs.seek(0x20)
+        basic_block_size = struct.unpack("<I", await pfs.read(0x04))[0]
+
+        await pfs.seek(0x38)
+        data_block_count = struct.unpack("<Q", await pfs.read(0x08))[0]
+
+    expected_file_size = basic_block_size * data_block_count
+    actual_file_size = await aiofiles.os.path.getsize(pfs_path)
+
+    if expected_file_size != actual_file_size:
+        raise OrbisError(f"Expected savesize {expected_file_size} but got {actual_file_size} for file {os.path.basename(pfs_path)}!")
+
+    pfs_header = {
+        "basic_block_size": basic_block_size,
+        "data_block_count": data_block_count,
+        "size": expected_file_size | actual_file_size
+    }
+    return pfs_header
