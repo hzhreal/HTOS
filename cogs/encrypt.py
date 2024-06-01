@@ -110,7 +110,7 @@ class Encrypt(commands.Cog):
                         embSceSys.set_footer(text="Made by hzh.")
 
                         await ctx.edit(embed=embSceSys)
-                        uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
+                        uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_header["size"])
 
                         if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths_sys) >= 1:
                             filesToUpload = await aiofiles.os.listdir(newUPLOAD_DECRYPTED)

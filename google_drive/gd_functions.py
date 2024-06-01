@@ -145,7 +145,7 @@ class GDapi:
                 await ctx.edit(embed=embnvSys)
                 await asyncio.sleep(1)
 
-            elif total_count > savesize:
+            elif savesize is not None and total_count > savesize:
                 raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
             
             else:
@@ -483,7 +483,7 @@ class GDapi:
             file_size = entry["filesize"]
             total_count += file_size
 
-        if total_count > savesize:
+        if savesize is not None and total_count > savesize:
             raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
 
         async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:

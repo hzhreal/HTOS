@@ -274,7 +274,7 @@ async def checkSaves(
             await ctx.edit(embed=embnvSys)
             await asyncio.sleep(1)
 
-        elif total_count > savesize:
+        elif savesize is not None and total_count > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
         
         else: 
