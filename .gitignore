@@ -11,3 +11,4 @@ logs
 network/__pycache__
 utils/__pycache__
 UserSaves
+*.sh
