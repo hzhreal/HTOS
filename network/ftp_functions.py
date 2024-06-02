@@ -5,6 +5,7 @@ import shutil
 import aiofiles
 import aiofiles.os
 import utils.orbis as orbis
+from aioftp.errors import AIOFTPException
 # from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
 from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, logger, Color
 
@@ -52,6 +53,11 @@ class FTPps:
         elif size > SYS_FILE_MAX or size == 0:
             return False
         return True
+    
+    @staticmethod
+    async def free_ctx(ftp: aioftp.Client) -> None:
+        await ftp.quit()
+        ftp.close()
         
     async def downloadStream(self, ftp: aioftp.Client, file_to_download: str, recieve_path: str) -> None:
         # Download the file
@@ -80,7 +86,7 @@ class FTPps:
                 local_file_path_replace = os.path.join(self.UPLOAD_DECRYPTED_REPLACE, replaceName)
                 await self.uploadStream(ftp, local_file_path_replace, replaceName)
                 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -100,7 +106,7 @@ class FTPps:
                 
                 await self.downloadStream(ftp, PARAM_NAME, paramPath)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -125,7 +131,7 @@ class FTPps:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, paramPath, PARAM_NAME)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -141,7 +147,7 @@ class FTPps:
                 
                 await self.downloadStream(ftp, KEYSTONE_NAME, full_keystone_path)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -167,7 +173,7 @@ class FTPps:
                     encrypted_local = os.path.join(self.UPLOAD_ENCRYPTED_PATH, files)
                     await self.uploadStream(ftp, encrypted_local, files)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -182,7 +188,7 @@ class FTPps:
                 
                 await self.downloadStream(ftp, PARAM_NAME, fullparam_dl)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -193,7 +199,7 @@ class FTPps:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, fullparam_dl, PARAM_NAME)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -207,7 +213,7 @@ class FTPps:
 
                 await ftp.remove(savenames_bin)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -224,7 +230,7 @@ class FTPps:
                 fullparam_dl = os.path.join(param_local, PARAM_NAME)
                 await self.downloadStream(ftp, PARAM_NAME, fullparam_dl)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -233,7 +239,7 @@ class FTPps:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.remove(folder_path)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -243,7 +249,7 @@ class FTPps:
                 await ftp.make_directory(folder1)
                 await ftp.make_directory(folder2)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -252,7 +258,7 @@ class FTPps:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.make_directory(path)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -265,7 +271,7 @@ class FTPps:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, full_pngpath, pngname)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
     
@@ -279,7 +285,7 @@ class FTPps:
             if ignoreSceSys: 
                 shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -291,7 +297,7 @@ class FTPps:
             
             logger.info(f"Uploaded {local_path} to {folderpath}")
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
             
@@ -320,7 +326,7 @@ class FTPps:
             if reregion: 
                 await orbis.reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")   
             
@@ -335,28 +341,27 @@ class FTPps:
                     basename = os.path.basename(file)
                     await self.uploadStream(ftp, file, basename)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
     async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list[str], sce_sysPath: str) -> None:
-        
-        for filepath in filepaths:
-            fullPath = os.path.join(self.UPLOAD_DECRYPTED_REPLACE, filepath)
-            embSuccess = discord.Embed(title="Upload alert: Successful", 
-                                       description=f"File '{filepath}' has been successfully uploaded and saved.", 
-                                       colour=Color.DEFAULT.value)            
-            embSuccess.set_footer(text="Made by hzh.")
+        try:
+            async with aioftp.Client.context(self.IP, self.PORT) as ftp:
+                await ftp.change_directory(sce_sysPath)
+                for filepath in filepaths:
+                    filename = os.path.basename(filepath)
+                    embSuccess = discord.Embed(title="Upload alert: Successful", 
+                                            description=f"File '{filename}' has been successfully uploaded and saved.", 
+                                            colour=Color.DEFAULT.value)            
+                    embSuccess.set_footer(text="Made by hzh.")
 
-            try:
-                async with aioftp.Client.context(self.IP, self.PORT) as ftp:
-                    await ftp.change_directory(sce_sysPath)
-                    await self.uploadStream(ftp, fullPath, filepath)
-
+                    await self.uploadStream(ftp, filepath, filename)
                     await ctx.edit(embed=embSuccess)
-            except aioftp.errors.AIOFTPException as e:
-                logger.error(f"[FTP ERROR]: {e}")
-                raise FTPError("FTP ERROR!")
+
+        except AIOFTPException as e:
+            logger.error(f"[FTP ERROR]: {e}")
+            raise FTPError("FTP ERROR!")
     
     async def ftpListContents(self, mountpath: str) -> list[str]:
         files = []
@@ -365,7 +370,7 @@ class FTPps:
                 await ftp.change_directory(mountpath)
                 async for path in ftp.list(recursive=True):
                     files.append(path)
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
@@ -390,7 +395,7 @@ class FTPps:
                     if (await ftp.exists(fileName)):
                         await ftp.remove(fileName)
 
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
@@ -404,13 +409,15 @@ class FTPps:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, paramPath, PARAM_NAME)
-        except aioftp.errors.AIOFTPException as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
         
     async def create_ctx(self) -> aioftp.Client:
         try:
-            return aioftp.Client.context(self.IP, self.PORT)
-        except aioftp.errors.AIOFTPException as e:
+            ctx = aioftp.Client()
+            await ctx.connect(self.IP, self.PORT)
+            return ctx
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR: CONNECTION FAIL!")
