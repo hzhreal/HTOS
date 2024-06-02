@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from utils.orbis import PfsSKKey
+
 import asyncio
 import json
 from utils.constants import logger
@@ -9,13 +14,12 @@ class SocketError(Exception):
 
 class SocketPS:
   """Async functions to mainly interact with cecie."""
-  SUCCESS = '{"ResponseType": "srOk"}\r\n'
   def __init__(self, HOST: str, PORT: int, maxConnections: int = 16) -> None:
     self.HOST = HOST
     self.PORT = PORT
     self.semaphore = asyncio.Semaphore(maxConnections) # Maximum 16 mounts at once
-  
-  async def send_tcp_message_with_response(self, message: str) -> str:
+  SUCCESS = "srOk"
+  async def send_tcp_message_with_response(self, message: str, deserialize: bool = True) -> str | bytes:
     writer = None
     try:
       async with self.semaphore:
@@ -26,7 +30,9 @@ class SocketPS:
         response = await reader.read(1024)
 
         logger.info(response)
-        return response.decode("utf-8")
+        if deserialize:
+          response = json.loads(response)
+        return response
     
     except (ConnectionError, asyncio.TimeoutError) as e:
       logger.error(f"An error occured while sending tcp message (Cecie): {e}")
@@ -43,95 +49,71 @@ class SocketPS:
     await writer.wait_closed()
 
   async def socket_dump(self, folder: str, savename: str) -> None: 
-    request = f'{{"RequestType": "rtDumpSave", "dump": {{"saveName": "{savename}", "targetFolder": "{folder}", "selectOnly": []}}}}\r\n'
+    request = json.dumps({
+      "RequestType": "rtDumpSave", 
+      "dump": {
+        "saveName": savename, 
+        "targetFolder": folder, 
+        "selectOnly": []
+      }
+    }) + "\r\n"
+
     response = await self.send_tcp_message_with_response(request)
     
-    if response != self.SUCCESS:
-      raise SocketError("Invalid save!")
+    if response.get("ResponseType") != self.SUCCESS:
+      raise SocketError(response.get("code", "Failed to dump save!"))
 
   async def socket_update(self, folder: str, savename: str) -> None: 
-    message = f'{{"RequestType": "rtUpdateSave", "update": {{"saveName": "{savename}", "sourceFolder": "{folder}", "selectOnly": []}}}}\r\n'
+    message = json.dumps({
+      "RequestType": "rtUpdateSave", 
+      "update": {
+        "saveName": savename, 
+        "sourceFolder": folder, 
+        "selectOnly": []
+      }
+    }) + "\r\n"
+
     response = await self.send_tcp_message_with_response(message)
 
-    if response != self.SUCCESS:
-      raise SocketError("Invalid save!")
+    if response.get("ResponseType") != self.SUCCESS:
+      raise SocketError(response.get("code", "Failed to update save!"))
   
   async def socket_keyset(self) -> int:
-    message = '{"RequestType": "rtKeySet"}\r\n'
+    message = json.dumps({
+      "RequestType": "rtKeySet"
+    }) + "\r\n"
+
     response = await self.send_tcp_message_with_response(message)
     parsed_response = json.loads(response)
 
-    return parsed_response["keyset"]
+    return parsed_response.get("keyset", "FAIL!")
   
   async def socket_createsave(self, folder: str, savename: str, blocks: int) -> None:
-    message = f'{{"RequestType": "rtCreateSave", "create": {{"saveName": "{savename}", "sourceFolder": "{folder}", "blocks": {blocks}, "selectOnly": []}}}}\r\n'
+    message = json.dumps({
+      "RequestType": "rtCreateSave",
+      "create": {
+        "saveName": savename,
+        "sourceFolder": folder,
+        "blocks": blocks
+      }
+    }) + "\r\n"
+
     response = await self.send_tcp_message_with_response(message)
 
-    if response != self.SUCCESS:
-      raise SocketError("Invalid save!")
+    if response.get("ResponseType") != self.SUCCESS:
+      raise SocketError(response.get("code", "Failed to create a save!"))
     
-class SDKeyUnsealer(SocketPS):
-  """Interact with SDKeyUnsealer if used."""
-  def __init__(self, HOST: str, PORT: int, maxConnections: int = 5) -> None:
-    super().__init__(HOST, PORT, maxConnections)
+  async def socket_decryptsdkey(self, sealed_key: PfsSKKey) -> None:
+    message = json.dumps({
+      "RequestType": "rtDecryptSealedKey",
+      "decsdkey": {
+        "sealedKey": sealed_key.as_array()
+      }
+    }) + "\r\n"
+
+    response = await self.send_tcp_message_with_response(message)
+
+    if response.get("ResponseType") == "srInvalid":
+      raise SocketError("Failed to decrypt sealed key!")
     
-  DEC_KEY_LEN = 32
-  CHKS_LEN = 2
-
-  async def send_tcp_message_with_response(self, data: bytearray | bytes) -> bytes | str:
-    writer = None
-    try:
-      async with self.semaphore:
-        reader, writer = await asyncio.open_connection(self.HOST, self.PORT)
-        writer.write(data)
-        await writer.drain()
-      
-        response = await reader.read(1024)
-
-        logger.info(response)
-        parsed_response = self.parse_response(response)
-
-        return parsed_response
-    
-    except (ConnectionError, asyncio.TimeoutError) as e:
-      logger.error(f"An error occured while sending tcp message (SDKeyUnsealer): {e}")
-      raise SocketError("Error communicating with socket.")
-    
-    except (SocketError) as e:
-      logger.error(f"An error occured while sending tcp message (SDKeyUnsealer, expected): {e}")
-      raise SocketError(e)
-    
-    finally:
-      if writer is not None:
-        writer.close()
-        await writer.wait_closed()
-
-  async def upload_key(self, enc_key: bytearray) -> bytes | str:
-    chks_val = self.chks(enc_key)
-    enc_key.extend(chks_val)
-
-    response = await self.send_tcp_message_with_response(enc_key)
-    return response
-      
-  def parse_response(self, response: bytes) -> bytes | str:
-    if len(response) == self.DEC_KEY_LEN + self.CHKS_LEN:
-      # check if checksum is correct
-      chks_val = self.chks(bytearray(response[:self.DEC_KEY_LEN]))
-      response_chks = response[self.DEC_KEY_LEN:self.DEC_KEY_LEN + self.CHKS_LEN]
-
-      if chks_val != response_chks:
-        raise SocketError("Invalid checksum!")
-      
-      return response[:self.DEC_KEY_LEN]
-      
-    return response.decode("utf-8")
-
-  @staticmethod
-  def chks(data: bytearray) -> bytes:
-    data_sum = 0
-    for byte in data:
-      data_sum += byte
-    data_sum &= 0xFF
-    data_hexstr = (hex(data_sum)[2:]).encode("utf-8")
-
-    return data_hexstr
+    sealed_key.dec_key.extend(json.loads(response["json"]))
