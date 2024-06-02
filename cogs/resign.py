@@ -8,7 +8,7 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color,
     embEncrypted1, emb6
 )
@@ -89,7 +89,7 @@ class Resign(commands.Cog):
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
-                        e = "PS4 not connected!"
+                        e = CON_FAIL_MSG
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return

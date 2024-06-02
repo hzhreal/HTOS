@@ -10,7 +10,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, CON_FAIL,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color,
     emb6, emb14
 )
@@ -113,8 +113,7 @@ class Encrypt(commands.Cog):
                         uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_header["size"])
 
                         if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths_sys) >= 1:
-                            filesToUpload = await aiofiles.os.listdir(newUPLOAD_DECRYPTED)
-                            await C1ftp.upload_scesysContents(ctx, filesToUpload, location_to_scesys)
+                            await C1ftp.upload_scesysContents(ctx, uploaded_file_paths_sys, location_to_scesys)
                         
                     location_to_scesys = mount_location_new + "/sce_sys"
                     await C1ftp.dlparam(location_to_scesys, user_id)
@@ -138,7 +137,7 @@ class Encrypt(commands.Cog):
                     return
                 except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError) as e:
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
-                        e = "PS4 not connected!"
+                        e = CON_FAIL_MSG
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return

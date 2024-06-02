@@ -14,7 +14,7 @@ from network import FTPps
 # from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
     logger, Color, bot, psnawp, 
-    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH,
+    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG,
     embgdt, embUtimeout, embnt, embnv1, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
@@ -71,13 +71,20 @@ class threadButton(discord.ui.View):
         except discord.Forbidden as e:
             logger.error(f"Can not clear old thread: {e}")
 
-async def errorHandling(ctx: discord.ApplicationContext, error: str, workspaceFolders: list[str], uploaded_file_paths: list[str], mountPaths: list[str], C1ftp: FTPps) -> None:
+async def errorHandling(
+          ctx: discord.ApplicationContext, 
+          error: str, 
+          workspaceFolders: list[str], 
+          uploaded_file_paths: list[str] | None, 
+          mountPaths: list[str] | None, 
+          C1ftp: FTPps | None
+        ) -> None:
     embe = discord.Embed(title="Error",
                             description=error,
                     colour=Color.DEFAULT.value)
     embe.set_footer(text="Made by hzh.")
     await ctx.edit(embed=embe)
-    if C1ftp is not None:
+    if (uploaded_file_paths is not None) and (mountPaths is not None) and (C1ftp is not None) and error != CON_FAIL_MSG:
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
     else:
         cleanupSimple(workspaceFolders)
@@ -232,7 +239,7 @@ async def upload2_special(ctx: discord.ApplicationContext, saveLocation: str, ma
                 raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
             
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
-            os.makedirs(dir_path)
+            await aiofiles.os.makedirs(dir_path, exist_ok=True)
             full_path = os.path.join(dir_path, file_name)
 
             await attachment.save(full_path)

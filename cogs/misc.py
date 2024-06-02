@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
-from network import FTPps, SocketPS, SDKeyUnsealer, SocketError
+from network import FTPps, SocketPS, SocketError
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PORT_SDKEYUNSEALER, CON_FAIL,
+    IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG,
     logger, Color, bot,
     embinit, loadkeyset_emb,
     BASE_ERROR_MSG
@@ -39,7 +39,7 @@ class Misc(commands.Cog):
 
         except (SocketError, OSError) as e:
             if isinstance(e, OSError) and e.errno in CON_FAIL:
-                e = "PS4 not connected!"
+                e = CON_FAIL_MSG
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -57,7 +57,7 @@ class Misc(commands.Cog):
         C1ftp = FTPps(IP, PORT_FTP, None, None, None, None, None, None, None, None)
         C1socket = SocketPS(IP, PORT_CECIE)
 
-        ftp_result = socket_result = unsealer_result = "Unavailable"
+        ftp_result = socket_result = "Unavailable"
 
         try:
             await C1ftp.testConnection()
@@ -73,15 +73,6 @@ class Misc(commands.Cog):
         except OSError as e:
             logger.exception(f"PING: SOCKET (Cecie) could not connect: {e}")
 
-        if PORT_SDKEYUNSEALER is not None:
-            unsealer = SDKeyUnsealer(IP, PORT_SDKEYUNSEALER)
-            try:
-                await unsealer.testConnection()
-                unsealer_result = "Available"
-            except OSError as e:
-                logger.exception(f"PING: SOCKET (SDKeyUnsealer) could not connect: {e}")
-
-        # this is for main functionality, SDKeyUnsealer is optional
         if result == 2:
             color = Color.GREEN.value
         else:
@@ -90,8 +81,7 @@ class Misc(commands.Cog):
         desc = (
             f"FTP: **{ftp_result}**\n"
             f"CECIE: **{socket_result}**\n"
-            f"SDKeyUnsealer: **{unsealer_result}**\n"
-            f"Latency: **{latency: .2f}**"
+            f"Latency: **{latency: .2f}** ms"
         )
 
         embResult = discord.Embed(title=desc, colour=color)

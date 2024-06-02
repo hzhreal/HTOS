@@ -10,7 +10,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color,
     emb_upl_savegame, embTimedOut
 )
@@ -94,7 +94,7 @@ class Quick(commands.Cog):
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
             if isinstance(e, OSError) and e.errno in CON_FAIL:
-                e = "PS4 not connected!"
+                e = CON_FAIL_MSG
             elif isinstance(e, OrbisError): 
                 logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
             await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)

@@ -60,9 +60,6 @@ load_dotenv()
 IP = str(os.getenv("IP"))
 PORT_FTP = int(os.getenv("FTP_PORT"))
 PORT_CECIE = int(os.getenv("CECIE_PORT"))
-PORT_SDKEYUNSEALER = os.getenv("SDKEYUNSEALER_PORT")
-if PORT_SDKEYUNSEALER is not None:
-    PORT_SDKEYUNSEALER = int(PORT_SDKEYUNSEALER)
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
@@ -163,6 +160,7 @@ class Color(Enum):
 
 # ERRNO
 CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETUNREACH]
+CON_FAIL_MSG = "PS4 not connected!"
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",

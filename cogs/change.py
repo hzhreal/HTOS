@@ -8,7 +8,7 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color,
     embpng, emb6, embpng1, embpng2, embTitleChange, embTitleErr,
     ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME
@@ -102,7 +102,7 @@ class Change(commands.Cog):
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
-                        e = "PS4 not connected!"
+                        e = CON_FAIL_MSG
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
@@ -116,7 +116,7 @@ class Change(commands.Cog):
             else: finishedFiles = ", ".join(savenames)
 
             embPdone = discord.Embed(title="PNG process: Successful",
-                                description=f"Altered the save png of **{finishedFiles} and resigned to {playstation_id or user_id}**.",
+                                description=f"Altered the save png of **{finishedFiles}** and resigned to '*{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
             embPdone.set_footer(text="Made by hzh.")
 
@@ -216,7 +216,7 @@ class Change(commands.Cog):
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
-                        e = "PS4 not connected!"
+                        e = CON_FAIL_MSG
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
@@ -230,7 +230,7 @@ class Change(commands.Cog):
             else: finishedFiles = ", ".join(savenames)
 
             embTdone = discord.Embed(title="Title altering process: Successful",
-                                description=f"Altered the save titles of **{finishedFiles}**, and resigned to ***{playstation_id or user_id}**.",
+                                description=f"Altered the save titles of **{finishedFiles}**, and resigned to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
             embTdone.set_footer(text="Made by hzh.")
 

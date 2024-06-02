@@ -5,8 +5,8 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, SYS_FILE_MAX, BASE_ERROR_MSG, loadSFO_emb, finished_emb
-from utils.orbis import SFOContext, OrbisError, PARAM_NAME
+from utils.constants import logger, Color, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
+from utils.orbis import SFOContext, OrbisError
 
 class SFO_Editor(SFOContext):
     """Discord utilities to parse and patch param.sfo."""
@@ -27,7 +27,7 @@ class SFO_Editor(SFOContext):
         for param in p_data:
             paramEmb = discord.Embed(colour=Color.DEFAULT.value)
             for key, val in param.items():
-                if key == "value": 
+                if key == "value":
                     continue
                 paramEmb.add_field(name=key.upper(),
                                 value=val,
@@ -81,16 +81,16 @@ class SFO(commands.Cog):
               self, 
               ctx: discord.ApplicationContext, 
               sfo: discord.Attachment,
-              account_id: Option(int, description="uint64", default=""), # type: ignore
-              attribute: Option(int, description="uint32", default=""), # type: ignore
+              account_id: Option(str, description="uint64 (hexadecimal)", default="", max_length=2 + 16), # type: ignore
+              attribute: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
               category: Option(str, description="utf-8", default=""), # type: ignore
               detail: Option(str, description="utf-8", default=""), # type: ignore
               format: Option(str, description="utf-8", default=""), # type: ignore
               maintitle: Option(str, description="utf-8", default=""), # type: ignore
               params: Option(str, description="utf-8-special", default=""), # type: ignore
-              savedata_blocks: Option(str, description="utf-8-special", default=""), # type: ignore
+              savedata_blocks: Option(int, description="uint64", default="", min_value=1, max_value=SAVEBLOCKS_MAX), # type: ignore
               savedata_directory: Option(str, description="utf-8", default=""), # type: ignore
-              savedata_list_param: Option(int, description="uint32", default=""), # type: ignore
+              savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
               subtitle: Option(str, description="utf-8", default=""), # type: ignore
               title_id: Option(str, description="utf-8", default="") # type: ignore
             ) -> None:
@@ -128,11 +128,7 @@ class SFO(commands.Cog):
             for key, val in parameters.items():
                 if not val: 
                     continue
-                match key:
-                    case "ACCOUNT_ID":
-                        sfo_ctx.sfo_patch_account_id(val)
-                    case _:
-                        sfo_ctx.sfo_patch_parameter(key, val)
+                sfo_ctx.sfo_patch_parameter(key, val)
             sfo_ctx.write()
 
             await ctx.edit(embed=finished_emb)
@@ -142,7 +138,11 @@ class SFO(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            if isinstance(e, ValueError):
+                err = "Invalid value inputted!"
+            else:
+                err = BASE_ERROR_MSG
+            await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
 
