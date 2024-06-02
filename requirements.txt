@@ -11,3 +11,4 @@ crc32c
 numpy
 zstandard
 lz4
+python-dateutil
