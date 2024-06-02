@@ -3,12 +3,14 @@ import discord
 import asyncio
 import json
 import aiofiles
+import aiofiles.os
 import re
 import datetime
 import utils.orbis as orbis
 from discord.ext import tasks
 from dotenv import load_dotenv
 from aiogoogle import Aiogoogle, HTTPError
+from dateutil import parser
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, logger, Color
 
 load_dotenv()
@@ -24,7 +26,7 @@ async def checkGDrive() -> None:
     for file in files:
         file_id = file["id"]
 
-        created_time = datetime.datetime.fromisoformat(file["createdTime"]) # RFC3339
+        created_time = parser.isoparse(file["createdTime"]) # RFC3339
         day_ahead = created_time + datetime.timedelta(days=1)
 
         if cur_time.date() >= day_ahead.date():
@@ -161,11 +163,14 @@ class GDapi:
             file_name = file_info["filename"]
             file_size = file_info["filesize"]
             file_id = file_info["fileid"]
-            path_len = len(PS_UPLOADDIR + "/" + file_name + "/")
 
-            if len(file_name) > MAX_FILENAME_LEN:
+            filename = file_name + f"_{'X' * RANDOMSTRING_LENGTH}"
+            filename_len = len(filename)
+            path_len = len(PS_UPLOADDIR + "/" + filename + "/")
+
+            if filename_len > MAX_FILENAME_LEN:
                 embfn = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file name of '{file_name}' ({len(file_name)}) exceeds {MAX_FILENAME_LEN}.",
+                        description=f"Sorry, the file name of '{file_name}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
                         colour=Color.DEFAULT.value)
                 embfn.set_footer(text="Made by hzh.")
                 await ctx.edit(embed=embfn)
@@ -494,7 +499,7 @@ class GDapi:
                 file_id = file["fileid"]
 
                 download_path = os.path.join(dst_local_dir, file_path)
-                os.makedirs(os.path.dirname(download_path), exist_ok=True)
+                await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
 
                 # Download the file
                 await aiogoogle.as_service_account(
