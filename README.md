@@ -67,13 +67,9 @@ How to obtain NPPSO:
 - Find {"npsso":"<64 character npsso code>"}
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
-### SDKeyUnsealer
-This is a payload that enables the sealed_key decrypt command, it is optional to run. The command itself is not so useful either. However, it is available if you want to experiment. Read the README.md if you want to set it up.  
-https://github.com/hzhreal/SDKeyUnsealer
-
 ### Everything else
-- Download the pkg from https://github.com/Team-Alua/cecie.nim/releases/tag/v2.00 and install it on your PS4
-- Download the config.ini file from https://github.com/Team-Alua/cecie.nim/blob/main/examples/config.ini and edit it with your desired 
+- Download the pkg from https://github.com/hzhreal/cecie.nim/releases/tag/v3.00 and install it on your PS4
+- Download the config.ini file from https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini and edit it with your desired 
   socket port and upload folder (path on PS4)
 - Upload the config.ini file to /data/cecie on your PS4.
 - Set up a Google Drive Service Account and grab the json file with the key 
@@ -82,7 +78,6 @@ https://github.com/hzhreal/SDKeyUnsealer
   IP: PS4 IP address  
   FTP_PORT: The port that your FTP payload uses  
   CECIE_PORT: The port that you used in the config.ini file  
-  SDKEYUNSEALER_PORT: The port for the SDKeyUnsealer payload, it is optional
   UPLOAD_PATH: The path that you used in the config.ini file  
   MOUNT_PATH: The path on your PS4 where the saves will be mounted  
   GOOGLE_DRIVE_JSON_PATH: The path to the Google Drive Service Account json file  
@@ -93,7 +88,7 @@ https://github.com/hzhreal/SDKeyUnsealer
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run bot.py
 - Do /init in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
-- Make sure you are running the pkg and the SDKeyUnsealer payload (optional)
+- Make sure you are running the pkg
 - Enjoy!
   
 ### Disclaimers
