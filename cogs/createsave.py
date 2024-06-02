@@ -4,22 +4,33 @@ import asyncio
 import os
 import shutil
 from discord.ext import commands
-from discord import Option
+from discord import Option, OptionChoice
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, SocketError, FTPError
 from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, PARAM_NAME, CON_FAIL,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
     Color, logger
 )
-from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup, cleanupSimple
+from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
 from utils.helpers import errorHandling, upload2, send_final, psusername, upload2_special
-from utils.orbis import resign, obtainCUSA, validate_savedirname, OrbisError
+from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError
 from utils.extras import generate_random_string
 from utils.exceptions import PSNIDError, FileError
 from utils.namespaces import Crypto
+
+# comment out the option you do not need
+savesize_presets = [
+    OptionChoice("25 MB", 25 * 1024**2 / SAVEBLOCKS_MAX),
+    OptionChoice("50 MB", 50 * 1024**2 / SAVEBLOCKS_MAX),
+    OptionChoice("75 MB", 75 * 1024**2 / SAVEBLOCKS_MAX),
+    OptionChoice("100 MB", 100 * 1024**2 / SAVEBLOCKS_MAX),
+]
+saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will deterine savesize (blocks * {SAVEBLOCKS_MAX})."
+saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
+saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=1, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
 
 class CreateSave(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -30,7 +41,7 @@ class CreateSave(commands.Cog):
               self, 
               ctx: discord.ApplicationContext, 
               savename: Option(str, description="The name of the save."), # type: ignore
-              saveblocks: Option(int, description=f"Max is {SAVEBLOCKS_MAX}, the value you put in will deterine savesize (blocks * {SAVEBLOCKS_MAX})."), # type: ignore
+              saveblocks: saveblocks_annotation, # type: ignore
               playstation_id: Option(str, description=PS_ID_DESC, default="") # type: ignore
             ) -> None:
         
@@ -45,7 +56,8 @@ class CreateSave(commands.Cog):
         mountPaths = []
         DISC_UPL_SPLITVALUE = "SLASH"
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
-        os.makedirs(scesys_local)
+        savesize = saveblocks * SAVEBLOCKS_MAX
+        await aiofiles.os.makedirs(scesys_local)
         
         embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{savename}",
                                   description="Please attach the sce_sys files you want to upload.",
@@ -66,12 +78,19 @@ class CreateSave(commands.Cog):
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
 
+            # value checks
             if not validate_savedirname(savename):
                 raise OrbisError("Invalid savename!")
-            elif saveblocks > SAVEBLOCKS_MAX:
-                raise OrbisError(f"Saveblocks limit of {SAVEBLOCKS_MAX} exceeded!")
-            
-            savesize = saveblocks * SAVEBLOCKS_MAX
+
+            # length checks
+            filename_bin = f"{savename}.bin_{'X' * RANDOMSTRING_LENGTH}"
+            filename_bin_len = len(filename_bin)
+            path_len = len(PS_UPLOADDIR + "/" + filename_bin + "/")
+
+            if filename_bin_len > MAX_FILENAME_LEN:
+                raise OrbisError(f"The length of the savename will exceed {MAX_FILENAME_LEN}!")
+            elif path_len > MAX_PATH_LEN:
+                raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
 
             # handle sce_sys first
             await ctx.edit(embed=embSceSys)
@@ -82,7 +101,7 @@ class CreateSave(commands.Cog):
 
             # next, other files (gamesaves)
             await ctx.edit(embed=embgs)
-            uploaded_file_paths = await upload2_special(ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
+            uploaded_file_paths_special = await upload2_special(ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(ctx, err, workspaceFolders, None, None, None)
@@ -97,15 +116,13 @@ class CreateSave(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
+        uploaded_file_paths = []
         # we dont care enough to add check if any gamesaves were uploaded
         try:
-            local_scesys_files = [os.path.join(scesys_local, filename) for filename in await aiofiles.os.listdir(scesys_local)]
-            sfo_path = os.path.join(scesys_local, PARAM_NAME)
-
-            await resign(sfo_path, user_id)
+            await handleTitles(scesys_local, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = await obtainCUSA(scesys_local)
             
-            for gamesave in uploaded_file_paths:
+            for gamesave in uploaded_file_paths_special:
                 embsl = discord.Embed(title=f"Gamesaves: Second layer\n{gamesave}",
                                   description="Checking for supported second layer encryption/compression...",
                                   colour=Color.DEFAULT.value)
@@ -122,15 +139,17 @@ class CreateSave(commands.Cog):
             mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
             location_to_scesys = mount_location_new + "/" + "sce_sys"
 
-            await C1socket.socket_createsave(PS_UPLOADDIR, savename, saveblocks)
+            await C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)
+            uploaded_file_paths.extend([temp_savename, f"{savename}_{random_string}.bin"])
             
             # now mount save and get ready to upload files to it
             await C1ftp.make1(mount_location_new)
+            await C1ftp.make1(location_to_scesys)
             mountPaths.append(mount_location_new)
             await C1socket.socket_dump(mount_location_new, temp_savename)
 
             # yh uploaded now! make sure all sce_sys files are uploaded with var
-            await C1ftp.upload_scesysContents(ctx, local_scesys_files, location_to_scesys)
+            await C1ftp.upload_scesysContents(ctx, uploaded_file_paths_sys, location_to_scesys)
             shutil.rmtree(scesys_local)
             await C1ftp.ftp_upload_folder(mount_location_new, newUPLOAD_DECRYPTED)
 
@@ -138,17 +157,16 @@ class CreateSave(commands.Cog):
             
             # make paths for save
             save_dirs = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4", "SAVEDATA", user_id, title_id)
-            os.makedirs(save_dirs)
+            await aiofiles.os.makedirs(save_dirs)
 
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
             await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename))
-            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + "bin", os.path.join(save_dirs, savename + ".bin"))
-            await ftp_ctx.quit()
-            ftp_ctx.close()
+            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+            await C1ftp.free_ctx(ftp_ctx)
         except (SocketError, FTPError, OSError, OrbisError) as e:
             if isinstance(e, OSError) and e.errno in CON_FAIL:
-                e = "PS4 not connected!"
+                e = CON_FAIL_MSG
             await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
