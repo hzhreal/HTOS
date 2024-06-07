@@ -11,6 +11,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Convert gamesaves from PS4 to PC or vice versa (some games require extra conversion, those implemented are in table below) 
 - Add quick cheats to your games (available games are in table below)
 - Apply save wizard quick codes to your saves
+- Create saves from scratch
 
 ## Functionalities
 - File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
