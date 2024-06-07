@@ -23,10 +23,10 @@ from utils.namespaces import Crypto
 
 # comment out the option you do not need
 savesize_presets = [
-    OptionChoice("25 MB", 25 * 1024**2 / SAVEBLOCKS_MAX),
-    OptionChoice("50 MB", 50 * 1024**2 / SAVEBLOCKS_MAX),
-    OptionChoice("75 MB", 75 * 1024**2 / SAVEBLOCKS_MAX),
-    OptionChoice("100 MB", 100 * 1024**2 / SAVEBLOCKS_MAX),
+    OptionChoice("25 MB", (25 * 1024**2) >> 15),
+    OptionChoice("50 MB", (50 * 1024**2) >> 15),
+    OptionChoice("75 MB", (75 * 1024**2) >> 15),
+    OptionChoice("100 MB", (100 * 1024**2) >> 15),
 ]
 saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will deterine savesize (blocks * {SAVEBLOCKS_MAX})."
 saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
@@ -56,7 +56,7 @@ class CreateSave(commands.Cog):
         mountPaths = []
         DISC_UPL_SPLITVALUE = "SLASH"
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
-        savesize = saveblocks * SAVEBLOCKS_MAX
+        savesize = saveblocks << 15
         await aiofiles.os.makedirs(scesys_local)
         
         embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{savename}",
