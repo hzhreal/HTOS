@@ -152,15 +152,15 @@ MAX_FILENAME_LEN = 255
 PSN_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 QC_RE = re.compile(r"^([0-9a-fA-F]){8} ([0-9a-fA-F]){8}$")
 
+# ERRNO
+CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETUNREACH]
+CON_FAIL_MSG = "PS4 not connected!"
+
 # EMBEDS
 class Color(Enum):
     DEFAULT = 0x854bf7
     GREEN = 0x22EA0D
     RED = 0xF42B00
-
-# ERRNO
-CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETUNREACH]
-CON_FAIL_MSG = "PS4 not connected!"
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
