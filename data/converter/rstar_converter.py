@@ -3,43 +3,33 @@ import aiofiles
 import os
 from data.converter.common import Converter, ConverterError
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
+from utils.type_helpers import uint32
 
-class Converter_Rstar:
+class Converter_Rstar: 
     @staticmethod
-    def get_uint32(data: bytearray, seed: int) -> int:
-        num1 = seed
-        for index in range(len(data)):
-            num2 = (num1 + int(data[index])) & 0xFF_FF_FF_FF
-            num3 = (num2 + (num2 << 10)) & 0xFF_FF_FF_FF
-            num1 = (num3 ^ num3 >> 6) & 0xFF_FF_FF_FF
-        num4 = (num1 + (num1 << 3)) & 0xFF_FF_FF_FF
-        num5 = (num4 ^ num4 >> 11) & 0xFF_FF_FF_FF
-        return (num5 + (num5 << 15)) & 0xFF_FF_FF_FF
-    
-    @staticmethod
-    async def handleTitle(filePath: str) -> None:
+    async def handleTitle(filePath: str, write_date_rdr2: bool = False, clear_rdr2_pc_chks: bool = False) -> None:
         unix = int(time.time())
         date = time.strftime("%d/%m/%y %H:%M:%S", time.gmtime(unix))
-        TITLE = f"~b~HTOS CONVERTER ~p~∑ ~g~‹ - {date}".encode("utf-16le")
+        if write_date_rdr2 or clear_rdr2_pc_chks:
+            TITLE = f"@!HTOS CONVERTER!@ - {date}".encode("utf-16le") # buffersize 0x100
+        else:
+            TITLE = f"~b~HTOS CONVERTER ~p~∑ ~g~‹ - {date}".encode("utf-16le") # buffersize 0x100
         NULL_BYTES = bytes([0] * (0x104 - 0x4))
 
         async with aiofiles.open(filePath, "r+b") as file:
-            seed_bytes = bytearray(await file.read(4))
-            seed_bytes = seed_bytes[::-1]
-            seed = Converter_Rstar.get_uint32(seed_bytes, 0)
-
             await file.seek(0x4) # title start
             await file.write(NULL_BYTES)
             await file.seek(0x4)
             await file.write(TITLE)
-            await file.seek(0x4)
 
-            title_bytes = bytearray(await file.read(0x100))
-            chks = format(Converter_Rstar.get_uint32(title_bytes, seed), "08x")
-            chks_bytes = bytes.fromhex(chks)
+            if write_date_rdr2:
+                await file.seek(0x104)
+                datesum = uint32(unix, "big")
+                await file.write(datesum.as_bytes)
 
-            await file.seek(0x104)
-            await file.write(chks_bytes)
+            if clear_rdr2_pc_chks:
+                await file.seek(0x10C)
+                await file.write(b"\x00" * 4)
 
     @staticmethod
     async def convertFile_GTAV(filePath: str) -> str:
@@ -109,7 +99,7 @@ class Converter_Rstar:
             
             if header == crypt.RDR2_HEADER and platform == "ps4":
                 await Converter.pushBytes(crypt.RDR2_PS_HEADER_OFFSET, crypt.RDR2_PC_HEADER_OFFSET, filePath)
-                await Converter_Rstar.handleTitle(filePath)
+                await Converter_Rstar.handleTitle(filePath, write_date_rdr2=True)
 
                 await crypt.encryptFile(filePath, crypt.RDR2_PC_HEADER_OFFSET)
             
@@ -117,19 +107,19 @@ class Converter_Rstar:
                 await crypt.decryptFile(os.path.dirname(filePath), crypt.RDR2_PS_HEADER_OFFSET)
 
                 await Converter.pushBytes(crypt.RDR2_PS_HEADER_OFFSET, crypt.RDR2_PC_HEADER_OFFSET, filePath)
-                await Converter_Rstar.handleTitle(filePath)
+                await Converter_Rstar.handleTitle(filePath, write_date_rdr2=True)
 
                 await crypt.encryptFile(filePath, crypt.RDR2_PC_HEADER_OFFSET)
             
             elif header == crypt.RDR2_HEADER and platform == "pc":
                 await Converter.pushBytes(crypt.RDR2_PC_HEADER_OFFSET, crypt.RDR2_PS_HEADER_OFFSET, filePath)
-                await Converter_Rstar.handleTitle(filePath)
+                await Converter_Rstar.handleTitle(filePath, clear_rdr2_pc_chks=True)
             
             elif header != crypt.RDR2_HEADER and platform == "pc":
                 await crypt.decryptFile(os.path.dirname(filePath), crypt.RDR2_PC_HEADER_OFFSET)
 
                 await Converter.pushBytes(crypt.RDR2_PC_HEADER_OFFSET, crypt.RDR2_PS_HEADER_OFFSET, filePath)
-                await Converter_Rstar.handleTitle(filePath)
+                await Converter_Rstar.handleTitle(filePath, clear_rdr2_pc_chks=True)
             
             else: raise ConverterError("File not supported!")
 

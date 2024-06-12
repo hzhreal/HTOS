@@ -1,12 +1,18 @@
 import aiofiles
 import struct
 import re
+from enum import Enum
+from typing import Literal
 from Crypto.Cipher import AES
 from data.crypto.common import CustomCrypto
 from utils.constants import GTAV_TITLEID
-from typing import Literal
+from utils.type_helpers import uint32, uint64
 
 class Crypt_Rstar:
+    class TitleHashTypes(Enum):
+        STANDARD = 0
+        DATE = 1
+
     # GTA V & RDR 2
     PS4_KEY = bytes([
         0x16,  0x85,  0xff,  0xa3,  0x8d,  0x01,  0x0f,  0x0d,
@@ -30,32 +36,73 @@ class Crypt_Rstar:
     RDR2_PC_HEADER_OFFSET = 0x110
     RDR2_HEADER = b"RSAV"
 
-    KEYS = {
-        GTAV_PS_HEADER_OFFSET: PS4_KEY,
-        RDR2_PS_HEADER_OFFSET: PS4_KEY,
+    TYPES = {
+        GTAV_PS_HEADER_OFFSET: {"key": PS4_KEY, "type": TitleHashTypes.STANDARD},
+        RDR2_PS_HEADER_OFFSET: {"key": PS4_KEY, "type": TitleHashTypes.STANDARD},
 
-        GTAV_PC_HEADER_OFFSET: PC_KEY,
-        RDR2_PC_HEADER_OFFSET: PC_KEY
+        GTAV_PC_HEADER_OFFSET: {"key": PC_KEY, "type": TitleHashTypes.STANDARD},
+        RDR2_PC_HEADER_OFFSET: {"key": PC_KEY, "type": TitleHashTypes.DATE}
     }
 
-    @staticmethod 
-    def calculate_checksum(data: bytes) -> int:
-        checksum = 0x3fac7125
+    @staticmethod
+    def jooat(data: bytes | bytearray, seed: int = 0x3FAC7125) -> int:
+        num = uint32(seed, "little")
+        for byte in data:
+            char = (byte + 128) % 256 - 128  # casting to signed char
+            num.value = num.value + char
+            num.value = num.value + (num.value << 10)
+            num.value = num.value ^ (num.value >> 6)
 
-        for char in data:
-            char = (char + 128) % 256 - 128 # casting to signed char
-            checksum = ((char + checksum) * 0x401) & 0xFFFFFFFF
-            checksum = (checksum >> 6 ^ checksum) & 0xFFFFFFFF
-        checksum = (checksum*9) & 0xFFFFFFFF
-        
-        return ((checksum >> 11 ^ checksum) * 0x8001) & 0xFFFFFFFF
+        num.value = num.value + (num.value << 3)
+        num.value = num.value ^ (num.value >> 11)
+        num.value = num.value + (num.value << 15)
+
+        return num.value
+    
+    @staticmethod
+    async def fix_title_chks(savegame: aiofiles.threadpool.binary.AsyncFileIO) -> None:
+        """GTA V PS4 & PC, RDR2 PS4"""
+        await savegame.seek(0)
+        iv = await savegame.read(4) # read the initial data, must be 00 00 00 01 (gta), 00 00 00 04 (rdr2)
+        seed_data = iv[::-1] # reverse order
+        seed = Crypt_Rstar.jooat(seed_data, 0) # generate seed
+
+        # read title and fix checksum
+        title = await savegame.read(0x100)
+        chks = uint32(Crypt_Rstar.jooat(title, seed), "big")
+        await savegame.write(chks.as_bytes)
+
+    @staticmethod
+    async def fix_date_chks(savegame: aiofiles.threadpool.binary.AsyncFileIO) -> None:
+        """RDR2 PC"""
+        await savegame.seek(0)
+        iv = await savegame.read(4) # read initial data, must be 00 00 00 04
+        seed_data = iv[::-1] # reverse order
+        seed = Crypt_Rstar.jooat(seed_data, 0) # generate seed
+
+        # read date and fix checksum
+        await savegame.seek(0x104)
+        date = uint64(await savegame.read(8), "big")
+        date.value = CustomCrypto.ES32(date.as_bytes)
+        chks = uint32(Crypt_Rstar.jooat(date.as_bytes, seed), "big")
+        await savegame.write(chks.as_bytes)
 
     @staticmethod
     async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        key = Crypt_Rstar.KEYS[start_offset]
+        key = Crypt_Rstar.TYPES[start_offset]["key"]
+        type_ = Crypt_Rstar.TYPES[start_offset]["type"]
 
         # Read the entire plaintext data from the file
         async with aiofiles.open(fileToEncrypt, "r+b") as file:
+            match type_:
+                case Crypt_Rstar.TitleHashTypes.STANDARD:
+                    # fix title checksum
+                    await Crypt_Rstar.fix_title_chks(file)
+                    await file.seek(0)
+                case Crypt_Rstar.TitleHashTypes.DATE:
+                    await Crypt_Rstar.fix_date_chks(file)
+                    await file.seek(0)
+
             data_before = await file.read(start_offset)  # Read data before the encrypted part
             await file.seek(start_offset)  # Move the file pointer to the start_offset
             data_to_encrypt = await file.read()  # Read the part to encrypt
@@ -72,7 +119,7 @@ class Crypt_Rstar:
 
                 chks_offset = len(data_to_be_hashed) - header_size + (4 + 4)
                 data_to_be_hashed[chks_offset:chks_offset + (4 + 4)] = b"\x00" * (4 + 4) # remove the length and hash
-                new_hash = struct.pack(">I", Crypt_Rstar.calculate_checksum(data_to_be_hashed))
+                new_hash = struct.pack(">I", Crypt_Rstar.jooat(data_to_be_hashed))
                 
                 await file.seek(start_offset + chunk + (4 + 4 + 4), 0) # 4 bytes for header size num, 4 bytes for the data length and 4 bytes for the checksum
                 await file.write(new_hash)
@@ -95,7 +142,7 @@ class Crypt_Rstar:
     @staticmethod
     async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
         files = await CustomCrypto.obtainFiles(upload_decrypted)
-        key = Crypt_Rstar.KEYS[start_offset]
+        key = Crypt_Rstar.TYPES[start_offset]["key"]
 
         for file_name in files:
 
