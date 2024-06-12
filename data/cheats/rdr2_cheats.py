@@ -62,10 +62,11 @@ class Cheats_RDR2:
             self.platform = platform
 
         async def on_timeout(self) -> None:
-            self.disable_all_items()
-            if self.platform == "pc":
-                await crypt.encryptFile(self.filePath, crypt.RDR2_PC_HEADER_OFFSET)
-            await self.helper.handle_timeout(self.ctx)
+            if not self.helper.done:
+                self.disable_all_items()
+                if self.platform == "pc":
+                    await crypt.encryptFile(self.filePath, crypt.RDR2_PC_HEADER_OFFSET)
+                await self.helper.handle_timeout(self.ctx)
 
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
