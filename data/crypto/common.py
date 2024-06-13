@@ -46,18 +46,19 @@ class CustomCrypto:
         return decrypted_data
     
     @staticmethod
-    def bytes_to_u32array(data: bytes | bytearray, byteorder: Literal["little", "big"]) -> list[int]:
+    def bytes_to_u32array(data: bytes | bytearray, byteorder: Literal["little", "big"], signed: bool = False) -> list[int]:
         u32_array = []
         for i in range(0, len(data), 4):
-            val = int.from_bytes(data[i:i + 4], byteorder=byteorder, signed=False)
+            val = int.from_bytes(data[i:i + 4], byteorder=byteorder, signed=signed)
             u32_array.append(val)
         return u32_array
     
     @staticmethod
-    def u32array_to_bytearray(data: list[int], byteorder: Literal["little", "big"]) -> bytearray:
+    def u32array_to_bytearray(data: list[int], byteorder: Literal["little", "big"], signed: bool = False) -> bytearray:
         new_array = bytearray()
         for u32_val in data:
-            byte_val = u32_val.to_bytes(4, byteorder=byteorder, signed=False)
+            u32_val &= 0xFF_FF_FF_FF
+            byte_val = u32_val.to_bytes(4, byteorder=byteorder, signed=signed)
             new_array.extend(byte_val)
         return new_array
     

@@ -1,7 +1,7 @@
 import hashlib
 import aiofiles
-from data.crypto.common import CustomCrypto
 from typing import Literal
+from data.crypto.common import CustomCrypto
 
 class Crypt_MGSV:
     MGSV_TPP_PS4KEY_CUSA01140 = 0x4131F8BE        
@@ -30,9 +30,9 @@ class Crypt_MGSV:
         key = Crypt_MGSV.KEYS[title_id]["key"]
 
         for i in range(length >> 2):
-            key ^= (key << 13) & 0xFFFFFFFF
-            key ^= (key >> 7) & 0xFFFFFFFF
-            key ^= (key << 5) & 0xFFFFFFFF
+            key ^= (key << 13) & 0xFF_FF_FF_FF
+            key ^= (key >> 7) & 0xFF_FF_FF_FF
+            key ^= (key << 5) & 0xFF_FF_FF_FF
 
             data[i] ^= key
         return data
@@ -57,7 +57,7 @@ class Crypt_MGSV:
     @staticmethod
     async def encryptFile(fileToEncrypt: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
         async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            decrypted_data = bytearray(savegame.read())
+            decrypted_data = bytearray(await savegame.read())
 
         to_hash = decrypted_data[0x10:]
         md5 = hashlib.md5()
@@ -104,7 +104,7 @@ class Crypt_MGSV:
                     decrypted_data_u32arr = Crypt_MGSV.crypt_data(encrypted_data_u32arr, len(encrypted_data), title_id)
 
                     decrypted_data = CustomCrypto.u32array_to_bytearray(decrypted_data_u32arr, "little")
-                    header = decrypted_data[0x10: 0x10 + 2]
+                    header = decrypted_data[0x10:0x10 + 2]
                     if header == Crypt_MGSV.HEADER_TPP or header == Crypt_MGSV.HEADER_GZ:
                         decrypted_data_u32arr = CustomCrypto.bytes_to_u32array(decrypted_data, "little")
                         encrypted_data_u32arr = Crypt_MGSV.crypt_data(decrypted_data_u32arr, len(decrypted_data), target_titleid)

@@ -45,8 +45,8 @@ class Crypt_Rstar:
     }
 
     @staticmethod
-    def jooat(data: bytes | bytearray, seed: int = 0x3FAC7125) -> int:
-        num = uint32(seed, "little")
+    def jooat(data: bytes | bytearray, seed: int = 0x3FAC7125, byteorder: Literal["little", "big"] = "big") -> uint32:
+        num = uint32(seed, byteorder)
         for byte in data:
             char = (byte + 128) % 256 - 128  # casting to signed char
             num.value = num.value + char
@@ -57,7 +57,7 @@ class Crypt_Rstar:
         num.value = num.value ^ (num.value >> 11)
         num.value = num.value + (num.value << 15)
 
-        return num.value
+        return num
     
     @staticmethod
     async def fix_title_chks(savegame: aiofiles.threadpool.binary.AsyncFileIO) -> None:
@@ -69,7 +69,7 @@ class Crypt_Rstar:
 
         # read title and fix checksum
         title = await savegame.read(0x100)
-        chks = uint32(Crypt_Rstar.jooat(title, seed), "big")
+        chks = Crypt_Rstar.jooat(title, seed.value)
         await savegame.write(chks.as_bytes)
 
     @staticmethod
@@ -84,7 +84,7 @@ class Crypt_Rstar:
         await savegame.seek(0x104)
         date = uint64(await savegame.read(8), "big")
         date.value = CustomCrypto.ES32(date.as_bytes)
-        chks = uint32(Crypt_Rstar.jooat(date.as_bytes, seed), "big")
+        chks = Crypt_Rstar.jooat(date.as_bytes, seed.value)
         await savegame.write(chks.as_bytes)
 
     @staticmethod
@@ -119,10 +119,10 @@ class Crypt_Rstar:
 
                 chks_offset = len(data_to_be_hashed) - header_size + (4 + 4)
                 data_to_be_hashed[chks_offset:chks_offset + (4 + 4)] = b"\x00" * (4 + 4) # remove the length and hash
-                new_hash = struct.pack(">I", Crypt_Rstar.jooat(data_to_be_hashed))
+                new_hash = Crypt_Rstar.jooat(data_to_be_hashed)
                 
                 await file.seek(start_offset + chunk + (4 + 4 + 4), 0) # 4 bytes for header size num, 4 bytes for the data length and 4 bytes for the checksum
-                await file.write(new_hash)
+                await file.write(new_hash.as_bytes)
             
             await file.seek(start_offset)
             data_to_encrypt = await file.read()
