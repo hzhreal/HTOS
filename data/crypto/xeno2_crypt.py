@@ -2,7 +2,8 @@ import aiofiles
 import hashlib
 import struct
 from Crypto.Cipher import AES
-from data.crypto.common import CustomCrypto, CryptoError
+from data.crypto.common import CustomCrypto as CC
+from data.crypto.common import CryptoError
 
 class Crypt_Xeno2:
     SAVE_HEADER_KEY = b"PR]-<Q9*WxHsV8rcW!JuH7k_ug:T5ApX"
@@ -45,7 +46,7 @@ class Crypt_Xeno2:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
 
         for filePath in files:
 

@@ -1,6 +1,7 @@
 import struct
 import aiofiles
-from data.crypto.common import CustomCrypto, CryptoError
+from data.crypto.common import CustomCrypto as CC
+from data.crypto.common import CryptoError
 from typing import Literal
 
 class Crypt_BL3:
@@ -121,7 +122,7 @@ class Crypt_BL3:
 
     @staticmethod
     async def decryptFile(folderPath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]

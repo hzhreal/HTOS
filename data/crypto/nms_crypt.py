@@ -3,7 +3,8 @@ import struct
 import lz4.block
 import json
 import os
-from data.crypto.common import CustomCrypto, CryptoError
+from data.crypto.common import CustomCrypto as CC
+from data.crypto.common import CryptoError
 from typing import Literal, Any
 
 # header: 
@@ -155,7 +156,7 @@ class Crypt_NMS:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        unfiltered_files = await CustomCrypto.obtainFiles(folderPath)
+        unfiltered_files = await CC.obtainFiles(folderPath)
         filtered_files = Crypt_NMS.pathChecks(unfiltered_files)
 
         for filePath in filtered_files:

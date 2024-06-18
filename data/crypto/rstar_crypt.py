@@ -3,8 +3,7 @@ import struct
 import re
 from enum import Enum
 from typing import Literal
-from Crypto.Cipher import AES
-from data.crypto.common import CustomCrypto
+from data.crypto.common import CustomCrypto as CC
 from utils.constants import GTAV_TITLEID
 from utils.type_helpers import uint32, uint64
 
@@ -83,7 +82,7 @@ class Crypt_Rstar:
         # read date and fix checksum
         await savegame.seek(0x104)
         date = uint64(await savegame.read(8), "big")
-        date.value = CustomCrypto.ES32(date.as_bytes)
+        date.value = CC.ES32(date.as_bytes)
         chks = Crypt_Rstar.jooat(date.as_bytes, seed.value)
         await savegame.write(chks.as_bytes)
 
@@ -127,12 +126,11 @@ class Crypt_Rstar:
             await file.seek(start_offset)
             data_to_encrypt = await file.read()
 
-        # Pad the data to be a multiple of the block size
-        block_size = AES.block_size
-        padded_data = data_to_encrypt + b"\x00" * (block_size - len(data_to_encrypt) % block_size)
+        # Truncate the data to be a multiple of the block size
+        t_decrypted_data = CC.truncate_to_blocksize(data_to_encrypt, CC.AES_BLOCKSIZE)
 
         # Encrypt the data
-        encrypted_data = CustomCrypto.encrypt_aes_ecb(padded_data, key)
+        encrypted_data = CC.encrypt_aes_ecb(t_decrypted_data, key)
 
         # Combine all the parts and save the new encrypted data to a new file (e.g., "encrypted_SGTA50000")
         async with aiofiles.open(fileToEncrypt, "wb") as encrypted_file:
@@ -141,7 +139,7 @@ class Crypt_Rstar:
 
     @staticmethod
     async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        files = await CustomCrypto.obtainFiles(upload_decrypted)
+        files = await CC.obtainFiles(upload_decrypted)
         key = Crypt_Rstar.TYPES[start_offset]["key"]
 
         for file_name in files:
@@ -153,11 +151,10 @@ class Crypt_Rstar:
                 data_to_decrypt = await file.read()  # Read the part to decrypt
                 
             # Pad the data to be a multiple of the block size
-            block_size = AES.block_size
-            padded_data = data_to_decrypt + b"\x00" * (block_size - len(data_to_decrypt) % block_size)
+            t_encrypted_data = CC.truncate_to_blocksize(data_to_decrypt, CC.AES_BLOCKSIZE)
 
             # Decrypt the data
-            decrypted_data = CustomCrypto.decrypt_aes_ecb(padded_data, key)
+            decrypted_data = CC.decrypt_aes_ecb(t_encrypted_data, key)
 
             # Save the decrypted data to a new file (e.g., "decrypted_SGTA50000")
             async with aiofiles.open(file_name, "wb") as decrypted_file:

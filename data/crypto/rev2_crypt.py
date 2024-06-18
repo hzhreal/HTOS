@@ -1,7 +1,6 @@
 import aiofiles
 import hashlib
-from data.crypto.common import CustomCrypto
-from Crypto.Cipher import Blowfish
+from data.crypto.common import CustomCrypto as CC
 
 # notes: start at 0x20
 
@@ -10,7 +9,7 @@ class Crypt_Rev2:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
 
         for filePath in files:
 
@@ -19,18 +18,17 @@ class Crypt_Rev2:
                 encrypted_data = await savegame.read()
 
             # endian swap before
-            encrypted_data = CustomCrypto.ES32(encrypted_data)
+            encrypted_data = CC.ES32(encrypted_data)
             
             # Pad the data to be a multiple of the block size
-            block_size = Blowfish.block_size
-            padding = b"\x00" * (block_size - len(encrypted_data) % block_size)
-            padded_data = encrypted_data + padding
+            p_encrypted_data, p_len = CC.pad_to_blocksize(encrypted_data, CC.BLOWFISH_BLOCKSIZE)
 
-            decrypted_data = bytearray(CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY))
-            decrypted_data = decrypted_data[:-len(padding)] # remove padding that we added to avoid exception
+            decrypted_data = CC.decrypt_blowfish_ecb(p_encrypted_data, Crypt_Rev2.SECRET_KEY)
+            if p_len > 0:
+                decrypted_data = decrypted_data[:-p_len] # remove padding that we added to avoid exception
 
             # endian swap after
-            decrypted_data = CustomCrypto.ES32(decrypted_data)
+            decrypted_data = CC.ES32(decrypted_data)
 
             async with aiofiles.open(filePath, "r+b") as savegame:
                 await savegame.seek(0x20)
@@ -49,23 +47,22 @@ class Crypt_Rev2:
         chks = sha1.digest()
         
         # endian swap the checksum
-        chks = CustomCrypto.ES32(chks)
+        chks = CC.ES32(chks)
 
         decrypted_data[length - 0x20:(length - 0x20) + len(chks)] = chks
 
         # endian swap before
-        decrypted_data = CustomCrypto.ES32(decrypted_data)
+        decrypted_data = CC.ES32(decrypted_data)
 
         # Pad the data to be a multiple of the block size
-        block_size = Blowfish.block_size
-        padding = b"\x00" * (block_size - len(decrypted_data) % block_size)
-        padded_data = decrypted_data + padding
+        p_decrypted_data, p_len = CC.pad_to_blocksize(decrypted_data, CC.BLOWFISH_BLOCKSIZE)
 
-        encrypted_data = bytearray(CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Rev2.SECRET_KEY))
-        encrypted_data = encrypted_data[:len(padding)] # remove padding that we added to avoid exception
+        encrypted_data = CC.encrypt_blowfish_ecb(p_decrypted_data, Crypt_Rev2.SECRET_KEY)
+        if p_len > 0:
+            encrypted_data = encrypted_data[:-p_len] # remove padding that we added to avoid exception
 
         # endian swap after
-        encrypted_data = CustomCrypto.ES32(encrypted_data)
+        encrypted_data = CC.ES32(encrypted_data)
 
         async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
             await savegame.seek(0x20)

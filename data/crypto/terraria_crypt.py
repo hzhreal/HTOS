@@ -2,8 +2,7 @@ import aiofiles
 import os
 import zlib
 import struct
-from Crypto.Cipher import AES
-from data.crypto.common import CustomCrypto
+from data.crypto.common import CustomCrypto as CC
 
 class Crypt_Terraria:
     KEY = "h3y_gUyZ".encode("utf-16-le")
@@ -24,7 +23,7 @@ class Crypt_Terraria:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        unfiltered_files = await CustomCrypto.obtainFiles(folderPath)
+        unfiltered_files = await CC.obtainFiles(folderPath)
         filtered_files = Crypt_Terraria.filter_paths(unfiltered_files)
 
         for filePath in filtered_files:
@@ -35,11 +34,12 @@ class Crypt_Terraria:
 
             match ext:
                 case ".plr":
-                    # Pad the data to be a multiple of the block size
-                    block_size = AES.block_size
-                    padded_data = encoded_data + b"\x00" * (block_size - len(encoded_data) % block_size)
+                    # Pad the data to be a multiple of the block sizee
+                    p_encoded_data, p_len = CC.pad_to_blocksize(encoded_data, CC.AES_BLOCKSIZE)
 
-                    decoded_data = CustomCrypto.decrypt_aes_cbc(padded_data, Crypt_Terraria.KEY, Crypt_Terraria.KEY)
+                    decoded_data = CC.decrypt_aes_cbc(p_encoded_data, Crypt_Terraria.KEY, Crypt_Terraria.KEY)
+                    if p_len > 0:
+                        decoded_data = decoded_data[:-p_len]
                 case ".wld":
                     decoded_data = zlib.decompress(encoded_data[0x08:])
 
@@ -59,10 +59,11 @@ class Crypt_Terraria:
         match ext:
             case ".plr":
                 # Pad the data to be a multiple of the block size
-                block_size = AES.block_size
-                padded_data = decoded_data + b"\x00" * (block_size - len(decoded_data) % block_size)
+                p_decoded_data, p_len = CC.pad_to_blocksize(decoded_data, CC.AES_BLOCKSIZE)
 
-                encoded_data = CustomCrypto.encrypt_aes_cbc(padded_data, Crypt_Terraria.KEY, Crypt_Terraria.KEY)
+                encoded_data = CC.encrypt_aes_cbc(p_decoded_data, Crypt_Terraria.KEY, Crypt_Terraria.KEY)
+                if p_len > 0:
+                    encoded_data = encoded_data[:-p_len]
             case ".wld":
                 size = struct.pack("<I", len(decoded_data))
                 encoded_data = Crypt_Terraria.COMP_MAGIC + size

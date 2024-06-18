@@ -5,8 +5,7 @@ import hmac
 import zlib
 import crc32c
 import os
-from data.crypto.common import CustomCrypto
-from Crypto.Cipher import Blowfish
+from data.crypto.common import CustomCrypto as CC
 from typing import Literal
 
 # notes: start 0x08 (0xC for the nathan drake collection & 0x10 for tlou part 2), last 4 bytes is size (4 bytes from 0x08 for tlou part 2), 
@@ -92,7 +91,7 @@ class Crypt_Ndog:
 
     @staticmethod
     async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
+        files = await CC.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
 
         for filePath in files:
 
@@ -106,18 +105,17 @@ class Crypt_Ndog:
             encrypted_data = encrypted_data[start_offset:]
 
             if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-                encrypted_data = CustomCrypto.ES32(encrypted_data)
+                encrypted_data = CC.ES32(encrypted_data)
 
             # Pad the data to be a multiple of the block size
-            block_size = Blowfish.block_size
-            padding = b"\x00" * (block_size - len(encrypted_data) % block_size)
-            padded_data = encrypted_data + padding
+            p_encrypted_data, p_len = CC.pad_to_blocksize(encrypted_data, CC.BLOWFISH_BLOCKSIZE)
 
-            decrypted_data = bytearray(CustomCrypto.decrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-            decrypted_data = decrypted_data[:-len(padding)] # remove padding that we added to avoid exception
+            decrypted_data = CC.decrypt_blowfish_ecb(p_encrypted_data, Crypt_Ndog.SECRET_KEY)
+            if p_len > 0:
+                decrypted_data = decrypted_data[:-p_len] # remove padding that we added to avoid exception
 
             if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-                decrypted_data = CustomCrypto.ES32(decrypted_data)
+                decrypted_data = CC.ES32(decrypted_data)
 
             # temp data to nullify bytes after hmac sha1 hash  
             tmp_decrypted_data = bytearray(first_bytes + decrypted_data)
@@ -148,18 +146,17 @@ class Crypt_Ndog:
         # remove first static bytes
         decrypted_data = decrypted_data[start_offset:]
         if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-            decrypted_data = CustomCrypto.ES32(decrypted_data)
+            decrypted_data = CC.ES32(decrypted_data)
 
         # Pad the data to be a multiple of the block size
-        block_size = Blowfish.block_size
-        padding = b"\x00" * (block_size - len(decrypted_data) % block_size)
-        padded_data = decrypted_data + padding
+        p_decrypted_data, p_len = CC.pad_to_blocksize(decrypted_data, CC.AES_BLOCKSIZE)
         
-        encrypted_data = bytearray(CustomCrypto.encrypt_blowfish_ecb(padded_data, Crypt_Ndog.SECRET_KEY))
-        encrypted_data = encrypted_data[:-len(padding)] # remove padding that we added to avoid exception
+        encrypted_data = CC.encrypt_blowfish_ecb(p_decrypted_data, Crypt_Ndog.SECRET_KEY)
+        if p_len > 0:
+            encrypted_data = encrypted_data[:-p_len] # remove padding that we added to avoid exception
         
         if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-            encrypted_data = CustomCrypto.ES32(encrypted_data)
+            encrypted_data = CC.ES32(encrypted_data)
 
         # temp data to nullify bytes after hmac sha1 hash
         tmp_encrypted_data = bytearray(first_bytes + encrypted_data)

@@ -1,14 +1,14 @@
 import aiofiles
 import gzip
 from typing import Literal
-from data.crypto.common import CustomCrypto
+from data.crypto.common import CustomCrypto as CC
 
 # both dying light 1 & 2 uses gzip, also dead island 1
 
 class Crypt_DL:
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
 
         for filePath in files:
             

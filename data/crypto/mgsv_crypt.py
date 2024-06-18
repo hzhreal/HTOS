@@ -1,7 +1,7 @@
 import hashlib
 import aiofiles
 from typing import Literal
-from data.crypto.common import CustomCrypto
+from data.crypto.common import CustomCrypto as CC
 
 class Crypt_MGSV:
     MGSV_TPP_PS4KEY_CUSA01140 = 0x4131F8BE        
@@ -39,17 +39,17 @@ class Crypt_MGSV:
 
     @staticmethod
     async def decryptFile(folderPath: str, title_id: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
 
         for filePath in files:
 
             async with aiofiles.open(filePath, "rb") as savegame:
                 encrypted_data = await savegame.read()
 
-            encrypted_data_u32arr = CustomCrypto.bytes_to_u32array(encrypted_data, "little")
+            encrypted_data_u32arr = CC.bytes_to_u32array(encrypted_data, "little")
             decrypted_data_u32arr = Crypt_MGSV.crypt_data(encrypted_data_u32arr, len(encrypted_data), title_id)
             
-            decrypted_data = CustomCrypto.u32array_to_bytearray(decrypted_data_u32arr, "little")
+            decrypted_data = CC.u32array_to_bytearray(decrypted_data_u32arr, "little")
 
             async with aiofiles.open(filePath, "wb") as savegame:
                 await savegame.write(decrypted_data)
@@ -65,10 +65,10 @@ class Crypt_MGSV:
         md5_data = md5.digest()
         decrypted_data[:len(md5_data)] = md5_data
         
-        decrypted_data_u32arr = CustomCrypto.bytes_to_u32array(decrypted_data, "little")
+        decrypted_data_u32arr = CC.bytes_to_u32array(decrypted_data, "little")
         encrypted_data_u32arr = Crypt_MGSV.crypt_data(decrypted_data_u32arr, len(decrypted_data), title_id)
 
-        encrypted_data = CustomCrypto.u32array_to_bytearray(encrypted_data_u32arr, "little")
+        encrypted_data = CC.u32array_to_bytearray(encrypted_data_u32arr, "little")
 
         async with open(fileToEncrypt, "wb") as savegame:
             await savegame.write(encrypted_data)
@@ -84,7 +84,7 @@ class Crypt_MGSV:
 
     @staticmethod
     async def reregion_changeCrypt(folderPath: str, target_titleid: Literal["CUSA01140", "CUSA01154", "CUSA01099", "CUSA00218", "CUSA00211", "CUSA00225"]) -> None:
-        files = await CustomCrypto.obtainFiles(folderPath)
+        files = await CC.obtainFiles(folderPath)
 
         for filePath in files:
         
@@ -100,16 +100,16 @@ class Crypt_MGSV:
                     async with aiofiles.open(filePath, "rb") as savegame:
                         encrypted_data = await savegame.read()
                     
-                    encrypted_data_u32arr = CustomCrypto.bytes_to_u32array(encrypted_data, "little")
+                    encrypted_data_u32arr = CC.bytes_to_u32array(encrypted_data, "little")
                     decrypted_data_u32arr = Crypt_MGSV.crypt_data(encrypted_data_u32arr, len(encrypted_data), title_id)
 
-                    decrypted_data = CustomCrypto.u32array_to_bytearray(decrypted_data_u32arr, "little")
+                    decrypted_data = CC.u32array_to_bytearray(decrypted_data_u32arr, "little")
                     header = decrypted_data[0x10:0x10 + 2]
                     if header == Crypt_MGSV.HEADER_TPP or header == Crypt_MGSV.HEADER_GZ:
-                        decrypted_data_u32arr = CustomCrypto.bytes_to_u32array(decrypted_data, "little")
+                        decrypted_data_u32arr = CC.bytes_to_u32array(decrypted_data, "little")
                         encrypted_data_u32arr = Crypt_MGSV.crypt_data(decrypted_data_u32arr, len(decrypted_data), target_titleid)
 
-                        encrypted_data = CustomCrypto.u32array_to_bytearray(encrypted_data_u32arr, "little")
+                        encrypted_data = CC.u32array_to_bytearray(encrypted_data_u32arr, "little")
 
                         async with aiofiles.open(filePath, "wb") as savegame:
                             await savegame.write(encrypted_data)

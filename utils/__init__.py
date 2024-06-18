@@ -39,6 +39,7 @@ from .constants import (
     DI1_TITLEID,
     DI2_TITLEID,
     NMS_TITLEID,
+    SMT5_TITLEID,
     TERRARIA_TITLEID,
     FILE_LIMIT_DISCORD, 
     MAX_FILES,
@@ -96,7 +97,7 @@ from .constants import (
     loadkeyset_emb
 )
 from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames
-from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey
+from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey, parse_sealedkey
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
