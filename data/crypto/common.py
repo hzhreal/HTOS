@@ -9,6 +9,32 @@ class CryptoError(Exception):
         self.message = message
 
 class CustomCrypto:
+    AES_BLOCKSIZE = AES.block_size
+    BLOWFISH_BLOCKSIZE = Blowfish.block_size
+
+    @staticmethod
+    def truncate_to_blocksize(data: bytes | bytearray, blocksize: int) -> bytes | bytearray:
+        if blocksize <= 0:
+            return type(data)()
+
+        size = len(data)
+        size_in_range = size & ~(blocksize - 1)
+
+        return data[:size_in_range]
+    
+    @staticmethod
+    def pad_to_blocksize(data: bytes | bytearray, blocksize: int, pad_value: int = 0) -> tuple[bytes | bytearray, int]:
+        if blocksize <= 0:
+            return type(data)()
+        
+        size = len(data)
+        pad_len = blocksize - (size % blocksize)
+        if pad_len == blocksize:
+            return data, 0
+        
+        pad_value &= 0xFF
+        return data + bytes([pad_value] * pad_len), pad_len
+
     @staticmethod
     def encrypt_aes_ecb(plaintext: bytes | bytearray, key: bytes | bytearray) -> bytes:
         cipher = AES.new(key, AES.MODE_ECB)
