@@ -131,6 +131,8 @@ async def upload2(
             # run a quick test
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
                 await orbis.parse_pfs_header(file_path)
+            elif ps_save_pair_upload and attachment.filename.endswith(".bin"):
+                await orbis.parse_sealedkey(file_path)
         
         await message.delete() # delete afterwards for reliability
     
@@ -280,7 +282,6 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     if username == "":
         user_id = await fetch_accountid_db(ctx.author.id)
         if user_id is not None:
-            user_id = hex(user_id)[2:]
             return user_id
         else:
             raise PSNIDError("Could not find previously stored account ID.")
@@ -387,8 +388,7 @@ async def replaceDecrypted(
 
             await ctx.edit(embed=emb18)
 
-            attachmentName = await upload1(ctx, upload_decrypted)
-            attachmentPath = os.path.join(upload_decrypted, attachmentName)
+            attachmentPath = await upload1(ctx, upload_decrypted)
             newPath = os.path.join(upload_decrypted, lastN)
             await aiofiles.os.rename(attachmentPath, newPath)
             await crypthelp.extra_import(Crypto, titleid, newPath)
