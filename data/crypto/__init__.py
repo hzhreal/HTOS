@@ -11,3 +11,4 @@ from .rgg_crypt import Crypt_RGG
 from .di2_crypt import Crypt_DI2
 from .nms_crypt import Crypt_NMS
 from .terraria_crypt import Crypt_Terraria
+from .smt5_crypt import Crypt_SMT5
