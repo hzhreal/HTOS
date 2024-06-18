@@ -565,3 +565,11 @@ async def parse_pfs_header(pfs_path: str) -> dict[str, int]:
         "size": expected_file_size | actual_file_size
     }
     return pfs_header
+
+async def parse_sealedkey(keypath: str) -> None:
+    async with aiofiles.open(keypath, "rb") as sealed_key:
+        data = bytearray(await sealed_key.read())
+    
+    enc_key = PfsSKKey(data)
+    if not enc_key.validate():
+        raise OrbisError(f"Invalid sealed key: {os.path.basename(keypath)}!")
