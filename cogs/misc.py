@@ -115,7 +115,7 @@ class Misc(commands.Cog):
         except (discord.Forbidden, WorkspaceError) as e:
             logger.error(f"Error clearing all threads: {e}")
         
-        await ctx.respond(f"Cleared {len(db_dict)} threads!", ephemeral=True)
+        await ctx.respond(f"Cleared {len(db_dict)} thread(s)!", ephemeral=True)
     
     @clear_threads.error
     async def on_clear_threads_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
