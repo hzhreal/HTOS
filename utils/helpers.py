@@ -188,7 +188,6 @@ async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str:
             await message.delete()
             await ctx.edit(embed=emb16)
 
-            name_of_file = attachment.filename
 
     elif message.content != None:
         try:
@@ -199,7 +198,7 @@ async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str:
             files = await GDapi.downloadsaves_gd(ctx, folder_id, saveLocation, max_files=1, sys_files=None, ps_save_pair_upload=False, ignore_filename_check=False)
             if len(files) == 0:
                 raise FileError("No files downloaded!")
-            name_of_file = files[0]
+            file_path = files[0]
 
         except asyncio.TimeoutError:
             await ctx.edit(embed=embgdt)
@@ -208,7 +207,7 @@ async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str:
     else:
         await ctx.send("Reply to the message with either 1 file, or a public google drive folder link (no subfolders and dont reach the file limit)!", ephemeral=True)
 
-    return name_of_file
+    return file_path
 
 async def upload2_special(ctx: discord.ApplicationContext, saveLocation: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
     """Makes the bot expect multiple files through discord or google drive (createsave command)."""
