@@ -84,9 +84,8 @@ class SocketPS:
     }) + "\r\n"
 
     response = await self.send_tcp_message_with_response(message)
-    parsed_response = json.loads(response)
 
-    return parsed_response.get("keyset", "FAIL!")
+    return response.get("keyset", "FAIL!")
   
   async def socket_createsave(self, folder: str, savename: str, blocks: int) -> None:
     message = json.dumps({
