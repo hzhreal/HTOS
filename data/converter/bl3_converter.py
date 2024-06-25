@@ -6,7 +6,7 @@ from data.converter.common import ConverterError
 from data.crypto import Crypt_BL3 as crypt
 from data.crypto.common import CryptoError
 from utils.helpers import TimeoutHelper
-from utils.constants import OTHER_TIMEOUT, emb_conv_choice, logger, Color
+from utils.constants import OTHER_TIMEOUT, emb_conv_choice, logger, Color, Embed_t
 
 class BL3_conv_button(discord.ui.View):
     """Discord button that is called when a decrypted BL3 save needs converting, gives user the choice of what platform to convert the save to."""
@@ -26,7 +26,7 @@ class BL3_conv_button(discord.ui.View):
     async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
         self.disable_all_items()
         embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not convert: {error}.", colour=Color.DEFAULT.value)
-        embedErrb.set_footer(text="Made by hzh.")
+        embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         self.helper.embTimeout = embedErrb
         await self.helper.handle_timeout(self.ctx)
         logger.error(f"{error} - {self.ctx.user.name}")

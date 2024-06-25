@@ -9,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    logger, Color,
+    logger, Color, Embed_t,
     embEncrypted1, emb6
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
@@ -67,7 +67,7 @@ class Resign(commands.Cog):
                     emb4 = discord.Embed(title="Resigning process: Encrypted",
                                 description=f"Your save (**{save}**) is being resigned, please wait...",
                                 colour=Color.DEFAULT.value)
-                    emb4.set_footer(text="Made by hzh.")
+                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=emb4)
                     await C1ftp.uploadencrypted_bulk(realSave)
@@ -83,15 +83,19 @@ class Resign(commands.Cog):
                     emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
                                 description=f"**{save}** resigned to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-                    emb5.set_footer(text="Made by hzh.")
+                    emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=emb5)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -105,7 +109,7 @@ class Resign(commands.Cog):
             embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
                                 description=f"**{finishedFiles}** resigned to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-            embRdone.set_footer(text="Made by hzh.")
+            embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             
             await ctx.edit(embed=embRdone)
 

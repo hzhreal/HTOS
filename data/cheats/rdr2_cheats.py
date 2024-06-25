@@ -5,7 +5,7 @@ import struct
 import os
 from discord.ui.item import Item
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
-from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color
+from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color, Embed_t
 from data.cheats.common import QuickCheatsError, QuickCheats
 from typing import Literal
 from utils.helpers import TimeoutHelper
@@ -71,7 +71,7 @@ class Cheats_RDR2:
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text="Made by hzh.")
+            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             self.helper.embTimeout = embedErrb
             await self.helper.handle_timeout(self.ctx)
             logger.error(f"{error} - {self.ctx.user.name}")
@@ -169,5 +169,5 @@ class Cheats_RDR2:
                         f"Money: **{stats['Money']}**"
                     ),
                     colour=Color.DEFAULT.value)
-        embLoaded.set_footer(text="Made by hzh.")
+        embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         return embLoaded

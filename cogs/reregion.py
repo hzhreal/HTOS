@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
-    logger, Color,
+    logger, Color, Embed_t,
     emb6, emb22, emb21, emb20
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
@@ -84,7 +84,7 @@ class ReRegion(commands.Cog):
                 emb23 = discord.Embed(title="Obtain process: Keystone",
                             description=f"Keystone from **{target_titleid}** obtained.",
                             colour=Color.DEFAULT.value)
-                emb23.set_footer(text="Made by hzh.")
+                emb23.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 await ctx.edit(embed=emb23)
 
@@ -94,10 +94,14 @@ class ReRegion(commands.Cog):
                 await C1ftp.deleteuploads(savename)
 
             except (SocketError, FTPError, OrbisError, OSError) as e:
+                status = "expected"
                 if isinstance(e, OSError) and e.errno in CON_FAIL:
                     e = CON_FAIL_MSG
+                elif isinstance(e, OSError):
+                    e = BASE_ERROR_MSG
+                    status = "unexpected"
                 await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
                 return
             except Exception as e:
                 await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -140,7 +144,7 @@ class ReRegion(commands.Cog):
                     emb4 = discord.Embed(title="Resigning process: Encrypted",
                                 description=f"Your save (**{save}**) is being resigned, please wait...",
                                 colour=Color.DEFAULT.value)
-                    emb4.set_footer(text="Made by hzh.")
+                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=emb4)
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
@@ -156,15 +160,19 @@ class ReRegion(commands.Cog):
                     emb5 = discord.Embed(title="Re-regioning & Resigning process (Encrypted): Successful",
                                 description=f"**{save}** resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
                                 colour=Color.DEFAULT.value)
-                    emb5.set_footer(text="Made by hzh.")
+                    emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=emb5)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -178,7 +186,7 @@ class ReRegion(commands.Cog):
             embRgdone = discord.Embed(title="Re-region: Successful",
                                 description=f"**{finishedFiles}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
                                 colour=Color.DEFAULT.value)
-            embRgdone.set_footer(text="Made by hzh.")
+            embRgdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             
             await ctx.edit(embed=embRgdone)
 

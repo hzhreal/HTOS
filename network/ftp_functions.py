@@ -7,7 +7,7 @@ import aiofiles.os
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
 # from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, logger, Color
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, logger, Color, Embed_t
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -354,7 +354,7 @@ class FTPps:
                     embSuccess = discord.Embed(title="Upload alert: Successful", 
                                             description=f"File '{filename}' has been successfully uploaded and saved.", 
                                             colour=Color.DEFAULT.value)            
-                    embSuccess.set_footer(text="Made by hzh.")
+                    embSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await self.uploadStream(ftp, filepath, filename)
                     await ctx.edit(embed=embSuccess)

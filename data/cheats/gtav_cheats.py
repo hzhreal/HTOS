@@ -4,7 +4,7 @@ import aiofiles
 import os
 import struct
 from discord.ui.item import Item
-from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color
+from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color, Embed_t
 from data.cheats.common import QuickCheatsError, QuickCheats
 from data.crypto import Crypt_Rstar as crypt
 from typing import Literal
@@ -87,7 +87,7 @@ class Cheats_GTAV:
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text="Made by hzh.")
+            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             self.helper.embTimeout = embedErrb
             await self.helper.handle_timeout(self.ctx)
             logger.error(f"{error} - {self.ctx.user.name}")
@@ -181,5 +181,5 @@ class Cheats_GTAV:
                         f"Trevor money: **{stats['Trevor_cash']: ,}**"
                     ),
                     colour=Color.DEFAULT.value)
-        embLoaded.set_footer(text="Made by hzh.")
+        embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         return embLoaded

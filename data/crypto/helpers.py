@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from data.crypto import CryptoError
 from utils.helpers import TimeoutHelper
 from utils.constants import (
-    logger, Color, OTHER_TIMEOUT,
+    logger, Color, Embed_t, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
     TERRARIA_TITLEID, SMT5_TITLEID
@@ -14,12 +14,12 @@ async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: SimpleNamespace
     embedTimeout = discord.Embed(title="Timeout Error:", 
                                  description="You took too long, sending the file with the format: Encrypted",
                                  colour=Color.DEFAULT.value)
-    embedTimeout.set_footer(text="Made by hzh.")
+    embedTimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
     embedFormat = discord.Embed(title=f"Format: {savePairName}", 
                                 description="Choose what format you want the file to be sent in", 
                                 colour=Color.DEFAULT.value)
-    embedFormat.set_footer(text="If you want to use the file in a save editor, choose decrypted")
+    embedFormat.set_footer(text="If you want to use the file in a save editor, choose decrypted!")
 
     helper = TimeoutHelper(embedTimeout)
 
@@ -37,7 +37,7 @@ async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: SimpleNamespace
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not decrypt: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text="Made by hzh.")
+            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             helper.embTimeout = embedErrb
             await helper.handle_timeout(ctx)
             logger.error(f"{error} - {ctx.user.name}")

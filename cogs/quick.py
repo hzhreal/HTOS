@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    logger, Color,
+    logger, Color, Embed_t,
     emb_upl_savegame, embTimedOut
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
@@ -55,7 +55,7 @@ class Quick(commands.Cog):
         
         if response == "EXIT":
             embExit = discord.Embed(title="Exited.", colour=Color.DEFAULT.value)
-            embExit.set_footer(text="Made by hzh.")
+            embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embExit)
             cleanupSimple(workspaceFolders)
             return
@@ -72,7 +72,7 @@ class Quick(commands.Cog):
             emb4 = discord.Embed(title="Resigning process: Encrypted",
                         description=f"Your save (**{saveName}**) is being resigned, please wait...",
                         colour=Color.DEFAULT.value)
-            emb4.set_footer(text="Made by hzh.")
+            emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=emb4)
             await C1ftp.uploadencrypted_bulk(realSave)
@@ -88,17 +88,22 @@ class Quick(commands.Cog):
             emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
                         description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
                         colour=Color.DEFAULT.value)
-            emb5.set_footer(text="Made by hzh.")
+            emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=emb5)
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
+            status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG
+            elif isinstance(e, OSError):
+                e = BASE_ERROR_MSG
+                status = "unexpected"
             elif isinstance(e, OrbisError): 
                 logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
+
             await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, files, mountPaths, C1ftp)
@@ -108,7 +113,7 @@ class Quick(commands.Cog):
         embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
                                 description=f"**{saveName}** resigned to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-        embRdone.set_footer(text="Made by hzh.")
+        embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
         await ctx.edit(embed=embRdone)
 
@@ -165,12 +170,12 @@ class Quick(commands.Cog):
                 embLoading = discord.Embed(title="Loading",
                                     description=f"Loading {savefile}...",
                                     colour=Color.DEFAULT.value)
-                embLoading.set_footer(text="Made by hzh.")
+                embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 embApplied = discord.Embed(title="Success!",
                                     description=f"Quick codes applied to {savefile}.",
                                     colour=Color.DEFAULT.value)
-                embApplied.set_footer(text="Made by hzh.")
+                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 await ctx.edit(embed=embLoading)
 
@@ -197,7 +202,7 @@ class Quick(commands.Cog):
         embCompleted = discord.Embed(title="Success!",
                                     description=f"Quick codes applied to {finishedFiles}.",
                                     colour=Color.DEFAULT.value)
-        embCompleted.set_footer(text="Made by hzh.")
+        embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.edit(embed=embCompleted)
 
         try: 
@@ -221,7 +226,7 @@ class Quick(commands.Cog):
         embLoading = discord.Embed(title="Loading",
                             description=f"Loading cheats process for {game}...",
                             colour=Color.DEFAULT.value)
-        embLoading.set_footer(text="Made by hzh.")
+        embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.respond(embed=embLoading)
 

@@ -12,7 +12,7 @@ from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
     SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
-    Color, logger
+    Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
 from utils.helpers import errorHandling, upload2, send_final, psusername, upload2_special
@@ -62,7 +62,7 @@ class CreateSave(commands.Cog):
         embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{savename}",
                                   description="Please attach the sce_sys files you want to upload.",
                                   colour=Color.DEFAULT.value)
-        embSceSys.set_footer(text="Made by hzh.")
+        embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         embgs = discord.Embed(title=f"Upload: Gamesaves\n{savename}",
                                   description=(
@@ -72,7 +72,7 @@ class CreateSave(commands.Cog):
                                     "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded."
                                   ),
                                   colour=Color.DEFAULT.value)
-        embgs.set_footer(text="Made by hzh.")
+        embgs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         try:
             user_id = await psusername(ctx, playstation_id)
@@ -126,7 +126,7 @@ class CreateSave(commands.Cog):
                 embsl = discord.Embed(title=f"Gamesaves: Second layer\n{gamesave}",
                                   description="Checking for supported second layer encryption/compression...",
                                   colour=Color.DEFAULT.value)
-                embsl.set_footer(text="Made by hzh.")
+                embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embsl)
                 await asyncio.sleep(0.5)
                 await extra_import(Crypto, title_id, gamesave)
@@ -165,10 +165,14 @@ class CreateSave(commands.Cog):
             await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
             await C1ftp.free_ctx(ftp_ctx)
         except (SocketError, FTPError, OSError, OrbisError) as e:
+            status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG
+            elif isinstance(e, OSError):
+                e = BASE_ERROR_MSG
+                status = "unexpected"
             await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -178,7 +182,7 @@ class CreateSave(commands.Cog):
         embRdone = discord.Embed(title="Creation process: Successful",
                             description=f"**{savename}** created & resigned to **{playstation_id or user_id}**.",
                             colour=Color.DEFAULT.value)
-        embRdone.set_footer(text="Made by hzh.")
+        embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
         await ctx.edit(embed=embRdone)
 

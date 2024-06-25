@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    logger, Color,
+    logger, Color, Embed_t,
     emb6, emb14
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
@@ -81,7 +81,7 @@ class Encrypt(commands.Cog):
                     embmo = discord.Embed(title="Encryption & Resigning process: Initializing",
                         description=f"Mounting {save}.",
                         colour=Color.DEFAULT.value)
-                    embmo.set_footer(text="Made by hzh.")
+                    embmo.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embmo)
 
                     await C1ftp.uploadencrypted_bulk(realSave)
@@ -107,7 +107,7 @@ class Encrypt(commands.Cog):
                         embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{save}",
                             description="Please attach the sce_sys files you want to upload.",
                             colour=Color.DEFAULT.value)
-                        embSceSys.set_footer(text="Made by hzh.")
+                        embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                         await ctx.edit(embed=embSceSys)
                         uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_header["size"])
@@ -127,7 +127,7 @@ class Encrypt(commands.Cog):
                     embmidComplete = discord.Embed(title="Encrypting & Resigning Process: Successful",
                                 description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-                    embmidComplete.set_footer(text="Made by hzh.")
+                    embmidComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=embmidComplete)
                 except HTTPError as e:
@@ -136,10 +136,14 @@ class Encrypt(commands.Cog):
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
                 except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -152,7 +156,7 @@ class Encrypt(commands.Cog):
             embComplete = discord.Embed(title="Encrypting & Resigning Process: Successful: Successful",
                             description=f"Resigned **{full_completed}** to **{playstation_id or user_id}**.",
                             colour=Color.DEFAULT.value)
-            embComplete.set_footer(text="Made by hzh.")
+            embComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=embComplete)
 

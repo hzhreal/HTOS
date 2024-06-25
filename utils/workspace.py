@@ -14,7 +14,7 @@ from network import FTPps
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger, Color
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger, Color, Embed_t
 )
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
@@ -164,7 +164,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
     embChannelError = discord.Embed(title="Error",
                                     description="Invalid channel!",
                                     colour=Color.DEFAULT.value)
-    embChannelError.set_footer(text="Made by hzh.")
+    embChannelError.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
     threadId = uint64(thread_id, "big")
 
@@ -227,7 +227,7 @@ async def listStoredSaves(ctx: discord.ApplicationContext) -> str:
     embList = discord.Embed(title="List of available saves",
                         description=f"{description}\nType in the number associated to the save to resign it, or send 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value)
-    embList.set_footer(text="Made by hzh.")
+    embList.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
     await ctx.edit(embed=embList)
 

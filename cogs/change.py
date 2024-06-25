@@ -9,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    logger, Color,
+    logger, Color, Embed_t,
     embpng, emb6, embpng1, embpng2, embTitleChange, embTitleErr,
     ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME
 )
@@ -96,15 +96,19 @@ class Change(commands.Cog):
                     embpngs = discord.Embed(title="PNG process: Successful",
                                 description=f"Altered the save png of **{save}**.",
                                 colour=Color.DEFAULT.value)
-                    embpngs.set_footer(text="Made by hzh.")
+                    embpngs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=embpngs)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -118,7 +122,7 @@ class Change(commands.Cog):
             embPdone = discord.Embed(title="PNG process: Successful",
                                 description=f"Altered the save png of **{finishedFiles}** and resigned to '*{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-            embPdone.set_footer(text="Made by hzh.")
+            embPdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=embPdone)
 
@@ -189,7 +193,7 @@ class Change(commands.Cog):
                 embTitleChange1 = discord.Embed(title="Change title: Processing",
                                     description=f"Processing {save}.",
                                     colour=Color.DEFAULT.value)
-                embTitleChange1.set_footer(text="Made by hzh.")
+                embTitleChange1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
@@ -210,15 +214,19 @@ class Change(commands.Cog):
                     embTitleSuccess = discord.Embed(title="Title altering process: Successful",
                                 description=f"Altered the save titles of **{save}**.",
                                 colour=Color.DEFAULT.value)
-                    embTitleSuccess.set_footer(text="Made by hzh.")
+                    embTitleSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await ctx.edit(embed=embTitleSuccess)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -232,7 +240,7 @@ class Change(commands.Cog):
             embTdone = discord.Embed(title="Title altering process: Successful",
                                 description=f"Altered the save titles of **{finishedFiles}**, and resigned to **{playstation_id or user_id}**.",
                                 colour=Color.DEFAULT.value)
-            embTdone.set_footer(text="Made by hzh.")
+            embTdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=embTdone)
 

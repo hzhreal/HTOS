@@ -3,7 +3,7 @@ from discord.ext import commands
 from network import FTPps, SocketPS, SocketError
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG,
-    logger, Color, bot,
+    logger, Color, Embed_t, bot,
     embinit, loadkeyset_emb,
     BASE_ERROR_MSG
 )
@@ -34,14 +34,18 @@ class Misc(commands.Cog):
             keyset_emb = discord.Embed(title="Success",
                                  description=f"Keyset: {keyset}\nFW: {fw}",
                                  color=Color.DEFAULT.value)
-            keyset_emb.set_footer(text="Made by hzh.")   
+            keyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)   
             await ctx.edit(embed=keyset_emb)
 
         except (SocketError, OSError) as e:
+            status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG
+            elif isinstance(e, OSError):
+                e = BASE_ERROR_MSG
+                status = "unexpected"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
@@ -85,7 +89,7 @@ class Misc(commands.Cog):
         )
 
         embResult = discord.Embed(title=desc, colour=color)
-        embResult.set_footer(text="Made by hzh.")
+        embResult.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.respond(embed=embResult)
     
     @discord.slash_command(description="Send the panel to create threads.")

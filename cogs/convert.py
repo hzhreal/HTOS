@@ -6,7 +6,7 @@ from data.converter import ConverterError
 from utils.namespaces import Converter
 from utils.constants import (
     BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG,
-    logger, Color, 
+    logger, Color, Embed_t,
     embTimedOut 
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanupSimple
@@ -33,7 +33,7 @@ class Convert(commands.Cog):
         embConverting = discord.Embed(title="Converting",
                             description=f"Starting convertion process for {game}...",
                             colour=Color.DEFAULT.value)
-        embConverting.set_footer(text="Made by hzh.")
+        embConverting.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.respond(embed=embConverting)
 
@@ -78,7 +78,7 @@ class Convert(commands.Cog):
             embCDone = discord.Embed(title="Success",
                                 description=f"{result}\nPlease report any errors.",
                                 colour=Color.DEFAULT.value)
-        embCDone.set_footer(text="Made by hzh.")
+        embCDone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.edit(embed=embCDone)
         await ctx.respond(file=discord.File(savegame))

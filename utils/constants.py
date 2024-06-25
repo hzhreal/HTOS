@@ -128,7 +128,7 @@ BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 
-BASE_ERROR_MSG = "An unexpected error has occurred!"
+BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
@@ -158,146 +158,151 @@ CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETU
 CON_FAIL_MSG = "PS4 not connected!"
 
 # EMBEDS
+EMBED_DESC_LIM = 4096
+
 class Color(Enum):
     DEFAULT = 0x854bf7
     GREEN = 0x22EA0D
     RED = 0xF42B00
 
+class Embed_t(Enum):
+    DEFAULT_FOOTER = "Made by hzh."
+
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
                       colour=Color.DEFAULT.value)
-embUtimeout.set_footer(text="Made by hzh.")
+embUtimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embgdt = discord.Embed(title="Google drive upload: Error",
                       description="You did not respond with the link in time!",
                       colour=Color.DEFAULT.value)
-embgdt.set_footer(text="Made by hzh.")
+embgdt.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb6 = discord.Embed(title="Upload alert: Error",
                       description="You did not upload 2 savefiles in one response to the bot, or you uploaded invalid files!",
                       colour=Color.DEFAULT.value)
-emb6.set_footer(text="Made by hzh.")
+emb6.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embhttp = discord.Embed(title="HttpError",
                                 description="Are you sure that you uploaded binary content?",
                                 colour=Color.DEFAULT.value)
-embhttp.set_footer(text="Made by hzh.")
+embhttp.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embEncrypted1 = discord.Embed(title="Resigning process: Encrypted",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
-embEncrypted1.set_footer(text="Made by hzh.")
+embEncrypted1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embDecrypt1 = discord.Embed(title="Decrypt Process",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
-embDecrypt1.set_footer(text="Made by hzh.")
+embDecrypt1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb14 = discord.Embed(title="Resigning process: Decrypted",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
-emb14.set_footer(text="Made by hzh.")
+emb14.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb20 = discord.Embed(title="Re-region process: Upload encrypted files from the FOREIGN region",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
-emb20.set_footer(text="Made by hzh.")
+emb20.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb4 = discord.Embed(title="Resigning process: Encrypted",
                     description="Your save is being resigned, please wait...",
                     colour=Color.DEFAULT.value)
-emb4.set_footer(text="Made by hzh.")
+emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb21 = discord.Embed(title="Re-region process: Upload encrypted files from YOUR region",
                     description="Please attach two encrypted savefiles that you want to upload (.bin and non bin).",
                     colour=Color.DEFAULT.value)
 
-emb21.set_footer(text="Made by hzh.")
+emb21.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb22 = discord.Embed(title="Obtain process: Keystone",
                           description="Obtaining keystone, please wait...",
                           colour=Color.DEFAULT.value)
-emb22.set_footer(text="Made by hzh.")
+emb22.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng = discord.Embed(title="PNG Process",
                       description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                       colour=Color.DEFAULT.value)
-embpng.set_footer(text="Made by hzh.")
+embpng.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng1 = discord.Embed(title="PNG process: Initializing",
                       description="Mounting save.",
                       colour=Color.DEFAULT.value) 
-embpng1.set_footer(text="Made by hzh.")
+embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng2 = discord.Embed(title="PNG process: Downloading",
                     description="Save mounted",
                     colour=Color.DEFAULT.value)
-embpng2.set_footer(text="Made by hzh.")
+embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embnv1 = discord.Embed(title="Error: PS username not valid",
                       description="This PS username is not in a valid format.",
                       colour=Color.DEFAULT.value)
-embnv1.set_footer(text="Made by hzh.")
+embnv1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb8 = discord.Embed(title="Error: PSN username",
                 description=f"Your input was not a valid PSN username, you have {OTHER_TIMEOUT} seconds to reply with your account ID instead.",
                 colour=Color.DEFAULT.value)
-emb8.set_footer(text="Made by hzh.")
+emb8.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embnt = discord.Embed(title="Error: Time limit reached",
                     description="You did not send your account ID in time.",
                     colour=Color.DEFAULT.value)
-embnt.set_footer(text="Made by hzh.")
+embnt.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embvalidpsn = discord.Embed(title="Obtained: PSN username",
                     description="Your input was a valid PSN username.",
                     colour=Color.DEFAULT.value)
-embvalidpsn.set_footer(text="Made by hzh.")
+embvalidpsn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embinit = discord.Embed(title="Instance creator",
                                 description="Click button to get started!\nYou can also use old threads that you have created with the bot.",
                                 colour=Color.DEFAULT.value)
-embinit.set_footer(text="Made by hzh.")
+embinit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTitleChange = discord.Embed(title="Change title: Upload",
                                 description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin).",
                                 colour=Color.DEFAULT.value)
-embTitleChange.set_footer(text="Made by hzh.")
+embTitleChange.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTitleErr = discord.Embed(title="Change title: Error",
                                 description="Please select a maintitle or subtitle.",
                                 colour=Color.DEFAULT.value)
-embTitleErr.set_footer(text="Made by hzh.")
+embTitleErr.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTimedOut = discord.Embed(title="Timed out!",
                                 description="Sending file.",
                                 colour=Color.DEFAULT.value)
-embTimedOut.set_footer(text="Made by hzh.")
+embTimedOut.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embDone_G = discord.Embed(title="Success",
                         description=f"Please report any errors.",
                         colour=Color.DEFAULT.value)
-embDone_G.set_footer(text="Made by hzh.")
+embDone_G.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_conv_choice = discord.Embed(title="Converter: Choice",
                         description=f"Could not recognize the platform of the save, please choose what platform to convert the save to.",
                         colour=Color.DEFAULT.value)
-emb_conv_choice.set_footer(text="Made by hzh.")
+emb_conv_choice.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_upl_savegame = discord.Embed(title="Upload files",
                         description=f"Please attach atleast 1 savefile, it must be fully decrypted.",
                         colour=Color.DEFAULT.value)
-emb_upl_savegame.set_footer(text="Made by hzh.")
+emb_upl_savegame.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 loadSFO_emb = discord.Embed(title="Initializing",
                                  description="Loading param.sfo...",
                                  color=Color.DEFAULT.value)
-loadSFO_emb.set_footer(text="Made by hzh.")
+loadSFO_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 finished_emb = discord.Embed(title="Finished", color=Color.DEFAULT.value)
-finished_emb.set_footer(text="Made by hzh.")
+finished_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 loadkeyset_emb = discord.Embed(title="Initializing",
                                  description="Obtaining keyset...",
                                  color=Color.DEFAULT.value)
-loadkeyset_emb.set_footer(text="Made by hzh.")
+loadkeyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

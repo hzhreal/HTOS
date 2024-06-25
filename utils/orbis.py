@@ -6,7 +6,7 @@ import discord
 import asyncio
 import struct
 from dataclasses import dataclass
-from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, Color
+from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, Color, Embed_t
 from utils.extras import generate_random_string
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, CHARACTER
 from data.crypto.mgsv_crypt import Crypt_MGSV
@@ -316,7 +316,7 @@ async def checkSaves(
             embfn = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
                     colour=Color.DEFAULT.value)
-            embfn.set_footer(text="Made by hzh.")
+            embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
 
@@ -324,7 +324,7 @@ async def checkSaves(
             embFileLarge = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
                     colour=Color.DEFAULT.value)
-            embFileLarge.set_footer(text="Made by hzh.")
+            embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embFileLarge)
             await asyncio.sleep(1)
     
@@ -332,7 +332,7 @@ async def checkSaves(
             embnvSys = discord.Embed(title="Upload alert: Error",
                 description=f"{attachment.filename} is not a valid sce_sys file!",
                 colour=Color.DEFAULT.value)
-            embnvSys.set_footer(text="Made by hzh.")
+            embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embnvSys)
             await asyncio.sleep(1)
 
@@ -357,7 +357,7 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
             embfn = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file name of '{attachment.filename}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
                     colour=Color.DEFAULT.value)
-            embfn.set_footer(text="Made by hzh.")
+            embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
 
@@ -365,7 +365,7 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
             embpn = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the path '{attachment.filename}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
                     colour=Color.DEFAULT.value)
-            embpn.set_footer(text="Made by hzh.")
+            embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embpn)
             await asyncio.sleep(1)
 
@@ -374,7 +374,7 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
                 embnvBin = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file size of '{attachment.filename}' is not {SEALED_KEY_ENC_SIZE} bytes.",
                     colour=Color.DEFAULT.value)
-                embnvBin.set_footer(text="Made by hzh.")
+                embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embnvBin)
                 await asyncio.sleep(1)
             else:
@@ -384,7 +384,7 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
                 embFileLarge = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
                         colour=Color.DEFAULT.value)
-                embFileLarge.set_footer(text="Made by hzh.")
+                embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embFileLarge)
                 await asyncio.sleep(1)
             else:

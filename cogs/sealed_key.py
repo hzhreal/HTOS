@@ -4,7 +4,7 @@ from io import BytesIO
 from network.socket_functions import SocketPS, SocketError
 from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE
+from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE
 from utils.orbis import PfsSKKey
 
 class Sealed_Key(commands.Cog):
@@ -22,7 +22,7 @@ class Sealed_Key(commands.Cog):
         embLoad = discord.Embed(title="Loading",
                           description=f"Loading {sealed_key.filename}...",
                           colour=Color.DEFAULT.value)
-        embLoad.set_footer(text="Made by hzh.")
+        embLoad.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.respond(embed=embLoad)
 
@@ -46,7 +46,7 @@ class Sealed_Key(commands.Cog):
             embdec = discord.Embed(title="Finished",
                           description=f"Successfully decrypted {sealed_key.filename}.",
                           colour=Color.DEFAULT.value)
-            embdec.set_footer(text="Made by hzh.")
+            embdec.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=embdec)
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))

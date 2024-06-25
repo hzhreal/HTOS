@@ -10,7 +10,7 @@ from google_drive import GDapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, CON_FAIL, CON_FAIL_MSG,
-    logger, Color,
+    logger, Color, Embed_t,
     emb6, embDecrypt1
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
@@ -71,7 +71,7 @@ class Decrypt(commands.Cog):
                 emb11 = discord.Embed(title="Decrypt process: Initializing",
                         description=f"Mounting {save}.",
                         colour=Color.DEFAULT.value)
-                emb11.set_footer(text="Made by hzh.")
+                emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
@@ -87,7 +87,7 @@ class Decrypt(commands.Cog):
                     emb_dl = discord.Embed(title="Decrypt process: Downloading",
                       description=f"{save} mounted, downloading decrypted savefile.",
                       colour=Color.DEFAULT.value) 
-                    emb_dl.set_footer(text="Made by hzh.")
+                    emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=emb_dl)
 
                     if include_sce_sys:
@@ -104,17 +104,21 @@ class Decrypt(commands.Cog):
                     emb13 = discord.Embed(title="Decrypt process: Successful",
                                 description=f"Downloaded the decrypted save of **{save}** from **{title_id_grab}**.",
                                 colour=Color.DEFAULT.value)
-                    emb13.set_footer(text="Made by hzh.")
+                    emb13.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     
                     await extra_decrypt(ctx, Crypto, title_id_grab, destination_directory, save)
 
                     await ctx.edit(embed=emb13)
 
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:
+                    status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
+                    elif isinstance(e, OSError):
+                        e = BASE_ERROR_MSG
+                        status = "unexpected"
                     await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
@@ -128,7 +132,7 @@ class Decrypt(commands.Cog):
             embDdone = discord.Embed(title="Decryption process: Successful",
                                 description=f"**{finishedFiles}** has been decrypted.",
                                 colour=Color.DEFAULT.value)
-            embDdone.set_footer(text="Made by hzh.")
+            embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embDdone)
 
             if len(await aiofiles.os.listdir(newDOWNLOAD_DECRYPTED)) == 1:

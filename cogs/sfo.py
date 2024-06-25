@@ -5,7 +5,7 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
+from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
 from utils.orbis import SFOContext, OrbisError
 
 class SFO_Editor(SFOContext):
@@ -32,7 +32,7 @@ class SFO_Editor(SFOContext):
                 paramEmb.add_field(name=key.upper(),
                                 value=val,
                                 inline=True)
-            paramEmb.set_footer(text="Made by hzh.")
+            paramEmb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             embeds.append(paramEmb)
 

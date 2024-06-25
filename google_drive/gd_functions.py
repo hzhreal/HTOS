@@ -11,7 +11,7 @@ from discord.ext import tasks
 from dotenv import load_dotenv
 from aiogoogle import Aiogoogle, HTTPError
 from dateutil import parser
-from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, logger, Color
+from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, logger, Color, Embed_t
 
 load_dotenv()
 
@@ -51,12 +51,12 @@ class GDapi:
     embednf = discord.Embed(title="Error: Google drive upload",
                         description="Could not locate any files inside your google drive folder. Are you sure I have permissions or that there is no folders inside?",
                         colour=Color.DEFAULT.value)
-    embednf.set_footer(text="Made by hzh.")
+    embednf.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
     emblinkwrong = discord.Embed(title="Google drive upload: Error",
                       description="Could not obtain folder id from inputted link!",
                       colour=Color.DEFAULT.value)
-    emblinkwrong.set_footer(text="Made by hzh.")
+    emblinkwrong.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
     
     @staticmethod
     async def grabfolderid(folder_link: str, ctx: discord.ApplicationContext) -> str | bool:
@@ -127,7 +127,7 @@ class GDapi:
                 embfn = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file name of '{file_name}' ({len(file_name)}) exceeds {MAX_FILENAME_LEN}.",
                         colour=Color.DEFAULT.value)
-                embfn.set_footer(text="Made by hzh.")
+                embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embfn)
                 await asyncio.sleep(1)
 
@@ -135,7 +135,7 @@ class GDapi:
                 embFileLarge = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
                     colour=Color.DEFAULT.value)
-                embFileLarge.set_footer(text="Made by hzh.")
+                embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embFileLarge)
                 await asyncio.sleep(1)
 
@@ -143,7 +143,7 @@ class GDapi:
                 embnvSys = discord.Embed(title="Upload alert: Error",
                     description=f"{file_name} is not a valid sce_sys file!",
                     colour=Color.DEFAULT.value)
-                embnvSys.set_footer(text="Made by hzh.")
+                embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embnvSys)
                 await asyncio.sleep(1)
 
@@ -172,7 +172,7 @@ class GDapi:
                 embfn = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file name of '{file_name}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
                         colour=Color.DEFAULT.value)
-                embfn.set_footer(text="Made by hzh.")
+                embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embfn)
                 await asyncio.sleep(1)
 
@@ -180,7 +180,7 @@ class GDapi:
                 embpn = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the path '{file_name}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
                         colour=Color.DEFAULT.value)
-                embpn.set_footer(text="Made by hzh.")
+                embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embpn)
                 await asyncio.sleep(1)
             
@@ -189,7 +189,7 @@ class GDapi:
                     embnvBin = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file size of '{file_name}' is not {SEALED_KEY_ENC_SIZE} bytes.",
                         colour=Color.DEFAULT.value)
-                    embnvBin.set_footer(text="Made by hzh.")
+                    embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embnvBin)
                     await asyncio.sleep(1)
 
@@ -201,7 +201,7 @@ class GDapi:
                     embFileLarge = discord.Embed(title="Upload alert: Error",
                             description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
                             colour=Color.DEFAULT.value)
-                    embFileLarge.set_footer(text="Made by hzh.")
+                    embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embFileLarge)
                     await asyncio.sleep(1)
                 else:
@@ -243,7 +243,7 @@ class GDapi:
             embpl = discord.Embed(title="Upload alert: Error",
                     description=f"Sorry, the path '{path}' ({real_len}) exceeds {lim}.",
                     colour=Color.DEFAULT.value)
-            embpl.set_footer(text="Made by hzh.")
+            embpl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embpl)
             await asyncio.sleep(1)
 
@@ -251,7 +251,7 @@ class GDapi:
             embfn = discord.Embed(title="Upload alert: Error",
                         description=f"Sorry, the file name of '{filename}' ({len(filename)}) exceeds {lim}.",
                         colour=Color.DEFAULT.value)
-            embfn.set_footer(text="Made by hzh.")
+            embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
 
@@ -468,7 +468,7 @@ class GDapi:
                     embeddone = discord.Embed(title="Google drive upload: Retrieved file",
                         description=f"{file_name} has been uploaded and saved.",
                         colour=Color.DEFAULT.value)
-                    embeddone.set_footer(text="Made by hzh.")
+                    embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embeddone)
                     
             else:
@@ -515,7 +515,7 @@ class GDapi:
                 embeddone = discord.Embed(title="Google drive upload: Retrieved file",
                     description=f"{file_path} has been uploaded and saved.",
                     colour=Color.DEFAULT.value)
-                embeddone.set_footer(text="Made by hzh.")
+                embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embeddone)
             
             return uploaded_file_paths
