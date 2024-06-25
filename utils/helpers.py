@@ -13,8 +13,9 @@ from google_drive import GDapi, GDapiError
 from network import FTPps
 # from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
-    logger, Color, bot, psnawp, 
-    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG,
+    logger, Color, Embed_t, bot, psnawp, 
+    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, 
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM,
     embgdt, embUtimeout, embnt, embnv1, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
@@ -82,7 +83,7 @@ async def errorHandling(
     embe = discord.Embed(title="Error",
                             description=error,
                     colour=Color.DEFAULT.value)
-    embe.set_footer(text="Made by hzh.")
+    embe.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
     await ctx.edit(embed=embe)
     if (uploaded_file_paths is not None) and (mountPaths is not None) and (C1ftp is not None) and error != CON_FAIL_MSG:
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
@@ -122,7 +123,7 @@ async def upload2(
             emb1 = discord.Embed(title="Upload alert: Successful", 
                                  description=f"File '{attachment.filename}' has been successfully uploaded and saved.", 
                                  colour=Color.DEFAULT.value)
-            emb1.set_footer(text="Made by hzh.")
+            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             logger.info(f"Saved {attachment.filename} to {file_path}")
             
@@ -184,7 +185,7 @@ async def upload1(ctx: discord.ApplicationContext, saveLocation: str) -> str:
             emb16 = discord.Embed(title="Upload alert: Successful", 
                                   description=f"File '{attachment.filename}' has been successfully uploaded and saved.", 
                                   colour=Color.DEFAULT.value)
-            emb16.set_footer(text="Made by hzh.")
+            emb16.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await message.delete()
             await ctx.edit(embed=emb16)
 
@@ -248,7 +249,7 @@ async def upload2_special(ctx: discord.ApplicationContext, saveLocation: str, ma
             emb1 = discord.Embed(title="Upload alert: Successful", 
                                  description=f"File '{rel_file_path}' has been successfully uploaded and saved.", 
                                  colour=Color.DEFAULT.value)
-            emb1.set_footer(text="Made by hzh.")
+            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             logger.info(f"Saved {attachment.filename} to {full_path}")
             
@@ -383,7 +384,7 @@ async def replaceDecrypted(
             emb18 = discord.Embed(title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
                             description=f"Please attach a decrypted savefile that you want to upload, MUST be equivalent to {file} (can be any name).",
                             colour=Color.DEFAULT.value)
-            emb18.set_footer(text="Made by hzh.")
+            emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=emb18)
 
@@ -399,14 +400,38 @@ async def replaceDecrypted(
             raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
     
     else:
-        SPLITVALUE = "SLASH"
-        patterned = "\n".join(files)
-        emb18 = discord.Embed(title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-                            description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:\n\n**{patterned}**",
-                            colour=Color.DEFAULT.value)
-        emb18.set_footer(text="Made by hzh.")
+        async def send_chunk(chunk: str) -> None:
+            embenc_out = discord.Embed(
+                title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
+                description=chunk,
+                colour=Color.DEFAULT.value
+            )
+            embenc_out.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            await ctx.send(embed=embenc_out)
+            await asyncio.sleep(1)
 
+        SPLITVALUE = "SLASH"
+
+        emb18 = discord.Embed(
+            title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
+            description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:",
+            colour=Color.DEFAULT.value
+        )
+        emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.edit(embed=emb18)
+
+        current_chunk = ""
+        for line in files:
+            if len(current_chunk) + len(line) + 1 > EMBED_DESC_LIM:
+                await send_chunk(current_chunk)
+                current_chunk = ""
+            
+            if current_chunk:
+                current_chunk += "\n"
+            current_chunk += line
+        if current_chunk:
+            await send_chunk(current_chunk)
+
         uploaded_file_paths = await upload2(ctx, upload_decrypted, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, savesize=savesize)
 
         if len(uploaded_file_paths) >= 1:
@@ -415,7 +440,7 @@ async def replaceDecrypted(
                 if file1[0] == "": file1 = file1[1:]
                 file1 = "/".join(file1)
 
-                if file1 not in patterned:
+                if file1 not in files:
                     await aiofiles.os.remove(os.path.join(upload_decrypted, file))
                     
                 else:
@@ -457,5 +482,5 @@ async def send_final(ctx: discord.ApplicationContext, file_name: str, zipupPath:
         embg = discord.Embed(title="Google Drive: Upload complete",
                     description=file_url,
                     colour=Color.DEFAULT.value)
-        embg.set_footer(text="Made by hzh.")
+        embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.respond(embed=embg)
