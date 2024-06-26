@@ -1,12 +1,13 @@
 import discord
 from utils.constants import bot, TOKEN
-from utils.workspace import startup
+from utils.workspace import startup, check_version
 from utils.helpers import threadButton
 
 @bot.event
 async def on_ready() -> None:
     from google_drive import checkGDrive
     startup()
+    await check_version()
     bot.add_view(threadButton()) # make view persistent
     checkGDrive.start() # start gd daemon
     print(

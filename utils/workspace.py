@@ -7,6 +7,7 @@ import aiosqlite
 import discord
 import aiofiles
 import aiofiles.os
+import aiohttp
 from typing import Literal
 from ftplib import FTP, error_perm
 from aioftp.errors import AIOFTPException
@@ -356,3 +357,17 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
             await db.commit()
     except aiosqlite.Error as e:
         logger.error(f"Could not write account ID to database: {e}")
+
+async def check_version() -> None:
+    from utils.constants import VERSION
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get("https://api.github.com/repos/hzhreal/HTOS/releases/latest") as resp:
+            content = await resp.json()
+            latest_ver = content.get("tag_name", 0)
+    
+    if latest_ver != VERSION:
+        print("Attention: You are running an outdated version of HTOS. Please update to the latest version to ensure security, performance, and access to new features.")
+        print(f"Your version: {VERSION}")
+        print(f"Latest version: {latest_ver}")
+        print("\n")

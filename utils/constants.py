@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from enum import Enum
 from psnawp_api import PSNAWP
 
+VERSION = "v1.0.0"
+
 # LOGGER
 def setup_logger() -> logging.Logger:
     LOGGER_FOLDER = "logs"
@@ -166,7 +168,7 @@ class Color(Enum):
     RED = 0xF42B00
 
 class Embed_t(Enum):
-    DEFAULT_FOOTER = "Made by hzh."
+    DEFAULT_FOOTER = f"Made by hzh. ({VERSION})"
 
 embUtimeout = discord.Embed(title="Upload alert: Error",
                       description="Time's up! You didn't attach any files.",
