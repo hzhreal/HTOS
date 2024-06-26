@@ -274,7 +274,7 @@ async def upload2_special(ctx: discord.ApplicationContext, saveLocation: str, ma
         await ctx.send("Reply to the message with files that does not reach the limit, or a public google drive link (do not reach the file limit)!", ephemeral=True)
         
     return uploaded_file_paths
-    
+
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     """Used to obtain an account ID, either through converting from username, obtaining from db, or manually. Utilizes the PSN API or a website doing it for us."""
     await ctx.defer()
@@ -400,14 +400,15 @@ async def replaceDecrypted(
             raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
     
     else:
-        async def send_chunk(chunk: str) -> None:
+        async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
             embenc_out = discord.Embed(
                 title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
                 description=chunk,
                 colour=Color.DEFAULT.value
             )
             embenc_out.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.send(embed=embenc_out)
+            msg = await ctx.send(embed=embenc_out)
+            msg_container.append(msg)
             await asyncio.sleep(1)
 
         SPLITVALUE = "SLASH"
@@ -419,20 +420,25 @@ async def replaceDecrypted(
         )
         emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.edit(embed=emb18)
+        await asyncio.sleep(2)
 
+        msg_container: list[discord.Message] = []
         current_chunk = ""
         for line in files:
             if len(current_chunk) + len(line) + 1 > EMBED_DESC_LIM:
-                await send_chunk(current_chunk)
+                await send_chunk(msg_container, current_chunk)
                 current_chunk = ""
             
             if current_chunk:
                 current_chunk += "\n"
             current_chunk += line
         if current_chunk:
-            await send_chunk(current_chunk)
+            await send_chunk(msg_container, current_chunk)
 
         uploaded_file_paths = await upload2(ctx, upload_decrypted, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, savesize=savesize)
+
+        for msg in msg_container:
+            await msg.delete(delay=0.5)
 
         if len(uploaded_file_paths) >= 1:
             for file in await aiofiles.os.listdir(upload_decrypted):
