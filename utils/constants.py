@@ -153,7 +153,6 @@ MAX_FILENAME_LEN = 255
 
 # regex
 PSN_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
-QC_RE = re.compile(r"^([0-9a-fA-F]){8} ([0-9a-fA-F]){8}$")
 
 # ERRNO
 CON_FAIL = [errno.ECONNREFUSED, errno.ETIMEDOUT, errno.EHOSTUNREACH, errno.ENETUNREACH]

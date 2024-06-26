@@ -61,7 +61,6 @@ from .constants import (
     MAX_PATH_LEN,
     MAX_FILENAME_LEN,
     PSN_USERNAME_RE,
-    QC_RE,
     BOT_DISCORD_UPLOAD_LIMIT,
     OTHER_TIMEOUT,
     CON_FAIL,

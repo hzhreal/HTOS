@@ -132,7 +132,6 @@ class Quick(commands.Cog):
               self, 
               ctx: discord.ApplicationContext, 
               codes: str, 
-              endianness: Option(str, choices=["little", "big"], description="Little is default, if little does not work use this option and try big.", default="little") # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
@@ -180,7 +179,7 @@ class Quick(commands.Cog):
                 await ctx.edit(embed=embLoading)
 
                 try:
-                    qc = QuickCodes(savegame, codes, endianness)
+                    qc = QuickCodes(savegame, codes)
                     await qc.apply_code()  
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
