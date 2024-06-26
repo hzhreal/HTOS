@@ -358,6 +358,14 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
     except aiosqlite.Error as e:
         logger.error(f"Could not write account ID to database: {e}")
 
+def semver_to_num(ver: str | int) -> int:
+    if isinstance(ver, int):
+        return ver
+
+    ver = ver[1:].split(".")
+    ver = int("".join(ver))
+    return ver
+
 async def check_version() -> None:
     from utils.constants import VERSION
 
@@ -365,9 +373,22 @@ async def check_version() -> None:
         async with session.get("https://api.github.com/repos/hzhreal/HTOS/releases/latest") as resp:
             content = await resp.json()
             latest_ver = content.get("tag_name", 0)
+
+    latest_ver_num = semver_to_num(latest_ver)
+    cur_ver_num = semver_to_num(VERSION)
     
-    if latest_ver != VERSION:
+    if cur_ver_num < latest_ver_num:
         print("Attention: You are running an outdated version of HTOS. Please update to the latest version to ensure security, performance, and access to new features.")
+        print(f"Your version: {VERSION}")
+        print(f"Latest version: {latest_ver}")
+        print("\n")
+    elif cur_ver_num > latest_ver_num:
+        print("Attention: You are running a version of HTOS that is newer than the latest release. Please report any bugs you may encounter.")
+        print(f"Your version: {VERSION}")
+        print(f"Latest version: {latest_ver}")
+        print("\n")
+    else:
+        print("You are running the latest version of HTOS.")
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
