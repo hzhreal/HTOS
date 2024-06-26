@@ -135,7 +135,7 @@ class Encrypt(commands.Cog):
                     await errorHandling(ctx, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
-                except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError, TimeoutError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
