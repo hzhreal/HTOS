@@ -163,7 +163,6 @@ class QuickCodes:
                                 self.data[write:write + 4] = wv32
 
                             case "3" | "B":
-                                # MAY NOT WORK!
                                 wv64 = np.uint64(unpack("<Q", self.data[write:write + 8])[0])
                                 wv64 += val
                                 wv64 = pack("<Q", wv64)
@@ -191,7 +190,6 @@ class QuickCodes:
                                 self.data[write:write + 4] = wv32
                             
                             case "7" | "F":
-                                # MAY NOT WORK!
                                 wv64 = np.uint64(unpack("<Q", self.data[write:write + 8])[0])
                                 wv64 -= val
                                 wv64 = pack("<Q", wv64)
