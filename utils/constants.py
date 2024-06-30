@@ -3,6 +3,12 @@ import discord
 import logging.config
 import re
 import errno
+from zipfile import (
+    #ZIP_BZIP2, 
+    #ZIP_DEFLATED, 
+    #ZIP_LZMA, 
+    ZIP_STORED
+)
 from discord.ext import commands
 from dotenv import load_dotenv
 from enum import Enum
@@ -127,6 +133,8 @@ MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
 BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
+ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
+ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 

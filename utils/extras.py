@@ -4,7 +4,7 @@ import random
 import string
 import aiofiles.os
 from PIL import Image
-from utils.constants import logger
+from utils.constants import logger, ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
@@ -27,7 +27,7 @@ def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
     full_new_path = os.path.join(directory_to_zip, zip_file_name)
   
     # writing files to a zipfile 
-    with zipfile.ZipFile(full_new_path,'w') as f: 
+    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f: 
        # writing each file one by one without the top-level folder
         for _, file in file_paths:
             archive_name = os.path.relpath(file, directory_to_zip)
