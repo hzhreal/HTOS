@@ -49,6 +49,7 @@ from .constants import (
     PS_ID_DESC,
     BASE_ERROR_MSG,
     SCE_SYS_CONTENTS,
+    MANDATORY_SCE_SYS_CONTENTS,
     ICON0_MAXSIZE,
     ICON0_FORMAT,
     ICON0_NAME,

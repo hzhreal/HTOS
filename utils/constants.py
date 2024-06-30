@@ -143,6 +143,7 @@ BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and i
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
 SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
+MANDATORY_SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone"]
 
 ICON0_MAXSIZE = 0x1C800
 ICON0_FORMAT = (228, 128)

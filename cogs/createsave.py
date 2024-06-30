@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
@@ -95,9 +95,10 @@ class CreateSave(commands.Cog):
             # handle sce_sys first
             await ctx.edit(embed=embSceSys)
             uploaded_file_paths_sys = await upload2(ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
-            if len(uploaded_file_paths_sys) != len(SCE_SYS_CONTENTS):
-                # we are trying to have a valid save
-                raise FileError("All sce_sys files are not uploaded! We are trying to create a valid save here.")
+            for sys_file in uploaded_file_paths_sys:
+                if os.path.basename(sys_file) not in MANDATORY_SCE_SYS_CONTENTS:
+                    # we are trying to have a valid save
+                    raise FileError("All sce_sys files are not uploaded! We are trying to create a valid save here.")
 
             # next, other files (gamesaves)
             await ctx.edit(embed=embgs)
