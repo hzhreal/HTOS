@@ -119,17 +119,17 @@ async def upload2(
         for attachment in valid_attachments:
             file_path = os.path.join(saveLocation, attachment.filename)
             await attachment.save(file_path)
+            logger.info(f"Saved {attachment.filename} to {file_path}")
             
             emb1 = discord.Embed(title="Upload alert: Successful", 
                                  description=f"File '{attachment.filename}' has been successfully uploaded and saved.", 
                                  colour=Color.DEFAULT.value)
             emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-            logger.info(f"Saved {attachment.filename} to {file_path}")
-            
             await ctx.edit(embed=emb1)
+            await asyncio.sleep(1)
+
             uploaded_file_paths.append(file_path)
-            # run a quick test
+            # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
                 await orbis.parse_pfs_header(file_path)
             elif ps_save_pair_upload and attachment.filename.endswith(".bin"):
@@ -143,7 +143,7 @@ async def upload2(
             await message.delete()
             folder_id = await GDapi.grabfolderid(google_drive_link, ctx)
             if not folder_id: raise GDapiError("Could not find the folder id!")
-            uploaded_file_paths = await GDapi.downloadsaves_gd(ctx, folder_id, saveLocation, max_files, [SCE_SYS_CONTENTS] if sys_files else None, ps_save_pair_upload, ignore_filename_check)
+            uploaded_file_paths = await GDapi.downloadsaves_gd(ctx, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check)
            
         except asyncio.TimeoutError:
             await ctx.edit(embed=embgdt)
@@ -245,15 +245,15 @@ async def upload2_special(ctx: discord.ApplicationContext, saveLocation: str, ma
             full_path = os.path.join(dir_path, file_name)
 
             await attachment.save(full_path)
+            logger.info(f"Saved {attachment.filename} to {full_path}")
             
             emb1 = discord.Embed(title="Upload alert: Successful", 
                                  description=f"File '{rel_file_path}' has been successfully uploaded and saved.", 
                                  colour=Color.DEFAULT.value)
-            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-            logger.info(f"Saved {attachment.filename} to {full_path}")
-            
+            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)  
             await ctx.edit(embed=emb1)
+            await asyncio.sleep(1)
+
             uploaded_file_paths.append(full_path)
         
         await message.delete()
