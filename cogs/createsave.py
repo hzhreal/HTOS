@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
@@ -95,14 +95,20 @@ class CreateSave(commands.Cog):
             # handle sce_sys first
             await ctx.edit(embed=embSceSys)
             uploaded_file_paths_sys = await upload2(ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
+            if len(uploaded_file_paths_sys) == 0:
+                raise FileError("No valid sce_sys files uploaded!")
+
             for sys_file in uploaded_file_paths_sys:
-                if os.path.basename(sys_file) not in MANDATORY_SCE_SYS_CONTENTS:
+                sys_file_name = os.path.basename(sys_file)
+                if sys_file_name not in MANDATORY_SCE_SYS_CONTENTS and sys_file_name not in SCE_SYS_CONTENTS:
                     # we are trying to have a valid save
-                    raise FileError("All sce_sys files are not uploaded! We are trying to create a valid save here.")
+                    raise FileError("All mandatory sce_sys files are not uploaded! We are trying to create a valid save here.")
 
             # next, other files (gamesaves)
             await ctx.edit(embed=embgs)
             uploaded_file_paths_special = await upload2_special(ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
+            if len(uploaded_file_paths_special) == 0:
+                raise FileError("No gamesaves uploaded!")
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(ctx, err, workspaceFolders, None, None, None)
@@ -123,14 +129,15 @@ class CreateSave(commands.Cog):
             await handleTitles(scesys_local, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = await obtainCUSA(scesys_local)
             
-            for gamesave in uploaded_file_paths_special:
-                embsl = discord.Embed(title=f"Gamesaves: Second layer\n{gamesave}",
-                                  description="Checking for supported second layer encryption/compression...",
-                                  colour=Color.DEFAULT.value)
-                embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await ctx.edit(embed=embsl)
-                await asyncio.sleep(0.5)
-                await extra_import(Crypto, title_id, gamesave)
+            if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT: # dont want to create unnecessary overhead
+                for gamesave in uploaded_file_paths_special:
+                    embsl = discord.Embed(title=f"Gamesaves: Second layer\n{gamesave}",
+                                    description="Checking for supported second layer encryption/compression...",
+                                    colour=Color.DEFAULT.value)
+                    embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    await ctx.edit(embed=embsl)
+                    await asyncio.sleep(0.5)
+                    await extra_import(Crypto, title_id, gamesave)
 
             # gen a new name for file to not get overwritten with anything on the console
             random_string = generate_random_string(RANDOMSTRING_LENGTH)

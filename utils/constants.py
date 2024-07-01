@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from enum import Enum
 from psnawp_api import PSNAWP
 
-VERSION = "v1.0.0"
+VERSION = "v1.0.1"
 
 # LOGGER
 def setup_logger() -> logging.Logger:
@@ -135,6 +135,7 @@ OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign comma
 BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
 ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
+CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 

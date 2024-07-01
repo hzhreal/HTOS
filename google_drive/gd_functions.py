@@ -273,7 +273,7 @@ class GDapi:
 
             count = GDapi.fileCount(listedJSON)
     
-            if count <= max_files and count >= 1:
+            if count <= max_files:
                 file_data_storage = []
 
                 for file_info in listedJSON.get("files", []):
@@ -470,6 +470,7 @@ class GDapi:
                         colour=Color.DEFAULT.value)
                     embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embeddone)
+                    await asyncio.sleep(1)
                     
             else:
                 await ctx.edit(embed=cls.embednf)
@@ -482,6 +483,8 @@ class GDapi:
     async def downloadfiles_recursive(cls, ctx: discord.ApplicationContext, dst_local_dir: str, folder_id: str, max_files_in_dir: int, savesize: int | None = None) -> list[str]:
         files = await cls.list_dir(ctx, folder_id, max_files_in_dir)
         uploaded_file_paths = []
+        if len(files) == 0:
+            return uploaded_file_paths
         total_count = 0
 
         for entry in files:
@@ -517,5 +520,6 @@ class GDapi:
                     colour=Color.DEFAULT.value)
                 embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embeddone)
+                await asyncio.sleep(1)
             
             return uploaded_file_paths
