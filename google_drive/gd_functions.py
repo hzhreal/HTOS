@@ -8,12 +8,9 @@ import re
 import datetime
 import utils.orbis as orbis
 from discord.ext import tasks
-from dotenv import load_dotenv
 from aiogoogle import Aiogoogle, HTTPError
 from dateutil import parser
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, logger, Color, Embed_t
-
-load_dotenv()
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")

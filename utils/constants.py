@@ -10,7 +10,6 @@ from zipfile import (
     ZIP_STORED
 )
 from discord.ext import commands
-from dotenv import load_dotenv
 from enum import Enum
 from psnawp_api import PSNAWP
 
@@ -60,9 +59,6 @@ def setup_logger() -> logging.Logger:
 
     return logger
 logger = setup_logger()
-
-# ENVIROMENT VARIABLES
-load_dotenv()
 
 # CONFIG
 IP = str(os.getenv("IP"))
