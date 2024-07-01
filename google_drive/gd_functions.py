@@ -11,7 +11,7 @@ from discord.ext import tasks
 from dotenv import load_dotenv
 from aiogoogle import Aiogoogle, HTTPError
 from dateutil import parser
-from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, logger, Color, Embed_t
 
 load_dotenv()
 
@@ -48,18 +48,22 @@ class GDapi:
         **json.load(open(credentials_path))
     }
 
-    embednf = discord.Embed(title="Error: Google drive upload",
-                        description="Could not locate any files inside your google drive folder. Are you sure I have permissions or that there is no folders inside?",
-                        colour=Color.DEFAULT.value)
+    embednf = discord.Embed(
+        title="Error: Google drive upload",
+        description="Could not locate any files inside your google drive folder. Are you sure I have permissions or that there is no folders inside?",
+        colour=Color.DEFAULT.value
+    )
     embednf.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-    emblinkwrong = discord.Embed(title="Google drive upload: Error",
-                      description="Could not obtain folder id from inputted link!",
-                      colour=Color.DEFAULT.value)
+    emblinkwrong = discord.Embed(
+        title="Google drive upload: Error",
+        description="Could not obtain folder id from inputted link!",
+        colour=Color.DEFAULT.value
+    )
     emblinkwrong.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
     
     @staticmethod
-    async def grabfolderid(folder_link: str, ctx: discord.ApplicationContext) -> str | bool:
+    async def grabfolderid(folder_link: str, ctx: discord.ApplicationContext | discord.Message) -> str | bool:
         match = FOLDER_ID_RE.search(folder_link)
 
         if match:
@@ -103,7 +107,7 @@ class GDapi:
     
     @staticmethod
     async def fileCheck(
-              ctx: discord.ApplicationContext, 
+              ctx: discord.ApplicationContext | discord.Message, 
               file_data: list[dict[str, str | int]], 
               sys_files: list[str] | None, 
               ps_save_pair_upload: bool, 
@@ -124,25 +128,31 @@ class GDapi:
             file_size = file_info["filesize"]
 
             if len(file_name) > MAX_FILENAME_LEN and not ignore_filename_check:
-                embfn = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file name of '{file_name}' ({len(file_name)}) exceeds {MAX_FILENAME_LEN}.",
-                        colour=Color.DEFAULT.value)
+                embfn = discord.Embed(
+                    title="Upload alert: Error",
+                    description=f"Sorry, the file name of '{file_name}' ({len(file_name)}) exceeds {MAX_FILENAME_LEN}.",
+                    colour=Color.DEFAULT.value
+                )
                 embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embfn)
                 await asyncio.sleep(1)
 
             elif file_size > GDapi.SAVEGAME_MAX:
-                embFileLarge = discord.Embed(title="Upload alert: Error",
+                embFileLarge = discord.Embed(
+                    title="Upload alert: Error",
                     description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
-                    colour=Color.DEFAULT.value)
+                    colour=Color.DEFAULT.value
+                )
                 embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embFileLarge)
                 await asyncio.sleep(1)
 
             elif (sys_files is not None) and (file_size > SYS_FILE_MAX or file_name not in sys_files): # sce_sys files are not that big
-                embnvSys = discord.Embed(title="Upload alert: Error",
+                embnvSys = discord.Embed(
+                    title="Upload alert: Error",
                     description=f"{file_name} is not a valid sce_sys file!",
-                    colour=Color.DEFAULT.value)
+                    colour=Color.DEFAULT.value
+                )
                 embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embnvSys)
                 await asyncio.sleep(1)
@@ -157,7 +167,7 @@ class GDapi:
         return valid_files_data     
 
     @staticmethod
-    async def save_pair_check(ctx: discord.ApplicationContext, file_data: list[dict[str, str | int]]) -> list[dict[str, str]]:
+    async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, file_data: list[dict[str, str | int]]) -> list[dict[str, str]]:
         valid_saves_check1 = []
         for file_info in file_data:
             file_name = file_info["filename"]
@@ -169,26 +179,32 @@ class GDapi:
             path_len = len(PS_UPLOADDIR + "/" + filename + "/")
 
             if filename_len > MAX_FILENAME_LEN:
-                embfn = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file name of '{file_name}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
-                        colour=Color.DEFAULT.value)
+                embfn = discord.Embed(
+                    title="Upload alert: Error",
+                    description=f"Sorry, the file name of '{file_name}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
+                    colour=Color.DEFAULT.value
+                )
                 embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embfn)
                 await asyncio.sleep(1)
 
             elif path_len > MAX_PATH_LEN:
-                embpn = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the path '{file_name}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
-                        colour=Color.DEFAULT.value)
+                embpn = discord.Embed(
+                    title="Upload alert: Error",
+                    description=f"Sorry, the path '{file_name}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
+                    colour=Color.DEFAULT.value
+                )
                 embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embpn)
                 await asyncio.sleep(1)
             
             elif file_name.endswith(".bin"):
                 if file_size != SEALED_KEY_ENC_SIZE:
-                    embnvBin = discord.Embed(title="Upload alert: Error",
+                    embnvBin = discord.Embed(
+                        title="Upload alert: Error",
                         description=f"Sorry, the file size of '{file_name}' is not {SEALED_KEY_ENC_SIZE} bytes.",
-                        colour=Color.DEFAULT.value)
+                        colour=Color.DEFAULT.value
+                    )
                     embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embnvBin)
                     await asyncio.sleep(1)
@@ -198,9 +214,11 @@ class GDapi:
                     valid_saves_check1.append(file_data)
             else:
                 if file_size > GDapi.SAVEGAME_MAX:
-                    embFileLarge = discord.Embed(title="Upload alert: Error",
-                            description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
-                            colour=Color.DEFAULT.value)
+                    embFileLarge = discord.Embed(
+                        title="Upload alert: Error",
+                        description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
+                        colour=Color.DEFAULT.value
+                    )
                     embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embFileLarge)
                     await asyncio.sleep(1)
@@ -231,7 +249,7 @@ class GDapi:
     @classmethod
     async def list_dir(
               cls, 
-              ctx: discord.ApplicationContext, 
+              ctx: discord.ApplicationContext | discord.Message, 
               folder_id: str, 
               max_files: int, 
               cur_nesting: int = 0, 
@@ -240,17 +258,21 @@ class GDapi:
             ) -> list[dict[str, str]]:
     
         async def warn_pathlen(path: str, real_len: int, lim: int) -> None:
-            embpl = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the path '{path}' ({real_len}) exceeds {lim}.",
-                    colour=Color.DEFAULT.value)
+            embpl = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the path '{path}' ({real_len}) exceeds {lim}.",
+                colour=Color.DEFAULT.value
+            )
             embpl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embpl)
             await asyncio.sleep(1)
 
         async def warn_filelen(filename: str, lim: int) -> None:
-            embfn = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file name of '{filename}' ({len(filename)}) exceeds {lim}.",
-                        colour=Color.DEFAULT.value)
+            embfn = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the file name of '{filename}' ({len(filename)}) exceeds {lim}.",
+                colour=Color.DEFAULT.value
+            )
             embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
@@ -298,7 +320,7 @@ class GDapi:
                         # go up one level
                         rel_path = os.path.dirname(rel_path)
                     else:
-                        if file_size == 0:
+                        if file_size == 0 or file_name in SCE_SYS_CONTENTS:
                             continue
                         
                         if rel_path is not None:
@@ -412,7 +434,7 @@ class GDapi:
     @classmethod
     async def downloadsaves_gd(
               cls, 
-              ctx: discord.ApplicationContext, 
+              ctx: discord.ApplicationContext | discord.Message, 
               folder_id: str, 
               download_dir: str, 
               max_files: int, 
@@ -465,12 +487,13 @@ class GDapi:
                     uploaded_file_paths.append(download_path)
 
                     logger.info(f"Saved {file_name} to {download_path}")
-                    embeddone = discord.Embed(title="Google drive upload: Retrieved file",
+                    embeddone = discord.Embed(
+                        title="Google drive upload: Retrieved file",
                         description=f"{file_name} has been uploaded and saved.",
-                        colour=Color.DEFAULT.value)
+                        colour=Color.DEFAULT.value
+                    )
                     embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await ctx.edit(embed=embeddone)
-                    await asyncio.sleep(1)
                     
             else:
                 await ctx.edit(embed=cls.embednf)
@@ -480,7 +503,7 @@ class GDapi:
         return uploaded_file_paths
     
     @classmethod
-    async def downloadfiles_recursive(cls, ctx: discord.ApplicationContext, dst_local_dir: str, folder_id: str, max_files_in_dir: int, savesize: int | None = None) -> list[str]:
+    async def downloadfiles_recursive(cls, ctx: discord.ApplicationContext | discord.Message, dst_local_dir: str, folder_id: str, max_files_in_dir: int, savesize: int | None = None) -> list[str]:
         files = await cls.list_dir(ctx, folder_id, max_files_in_dir)
         uploaded_file_paths = []
         if len(files) == 0:
@@ -515,11 +538,12 @@ class GDapi:
                 uploaded_file_paths.append(download_path)
 
                 logger.info(f"Saved {file_path} to {download_path}")
-                embeddone = discord.Embed(title="Google drive upload: Retrieved file",
+                embeddone = discord.Embed(
+                    title="Google drive upload: Retrieved file",
                     description=f"{file_path} has been uploaded and saved.",
-                    colour=Color.DEFAULT.value)
+                    colour=Color.DEFAULT.value
+                )
                 embeddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embeddone)
-                await asyncio.sleep(1)
             
             return uploaded_file_paths

@@ -10,7 +10,7 @@ from utils.constants import (
     TERRARIA_TITLEID, SMT5_TITLEID
 )
 
-async def extra_decrypt(ctx: discord.ApplicationContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
+async def extra_decrypt(ctx: discord.ApplicationContext | discord.Message, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
     embedTimeout = discord.Embed(title="Timeout Error:", 
                                  description="You took too long, sending the file with the format: Encrypted",
                                  colour=Color.DEFAULT.value)

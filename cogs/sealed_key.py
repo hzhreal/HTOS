@@ -19,11 +19,12 @@ class Sealed_Key(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        embLoad = discord.Embed(title="Loading",
-                          description=f"Loading {sealed_key.filename}...",
-                          colour=Color.DEFAULT.value)
+        embLoad = discord.Embed(
+            title="Loading",
+            description=f"Loading {sealed_key.filename}...",
+            colour=Color.DEFAULT.value
+        )
         embLoad.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
         await ctx.respond(embed=embLoad)
 
         if sealed_key.size != SEALED_KEY_ENC_SIZE:
@@ -43,12 +44,14 @@ class Sealed_Key(commands.Cog):
             C1socket = SocketPS(IP, PORT_CECIE)
             await C1socket.socket_decryptsdkey(sealedkey_t)
 
-            embdec = discord.Embed(title="Finished",
-                          description=f"Successfully decrypted {sealed_key.filename}.",
-                          colour=Color.DEFAULT.value)
+            embdec = discord.Embed(
+                title="Finished",
+                description=f"Successfully decrypted {sealed_key.filename}.",
+                colour=Color.DEFAULT.value
+            )
             embdec.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
             await ctx.edit(embed=embdec)
+
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))
         except SocketError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)

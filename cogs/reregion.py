@@ -16,7 +16,7 @@ from utils.constants import (
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
-from utils.helpers import psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
 from utils.orbis import obtainCUSA, OrbisError
 from utils.exceptions import PSNIDError, FileError
 
@@ -36,22 +36,26 @@ class ReRegion(commands.Cog):
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
+        msg = ctx
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            await ctx.edit(embed=emb21)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=2, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            msg = await ctx.edit(embed=emb21)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=2, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
             
@@ -69,7 +73,7 @@ class ReRegion(commands.Cog):
                     else:
                         await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, file), os.path.join(newUPLOAD_ENCRYPTED, file + f"_{random_string}"))
             
-                await ctx.edit(embed=emb22)
+                await msg.edit(embed=emb22)
                 await C1ftp.uploadencrypted()
                 mount_location_new = MOUNT_LOCATION + "/" + random_string
                 await C1ftp.make1(mount_location_new)
@@ -81,12 +85,14 @@ class ReRegion(commands.Cog):
 
                 target_titleid = await obtainCUSA(newPARAM_PATH)
                 
-                emb23 = discord.Embed(title="Obtain process: Keystone",
-                            description=f"Keystone from **{target_titleid}** obtained.",
-                            colour=Color.DEFAULT.value)
+                emb23 = discord.Embed(
+                    title="Obtain process: Keystone",
+                    description=f"Keystone from **{target_titleid}** obtained.",
+                    colour=Color.DEFAULT.value
+                )
                 emb23.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                await ctx.edit(embed=emb23)
+                await msg.edit(embed=emb23)
 
                 shutil.rmtree(newUPLOAD_ENCRYPTED)
                 await aiofiles.os.makedirs(newUPLOAD_ENCRYPTED)
@@ -100,33 +106,33 @@ class ReRegion(commands.Cog):
                 elif isinstance(e, OSError):
                     e = BASE_ERROR_MSG
                     status = "unexpected"
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - ({status})")
                 return
             except Exception as e:
-                await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 return
         
         else: 
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
             return
 
-        await ctx.edit(embed=emb20)
+        await msg.edit(embed=emb20)
 
-        try: uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+        try: uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
             
@@ -141,11 +147,15 @@ class ReRegion(commands.Cog):
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin")) 
-                    emb4 = discord.Embed(title="Resigning process: Encrypted",
-                                description=f"Your save (**{save}**) is being resigned, please wait...",
-                                colour=Color.DEFAULT.value)
+
+                    emb4 = discord.Embed(
+                        title="Resigning process: Encrypted",
+                        description=f"Your save (**{save}**) is being resigned, please wait...",
+                        colour=Color.DEFAULT.value
+                    )
                     emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await ctx.edit(embed=emb4)
+                    await msg.edit(embed=emb4)
+
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                     await C1ftp.make1(mount_location_new)
@@ -157,12 +167,13 @@ class ReRegion(commands.Cog):
                     await C1socket.socket_update(mount_location_new, realSave)
                     await C1ftp.dlencrypted_bulk(True, user_id, realSave)
 
-                    emb5 = discord.Embed(title="Re-regioning & Resigning process (Encrypted): Successful",
-                                description=f"**{save}** resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
-                                colour=Color.DEFAULT.value)
+                    emb5 = discord.Embed(
+                        title="Re-regioning & Resigning process (Encrypted): Successful",
+                        description=f"**{save}** resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
+                        colour=Color.DEFAULT.value
+                    )
                     emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-                    await ctx.edit(embed=emb5)
+                    await msg.edit(embed=emb5)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     status = "expected"
@@ -171,11 +182,11 @@ class ReRegion(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
                 
@@ -183,28 +194,33 @@ class ReRegion(commands.Cog):
                 finishedFiles = "".join(savenames)
             else: finishedFiles = ", ".join(savenames)
 
-            embRgdone = discord.Embed(title="Re-region: Successful",
-                                description=f"**{finishedFiles}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
-                                colour=Color.DEFAULT.value)
+            embRgdone = discord.Embed(
+                title="Re-region: Successful",
+                description=f"**{finishedFiles}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**).",
+                colour=Color.DEFAULT.value
+            )
             embRgdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             
-            await ctx.edit(embed=embRgdone)
+            await msg.edit(embed=embRgdone)
 
             try: 
-                await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+                await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
             except GDapiError as e:
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 
             if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)) and finishedFiles > 1:
-                await ctx.respond("Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once.", ephemeral=True)
+                await ctx.send(
+                    "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once.",
+                    ephemeral=True, reference=msg
+                )
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
             
         else: 
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:

@@ -345,15 +345,17 @@ class FTPps:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
-    async def upload_scesysContents(self, ctx: discord.ApplicationContext, filepaths: list[str], sce_sysPath: str) -> None:
+    async def upload_scesysContents(self, ctx: discord.ApplicationContext | discord.Message, filepaths: list[str], sce_sysPath: str) -> None:
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(sce_sysPath)
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
-                    embSuccess = discord.Embed(title="Upload alert: Successful", 
-                                            description=f"File '{filename}' has been successfully uploaded and saved.", 
-                                            colour=Color.DEFAULT.value)            
+                    embSuccess = discord.Embed(
+                        title="Upload alert: Successful", 
+                        description=f"File '{filename}' has been successfully uploaded and saved.", 
+                        colour=Color.DEFAULT.value
+                    )            
                     embSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                     await self.uploadStream(ftp, filepath, filename)

@@ -19,7 +19,7 @@ from utils.extras import generate_random_string, obtain_savenames
 from utils.helpers import psusername, upload2, errorHandling, send_final
 from utils.orbis import obtainCUSA, parse_pfs_header, OrbisError
 from utils.exceptions import PSNIDError, FileError
-from utils.helpers import replaceDecrypted
+from utils.helpers import DiscordContext, replaceDecrypted
 
 class Encrypt(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -44,22 +44,26 @@ class Encrypt(commands.Cog):
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
+        msg = ctx
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            await ctx.edit(embed=emb14)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            msg = await ctx.edit(embed=emb14)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
 
@@ -78,11 +82,13 @@ class Encrypt(commands.Cog):
                     await aiofiles.os.rename(pfs_path, os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(pfs_path + ".bin", os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
 
-                    embmo = discord.Embed(title="Encryption & Resigning process: Initializing",
+                    embmo = discord.Embed(
+                        title="Encryption & Resigning process: Initializing",
                         description=f"Mounting {save}.",
-                        colour=Color.DEFAULT.value)
+                        colour=Color.DEFAULT.value
+                    )
                     embmo.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await ctx.edit(embed=embmo)
+                    await msg.edit(embed=embmo)
 
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
@@ -97,23 +103,25 @@ class Encrypt(commands.Cog):
                     await C1ftp.dlparamonly_grab(location_to_scesys)
                     title_id = await obtainCUSA(newPARAM_PATH)
  
-                    completed = await replaceDecrypted(ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save, pfs_header["size"])
+                    completed = await replaceDecrypted(d_ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save, pfs_header["size"])
 
                     if include_sce_sys:
                         if len(await aiofiles.os.listdir(newUPLOAD_DECRYPTED)) > 0:
                             shutil.rmtree(newUPLOAD_DECRYPTED)
                             await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
                             
-                        embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{save}",
+                        embSceSys = discord.Embed(
+                            title=f"Upload: sce_sys contents\n{save}",
                             description="Please attach the sce_sys files you want to upload.",
-                            colour=Color.DEFAULT.value)
+                            colour=Color.DEFAULT.value
+                        )
                         embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                        await ctx.edit(embed=embSceSys)
-                        uploaded_file_paths_sys = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_header["size"])
+                        await msg.edit(embed=embSceSys)
+                        uploaded_file_paths_sys = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_header["size"])
 
                         if len(uploaded_file_paths_sys) <= len(SCE_SYS_CONTENTS) and len(uploaded_file_paths_sys) >= 1:
-                            await C1ftp.upload_scesysContents(ctx, uploaded_file_paths_sys, location_to_scesys)
+                            await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)
                         
                     location_to_scesys = mount_location_new + "/sce_sys"
                     await C1ftp.dlparam(location_to_scesys, user_id)
@@ -124,15 +132,17 @@ class Encrypt(commands.Cog):
                     else: completed = ", ".join(completed)
                     full_completed.append(completed)
 
-                    embmidComplete = discord.Embed(title="Encrypting & Resigning Process: Successful",
-                                description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+                    embmidComplete = discord.Embed(
+                        title="Encrypting & Resigning Process: Successful",
+                        description=f"Resigned **{completed}** with title id **{title_id}** to **{playstation_id or user_id}**.",
+                        colour=Color.DEFAULT.value
+                    )
                     embmidComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                    await ctx.edit(embed=embmidComplete)
+                    await msg.edit(embed=embmidComplete)
                 except HTTPError as e:
                     err = GDapi.getErrStr_HTTPERROR(e)
-                    await errorHandling(ctx, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, err, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
                 except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError, TimeoutError) as e:
@@ -142,35 +152,37 @@ class Encrypt(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
                 
             if len(full_completed) == 1: full_completed = "".join(full_completed)
             else: full_completed = ", ".join(full_completed)
 
-            embComplete = discord.Embed(title="Encrypting & Resigning Process: Successful: Successful",
-                            description=f"Resigned **{full_completed}** to **{playstation_id or user_id}**.",
-                            colour=Color.DEFAULT.value)
+            embComplete = discord.Embed(
+                title="Encrypting & Resigning Process: Successful: Successful",
+                description=f"Resigned **{full_completed}** to **{playstation_id or user_id}**.",
+                colour=Color.DEFAULT.value
+            )
             embComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-            await ctx.edit(embed=embComplete)
+            await msg.edit(embed=embComplete)
 
             try: 
-                await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+                await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
             except GDapiError as e:
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
         else:
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:

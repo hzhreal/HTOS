@@ -107,5 +107,5 @@ from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, o
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
-from .helpers import errorHandling, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final
+from .helpers import DiscordContext, errorHandling, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final
 from .type_helpers import uint32, uint64, utf_8, utf_8_s, fmt, INTEGER, CHARACTER, CHARACTER_SPECIAL

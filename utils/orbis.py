@@ -296,7 +296,7 @@ def handle_accid(user_id: str) -> str:
     return user_id
     
 async def checkSaves(
-          ctx: discord.ApplicationContext, 
+          ctx: discord.ApplicationContext | discord.Message, 
           attachments: list[discord.message.Attachment], 
           ps_save_pair_upload: bool, 
           sys_files: bool, 
@@ -313,25 +313,31 @@ async def checkSaves(
 
     for attachment in attachments:
         if len(attachment.filename) > MAX_FILENAME_LEN and not ignore_filename_check:
-            embfn = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
-                    colour=Color.DEFAULT.value)
+            embfn = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
+                colour=Color.DEFAULT.value
+            )
             embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
 
         elif attachment.size > FILE_LIMIT_DISCORD:
-            embFileLarge = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
-                    colour=Color.DEFAULT.value)
+            embFileLarge = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
+                colour=Color.DEFAULT.value
+            )
             embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embFileLarge)
             await asyncio.sleep(1)
     
         elif sys_files and (attachment.filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
-            embnvSys = discord.Embed(title="Upload alert: Error",
+            embnvSys = discord.Embed(
+                title="Upload alert: Error",
                 description=f"{attachment.filename} is not a valid sce_sys file!",
-                colour=Color.DEFAULT.value)
+                colour=Color.DEFAULT.value
+            )
             embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embnvSys)
             await asyncio.sleep(1)
@@ -345,7 +351,7 @@ async def checkSaves(
     
     return valid_files
 
-async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
+async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
     """Makes sure the save pair through discord upload is valid."""
     valid_attachments_check1 = []
     for attachment in attachments:
@@ -354,26 +360,32 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
         path_len = len(PS_UPLOADDIR + "/" + filename + "/")
 
         if filename_len > MAX_FILENAME_LEN:
-            embfn = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the file name of '{attachment.filename}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
-                    colour=Color.DEFAULT.value)
+            embfn = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the file name of '{attachment.filename}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
+                colour=Color.DEFAULT.value
+            )
             embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embfn)
             await asyncio.sleep(1)
 
         elif path_len > MAX_PATH_LEN:
-            embpn = discord.Embed(title="Upload alert: Error",
-                    description=f"Sorry, the path '{attachment.filename}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
-                    colour=Color.DEFAULT.value)
+            embpn = discord.Embed(
+                title="Upload alert: Error",
+                description=f"Sorry, the path '{attachment.filename}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
+                colour=Color.DEFAULT.value
+            )
             embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embpn)
             await asyncio.sleep(1)
 
         elif attachment.filename.endswith(".bin"):
             if attachment.size != SEALED_KEY_ENC_SIZE:
-                embnvBin = discord.Embed(title="Upload alert: Error",
+                embnvBin = discord.Embed(
+                    title="Upload alert: Error",
                     description=f"Sorry, the file size of '{attachment.filename}' is not {SEALED_KEY_ENC_SIZE} bytes.",
-                    colour=Color.DEFAULT.value)
+                    colour=Color.DEFAULT.value
+                )
                 embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embnvBin)
                 await asyncio.sleep(1)
@@ -381,9 +393,11 @@ async def save_pair_check(ctx: discord.ApplicationContext, attachments: list[dis
                 valid_attachments_check1.append(attachment)
         else:
             if attachment.size > FILE_LIMIT_DISCORD:
-                embFileLarge = discord.Embed(title="Upload alert: Error",
-                        description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
-                        colour=Color.DEFAULT.value)
+                embFileLarge = discord.Embed(
+                    title="Upload alert: Error",
+                    description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
+                    colour=Color.DEFAULT.value
+                )
                 embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await ctx.edit(embed=embFileLarge)
                 await asyncio.sleep(1)

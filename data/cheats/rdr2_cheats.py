@@ -163,11 +163,13 @@ class Cheats_RDR2:
     
     @staticmethod
     def loaded_embed(stats: dict[str, str]) -> discord.Embed:
-        embLoaded = discord.Embed(title=f"Save loaded: RDR 2",
-                    description=(
-                        f"Platform: **{stats['Platform']}**\n"
-                        f"Money: **{stats['Money']}**"
-                    ),
-                    colour=Color.DEFAULT.value)
+        embLoaded = discord.Embed(
+            title=f"Save loaded: RDR 2",
+            description=(
+                f"Platform: **{stats['Platform']}**\n"
+                f"Money: **{stats['Money']}**"
+            ),
+            colour=Color.DEFAULT.value
+        )
         embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         return embLoaded

@@ -30,9 +30,11 @@ class Convert(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        embConverting = discord.Embed(title="Converting",
-                            description=f"Starting convertion process for {game}...",
-                            colour=Color.DEFAULT.value)
+        embConverting = discord.Embed(
+            title="Converting",
+            description=f"Starting convertion process for {game}...",
+            colour=Color.DEFAULT.value
+        )
         embConverting.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.respond(embed=embConverting)
@@ -75,9 +77,11 @@ class Convert(commands.Cog):
         elif result == "ERROR":
             embCDone = discord.Embed(title="ERROR!", description="Invalid save!", colour=Color.DEFAULT.value)
         else:
-            embCDone = discord.Embed(title="Success",
-                                description=f"{result}\nPlease report any errors.",
-                                colour=Color.DEFAULT.value)
+            embCDone = discord.Embed(
+                title="Success",
+                description=f"{result}\nPlease report any errors.",
+                colour=Color.DEFAULT.value
+            )
         embCDone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.edit(embed=embCDone)

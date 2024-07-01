@@ -14,7 +14,7 @@ from utils.constants import (
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames
-from utils.helpers import psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
 from utils.orbis import OrbisError
 from utils.exceptions import PSNIDError, FileError
 
@@ -34,22 +34,26 @@ class Resign(commands.Cog):
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
         
+        msg = ctx
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            await ctx.edit(embed=embEncrypted1)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            msg = await ctx.edit(embed=embEncrypted1)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
 
@@ -64,12 +68,15 @@ class Resign(commands.Cog):
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
-                    emb4 = discord.Embed(title="Resigning process: Encrypted",
-                                description=f"Your save (**{save}**) is being resigned, please wait...",
-                                colour=Color.DEFAULT.value)
-                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                    await ctx.edit(embed=emb4)
+                    emb4 = discord.Embed(
+                        title="Resigning process: Encrypted",
+                        description=f"Your save (**{save}**) is being resigned, please wait...",
+                        colour=Color.DEFAULT.value
+                    )
+                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    await msg.edit(embed=emb4)
+
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                     await C1ftp.make1(mount_location_new)
@@ -80,12 +87,13 @@ class Resign(commands.Cog):
                     await C1socket.socket_update(mount_location_new, realSave)
                     await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
-                    emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
-                                description=f"**{save}** resigned to **{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+                    emb5 = discord.Embed(
+                        title="Resigning process (Encrypted): Successful",
+                        description=f"**{save}** resigned to **{playstation_id or user_id}**.",
+                        colour=Color.DEFAULT.value
+                    )
                     emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-                    await ctx.edit(embed=emb5)
+                    await msg.edit(embed=emb5)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     status = "expected"
@@ -94,11 +102,11 @@ class Resign(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
                 
@@ -106,17 +114,17 @@ class Resign(commands.Cog):
                 finishedFiles = "".join(savenames)
             else: finishedFiles = ", ".join(savenames)
             
-            embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
-                                description=f"**{finishedFiles}** resigned to **{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+            embRdone = discord.Embed(
+                title="Resigning process (Encrypted): Successful",
+                description=f"**{finishedFiles}** resigned to **{playstation_id or user_id}**.",
+                colour=Color.DEFAULT.value)
             embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            
-            await ctx.edit(embed=embRdone)
+            await msg.edit(embed=embRdone)
 
             try: 
-                await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+                await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
             except GDapiError as e:
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 
@@ -124,7 +132,7 @@ class Resign(commands.Cog):
             await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
                 
         else: 
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
     
 def setup(bot: commands.Bot) -> None:

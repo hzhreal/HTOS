@@ -16,7 +16,7 @@ from utils.constants import (
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
 from utils.extras import generate_random_string
-from utils.helpers import psusername, upload2, errorHandling, TimeoutHelper, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final
 from utils.orbis import OrbisError
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
@@ -69,9 +69,11 @@ class Quick(commands.Cog):
             shutil.copyfile(response, os.path.join(newUPLOAD_ENCRYPTED, f"{saveName}_{random_string}"))
             shutil.copyfile(response + ".bin", os.path.join(newUPLOAD_ENCRYPTED, f"{saveName}_{random_string}.bin"))
 
-            emb4 = discord.Embed(title="Resigning process: Encrypted",
-                        description=f"Your save (**{saveName}**) is being resigned, please wait...",
-                        colour=Color.DEFAULT.value)
+            emb4 = discord.Embed(
+                title="Resigning process: Encrypted",
+                description=f"Your save (**{saveName}**) is being resigned, please wait...",
+                colour=Color.DEFAULT.value
+            )
             emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=emb4)
@@ -85,9 +87,11 @@ class Quick(commands.Cog):
             await C1socket.socket_update(mount_location_new, realSave)
             await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
-            emb5 = discord.Embed(title="Resigning process (Encrypted): Successful",
-                        description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
-                        colour=Color.DEFAULT.value)
+            emb5 = discord.Embed(
+                title="Resigning process (Encrypted): Successful",
+                description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
+                colour=Color.DEFAULT.value
+            )
             emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             await ctx.edit(embed=emb5)
@@ -110,15 +114,19 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
-        embRdone = discord.Embed(title="Resigning process (Encrypted): Successful",
-                                description=f"**{saveName}** resigned to **{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+        embRdone = discord.Embed(
+            title="Resigning process (Encrypted): Successful",
+            description=f"**{saveName}** resigned to **{playstation_id or user_id}**.",
+            colour=Color.DEFAULT.value
+        )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
-        await ctx.edit(embed=embRdone)
+        msg = await ctx.edit(embed=embRdone)
+        msg = await ctx.fetch_message(msg.id)
+        d_ctx = DiscordContext(ctx, msg)
 
         try: 
-            await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+            await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
         except GDapiError as e:
             await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
@@ -141,20 +149,23 @@ class Quick(commands.Cog):
         except WorkspaceError: return
 
         await ctx.respond(embed=emb_upl_savegame)
+        msg = await ctx.edit(embed=emb_upl_savegame)
+        msg = await ctx.fetch_message(msg.id)
+        d_ctx = DiscordContext(ctx, msg)
 
         try:
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False)
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
@@ -166,48 +177,54 @@ class Quick(commands.Cog):
             for savefile in savefiles:
                 savegame = os.path.join(newUPLOAD_DECRYPTED, savefile)
                 
-                embLoading = discord.Embed(title="Loading",
-                                    description=f"Loading {savefile}...",
-                                    colour=Color.DEFAULT.value)
+                embLoading = discord.Embed(
+                    title="Loading",
+                    description=f"Loading {savefile}...",
+                    colour=Color.DEFAULT.value
+                )
                 embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                embApplied = discord.Embed(title="Success!",
-                                    description=f"Quick codes applied to {savefile}.",
-                                    colour=Color.DEFAULT.value)
+                embApplied = discord.Embed(
+                    title="Success!",
+                    description=f"Quick codes applied to {savefile}.",
+                    colour=Color.DEFAULT.value
+                )
                 embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                await ctx.edit(embed=embLoading)
+                await msg.edit(embed=embLoading)
 
                 try:
                     qc = QuickCodes(savegame, codes)
                     await qc.apply_code()  
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
-                    await errorHandling(ctx, e, workspaceFolders, None, None, None)
+                    await errorHandling(msg, e, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
         
-                await ctx.edit(embed=embApplied)
+                await msg.edit(embed=embApplied)
                 completed.append(savefile)
 
         if len(completed) == 1:
             finishedFiles = "".join(completed)
         else: finishedFiles = ", ".join(completed)
 
-        embCompleted = discord.Embed(title="Success!",
-                                    description=f"Quick codes applied to {finishedFiles}.",
-                                    colour=Color.DEFAULT.value)
+        embCompleted = discord.Embed(
+            title="Success!",
+            description=f"Quick codes applied to {finishedFiles}.",
+            colour=Color.DEFAULT.value
+        )
         embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.edit(embed=embCompleted)
+        await msg.edit(embed=embCompleted)
 
         try: 
-            await send_final(ctx, "savegame_CodeApplied.zip", newUPLOAD_DECRYPTED)
+            await send_final(d_ctx, "savegame_CodeApplied.zip", newUPLOAD_DECRYPTED)
         except GDapiError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 
@@ -222,9 +239,11 @@ class Quick(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        embLoading = discord.Embed(title="Loading",
-                            description=f"Loading cheats process for {game}...",
-                            colour=Color.DEFAULT.value)
+        embLoading = discord.Embed(
+            title="Loading",
+            description=f"Loading cheats process for {game}...",
+            colour=Color.DEFAULT.value
+        )
         embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
         await ctx.respond(embed=embLoading)

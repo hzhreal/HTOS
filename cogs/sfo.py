@@ -29,9 +29,11 @@ class SFO_Editor(SFOContext):
             for key, val in param.items():
                 if key == "value":
                     continue
-                paramEmb.add_field(name=key.upper(),
-                                value=val,
-                                inline=True)
+                paramEmb.add_field(
+                    name=key.upper(),
+                    value=val,
+                    inline=True
+                )
             paramEmb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
             embeds.append(paramEmb)

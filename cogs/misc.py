@@ -31,9 +31,11 @@ class Misc(commands.Cog):
             keyset = await C1socket.socket_keyset()
             fw = keyset_to_fw(keyset)
 
-            keyset_emb = discord.Embed(title="Success",
-                                 description=f"Keyset: {keyset}\nFW: {fw}",
-                                 color=Color.DEFAULT.value)
+            keyset_emb = discord.Embed(
+                title="Success",
+                description=f"Keyset: {keyset}\nFW: {fw}",
+                color=Color.DEFAULT.value
+            )
             keyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)   
             await ctx.edit(embed=keyset_emb)
 

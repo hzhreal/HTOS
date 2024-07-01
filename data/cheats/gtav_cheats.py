@@ -173,13 +173,15 @@ class Cheats_GTAV:
     
     @staticmethod
     def loaded_embed(stats: dict[str, int | str]) -> discord.Embed:
-        embLoaded = discord.Embed(title=f"Save loaded: GTA V",
-                    description=(
-                        f"Platform: **{stats['Platform']}**\n"
-                        f"Franklin money: **{stats['Franklin_cash']: ,}**\n"
-                        f"Michael money: **{stats['Michael_cash']: ,}**\n"
-                        f"Trevor money: **{stats['Trevor_cash']: ,}**"
-                    ),
-                    colour=Color.DEFAULT.value)
+        embLoaded = discord.Embed(
+            title=f"Save loaded: GTA V",
+            description=(
+                f"Platform: **{stats['Platform']}**\n"
+                f"Franklin money: **{stats['Franklin_cash']: ,}**\n"
+                f"Michael money: **{stats['Michael_cash']: ,}**\n"
+                f"Trevor money: **{stats['Trevor_cash']: ,}**"
+            ),
+            colour=Color.DEFAULT.value
+        )
         embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         return embLoaded

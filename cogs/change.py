@@ -15,7 +15,7 @@ from utils.constants import (
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
 from utils.extras import generate_random_string, obtain_savenames, pngprocess
-from utils.helpers import psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
 from utils.orbis import handleTitles, OrbisError
 from utils.exceptions import PSNIDError, FileError
 
@@ -44,22 +44,26 @@ class Change(commands.Cog):
         mountPaths = []
         pngfile = os.path.join(newPNG_PATH, ICON0_NAME)
 
+        msg = ctx
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            await ctx.edit(embed=embpng)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            msg = await ctx.edit(embed=embpng)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
                 
@@ -80,25 +84,27 @@ class Change(commands.Cog):
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
-                    await ctx.edit(embed=embpng1)
+                    await msg.edit(embed=embpng1)
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                     await C1ftp.make1(mount_location_new)
                     mountPaths.append(mount_location_new)
                     await C1socket.socket_dump(mount_location_new, realSave)
-                    await ctx.edit(embed=embpng2)
+                    await msg.edit(embed=embpng2)
                     location_to_scesys = mount_location_new + "/sce_sys"
                     await C1ftp.swappng(location_to_scesys)
                     await C1ftp.dlparam(location_to_scesys, user_id)
                     await C1socket.socket_update(mount_location_new, realSave)
                     await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
-                    embpngs = discord.Embed(title="PNG process: Successful",
-                                description=f"Altered the save png of **{save}**.",
-                                colour=Color.DEFAULT.value)
+                    embpngs = discord.Embed(
+                        title="PNG process: Successful",
+                        description=f"Altered the save png of **{save}**.",
+                        colour=Color.DEFAULT.value
+                    )
                     embpngs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                    await ctx.edit(embed=embpngs)
+                    await msg.edit(embed=embpngs)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     status = "expected"
@@ -107,11 +113,11 @@ class Change(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
 
@@ -119,17 +125,19 @@ class Change(commands.Cog):
                 finishedFiles = "".join(savenames)
             else: finishedFiles = ", ".join(savenames)
 
-            embPdone = discord.Embed(title="PNG process: Successful",
-                                description=f"Altered the save png of **{finishedFiles}** and resigned to '*{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+            embPdone = discord.Embed(
+                title="PNG process: Successful",
+                description=f"Altered the save png of **{finishedFiles}** and resigned to '*{playstation_id or user_id}**.",
+                colour=Color.DEFAULT.value
+            )
             embPdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-            await ctx.edit(embed=embPdone)
+            await msg.edit(embed=embPdone)
 
             try: 
-                await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+                await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
             except GDapiError as e:
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
             
@@ -137,7 +145,7 @@ class Change(commands.Cog):
             await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
 
         else:
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
 
     @change_group.command(description="Change the titles of your save.")
@@ -162,22 +170,26 @@ class Change(commands.Cog):
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
+        msg = ctx
+
         try: 
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            await ctx.edit(embed=embTitleChange)
-            uploaded_file_paths = await upload2(ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            msg = await ctx.edit(embed=embTitleChange)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
                 
@@ -190,15 +202,17 @@ class Change(commands.Cog):
                 realSave = f"{save}_{random_string}"
                 random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
 
-                embTitleChange1 = discord.Embed(title="Change title: Processing",
-                                    description=f"Processing {save}.",
-                                    colour=Color.DEFAULT.value)
+                embTitleChange1 = discord.Embed(
+                    title="Change title: Processing",
+                    description=f"Processing {save}.",
+                    colour=Color.DEFAULT.value
+                )
                 embTitleChange1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 try:
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
                     await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
-                    await ctx.edit(embed=embTitleChange1)
+                    await msg.edit(embed=embTitleChange1)
                     await C1ftp.uploadencrypted_bulk(realSave)
                     mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
                     await C1ftp.make1(mount_location_new)
@@ -211,12 +225,14 @@ class Change(commands.Cog):
                     await C1socket.socket_update(mount_location_new, realSave)
                     await C1ftp.dlencrypted_bulk(False, user_id, realSave)
 
-                    embTitleSuccess = discord.Embed(title="Title altering process: Successful",
-                                description=f"Altered the save titles of **{save}**.",
-                                colour=Color.DEFAULT.value)
+                    embTitleSuccess = discord.Embed(
+                        title="Title altering process: Successful",
+                        description=f"Altered the save titles of **{save}**.",
+                        colour=Color.DEFAULT.value
+                    )
                     embTitleSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-                    await ctx.edit(embed=embTitleSuccess)
+                    await msg.edit(embed=embTitleSuccess)
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     status = "expected"
@@ -225,11 +241,11 @@ class Change(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
             
@@ -237,17 +253,19 @@ class Change(commands.Cog):
                 finishedFiles = "".join(savenames)
             else: finishedFiles = ", ".join(savenames)
 
-            embTdone = discord.Embed(title="Title altering process: Successful",
-                                description=f"Altered the save titles of **{finishedFiles}**, and resigned to **{playstation_id or user_id}**.",
-                                colour=Color.DEFAULT.value)
+            embTdone = discord.Embed(
+                title="Title altering process: Successful",
+                description=f"Altered the save titles of **{finishedFiles}**, and resigned to **{playstation_id or user_id}**.",
+                colour=Color.DEFAULT.value
+            )
             embTdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-            await ctx.edit(embed=embTdone)
+            await msg.edit(embed=embTdone)
 
             try: 
-                await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+                await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
             except GDapiError as e:
-                await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 
@@ -255,7 +273,7 @@ class Change(commands.Cog):
             await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
 
         else:
-            await ctx.edit(embed=emb6)
+            await msg.edit(embed=emb6)
             cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:

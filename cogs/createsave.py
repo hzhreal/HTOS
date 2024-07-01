@@ -15,7 +15,7 @@ from utils.constants import (
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
-from utils.helpers import errorHandling, upload2, send_final, psusername, upload2_special
+from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
 from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError
 from utils.extras import generate_random_string
 from utils.exceptions import PSNIDError, FileError
@@ -59,20 +59,26 @@ class CreateSave(commands.Cog):
         savesize = saveblocks << 15
         await aiofiles.os.makedirs(scesys_local)
         
-        embSceSys = discord.Embed(title=f"Upload: sce_sys contents\n{savename}",
-                                  description="Please attach the sce_sys files you want to upload.",
-                                  colour=Color.DEFAULT.value)
+        embSceSys = discord.Embed(
+            title=f"Upload: sce_sys contents\n{savename}",
+            description="Please attach the sce_sys files you want to upload.",
+            colour=Color.DEFAULT.value
+        )
         embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-        embgs = discord.Embed(title=f"Upload: Gamesaves\n{savename}",
-                                  description=(
-                                    "Please attach the gamesaves files you want to upload.\n"
-                                    "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
-                                    f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{DISC_UPL_SPLITVALUE}savedata'.\n\n"
-                                    "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded."
-                                  ),
-                                  colour=Color.DEFAULT.value)
+        embgs = discord.Embed(
+            title=f"Upload: Gamesaves\n{savename}",
+            description=(
+                "Please attach the gamesaves files you want to upload.\n"
+                "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
+                f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{DISC_UPL_SPLITVALUE}savedata'.\n\n"
+                "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded."
+            ),
+            colour=Color.DEFAULT.value
+        )
         embgs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+        msg = ctx
 
         try:
             user_id = await psusername(ctx, playstation_id)
@@ -92,9 +98,12 @@ class CreateSave(commands.Cog):
             elif path_len > MAX_PATH_LEN:
                 raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
 
+            msg = await ctx.edit(embed=embSceSys)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
+
             # handle sce_sys first
-            await ctx.edit(embed=embSceSys)
-            uploaded_file_paths_sys = await upload2(ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
+            uploaded_file_paths_sys = await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
             if len(uploaded_file_paths_sys) == 0:
                 raise FileError("No valid sce_sys files uploaded!")
 
@@ -105,21 +114,21 @@ class CreateSave(commands.Cog):
                     raise FileError("All mandatory sce_sys files are not uploaded! We are trying to create a valid save here.")
 
             # next, other files (gamesaves)
-            await ctx.edit(embed=embgs)
-            uploaded_file_paths_special = await upload2_special(ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
+            await msg.edit(embed=embgs)
+            uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
             if len(uploaded_file_paths_special) == 0:
                 raise FileError("No gamesaves uploaded!")
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
@@ -131,13 +140,23 @@ class CreateSave(commands.Cog):
             
             if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT: # dont want to create unnecessary overhead
                 for gamesave in uploaded_file_paths_special:
-                    embsl = discord.Embed(title=f"Gamesaves: Second layer\n{gamesave}",
-                                    description="Checking for supported second layer encryption/compression...",
-                                    colour=Color.DEFAULT.value)
+                    embsl = discord.Embed(
+                        title=f"Gamesaves: Second layer\n{gamesave}",
+                        description="Checking for supported second layer encryption/compression...",
+                        colour=Color.DEFAULT.value
+                    )
                     embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await ctx.edit(embed=embsl)
+                    await msg.edit(embed=embsl)
                     await asyncio.sleep(0.5)
                     await extra_import(Crypto, title_id, gamesave)
+
+            embc = discord.Embed(
+                title="Processing",
+                description=f"Creating {savename}...",
+                colour=Color.DEFAULT.value
+            )
+            embc.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            await msg.edit(embed=embc)
 
             # gen a new name for file to not get overwritten with anything on the console
             random_string = generate_random_string(RANDOMSTRING_LENGTH)
@@ -157,7 +176,7 @@ class CreateSave(commands.Cog):
             await C1socket.socket_dump(mount_location_new, temp_savename)
 
             # yh uploaded now! make sure all sce_sys files are uploaded with var
-            await C1ftp.upload_scesysContents(ctx, uploaded_file_paths_sys, location_to_scesys)
+            await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)
             shutil.rmtree(scesys_local)
             await C1ftp.ftp_upload_folder(mount_location_new, newUPLOAD_DECRYPTED)
 
@@ -179,25 +198,27 @@ class CreateSave(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
-        embRdone = discord.Embed(title="Creation process: Successful",
-                            description=f"**{savename}** created & resigned to **{playstation_id or user_id}**.",
-                            colour=Color.DEFAULT.value)
+        embRdone = discord.Embed(
+            title="Creation process: Successful",
+            description=f"**{savename}** created & resigned to **{playstation_id or user_id}**.",
+            colour=Color.DEFAULT.value
+        )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
-        await ctx.edit(embed=embRdone)
+        await msg.edit(embed=embRdone)
 
         try: 
-            await send_final(ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+            await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
         except GDapiError as e:
-            await errorHandling(ctx, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 
