@@ -2,7 +2,7 @@ import discord
 from discord.ui.item import Item
 from types import SimpleNamespace
 from data.crypto import CryptoError
-from utils.helpers import TimeoutHelper
+from utils.helpers import DiscordContext, TimeoutHelper
 from utils.constants import (
     logger, Color, Embed_t, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
@@ -10,7 +10,7 @@ from utils.constants import (
     TERRARIA_TITLEID, SMT5_TITLEID
 )
 
-async def extra_decrypt(ctx: discord.ApplicationContext | discord.Message, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
+async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
     embedTimeout = discord.Embed(title="Timeout Error:", 
                                  description="You took too long, sending the file with the format: Encrypted",
                                  colour=Color.DEFAULT.value)
@@ -32,15 +32,15 @@ async def extra_decrypt(ctx: discord.ApplicationContext | discord.Message, Crypt
                 
         async def on_timeout(self) -> None:
             self.disable_all_items()
-            await helper.handle_timeout(ctx)
+            await helper.handle_timeout(d_ctx.msg)
 
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not decrypt: {error}.", colour=Color.DEFAULT.value)
             embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             helper.embTimeout = embedErrb
-            await helper.handle_timeout(ctx)
-            logger.error(f"{error} - {ctx.user.name}")
+            await helper.handle_timeout(d_ctx.msg)
+            logger.exception(f"{error} - {d_ctx.ctx.user.name}")
             
         @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
         async def decryption_callback(self, _, interaction: discord.Interaction) -> None:
@@ -86,67 +86,67 @@ async def extra_decrypt(ctx: discord.ApplicationContext | discord.Message, Crypt
             helper.done = True
 
     if title_id in GTAV_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET, title_id=None))
         await helper.await_done()
         
     elif title_id in RDR2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET, title_id=None))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in BL3_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in WONDERLANDS_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("TTWL", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TTWL", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET, title_id=None))
         await helper.await_done()
 
     elif title_id in NDOG_COL_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL, title_id=None))
         await helper.await_done()
 
     elif title_id in NDOG_TLOU2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2, title_id=None))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", start_offset=None, title_id=title_id))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", start_offset=None, title_id=title_id))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in DL1_TITLEID or title_id in DL2_TITLEID or title_id in DL1_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("DL2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL2", start_offset=None, title_id=None))
         await helper.await_done()
     
     elif title_id in RGG_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("RGG", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RGG", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in DI2_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("DI2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI2", start_offset=None, title_id=None))
         await helper.await_done()
 
     elif title_id in NMS_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("NMS", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NMS", start_offset=None, title_id=None))
         await helper.await_done()
     
     elif title_id in TERRARIA_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA", start_offset=None, title_id=None))
         await helper.await_done()
     
     elif title_id in SMT5_TITLEID:
-        await ctx.edit(embed=embedFormat, view=CryptChoiceButton("SMT5", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5", start_offset=None, title_id=None))
         await helper.await_done()
 
 async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:

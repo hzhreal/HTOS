@@ -116,7 +116,7 @@ class Decrypt(commands.Cog):
                     )
                     emb13.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     
-                    await extra_decrypt(msg, Crypto, title_id_grab, destination_directory, save)
+                    await extra_decrypt(d_ctx, Crypto, title_id_grab, destination_directory, save)
 
                     await msg.edit(embed=emb13)
 
