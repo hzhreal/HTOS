@@ -1,5 +1,7 @@
-import discord
 from dotenv import load_dotenv
+load_dotenv()
+
+import discord
 from utils.constants import bot, TOKEN
 from utils.workspace import startup, check_version
 from utils.helpers import threadButton
@@ -40,7 +42,6 @@ cogs_list = [
 ]
 
 if __name__ == "__main__":
-    load_dotenv()
     for cog in cogs_list:
         print(f"Loading cog: {cog}...")
         bot.load_extension(f"cogs.{cog}")
