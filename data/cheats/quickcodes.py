@@ -38,9 +38,10 @@ class QuickCodes:
     @staticmethod
     def search_data(data: bytearray | bytes, size: int, start: int, search: bytearray | bytes, length: int, count: int) -> int:
         k = 1
+        s = search[:length]
 
         for i in range(start, size - length + 1):
-            if data[i:i + length] == search:
+            if data[i:i + length] == s:
                 if k == count:
                     return i
                 k += 1
@@ -49,11 +50,12 @@ class QuickCodes:
     @staticmethod
     def reverse_search_data(data: bytearray | bytes, size: int, start: int, search: bytearray | bytes, length: int, count: int) -> int:
         k = 1
+        s = search[:length]
         
         for i in range(start, -1, -1):
-            if (i + length <= size) and (data[i:i + length] == search) and (k == count):
+            if (i + length <= size) and (data[i:i + length] == s) and (k == count):
                 return i
-            elif (i + length <= size) and (data[i:i + length] == search):
+            elif (i + length <= size) and (data[i:i + length] == s):
                 k += 1
         return -1
     
@@ -214,7 +216,7 @@ class QuickCodes:
 
                         tmp6 = line[2:8]
                         off = np.intc(int(tmp6, 16))
-                        if t in ["8", "9", "A"]:
+                        if t in ["8", "9", "A", "E"]:
                             off += pointer
                         
                         tmp8 = line[9:17]
@@ -247,7 +249,7 @@ class QuickCodes:
 
                                     self.data[write:write + 2] = wv16
                                 
-                                case "2" | "A":
+                                case "2" | "A" | "E":
                                     wv32 = val
                                     wv32 = pack("<I", wv32)
 
@@ -325,25 +327,25 @@ class QuickCodes:
                                 write += (val + off)
                             
                                 if y == "1":
-                                    pointer = val
+                                    pointer = np.int_(val)
                                 
                                 match t:
                                     case "0" | "8":
                                         # Data size = 8 bits
 						                # 000000VV
-                                        ptr_value = self.data[write]
+                                        ptr_value = np.uint32(self.data[write])
 
                                     case "1" | "9":
                                         # Data size = 16 bits
 						                # 0000VVVV
                                         wv16 = unpack("<H", self.data[write:write + 2])[0]
-                                        ptr_value = wv16
+                                        ptr_value = np.uint32(wv16)
                                     
                                     case "2" | "A":
                                         # Data size = 32 bits
 						                # VVVVVVVV
                                         wv32 = unpack("<I", self.data[write:write + 4])[0]
-                                        ptr_value = wv32
+                                        ptr_value = np.uint32(wv32)
 
                             case "1":
                                 # 1X = Move pointer from obtained address ?? (X = 0:add, 1:substract, 2:multiply)
@@ -359,7 +361,7 @@ class QuickCodes:
                                 
                                 if z == "1":
                                     ptr_value += pointer
-                                pointer = ptr_value
+                                pointer = np.intc(ptr_value)
                             
                             case "2":
                                 # 2X = Move pointer ?? (X = 0:add, 1:substract, 2:multiply)
@@ -374,7 +376,7 @@ class QuickCodes:
                                         pointer *= val
                                     
                                 if y == "1":
-                                    ptr_value = pointer
+                                    ptr_value = np.uint32(pointer)
                             
                             case "4":
                                 # 4X = Write value: X=0 at read address, X=1 at pointer address
@@ -497,7 +499,7 @@ class QuickCodes:
 
                         find = bytearray((length + 3) & ~3)
 
-                        if not cnt: cnt = 1
+                        if not cnt: cnt = np.intc(1)
 
                         find[:4] = pack(">I", val)
 
@@ -506,17 +508,17 @@ class QuickCodes:
                             line_index += 1
 
                             tmp8 = line[:8]
-                            val = int(tmp8, 16)
+                            val = np.uint32(int(tmp8, 16))
 
                             find[i:i + 4] = pack(">I", val)
 
                             tmp8 = line[9:17]
-                            val = int(tmp8, 16)
+                            val = np.uint32(int(tmp8, 16))
 
                             if i + 4 < length:
                                 find[(i + 4):(i + 4) + 4] = pack(">I", val)
 
-                        pointer = self.search_data(self.data, len(self.data), pointer if t == "8" else 0, find, length, cnt)
+                        pointer = np.int_(self.search_data(self.data, len(self.data), pointer if t == "8" else 0, find, length, cnt))
 
                         if pointer < 0:
                             while line_index < len(self.lines):
@@ -528,7 +530,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = 0
+                            pointer = np.int_(0)
 
                     case "9":
                         #	Pointer Manipulator (Set/Move Pointer)
@@ -562,11 +564,11 @@ class QuickCodes:
                         match line[1]:
                             case "0":
                                 val = np.uint32(unpack(">I", self.data[off:off + 4])[0])
-                                pointer = val
+                                pointer = np.int_(val)
                             
                             case "1":
                                 val = np.uint32(unpack("<I", self.data[off:off + 4])[0])
-                                pointer = val
+                                pointer = np.int_(val)
                             
                             case "2":
                                 pointer += off
@@ -575,16 +577,16 @@ class QuickCodes:
                                 pointer -= off
                             
                             case "4": 
-                                pointer = len(self.data) - off
+                                pointer = np.int_(len(self.data) - off)
                             
                             case "5":
-                                pointer = off
+                                pointer = np.int_(off)
 
                             case "D":
-                                end_pointer = off
+                                end_pointer = np.int_(off)
 
                             case "E":
-                                end_pointer = pointer + off
+                                end_pointer = np.int_(pointer + off)
 
                     case "A":
                         #	Multi-write
@@ -651,8 +653,8 @@ class QuickCodes:
                         val = pack(">I", val)
 
                         find = bytearray((length + 3) & ~3)
-                        if not cnt: cnt = 1
-                        if not end_pointer: end_pointer = len(self.data) - 1
+                        if not cnt: cnt = np.intc(1)
+                        if not end_pointer: end_pointer = np.int_(len(self.data) - 1)
 
                         find[:4] = val
 
@@ -673,7 +675,7 @@ class QuickCodes:
                             if (i + 4) < length:
                                 find[(i + 4):(i + 4) + 4] = val
 
-                        pointer = self.reverse_search_data(self.data, len(self.data), pointer if t == "8" else end_pointer, find, length, cnt)
+                        pointer = np.int_(self.reverse_search_data(self.data, len(self.data), pointer if t == "8" else end_pointer, find, length, cnt))
                         
                         if pointer < 0:
                             while line_index < len(self.lines):
@@ -685,7 +687,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = 0
+                            pointer = np.int_(0)
                     
                     case "C":
                         #	Address Byte Search (Set Pointer)
@@ -720,12 +722,12 @@ class QuickCodes:
 
                         find = self.data[addr:]
 
-                        if not cnt: cnt = 1
+                        if not cnt: cnt = np.intc(1)
 
                         if t in ["4", "C"]:
-                            pointer = self.search_data(self.data, addr + length, 0, find, length, cnt)
+                            pointer = np.int_(self.search_data(self.data, addr + length, 0, find, length, cnt))
                         else:
-                            pointer = self.search_data(self.data, len(self.data), addr + length, find, length, cnt)
+                            pointer = np.int_(self.search_data(self.data, len(self.data), addr + length, find, length, cnt))
 
                         if pointer < 0:
                             while line_index < len(self.lines):
@@ -737,7 +739,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = 0
+                            pointer = np.int_(0)
 
                     case "D":
                         #	2 Byte Test Commands (Code Skipper)
@@ -780,19 +782,19 @@ class QuickCodes:
                         
                         match op:
                             case "0":
-                                off = (src == val)
+                                off = np.intc((src == val))
 
                             case "1":
-                                off = (src != val)
+                                off = np.intc((src != val))
 
                             case "2":
-                                off = (src > val)
+                                off = np.intc((src > val))
                             
                             case "3":
-                                off = (src < val)
+                                off = np.intc((src < val))
 
                             case _:
-                                off = 1
+                                off = np.intc(1)
                         
                         if not off:
                             while l > 0:
