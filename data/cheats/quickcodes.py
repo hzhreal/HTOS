@@ -226,10 +226,13 @@ class QuickCodes:
                         line_index += 1
                         
                         if t in ["4", "5", "6", "C", "D", "E"]:
-                            tmp3 = line[:4]
+                            # NNNNWWWW VVVVVVVV
+                            tmp4 = line[:4]
+                            n = np.intc(int(tmp4, 16))
                         else:
+                            # 4NNNWWWW VVVVVVVV
                             tmp3 = line[1:4]
-                        n = np.intc(int(tmp3, 16))
+                            n = np.intc(int(tmp3, 16))
 
                         tmp4 = line[4:8]
                         incoff = np.intc(int(tmp4, 16))
