@@ -201,7 +201,7 @@ class QuickCodes:
                     case "4":
                         #	multi write
                         #	4TXXXXXX YYYYYYYY
-                        #	4NNNWWWW VVVVVVVV
+                        #	4NNNWWWW VVVVVVVV | NNNNWWWW VVVVVVVV
                         #	X= Address/Offset
                         #	Y= Value to write (Starting)
                         #	N=Times to Write
@@ -209,14 +209,14 @@ class QuickCodes:
                         #	V=Increase Value By
                         #	T=Address/Offset type
                         #	Normal/Pointer
-                        #	0 / 8 = 8bit
-                        #	1 / 9 = 16bit
-                        #	2 / A = 32bit
+                        #	0 / 8 & 4 / C = 8bit
+                        #	1 / 9 & 5 / D = 16bit
+                        #	2 / A & 6 / E = 32bit
                         t = line[1]
 
                         tmp6 = line[2:8]
                         off = np.intc(int(tmp6, 16))
-                        if t in ["8", "9", "A", "E"]:
+                        if t in ["8", "9", "A", "C", "D", "E"]:
                             off += pointer
                         
                         tmp8 = line[9:17]
@@ -225,7 +225,10 @@ class QuickCodes:
                         line = self.lines[line_index + 1]
                         line_index += 1
                         
-                        tmp3 = line[1:4]
+                        if t in ["4", "5", "6", "C", "D", "E"]:
+                            tmp3 = line[:4]
+                        else:
+                            tmp3 = line[1:4]
                         n = np.intc(int(tmp3, 16))
 
                         tmp4 = line[4:8]
@@ -238,18 +241,18 @@ class QuickCodes:
                             write = off + (incoff * i)
 
                             match t:
-                                case "0" | "8":
+                                case "0" | "8" | "4" | "C":
                                     wv8 = np.uint8(val)
 
                                     self.data[write] = wv8
                                 
-                                case "1" | "9":
+                                case "1" | "9" | "5" | "D":
                                     wv16 = np.uint16(val)
                                     wv16 = pack("<H", wv16)
 
                                     self.data[write:write + 2] = wv16
                                 
-                                case "2" | "A" | "E":
+                                case "2" | "A" | "6" | "E":
                                     wv32 = val
                                     wv32 = pack("<I", wv32)
 
