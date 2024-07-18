@@ -11,15 +11,17 @@ from utils.constants import (
 )
 
 async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
-    embedTimeout = discord.Embed(title="Timeout Error:", 
-                                 description="You took too long, sending the file with the format: Encrypted",
-                                 colour=Color.DEFAULT.value)
+    embedTimeout = discord.Embed(
+        title="Timeout Error:", 
+        description="You took too long, sending the file with the format: 'Encrypted'",
+        colour=Color.DEFAULT.value)
     embedTimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-    embedFormat = discord.Embed(title=f"Format: {savePairName}", 
-                                description="Choose what format you want the file to be sent in", 
-                                colour=Color.DEFAULT.value)
-    embedFormat.set_footer(text="If you want to use the file in a save editor, choose decrypted!")
+    embedFormat = discord.Embed(
+        title=f"Format: {savePairName}", 
+        description="Choose if you want second layer removed ('Decrypted') or just Sony PFS layer ('Encrypted').", 
+        colour=Color.DEFAULT.value)
+    embedFormat.set_footer(text="If you want to use the file in a save editor, choose 'Decrypted'!")
 
     helper = TimeoutHelper(embedTimeout)
 
