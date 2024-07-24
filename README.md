@@ -83,18 +83,18 @@ How to obtain NPPSO:
   ```UPLOAD_PATH```: The path that you used in the config.ini file  
   ```MOUNT_PATH```: The path on your PS4 where the saves will be mounted  
   ```GOOGLE_DRIVE_JSON_PATH```: The path to the Google Drive Service Account json file  
-  ```STORED_SAVES_FOLDER_PATH```: The path to the folder where you store saves for use in the quickresign command, format inside the folder is {NAME OF GAME}/{CUSAXXXXX}{ANY NAME FOR SAVE}/{THE .BIN AND FILE}  
+  ```STORED_SAVES_FOLDER_PATH```: The path to the folder where you store saves for use in the quickresign command, format inside the folder is ```{NAME OF GAME}/{CUSAXXXXX}{ANY NAME FOR SAVE}/{THE .BIN AND FILE}``` 
   ```TOKEN```: Discord bot token  
   ```NPSSO```: The NPSSO token  
 - Cd into the directory and run ```pip install -r requirements.txt```
 - Run bot.py
-- Do /init in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
+- Do ```/init``` in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
 - Make sure you are running the pkg
 - Enjoy!
   
 ### Disclaimers
-- Remember to not have the same folder for mount and upload. Have them in different paths, for example /data/example/mount & 
-  /data/example/upload, these paths will get deleted and remade so you should not store anything there
+- Remember to not have the same folder for mount and upload. Have them in different paths, for example ```/data/example/mount``` & 
+  ```/data/example/upload```, these paths will get deleted and remade so you should not store anything there
 - Saves created using this application will work on SaveWizard as long as you copy it from your PS4
 - Make sure to use the latest cecie.nim release
 
