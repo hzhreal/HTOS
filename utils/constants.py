@@ -137,6 +137,8 @@ PS_ID_DESC = "Your Playstation Network username. Do not include if you want to u
 
 BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 
+QR_FOOTER = "Respond with the number of your desired save, or type 'EXIT' to quit."
+
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
 SCE_SYS_CONTENTS = ["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"]
@@ -166,6 +168,7 @@ CON_FAIL_MSG = "PS4 not connected!"
 
 # EMBEDS
 EMBED_DESC_LIM = 4096
+EMBED_FIELD_LIM = 25
 
 class Color(Enum):
     DEFAULT = 0x854bf7
@@ -366,3 +369,9 @@ loadkeyset_emb = discord.Embed(
     color=Color.DEFAULT.value
 )
 loadkeyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+working_emb = discord.Embed(
+    title="Working...",
+    color=Color.DEFAULT.value
+)
+working_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

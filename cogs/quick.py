@@ -12,11 +12,11 @@ from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color, Embed_t,
-    emb_upl_savegame, embTimedOut
+    emb_upl_savegame, embTimedOut, working_emb
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
 from utils.extras import generate_random_string
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator
 from utils.orbis import OrbisError
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
@@ -34,7 +34,7 @@ class Quick(commands.Cog):
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except: return
+        except WorkspaceError: return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         C1socket = SocketPS(IP, PORT_CECIE)
@@ -43,8 +43,13 @@ class Quick(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            response = await listStoredSaves(ctx)
-        except (PSNIDError, TimeoutError) as e:
+
+            msg = await ctx.edit(embed=working_emb)
+            msg = await ctx.fetch_message(msg.id) # fetch for paginator.edit()
+            d_ctx = DiscordContext(ctx, msg)
+            stored_saves = await listStoredSaves()
+            response = await run_qr_paginator(d_ctx, stored_saves)
+        except (PSNIDError, WorkspaceError, TimeoutError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -52,22 +57,22 @@ class Quick(commands.Cog):
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
-        
+
         if response == "EXIT":
             embExit = discord.Embed(title="Exited.", colour=Color.DEFAULT.value)
             embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embExit)
+            await ctx.edit(embed=embExit, view=None)
             cleanupSimple(workspaceFolders)
             return
-        
+
         random_string = generate_random_string(RANDOMSTRING_LENGTH)
         saveName = os.path.basename(response)
-        files = await aiofiles.os.listdir(newUPLOAD_ENCRYPTED)
         realSave = f"{saveName}_{random_string}"
+        uploaded_file_paths = [realSave, realSave + ".bin"]
 
         try:
-            shutil.copyfile(response, os.path.join(newUPLOAD_ENCRYPTED, f"{saveName}_{random_string}"))
-            shutil.copyfile(response + ".bin", os.path.join(newUPLOAD_ENCRYPTED, f"{saveName}_{random_string}.bin"))
+            shutil.copyfile(response, os.path.join(newUPLOAD_ENCRYPTED, realSave))
+            shutil.copyfile(response + ".bin", os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
 
             emb4 = discord.Embed(
                 title="Resigning process: Encrypted",
@@ -106,11 +111,11 @@ class Quick(commands.Cog):
             elif isinstance(e, OrbisError): 
                 logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
 
-            await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, files, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
@@ -121,19 +126,17 @@ class Quick(commands.Cog):
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
-        msg = await ctx.edit(embed=embRdone)
-        msg = await ctx.fetch_message(msg.id)
-        d_ctx = DiscordContext(ctx, msg)
+        await ctx.edit(embed=embRdone)
 
         try: 
             await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
         except GDapiError as e:
-            await errorHandling(ctx, e, workspaceFolders, files, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 
         # await asyncio.sleep(1)
-        await cleanup(C1ftp, workspaceFolders, files, mountPaths)
+        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     async def codes(

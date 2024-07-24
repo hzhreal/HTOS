@@ -2,20 +2,18 @@ import os
 import sqlite3
 import time
 import shutil
-import asyncio
 import aiosqlite
 import discord
 import aiofiles
 import aiofiles.os
 import aiohttp
-from typing import Literal
 from ftplib import FTP, error_perm
 from aioftp.errors import AIOFTPException
 from network import FTPps
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, OTHER_TIMEOUT, bot, logger, Color, Embed_t
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, logger, Color, Embed_t
 )
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
@@ -194,75 +192,46 @@ def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
 
     return fileList
 
-async def listStoredSaves(ctx: discord.ApplicationContext) -> str:
+async def get_savename_from_bin_ext(path: str) -> str:
+    savename = ""
+    files = await aiofiles.os.listdir(path)
+    
+    for filename in files:
+        name, ext = os.path.splitext(filename)
+        if ext == ".bin":
+            if name in files:
+                savename = name
+    return savename
+
+async def listStoredSaves() -> dict[str, dict[str, dict[str, str]]]:
     """Lists the saves in the stored folder, used in the quick resign command."""
-    gameList = await aiofiles.os.listdir(STORED_SAVES_FOLDER)
-    description = ""
-    save_paths = []
-    index = 1
-            
+    gameList = await aiofiles.os.listdir(STORED_SAVES_FOLDER) 
+    stored_saves = {}
+       
     if len(gameList) == 0:
         raise WorkspaceError("NO STORED SAVES!")
-    
+
     for game in gameList:
         gamePath = os.path.join(STORED_SAVES_FOLDER, game)
 
         if await aiofiles.os.path.isdir(gamePath):
-            description += f"**{game}**\n"
+            stored_saves[game] = {}
 
-            gameRegions = os.listdir(gamePath)
+            gameRegions = await aiofiles.os.listdir(gamePath)
 
             for region in gameRegions:
                 regionPath = os.path.join(STORED_SAVES_FOLDER, game, region)
-                if os.path.isdir(regionPath):
-                    description += f"- {region}\n"
+                if await aiofiles.os.path.isdir(regionPath):
+                    stored_saves[game][region] = {}
                     
                     gameSaves = await aiofiles.os.listdir(regionPath)
                     for save in gameSaves:
                         savePath = os.path.join(STORED_SAVES_FOLDER, game, region, save)
                         if await aiofiles.os.path.isdir(savePath):
-                            description += f"-- {index}. {save}\n"
-                            save_paths.append(savePath)
-                            index += 1
-
-    embList = discord.Embed(title="List of available saves",
-                        description=f"{description}\nType in the number associated to the save to resign it, or send 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value)
-    embList.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-    await ctx.edit(embed=embList)
-
-    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> Literal["EXIT"] | bool:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            if message.content == "EXIT":
-                return message.content
-            else:
-                try:
-                    index = int(message.content)
-                    return 1 <= index <= max_index
-                except ValueError:
-                    return False
-        return False
-        
-    try:
-        message = await bot.wait_for("message", check=lambda message: check(message, ctx, len(save_paths)), timeout=OTHER_TIMEOUT) 
-    except asyncio.TimeoutError:
-        raise TimeoutError("TIMED OUT!")
+                            if await get_savename_from_bin_ext(savePath):
+                                stored_saves[game][region][save] = savePath
     
-    await message.delete()
-    
-    if message.content == "EXIT":
-        return message.content
-    
-    else:
-        selected_save = save_paths[int(message.content) - 1]
-        saves = await aiofiles.os.listdir(selected_save)
-
-        for save in saves:
-            if not save.endswith(".bin"):
-                selected_save = os.path.join(selected_save, save)
-
-        return selected_save
+    return stored_saves
     
 async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int]:
     """Used to write thread IDs into the db on behalf of a user, if an entry exists it will be overwritten."""

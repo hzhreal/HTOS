@@ -6,7 +6,9 @@ import aiohttp
 import data.crypto.helpers as crypthelp
 import utils.orbis as orbis
 import aiofiles.os
+from discord.ext import pages
 from dataclasses import dataclass
+from typing import Literal
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound
 from google_drive import GDapi, GDapiError
@@ -16,11 +18,11 @@ from network import FTPps
 from utils.constants import (
     logger, Color, Embed_t, bot, psnawp, 
     NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, 
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM,
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER,
     embgdt, embUtimeout, embnt, embnv1, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError
+from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError, get_savename_from_bin_ext
 from utils.extras import zipfiles
 
 @dataclass
@@ -517,3 +519,74 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str) -> N
         )
         embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await d_ctx.ctx.send(embed=embg, reference=d_ctx.msg)
+
+async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> str:
+    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> Literal["EXIT"] | bool:
+        if message.author == ctx.author and message.channel == ctx.channel:
+            if message.content == "EXIT":
+                return message.content
+            else:
+                try:
+                    index = int(message.content)
+                    return 1 <= index <= max_index
+                except ValueError:
+                    return False
+        return False
+
+    pages_list = []
+    selection = {}
+    entries_added = 0 # no limit
+    
+    for game, game_dict in stored_saves.items():
+        emb = discord.Embed(
+            title=game,
+            colour=Color.DEFAULT.value
+        )
+        emb.set_footer(text=QR_FOOTER)
+        fields_added = 0 # stays within limit
+
+        for titleId, titleId_dict in game_dict.items():
+            for savedesc, path in titleId_dict.items():
+                if fields_added <= EMBED_FIELD_LIM:
+                    emb.add_field(name=titleId, value=f"{entries_added + 1}. {savedesc}")
+                    selection[entries_added] = path
+                    entries_added += 1
+                    fields_added += 1
+
+                else:
+                    pages_list.append(emb)
+                    emb = discord.Embed(
+                        title=game,
+                        colour=Color.DEFAULT.value
+                    )
+                    emb.set_footer(text=QR_FOOTER)
+                    fields_added = 0
+        pages_list.append(emb)
+    
+    if entries_added == 0:
+        raise WorkspaceError("NO STORED SAVES!")
+    
+    paginator = pages.Paginator(pages=pages_list, show_disabled=False, timeout=None)
+    p_msg = await paginator.respond(d_ctx.ctx.interaction)
+        
+    try:
+       message = await bot.wait_for("message", check=lambda message: check(message, d_ctx.ctx, entries_added), timeout=OTHER_TIMEOUT) 
+    except asyncio.TimeoutError:
+        await paginator.disable(page=pages_list[0])
+        await p_msg.delete()
+        raise TimeoutError("TIMED OUT!")
+    
+    await message.delete()
+
+    await paginator.disable(page=pages_list[0])
+    await p_msg.delete()
+    
+    if message.content == "EXIT":
+        return message.content
+    
+    else:
+        selected_save = selection[int(message.content) - 1]
+        savename = await get_savename_from_bin_ext(selected_save)
+        if not savename:
+            raise WorkspaceError("Failed to get save!")
+        return os.path.join(selected_save, savename)
