@@ -45,7 +45,7 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
             logger.exception(f"{error} - {d_ctx.ctx.user.name}")
             
         @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
-        async def decryption_callback(self, _, interaction: discord.Interaction) -> None:
+        async def decryption_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message(view=None)
             try:
                 match self.game:
@@ -83,7 +83,7 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
             helper.done = True
             
         @discord.ui.button(label="Encrypted", style=discord.ButtonStyle.blurple, custom_id="encrypt")
-        async def encryption_callback(self, _, interaction: discord.Interaction) -> None:
+        async def encryption_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message(view=None)
             helper.done = True
 

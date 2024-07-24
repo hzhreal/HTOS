@@ -93,11 +93,11 @@ class Cheats_GTAV:
             logger.error(f"{error} - {self.ctx.user.name}")
 
         @discord.ui.button(label="Change money", style=discord.ButtonStyle.primary, custom_id="ChangeMoney_GTAV")
-        async def changeMoney_callback(self, _, interaction: discord.Interaction) -> None:
+        async def changeMoney_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
             await interaction.response.send_modal(Cheats_GTAV.MoneyModal(self.ctx, self.helper, self.filePath, self.platform))
 
         @discord.ui.button(label="Save file", style=discord.ButtonStyle.green, custom_id="SaveFile_GTAV")
-        async def saveFile_callback(self, _, interaction: discord.Interaction) -> None:
+        async def saveFile_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
             await interaction.response.edit_message(embed=embDone_G, view=None)
             if self.platform == "pc":
                 await crypt.encryptFile(self.filePath, crypt.GTAV_PC_HEADER_OFFSET)
