@@ -18,7 +18,7 @@ from network import FTPps
 from utils.constants import (
     logger, Color, Embed_t, bot, psnawp, 
     NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, 
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER,
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
     embgdt, embUtimeout, embnt, embnv1, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
@@ -79,6 +79,13 @@ class threadButton(discord.ui.View):
                     await old_thread.delete() 
         except discord.Forbidden as e:
             logger.error(f"Can not clear old thread: {e}")
+
+async def clean_msgs(messages: list[discord.Message]) -> None:
+    for msg in messages:
+        try:
+            await msg.delete()
+        except discord.Forbidden:
+            pass
 
 async def errorHandling(
           ctx: discord.ApplicationContext | discord.Message, 
@@ -520,34 +527,87 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str) -> N
         embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await d_ctx.ctx.send(embed=embg, reference=d_ctx.msg)
 
-async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> str:
-    def check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int) -> Literal["EXIT"] | bool:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            if message.content == "EXIT":
-                return message.content
-            else:
-                try:
-                    index = int(message.content)
-                    return 1 <= index <= max_index
-                except ValueError:
-                    return False
-        return False
+def qr_check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int, exit_val: str) -> str | bool:
+    if message.author == ctx.author and message.channel == ctx.channel:
+        if message.content == exit_val:
+            return message.content
+        else:
+            try:
+                index = int(message.content)
+                return 1 <= index <= max_index
+            except ValueError:
+                return False
+    return False
 
-    pages_list = []
+async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> tuple[str, dict[str, dict[str, str]]] | tuple[Literal["EXIT"], Literal["EXIT"]]:
+    game_desc = ""
+    game_msgs = []
     selection = {}
-    entries_added = 0 # no limit
+    entries_added = 0
+    embmain = discord.Embed(
+        title="All available games",
+        colour=Color.DEFAULT.value
+    )
+    embmain.set_footer(text=QR_FOOTER1)
     
-    for game, game_dict in stored_saves.items():
+    for game, _ in stored_saves.items():
+        game_info = f"\n{entries_added + 1}. {game}"
+        if len(game_desc + game_info) <= EMBED_DESC_LIM:
+            game_desc += game_info
+        else:
+            embmain.description = game_desc
+            msg = await d_ctx.ctx.respond(embed=embmain)
+            game_msgs.append(msg)
+            game_desc = game_info
+        selection[entries_added] = game
+        entries_added += 1
+    if game_desc:
+        embmain.description = game_desc
+        msg = await d_ctx.ctx.respond(embed=embmain)
+        game_msgs.append(msg)
+    
+    if entries_added == 0:
+        raise WorkspaceError("NO STORED SAVES!")
+
+    try:
+       message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "EXIT"), timeout=OTHER_TIMEOUT) 
+    except asyncio.TimeoutError:
+        await clean_msgs(game_msgs)
+        raise TimeoutError("TIMED OUT!")
+    
+    await message.delete()
+    await clean_msgs(game_msgs)
+
+    if message.content == "EXIT":
+        return message.content, message.content
+    
+    else:
+        game = selection[int(message.content) - 1]
+        selected_game = stored_saves.get(game)
+        if not selected_game:
+            raise WorkspaceError("Could not find game!")
+        return game, selected_game
+
+async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> str:
+    while True:
+        game, game_dict = await qr_interface_main(d_ctx, stored_saves)
+        if game == "EXIT" and game_dict == "EXIT":
+            return "EXIT"
+
+        pages_list = []
+        selection = {}
+        entries_added = 0 # no limit
+
         emb = discord.Embed(
             title=game,
             colour=Color.DEFAULT.value
         )
-        emb.set_footer(text=QR_FOOTER)
+        emb.set_footer(text=QR_FOOTER2)
         fields_added = 0 # stays within limit
 
         for titleId, titleId_dict in game_dict.items():
             for savedesc, path in titleId_dict.items():
-                if fields_added <= EMBED_FIELD_LIM:
+                if fields_added < EMBED_FIELD_LIM:
                     emb.add_field(name=titleId, value=f"{entries_added + 1}. {savedesc}")
                     selection[entries_added] = path
                     entries_added += 1
@@ -555,38 +615,35 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
 
                 else:
                     pages_list.append(emb)
-                    emb = discord.Embed(
-                        title=game,
-                        colour=Color.DEFAULT.value
-                    )
-                    emb.set_footer(text=QR_FOOTER)
+                    emb = emb.copy()
+                    emb.clear_fields()
                     fields_added = 0
         pages_list.append(emb)
-    
-    if entries_added == 0:
-        raise WorkspaceError("NO STORED SAVES!")
-    
-    paginator = pages.Paginator(pages=pages_list, show_disabled=False, timeout=None)
-    p_msg = await paginator.respond(d_ctx.ctx.interaction)
         
-    try:
-       message = await bot.wait_for("message", check=lambda message: check(message, d_ctx.ctx, entries_added), timeout=OTHER_TIMEOUT) 
-    except asyncio.TimeoutError:
+        if entries_added == 0:
+            raise WorkspaceError("NO STORED SAVES!")
+        
+        paginator = pages.Paginator(pages=pages_list, show_disabled=False, timeout=None)
+        p_msg = await paginator.respond(d_ctx.ctx.interaction)
+            
+        try:
+            message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT) 
+        except asyncio.TimeoutError:
+            await paginator.disable(page=pages_list[0])
+            await p_msg.delete()
+            raise TimeoutError("TIMED OUT!")
+        
+        await message.delete()
+
         await paginator.disable(page=pages_list[0])
         await p_msg.delete()
-        raise TimeoutError("TIMED OUT!")
-    
-    await message.delete()
-
-    await paginator.disable(page=pages_list[0])
-    await p_msg.delete()
-    
-    if message.content == "EXIT":
-        return message.content
-    
-    else:
-        selected_save = selection[int(message.content) - 1]
-        savename = await get_savename_from_bin_ext(selected_save)
-        if not savename:
-            raise WorkspaceError("Failed to get save!")
-        return os.path.join(selected_save, savename)
+        
+        if message.content == "BACK":
+            continue
+        
+        else:
+            selected_save = selection[int(message.content) - 1]
+            savename = await get_savename_from_bin_ext(selected_save)
+            if not savename:
+                raise WorkspaceError("Failed to get save!")
+            return os.path.join(selected_save, savename)

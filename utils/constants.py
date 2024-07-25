@@ -137,7 +137,8 @@ PS_ID_DESC = "Your Playstation Network username. Do not include if you want to u
 
 BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 
-QR_FOOTER = "Respond with the number of your desired save, or type 'EXIT' to quit."
+QR_FOOTER1 = "Respond with the number of your desired game, or type 'EXIT' to quit."
+QR_FOOTER2 = "Respond with the number of your desired save, or type 'BACK' to go to the game menu."
 
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
