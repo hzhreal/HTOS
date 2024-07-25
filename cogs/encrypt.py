@@ -147,7 +147,9 @@ class Encrypt(commands.Cog):
                     return
                 except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError, TimeoutError) as e:
                     status = "expected"
-                    if isinstance(e, OSError) and e.errno in CON_FAIL: 
+                    if isinstance(e, TimeoutError):
+                        pass # we dont want TimeoutError in the OSError check because its a subclass
+                    elif isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
