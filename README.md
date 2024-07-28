@@ -110,4 +110,4 @@ How to obtain NPPSO:
 - https://github.com/bucanero/apollo-lib/blob/main/source/patches.c#L2781 for the quick codes implementation
 - https://github.com/Zhaxxy/rdr2_enc_dec/blob/main/rdr2_enc_dec.py for the checksum
 - https://github.com/Zhaxxy/xenoverse2_ps4_decrypt for Xenoverse 2 extra layer of encryption
-- https://github.com/monkeyman192/MBINCompiler/releases/tag/v4.73.0-pre1 for No Man's Sky obfuscation (mapping.json)
+- https://github.com/monkeyman192/MBINCompiler/releases/tag/v5.02.0-pre2 for No Man's Sky obfuscation (mapping.json)
