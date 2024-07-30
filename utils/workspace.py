@@ -116,9 +116,6 @@ def startup():
         logger.exception(f"Error creating databases: {e}")
         exit(-1)
 
-    time.sleep(1)
-    os.system("cls" if os.name == "nt" else "clear")
-
 async def cleanup(fInstance: FTPps, clean_list: list[str], saveList: list[str], mountPaths: list[str]) -> None:
     """Used to cleanup after a command utilizing the ps4 (remote)."""
     for folderpath in clean_list:

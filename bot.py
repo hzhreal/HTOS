@@ -47,5 +47,5 @@ if __name__ == "__main__":
         bot.load_extension(f"cogs.{cog}")
         print(f"Loaded cog: {cog}.")
     
-    print("Starting bot...")
+    print("Starting bot...\n\n")
     bot.run(TOKEN)
