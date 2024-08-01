@@ -106,14 +106,20 @@ class CreateSave(commands.Cog):
             uploaded_file_paths_sys = await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
             if len(uploaded_file_paths_sys) == 0:
                 raise FileError("No valid sce_sys files uploaded!")
-            elif len(uploaded_file_paths_special < len(MANDATORY_SCE_SYS_CONTENTS)):
+            elif len(uploaded_file_paths_sys) < len(MANDATORY_SCE_SYS_CONTENTS):
                 raise FileError("Not enough sce_sys files uploaded!")
 
+            mandatory_sys_found = 0
             for sys_file in uploaded_file_paths_sys:
+                if mandatory_sys_found == len(MANDATORY_SCE_SYS_CONTENTS):
+                    break
+
                 sys_file_name = os.path.basename(sys_file)
-                if sys_file_name not in MANDATORY_SCE_SYS_CONTENTS and sys_file_name not in SCE_SYS_CONTENTS:
-                    # we are trying to have a valid save
-                    raise FileError("All mandatory sce_sys files are not uploaded! We are trying to create a valid save here.")
+                if sys_file_name in MANDATORY_SCE_SYS_CONTENTS:
+                    mandatory_sys_found += 1
+            if mandatory_sys_found != len(MANDATORY_SCE_SYS_CONTENTS):
+                # we are trying to have a valid save
+                raise FileError("All mandatory sce_sys files are not uploaded! We are trying to create a valid save here.")
 
             # next, other files (gamesaves)
             await msg.edit(embed=embgs)
