@@ -127,8 +127,11 @@ async def upload2(
     except asyncio.TimeoutError:
         await d_ctx.msg.edit(embed=embUtimeout)
         raise TimeoutError("TIMED OUT!")
+    
+    if len(message.attachments) > max_files:
+        return []
 
-    if len(message.attachments) >= 1 and len(message.attachments) <= max_files:
+    elif len(message.attachments) >= 1:
         attachments = message.attachments
         uploaded_file_paths = []
         valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
@@ -155,7 +158,7 @@ async def upload2(
         
         await message.delete() # delete afterwards for reliability
     
-    elif message.content != None:
+    else:
         try:
             google_drive_link = message.content
             await message.delete()
@@ -166,12 +169,6 @@ async def upload2(
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-    
-    else:
-        await d_ctx.ctx.send(
-            "Reply to the message with files that does not reach the limit, or a public google drive link (no subfolders and do not reach the file limit)!",
-            ephemeral=True, reference=d_ctx.msg
-        )
         
     return uploaded_file_paths
 
@@ -212,8 +209,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             await message.delete()
             await d_ctx.msg.edit(embed=emb16)
 
-
-    elif message.content != None:
+    else:
         try:
             google_drive_link = message.content
             await message.delete()
@@ -227,12 +223,6 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-    
-    else:
-        await d_ctx.ctx.send(
-            "Reply to the message with either 1 file, or a public google drive folder link (no subfolders and dont reach the file limit)!",
-            ephemeral=True, reference=d_ctx.msg
-        )
 
     return file_path
 
@@ -247,8 +237,11 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
     except asyncio.TimeoutError:
         await d_ctx.msg.edit(embed=embUtimeout)
         raise TimeoutError("TIMED OUT!")
+    
+    if len(message.attachments) > max_files:
+        return []
 
-    if len(message.attachments) >= 1 and len(message.attachments) <= max_files:
+    elif len(message.attachments) >= 1:
         attachments = message.attachments
         uploaded_file_paths = []
         valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, False, False, True, savesize)
@@ -285,7 +278,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         
         await message.delete()
     
-    elif message.content != None:
+    else:
         try:
             google_drive_link = message.content
             await message.delete()
@@ -296,12 +289,6 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-    
-    else:
-        await d_ctx.ctx.send(
-            "Reply to the message with files that does not reach the limit, or a public google drive link (do not reach the file limit)!",
-            ephemeral=True, reference=d_ctx.msg
-        )
         
     return uploaded_file_paths
 

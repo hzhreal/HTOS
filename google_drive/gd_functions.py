@@ -44,20 +44,6 @@ class GDapi:
         "scopes": ["https://www.googleapis.com/auth/drive"],
         **json.load(open(credentials_path))
     }
-
-    embednf = discord.Embed(
-        title="Error: Google drive upload",
-        description="Could not locate any files inside your google drive folder. Are you sure I have permissions or that there is no folders inside?",
-        colour=Color.DEFAULT.value
-    )
-    embednf.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-    emblinkwrong = discord.Embed(
-        title="Google drive upload: Error",
-        description="Could not obtain folder id from inputted link!",
-        colour=Color.DEFAULT.value
-    )
-    emblinkwrong.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
     
     @staticmethod
     async def grabfolderid(folder_link: str, ctx: discord.ApplicationContext | discord.Message) -> str | bool:
@@ -67,7 +53,6 @@ class GDapi:
             folder_id = match.group(1)
             return folder_id
         else:
-            await ctx.edit(embed=GDapi.emblinkwrong)
             return False
 
     @staticmethod
@@ -347,8 +332,6 @@ class GDapi:
                 return files
 
             else:
-                await ctx.edit(embed=cls.embednf)
-                await asyncio.sleep(0.5)
                 raise GDapiError(f"G-D UPLOAD ERROR: No files found! Or they are more than {max_files}.")
 
     @classmethod
@@ -493,8 +476,6 @@ class GDapi:
                     await ctx.edit(embed=embeddone)
                     
             else:
-                await ctx.edit(embed=cls.embednf)
-                await asyncio.sleep(0.5)
                 raise GDapiError(f"G-D UPLOAD ERROR: No files found! Or they are more than {max_files}.")
             
         return uploaded_file_paths
