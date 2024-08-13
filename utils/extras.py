@@ -3,8 +3,9 @@ import zipfile
 import random
 import string
 import aiofiles.os
-from PIL import Image
-from utils.constants import logger, ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL
+from PIL import Image, UnidentifiedImageError
+from utils.constants import ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL
+from utils.exceptions import FileError
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
@@ -41,16 +42,16 @@ def generate_random_string(length: int) -> str:
 def pngprocess(path: str, size: tuple[int, int]) -> None:
     try:
         image = Image.open(path)
+    except UnidentifiedImageError:
+        raise FileError("Failed to open image!")
 
-        if image.mode != "RGB":
-            image = image.convert("RGB")
+    if image.mode != "RGB":
+        image = image.convert("RGB")
 
-        image = image.resize(size)
-        image.save(path)
+    image = image.resize(size)
+    image.save(path)
 
-        image.close()
-    except Exception as e:
-        logger.exception(f"Error processing {path}: {e} - (unexpected)")
+    image.close()
 
 async def obtain_savenames(dir_: str) -> list[str]:
     savenames = []

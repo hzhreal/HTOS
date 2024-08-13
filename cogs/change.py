@@ -1,3 +1,4 @@
+import aiofiles.ospath
 import discord
 import asyncio
 import aiofiles.os
@@ -53,6 +54,13 @@ class Change(commands.Cog):
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+
+            # png handling
+            await picture.save(pngfile)
+            pngprocess(pngfile, ICON0_FORMAT)
+            png_size = await aiofiles.ospath.getsize(pngfile)
+            if png_size > ICON0_MAXSIZE:
+                raise FileError(f"Image turned out to be too big: {png_size}/{ICON0_MAXSIZE}!")
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
@@ -70,12 +78,6 @@ class Change(commands.Cog):
         savenames = await obtain_savenames(newUPLOAD_ENCRYPTED)
 
         if len(uploaded_file_paths) >= 2:
-            # png handling
-            if picture.size > ICON0_MAXSIZE:
-                raise OrbisError(f"Icon0 exceeded max size of {ICON0_MAXSIZE}.")
-            await picture.save(pngfile)
-            pngprocess(pngfile, ICON0_FORMAT)
-
             random_string = generate_random_string(RANDOMSTRING_LENGTH)
             uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
             for save in savenames:
