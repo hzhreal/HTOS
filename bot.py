@@ -33,6 +33,7 @@ cogs_list = [
     "createsave",
     "decrypt",
     "encrypt",
+    "extra",
     "misc",
     "quick",
     "reregion",

@@ -111,6 +111,12 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 
 //
 
+**store_accountid**: Store your account ID in the database. Use this if obtaining your account ID with username does not work.
+**Parameter**:
+- account_id, your account ID in hexadecimal format
+
+//
+
 **info keyset**: Display the max the maximum keyset the hoster's console can mount/unmount and the firmware version associated
 
 //
