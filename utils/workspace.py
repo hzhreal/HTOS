@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import time
 import shutil
 import aiosqlite
 import discord
@@ -12,8 +11,9 @@ from aioftp.errors import AIOFTPException
 from network import FTPps
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
-    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, logger, Color, Embed_t
+    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, BLACKLIST_CONF_PATH, BLACKLIST_SECTION_DISC, BLACKLIST_MESSAGE, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, RANDOMSTRING_LENGTH, logger, Color, Embed_t,
+    embChannelError, retry_emb, blacklist_emb
 )
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
@@ -177,7 +177,13 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
                 await ctx.respond(embed=embChannelError)
                 raise WorkspaceError("Invalid channel!")
     except aiosqlite.Error:
+        await ctx.respond(embed=retry_emb)
         raise WorkspaceError("Please try again.")
+    
+    # check blacklist while we are at it
+    if await blacklist_parse(BLACKLIST_SECTION_DISC, str(ctx.author.id)):
+        await ctx.respond(embed=blacklist_emb)
+        raise WorkspaceError(BLACKLIST_MESSAGE)
 
 def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
     """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
@@ -358,3 +364,29 @@ async def check_version() -> None:
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
+
+async def blacklist_parse(target_section: str, target_value: str) -> bool:
+    COMMENT_CHAR = "#"
+    SECTION_START = "["
+    SECTION_END = "]"
+
+    async with aiofiles.open(BLACKLIST_CONF_PATH) as conf:
+        section = ""
+        async for line in conf:
+            line = line.rstrip()
+
+            if not line or line.lstrip().startswith(COMMENT_CHAR):
+                continue
+
+            if line.startswith(SECTION_START) and SECTION_END in line:
+                section = line[line.find(SECTION_START) + 1 : line.find(SECTION_END)]
+                continue
+
+            stripped_line = line.strip()
+            if stripped_line[:2].lower() == "0x":
+                stripped_line = stripped_line[2:]
+
+            if section == target_section:
+                if stripped_line.lower() == target_value.lower():
+                    return True
+    return False

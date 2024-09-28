@@ -67,6 +67,7 @@ PORT_CECIE = int(os.getenv("CECIE_PORT"))
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
+BLACKLIST_CONF_PATH = str(os.getenv("BLACKLIST_CONFIG_PATH"))
 UPLOAD_ENCRYPTED = os.path.join("UserSaves", "uploadencrypted")
 UPLOAD_DECRYPTED = os.path.join("UserSaves", "uploaddecrypted")
 DOWNLOAD_ENCRYPTED = os.path.join("UserSaves", "downloadencrypted")
@@ -85,6 +86,10 @@ NPSSO = str(os.getenv("NPSSO"))
 # find {"npsso":"<64 character npsso code>"}
 
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
+
+BLACKLIST_SECTION_PS = "PLAYSTATION ACCOUNT ID"
+BLACKLIST_SECTION_DISC = "DISCORD USER ID"
+BLACKLIST_MESSAGE = "YOU HAVE BEEN DENIED!"
 
 if NPSSO is not None:
     psnawp = PSNAWP(NPSSO)
@@ -277,13 +282,6 @@ embpng2 = discord.Embed(
 )
 embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-embnv1 = discord.Embed(
-    title="Error: PS username not valid",
-    description="This PS username is not in a valid format.",
-    colour=Color.DEFAULT.value
-)
-embnv1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 emb8 = discord.Embed(
     title="Error: PSN username",
     description=f"Your input was not a valid PSN username, you have {OTHER_TIMEOUT} seconds to reply with your account ID instead.",
@@ -376,3 +374,20 @@ working_emb = discord.Embed(
     color=Color.DEFAULT.value
 )
 working_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+retry_emb = discord.Embed(
+    title="Please try again.",
+    color=Color.DEFAULT.value
+)
+retry_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+blacklist_emb = discord.Embed(
+    title=BLACKLIST_MESSAGE,
+    color=Color.RED.value
+)
+blacklist_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+embChannelError = discord.Embed(title="Error",
+                                    description="Invalid channel!",
+                                    colour=Color.DEFAULT.value)
+embChannelError.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

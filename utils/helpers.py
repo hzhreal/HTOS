@@ -17,12 +17,12 @@ from network import FTPps
 # from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
     logger, Color, Embed_t, bot, psnawp, 
-    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, 
+    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_SECTION_PS, BLACKLIST_MESSAGE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
-    embgdt, embUtimeout, embnt, embnv1, emb8, embvalidpsn
+    embgdt, embUtimeout, embnt, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError, get_savename_from_bin_ext
+from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError, get_savename_from_bin_ext, blacklist_parse
 from utils.extras import zipfiles
 
 @dataclass
@@ -299,6 +299,9 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     if username == "":
         user_id = await fetch_accountid_db(ctx.author.id)
         if user_id is not None:
+            # check blacklist while we are at it
+            if await blacklist_parse(BLACKLIST_SECTION_PS, user_id):
+                raise PSNIDError(BLACKLIST_MESSAGE)
             return user_id
         else:
             raise PSNIDError("Could not find previously stored account ID.")
@@ -310,11 +313,9 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     limit = 0
 
     if len(username) < 3 or len(username) > 16:
-        await ctx.edit(embed=embnv1)
         await asyncio.sleep(1)
         raise PSNIDError("Invalid PS username!")
     elif not bool(PSN_USERNAME_RE.fullmatch(username)):
-        await ctx.edit(embed=embnv1)
         await asyncio.sleep(1)
         raise PSNIDError("Invalid PS username!")
 
@@ -374,6 +375,11 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         await ctx.respond(embed=embvalidpsn)
 
     await asyncio.sleep(0.5)
+
+    # check blacklist while we are at it
+    if await blacklist_parse(BLACKLIST_SECTION_PS, user_id):
+        raise PSNIDError(BLACKLIST_MESSAGE)
+
     await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()
 
