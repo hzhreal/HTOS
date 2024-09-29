@@ -67,7 +67,6 @@ PORT_CECIE = int(os.getenv("CECIE_PORT"))
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
-BLACKLIST_CONF_PATH = str(os.getenv("BLACKLIST_CONFIG_PATH"))
 UPLOAD_ENCRYPTED = os.path.join("UserSaves", "uploadencrypted")
 UPLOAD_DECRYPTED = os.path.join("UserSaves", "uploaddecrypted")
 DOWNLOAD_ENCRYPTED = os.path.join("UserSaves", "downloadencrypted")
@@ -78,6 +77,7 @@ KEYSTONE_PATH = os.path.join("UserSaves", "keystone")
 RANDOMSTRING_LENGTH = 10
 DATABASENAME_THREADS = "valid_threads.db"
 DATABASENAME_ACCIDS = "account_ids.db"
+DATABASENAME_BLACKLIST = "blacklist.db"
 TOKEN = str(os.getenv("TOKEN"))
 NPSSO = str(os.getenv("NPSSO"))
 # how to obtain NPSSO:
@@ -87,8 +87,6 @@ NPSSO = str(os.getenv("NPSSO"))
 
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
 
-BLACKLIST_SECTION_PS = "PLAYSTATION ACCOUNT ID"
-BLACKLIST_SECTION_DISC = "DISCORD USER ID"
 BLACKLIST_MESSAGE = "YOU HAVE BEEN DENIED!"
 
 if NPSSO is not None:

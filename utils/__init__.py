@@ -11,7 +11,6 @@ from .constants import (
     MOUNT_LOCATION,
     PS_UPLOADDIR, 
     STORED_SAVES_FOLDER,
-    BLACKLIST_CONF_PATH,
     UPLOAD_ENCRYPTED, 
     UPLOAD_DECRYPTED,
     DOWNLOAD_ENCRYPTED, 
@@ -22,10 +21,9 @@ from .constants import (
     RANDOMSTRING_LENGTH,
     DATABASENAME_THREADS,
     DATABASENAME_ACCIDS, 
+    DATABASENAME_BLACKLIST,
     TOKEN,
     NPSSO,
-    BLACKLIST_SECTION_PS,
-    BLACKLIST_SECTION_DISC,
     BLACKLIST_MESSAGE,
     GTAV_TITLEID, 
     RDR2_TITLEID, 
@@ -114,7 +112,7 @@ from .constants import (
 )
 from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames
 from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey, parse_sealedkey
-from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savename_from_bin_ext, blacklist_parse
+from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savename_from_bin_ext, blacklist_write_db, blacklist_check_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
 from .helpers import DiscordContext, errorHandling, clean_msgs, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator

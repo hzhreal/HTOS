@@ -1,5 +1,6 @@
 valid_threads.db
 account_ids.db
+blacklist.db
 google_drive/service_account.json
 cogs/__pycache__
 data/__pycache__

@@ -129,6 +129,30 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 
 //
 
+**blacklist add**: Bot owner can blacklist someone
+**Parameters**:
+- ps_accountid, PlayStation account ID in hexadecimal format
+- user, Discord user
+Minimum 1 argument  
+
+//
+
+**blacklist remove**: Bot owner can remove someone from the blacklist
+**Parameters**:
+- ps_accountid, PlayStation account ID in hexadecimal format
+- user, Discord user  
+Minimum 1 argument  
+
+//
+
+**blacklist remove_all**: Bot owner can clear the blacklist
+
+//
+
+**blacklist show**: Bot owner can list all blacklisted entries
+
+//
+
 **ping**: Check if the bot is functional!  
 
 ## Examples
