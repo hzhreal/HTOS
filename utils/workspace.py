@@ -6,14 +6,14 @@ import discord
 import aiofiles
 import aiofiles.os
 import aiohttp
-from discord.ext.commands import Bot
 from ftplib import FTP, error_perm
 from aioftp.errors import AIOFTPException
+from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound
 from network import FTPps
 from utils.constants import (
-    UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, 
+    UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, logger,
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, logger, blacklist_logger, psnawp,
     embChannelError, retry_emb, blacklist_emb
 )
 from utils.extras import generate_random_string
@@ -118,12 +118,14 @@ def startup():
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS PS_Users (
-                    account_id BLOB UNIQUE
+                    account_id BLOB UNIQUE,
+                    username TEXT UNIQUE
             )
         """)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Disc_Users (
-                    user_id BLOB UNIQUE
+                    user_id BLOB UNIQUE,
+                    username TEXT UNIQUE
             )
         """)
         conn.commit()
@@ -195,6 +197,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
     
     # check blacklist while we are at it
     if await blacklist_check_db(ctx.author.id, None):
+        blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a command while blacklisted!")
         await ctx.respond(embed=blacklist_emb)
         raise WorkspaceError(BLACKLIST_MESSAGE)
 
@@ -343,25 +346,31 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
     except aiosqlite.Error as e:
         logger.error(f"Could not write account ID to database: {e}")
 
-async def blacklist_write_db(disc_userid: int | None, account_id: str | None) -> None:
+async def blacklist_write_db(disc_user: discord.User | None, account_id: str | None) -> None:
     """Add entry to the blacklist db."""
-    if disc_userid is None and account_id is None:
+    if disc_user is None and account_id is None:
         return
     
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
 
-            if disc_userid is not None:
-                userId = uint64(disc_userid, "big")
+            if disc_user is not None:
+                userId = uint64(disc_user.id, "big")
 
-                await cursor.execute("INSERT OR IGNORE INTO Disc_Users (user_id) VALUES (?)", (userId.as_bytes,))
+                await cursor.execute("INSERT OR IGNORE INTO Disc_Users (user_id, username) VALUES (?, ?)", (userId.as_bytes, disc_user.name,))
 
             if account_id is not None:
                 accid = int(account_id, 16)
+                if NPSSO is not None:
+                    try:
+                        ps_user = psnawp.user(account_id=str(accid))
+                        username = ps_user.online_id
+                    except PSNAWPNotFound:
+                        username = None
                 accid = uint64(accid, "big")
                 
-                await cursor.execute("INSERT OR IGNORE INTO PS_Users (account_id) VALUES (?)", (accid.as_bytes,))
+                await cursor.execute("INSERT OR IGNORE INTO PS_Users (account_id, username) VALUES (?, ?)", (accid.as_bytes, username,))
 
             await db.commit()
     except aiosqlite.Error as e:
@@ -436,7 +445,7 @@ async def blacklist_delall_db() -> None:
     except aiosqlite.Error as e:
         logger.error(f"Could not delete all entries in blacklist database: {e}")
 
-async def blacklist_fetchall_db(bot: Bot) -> dict[str, list[str] | list[dict[str | None, int]]]:
+async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | list[dict[str | None, int]]]:
     """Obtain all entries inside the blacklist db."""
     entries = {"PlayStation account IDs": [], "Discord user IDs": []}
 
@@ -444,27 +453,22 @@ async def blacklist_fetchall_db(bot: Bot) -> dict[str, list[str] | list[dict[str
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
 
-            await cursor.execute("SELECT account_id FROM PS_Users")
+            await cursor.execute("SELECT account_id, username FROM PS_Users")
             accids = await cursor.fetchall()
 
-            await cursor.execute("SELECT user_id FROM Disc_Users")
+            await cursor.execute("SELECT user_id, username FROM Disc_Users")
             userids = await cursor.fetchall()
     except aiosqlite.Error as e:
         logger.error(f"Could not fetch all blacklist database entries: {e}")
 
-    for accid in accids:
-        accid = uint64(accid[0], "big")
-        entries["PlayStation account IDs"].append(hex(accid.value))
+    for accid, username in accids:
+        accid = uint64(accid, "big")
 
-    for userid in userids:
-        userid = uint64(userid[0], "big")
+        entry = {username: hex(accid.value)}
+        entries["PlayStation account IDs"].append(entry)
 
-        # try to fetch username
-        try:
-            user = await bot.fetch_user(userid.value)
-            username = user.name
-        except discord.NotFound:
-            username = None
+    for userid, username in userids:
+        userid = uint64(userid, "big")
 
         entry = {username: userid.value}
         entries["Discord user IDs"].append(entry)

@@ -16,16 +16,16 @@ from psnawp_api import PSNAWP
 VERSION = "v1.2.0"
 
 # LOGGER
-def setup_logger() -> logging.Logger:
-    LOGGER_FOLDER = "logs"
-    LOGGER_PATH = os.path.join(LOGGER_FOLDER, "HTOS.log")
-    if not os.path.exists(LOGGER_FOLDER):
-        os.makedirs(LOGGER_FOLDER)
-    if not os.path.exists(LOGGER_PATH):
-        with open(LOGGER_PATH, "w"):
+def setup_logger(path: str, logger_type: str) -> logging.Logger:
+    dirname = os.path.dirname(path)
+
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    if not os.path.exists(path):
+        with open(path, "w"):
             ...
 
-    logger = logging.getLogger("HTOS_LOGS")
+    logger = logging.getLogger(logger_type)
 
     logging_config = {
         "version": 1,
@@ -37,20 +37,20 @@ def setup_logger() -> logging.Logger:
             }
         },
         "handlers": {
-            "file": {
+            logger_type: {
                 "class": "logging.handlers.RotatingFileHandler",
                 "level": "DEBUG",
                 "formatter": "detailed",
-                "filename": LOGGER_PATH,
+                "filename": path,
                 "maxBytes": 25 * 1024 * 1024,
                 "backupCount": 3
             }
         },
         "loggers": {
-            "HTOS_LOGS": {
+            logger_type: {
                 "level": "INFO",
                 "handlers": [
-                    "file"
+                    logger_type
                 ]
             }
         }
@@ -58,7 +58,8 @@ def setup_logger() -> logging.Logger:
     logging.config.dictConfig(config=logging_config)
 
     return logger
-logger = setup_logger()
+logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS")
+blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS")
 
 # CONFIG
 IP = str(os.getenv("IP"))
@@ -89,6 +90,7 @@ NPSSO = str(os.getenv("NPSSO"))
 
 BLACKLIST_MESSAGE = "YOU HAVE BEEN DENIED!"
 
+psnawp = None
 if NPSSO is not None:
     psnawp = PSNAWP(NPSSO)
     print("psnawp initialized")

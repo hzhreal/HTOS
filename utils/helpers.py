@@ -16,7 +16,7 @@ from google_drive import GDapi, GDapiError
 from network import FTPps
 # from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
-    logger, Color, Embed_t, bot, psnawp, 
+    logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
     NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
     embgdt, embUtimeout, embnt, emb8, embvalidpsn
@@ -301,6 +301,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         if user_id is not None:
             # check blacklist while we are at it
             if await blacklist_check_db(None, user_id):
+                blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a blacklisted account ID: {user_id}")
                 raise PSNIDError(BLACKLIST_MESSAGE)
             return user_id
         else:
@@ -378,6 +379,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
 
     # check blacklist while we are at it
     if await blacklist_check_db(None, user_id):
+        blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a blacklisted account ID: {user_id}")
         raise PSNIDError(BLACKLIST_MESSAGE)
 
     await write_accountid_db(ctx.author.id, user_id.lower())

@@ -37,7 +37,7 @@ class Extra(commands.Cog):
                 return
         
         await ctx.respond("Adding...", ephemeral=True)
-        await blacklist_write_db(user.id if user != "" else None, ps_accountid if ps_accountid != "" else None)
+        await blacklist_write_db(user if user != "" else None, ps_accountid if ps_accountid != "" else None)
         await ctx.respond("Added!", ephemeral=True)
     
     @blacklist_group.command(description="Remove entry from blacklist.")
@@ -79,8 +79,8 @@ class Extra(commands.Cog):
     @commands.is_owner()
     async def show(self, ctx: discord.ApplicationContext) -> None:
         await ctx.respond("Showing...", ephemeral=True)
-        entries = await blacklist_fetchall_db(self.bot)
-        data = json.dumps(entries).encode("utf-8")
+        entries = await blacklist_fetchall_db()
+        data = json.dumps(entries, indent=4).encode("utf-8")
         await ctx.respond(file=discord.File(BytesIO(data), filename="blacklist.json"), ephemeral=True)
 
     @discord.slash_command(description="Store your account ID in hexadecimal format.")

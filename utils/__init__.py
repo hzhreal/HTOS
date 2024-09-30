@@ -2,6 +2,7 @@ from .constants import (
     VERSION,
     setup_logger,
     logger,
+    blacklist_logger,
     bot,
     activity,
     intents,
