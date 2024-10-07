@@ -28,7 +28,7 @@ savesize_presets = [
     OptionChoice("75 MB", (75 * 1024**2) >> 15),
     OptionChoice("100 MB", (100 * 1024**2) >> 15),
 ]
-saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will deterine savesize (blocks * {SAVEBLOCKS_MAX})."
+saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will determine savesize (blocks * {SAVEBLOCKS_MAX})."
 saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
 saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=1, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
 
