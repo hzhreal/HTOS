@@ -30,7 +30,7 @@ savesize_presets = [
 ]
 saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will determine savesize (blocks * {SAVEBLOCKS_MAX})."
 saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
-saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=1, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
+saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=96, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
 
 class CreateSave(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
