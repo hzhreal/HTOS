@@ -45,6 +45,7 @@ from .constants import (
     NMS_TITLEID,
     SMT5_TITLEID,
     TERRARIA_TITLEID,
+    RCUBE_TITLEID,
     FILE_LIMIT_DISCORD, 
     MAX_FILES,
     UPLOAD_TIMEOUT,

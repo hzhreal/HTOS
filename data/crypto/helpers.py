@@ -7,7 +7,7 @@ from utils.constants import (
     logger, Color, Embed_t, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
-    TERRARIA_TITLEID, SMT5_TITLEID
+    TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID
 )
 
 async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
@@ -75,6 +75,8 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
                         await Crypto.TERRARIA.decryptFile(destination_directory)
                     case "SMT5":
                         await Crypto.SMT5.decryptFile(destination_directory)
+                    case "RCUBE":
+                        await Crypto.RCube.decryptFile(destination_directory)
             except CryptoError as e:
                 raise CryptoError(e)
             except (ValueError, IOError, IndexError):
@@ -150,6 +152,10 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
     elif title_id in SMT5_TITLEID:
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5", start_offset=None, title_id=None))
         await helper.await_done()
+    
+    elif title_id in RCUBE_TITLEID:
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RCUBE", start_offset=None, title_id=None))
+        await helper.await_done()
 
 async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:
     try:
@@ -206,6 +212,9 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -
         
         elif title_id in SMT5_TITLEID:
             await Crypto.SMT5.checkEnc_ps(file_name)
+        
+        elif title_id in RCUBE_TITLEID:
+            await Crypto.RCube.checkEnc_ps(file_name)
 
     except CryptoError as e:
         raise CryptoError(e)
