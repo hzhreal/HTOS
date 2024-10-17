@@ -31,7 +31,7 @@ class Change(commands.Cog):
               self, 
               ctx: discord.ApplicationContext, 
               picture: discord.Attachment, 
-              playstation_id: Option(str, description=PS_ID_DESC, defualt="") # type: ignore
+              playstation_id: Option(str, description=PS_ID_DESC, default="") # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
