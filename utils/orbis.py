@@ -15,7 +15,7 @@ from data.crypto.mgsv_crypt import Crypt_MGSV
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
 
-SAVEDIR_RE = re.compile(r"^[a-zA-Z0-9\-.\@]+$")
+SAVEDIR_RE = re.compile(r"^[a-zA-Z0-9\-_.\@]+$")
 TITLE_ID_RE = re.compile(r"^CUSA\d{5}$")
 ACCID_RE = re.compile(r"^[0-9a-fA-F]+$")
 
