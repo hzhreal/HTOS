@@ -107,6 +107,16 @@ async def errorHandling(
     else:
         cleanupSimple(workspaceFolders)
 
+"""Makes the bot expect multiple files through discord or google drive."""
+def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
+    if message.author == ctx.author and message.channel == ctx.channel:
+        return (len(message.attachments) >= 1) or (message.content and GDapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+    
+"""Makes the bot expect a single file through discord or google drive."""
+def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
+    if message.author == ctx.author and message.channel == ctx.channel:
+        return (len(message.attachments) == 1) or (message.content and GDapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+
 async def upload2(
           d_ctx: DiscordContext, 
           saveLocation: str, 
@@ -117,13 +127,8 @@ async def upload2(
           savesize: int | None = None
         ) -> list[str]:
 
-    """Makes the bot expect multiple files through discord or google drive."""
-    def check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            return len(message.attachments) >= 1 or (message.content and GDapi.is_google_drive_link(message.content))
-
     try:
-        message = await bot.wait_for("message", check=lambda message: check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with one attachments
+        message: discord.Message = await bot.wait_for("message", check=lambda message: upl_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with attachments
     except asyncio.TimeoutError:
         await d_ctx.msg.edit(embed=embUtimeout)
         raise TimeoutError("TIMED OUT!")
@@ -157,6 +162,9 @@ async def upload2(
                 await orbis.parse_sealedkey(file_path)
         
         await message.delete() # delete afterwards for reliability
+
+    elif message.content == "EXIT":
+        raise TimeoutError("EXITED!")
     
     else:
         try:
@@ -172,14 +180,9 @@ async def upload2(
         
     return uploaded_file_paths
 
-async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
-    """Makes the bot expect a single file through discord or google drive."""
-    def check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            return len(message.attachments) == 1 or (message.content and GDapi.is_google_drive_link(message.content))
-        
+async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:        
     try:
-        message = await bot.wait_for("message", check=lambda message: check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 120 seconds for a response with an attachment
+        message: discord.Message = await bot.wait_for("message", check=lambda message: upl1_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 120 seconds for a response with an attachment
     except asyncio.TimeoutError:
         await d_ctx.msg.edit(embed=embUtimeout)
         raise TimeoutError("TIMED OUT!")
@@ -209,6 +212,9 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             await message.delete()
             await d_ctx.msg.edit(embed=emb16)
 
+    elif message.content == "EXIT":
+        raise TimeoutError("EXITED!")
+
     else:
         try:
             google_drive_link = message.content
@@ -227,13 +233,8 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
     return file_path
 
 async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
-    """Makes the bot expect multiple files through discord or google drive (createsave command)."""
-    def check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            return len(message.attachments) >= 1 or (message.content and GDapi.is_google_drive_link(message.content))
-
     try:
-        message = await bot.wait_for("message", check=lambda message: check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with one attachments
+        message: discord.Message = await bot.wait_for("message", check=lambda message: upl_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with one attachments
     except asyncio.TimeoutError:
         await d_ctx.msg.edit(embed=embUtimeout)
         raise TimeoutError("TIMED OUT!")
@@ -277,6 +278,9 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             uploaded_file_paths.append(full_path)
         
         await message.delete()
+
+    elif message.content == "EXIT":
+        raise TimeoutError("EXITED!")
     
     else:
         try:
@@ -622,7 +626,7 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         p_msg = await paginator.respond(d_ctx.ctx.interaction)
             
         try:
-            message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT) 
+            message: discord.Message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT) 
         except asyncio.TimeoutError:
             await paginator.disable(page=pages_list[0])
             await p_msg.delete()

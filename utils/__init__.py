@@ -117,5 +117,5 @@ from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, o
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savename_from_bin_ext, blacklist_write_db, blacklist_check_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
-from .helpers import DiscordContext, errorHandling, clean_msgs, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator
+from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator
 from .type_helpers import uint32, uint64, utf_8, utf_8_s, fmt, INTEGER, CHARACTER, CHARACTER_SPECIAL

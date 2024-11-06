@@ -112,7 +112,7 @@ class Encrypt(commands.Cog):
                             
                         embSceSys = discord.Embed(
                             title=f"Upload: sce_sys contents\n{save}",
-                            description="Please attach the sce_sys files you want to upload.",
+                            description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
                             colour=Color.DEFAULT.value
                         )
                         embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
