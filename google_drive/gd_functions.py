@@ -73,12 +73,17 @@ class GDapi:
             return "HTTPError!"
         
         err = e.res.content.get("error")
-        errCode = err.get("code")
+        if isinstance(err, dict):
+            errCode = err.get("code")
+        else:
+            return "UNEXPECTED GD ERROR."
+
         errMsg = []
 
-        err_list = err.get("errors")       
-        for error in err_list:
-            errMsg.append(error.get("reason"))
+        err_list = err.get("errors")  
+        if isinstance(err_list, list):     
+            for error in err_list:
+                errMsg.append(error.get("reason"))
 
         if len(errMsg) == 1:
             errMsg = errMsg[0]
