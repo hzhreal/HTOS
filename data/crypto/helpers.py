@@ -26,7 +26,7 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
     helper = TimeoutHelper(embedTimeout)
 
     class CryptChoiceButton(discord.ui.View):
-        def __init__(self, game: str, start_offset: int, title_id: str) -> None:
+        def __init__(self, game: str | None = None, start_offset: int | None = None, title_id: str | None = None) -> None:
             self.game = game
             self.offset = start_offset
             self.title_id = title_id
@@ -90,71 +90,79 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
             helper.done = True
 
     if title_id in GTAV_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
         await helper.await_done()
         
     elif title_id in RDR2_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("XENO2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("XENO2"))
         await helper.await_done()
 
     elif title_id in BL3_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("BL3", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("BL3"))
         await helper.await_done()
 
     elif title_id in WONDERLANDS_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TTWL", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TTWL"))
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
         await helper.await_done()
 
     elif title_id in NDOG_COL_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
         await helper.await_done()
 
     elif title_id in NDOG_TLOU2_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", start_offset=None, title_id=title_id))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", title_id=title_id))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("REV2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("REV2"))
         await helper.await_done()
 
-    elif title_id in DL1_TITLEID or title_id in DL2_TITLEID or title_id in DL1_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL2", start_offset=None, title_id=None))
+    elif title_id in DL1_TITLEID:
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL1"))
+        await helper.await_done()
+
+    elif title_id in DL2_TITLEID:
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL2"))
         await helper.await_done()
     
     elif title_id in RGG_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RGG", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RGG"))
+        await helper.await_done()
+
+    elif title_id in DI1_TITLEID:
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI1"))
         await helper.await_done()
 
     elif title_id in DI2_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI2", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI2"))
         await helper.await_done()
 
     elif title_id in NMS_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NMS", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NMS"))
         await helper.await_done()
     
     elif title_id in TERRARIA_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA"))
         await helper.await_done()
     
     elif title_id in SMT5_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5"))
         await helper.await_done()
     
     elif title_id in RCUBE_TITLEID:
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RCUBE", start_offset=None, title_id=None))
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RCUBE"))
         await helper.await_done()
 
 async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:
