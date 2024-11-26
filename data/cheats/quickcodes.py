@@ -608,7 +608,7 @@ class QuickCodes:
                             off += pointer
 
                         tmp8 = line[9:17]
-                        size = np.uint32(int(tmp8, 16))
+                        size = int(tmp8, 16) & 0xFF_FF_FF_FF
 
                         write = bytearray((size + 3) & ~3)
 
