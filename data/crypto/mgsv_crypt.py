@@ -74,7 +74,7 @@ class Crypt_MGSV:
 
         encrypted_data = CC.u32array_to_bytearray(encrypted_data_u32arr, "little")
 
-        async with open(fileToEncrypt, "wb") as savegame:
+        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
             await savegame.write(encrypted_data)
 
     @staticmethod
