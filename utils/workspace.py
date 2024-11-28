@@ -8,10 +8,10 @@ import aiofiles.os
 import aiohttp
 from ftplib import FTP, error_perm
 from aioftp.errors import AIOFTPException
-from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound
+from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound, PSNAWPAuthenticationError
 from network import FTPps
 from utils.constants import (
-    UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO,
+    UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
     DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, logger, blacklist_logger, psnawp,
     embChannelError, retry_emb, blacklist_emb
@@ -362,12 +362,15 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
 
             if account_id is not None:
                 accid = int(account_id, 16)
-                if NPSSO is not None:
+                if NPSSO_global.val:
                     try:
                         ps_user = psnawp.user(account_id=str(accid))
                         username = ps_user.online_id
                     except PSNAWPNotFound:
                         username = None
+                    except PSNAWPAuthenticationError:
+                        username = None
+                        NPSSO_global.val = ""
                 accid = uint64(accid, "big")
                 
                 await cursor.execute("INSERT OR IGNORE INTO PS_Users (account_id, username) VALUES (?, ?)", (accid.as_bytes, username,))

@@ -8,16 +8,16 @@ import utils.orbis as orbis
 import aiofiles.os
 from discord.ext import pages
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Callable
 from discord.ui.item import Item
-from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound
+from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound, PSNAWPAuthenticationError
 from google_drive import GDapi, GDapiError
 # from data.crypto.helpers import extra_import
 from network import FTPps
 # from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
-    NPSSO, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE,
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
     embgdt, embUtimeout, embnt, emb8, embvalidpsn
 )
@@ -117,6 +117,21 @@ def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> boo
     if message.author == ctx.author and message.channel == ctx.channel:
         return (len(message.attachments) == 1) or (message.content and GDapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
 
+def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
+    if message.author == ctx.author and message.channel == ctx.channel:
+        return message.content and orbis.checkid(message.content)
+
+async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord.Message, discord.ApplicationContext], bool], embed: discord.Embed, delete_response: bool = False, timeout: int = OTHER_TIMEOUT) -> discord.Message:
+    try:
+        response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=timeout)
+        if delete_response:
+            await response.delete()
+    except asyncio.TimeoutError:
+        await ctx.edit(embed=embed)
+        await asyncio.sleep(3)
+        raise TimeoutError("TIMED OUT!")
+    return response
+
 async def upload2(
           d_ctx: DiscordContext, 
           saveLocation: str, 
@@ -127,11 +142,7 @@ async def upload2(
           savesize: int | None = None
         ) -> list[str]:
 
-    try:
-        message: discord.Message = await bot.wait_for("message", check=lambda message: upl_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with attachments
-    except asyncio.TimeoutError:
-        await d_ctx.msg.edit(embed=embUtimeout)
-        raise TimeoutError("TIMED OUT!")
+    message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
     
     if len(message.attachments) > max_files:
         return []
@@ -180,12 +191,8 @@ async def upload2(
         
     return uploaded_file_paths
 
-async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:        
-    try:
-        message: discord.Message = await bot.wait_for("message", check=lambda message: upl1_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 120 seconds for a response with an attachment
-    except asyncio.TimeoutError:
-        await d_ctx.msg.edit(embed=embUtimeout)
-        raise TimeoutError("TIMED OUT!")
+async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:  
+    message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
 
     if len(message.attachments) == 1:
         attachment = message.attachments[0]
@@ -233,11 +240,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
     return file_path
 
 async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
-    try:
-        message: discord.Message = await bot.wait_for("message", check=lambda message: upl_check(message, d_ctx.ctx), timeout=UPLOAD_TIMEOUT)  # Wait for 300 seconds for a response with one attachments
-    except asyncio.TimeoutError:
-        await d_ctx.msg.edit(embed=embUtimeout)
-        raise TimeoutError("TIMED OUT!")
+    message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
     
     if len(message.attachments) > max_files:
         return []
@@ -299,6 +302,8 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     """Used to obtain an account ID, either through converting from username, obtaining from db, or manually. Utilizes the PSN API or a website doing it for us."""
     await ctx.defer()
+    
+    user_id = ""
 
     if username == "":
         user_id = await fetch_accountid_db(ctx.author.id)
@@ -311,10 +316,6 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         else:
             raise PSNIDError("Could not find previously stored account ID.")
 
-    def check(message: discord.Message, ctx: discord.ApplicationContext) -> str:
-        if message.author == ctx.author and message.channel == ctx.channel:
-            return message.content and orbis.checkid(message.content)
-
     limit = 0
 
     if len(username) < 3 or len(username) > 16:
@@ -324,7 +325,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         await asyncio.sleep(1)
         raise PSNIDError("Invalid PS username!")
 
-    if NPSSO is not None:
+    if NPSSO_global.val:
         try:
             userSearch = psnawp.user(online_id=username)
             user_id = userSearch.account_id
@@ -335,16 +336,13 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
             await ctx.respond(embed=emb8)
             delmsg = True
 
-            try:
-                response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=OTHER_TIMEOUT)
-                user_id = response.content
-                await response.delete()
-            except asyncio.TimeoutError:
-                await ctx.edit(embed=embnt)
-                raise TimeoutError("TIMED OUT!")
-    else:
+            response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
+            user_id = response.content
+        except PSNAWPAuthenticationError:
+            NPSSO_global.val = ""
+    
+    if not user_id:
         while True:
-
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"https://psn.flipscreen.games/search.php?username={username}") as response:
                     response.text = await response.text()
@@ -364,14 +362,9 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
                 await ctx.respond(embed=emb8)
                 delmsg = True
 
-                try:
-                    response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=OTHER_TIMEOUT)
-                    user_id = response.content
-                    await response.delete()
-                    break
-                except asyncio.TimeoutError:
-                    await ctx.edit(embed=embnt)
-                    raise TimeoutError("TIMED OUT!")
+                response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
+                user_id = response.content
+                break
             
     if delmsg:
         await asyncio.sleep(0.5)

@@ -3,6 +3,7 @@ import discord
 import logging.config
 import re
 import errno
+import time
 from zipfile import (
     #ZIP_BZIP2, 
     #ZIP_DEFLATED, 
@@ -80,22 +81,26 @@ DATABASENAME_THREADS = "valid_threads.db"
 DATABASENAME_ACCIDS = "account_ids.db"
 DATABASENAME_BLACKLIST = "blacklist.db"
 TOKEN = str(os.getenv("TOKEN"))
-NPSSO = str(os.getenv("NPSSO"))
 # how to obtain NPSSO:
 # go to playstation.com and login
 # go to this link https://ca.account.sony.com/api/v1/ssocookie
 # find {"npsso":"<64 character npsso code>"}
 
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
+class NPSSO:
+    def __init__(self):
+        self.val: str = str(os.getenv("NPSSO"))
+NPSSO_global = NPSSO()
 
 BLACKLIST_MESSAGE = "YOU HAVE BEEN DENIED!"
 
 psnawp = None
-if NPSSO is not None:
-    psnawp = PSNAWP(NPSSO)
+if NPSSO_global.val:
+    psnawp = PSNAWP(NPSSO_global)
     print("psnawp initialized")
 else:
     print("It is recommended that you register a NPSSO token.")
+    time.sleep(3)
 
 # BOT INITIALIZATION 
 activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
