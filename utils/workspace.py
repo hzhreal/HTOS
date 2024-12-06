@@ -377,7 +377,7 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
 
             await db.commit()
     except aiosqlite.Error as e:
-        logger.error(f"Could not write to blacklist database: {e}")
+        blacklist_logger.error(f"Could not write to blacklist database: {e}")
 
 async def blacklist_check_db(disc_userid: int | None, account_id: str | None) -> bool | None:
     """Check if value is blacklisted, only use argument, leave other to None."""
@@ -407,7 +407,7 @@ async def blacklist_check_db(disc_userid: int | None, account_id: str | None) ->
                 if res[0] > 0:
                     return True
     except aiosqlite.Error as e:
-        logger.error(f"Could check blacklist database: {e}")
+        blacklist_logger.error(f"Could check blacklist database: {e}")
 
     return False
 
@@ -433,7 +433,7 @@ async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> N
 
             await db.commit()
     except aiosqlite.Error as e:
-        logger.error(f"Could not remove entry from blacklist database: {e}")
+        blacklist_logger.error(f"Could not remove entry from blacklist database: {e}")
 
 async def blacklist_delall_db() -> None:
     """Delete all entries in blacklist db."""
@@ -446,11 +446,13 @@ async def blacklist_delall_db() -> None:
 
             await db.commit()
     except aiosqlite.Error as e:
-        logger.error(f"Could not delete all entries in blacklist database: {e}")
+        blacklist_logger.error(f"Could not delete all entries in blacklist database: {e}")
 
 async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | list[dict[str | None, int]]]:
     """Obtain all entries inside the blacklist db."""
     entries = {"PlayStation account IDs": [], "Discord user IDs": []}
+
+    accids = userids = []
 
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
@@ -462,7 +464,7 @@ async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | lis
             await cursor.execute("SELECT user_id, username FROM Disc_Users")
             userids = await cursor.fetchall()
     except aiosqlite.Error as e:
-        logger.error(f"Could not fetch all blacklist database entries: {e}")
+        blacklist_logger.error(f"Could not fetch all blacklist database entries: {e}")
 
     for accid, username in accids:
         accid = uint64(accid, "big")
