@@ -88,7 +88,7 @@ TOKEN = str(os.getenv("TOKEN"))
 
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
 class NPSSO:
-    def __init__(self):
+    def __init__(self) -> None:
         self.val: str = str(os.getenv("NPSSO"))
 NPSSO_global = NPSSO()
 
