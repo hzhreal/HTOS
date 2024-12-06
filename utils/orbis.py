@@ -8,7 +8,7 @@ import struct
 from dataclasses import dataclass
 from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, Color, Embed_t
 from utils.extras import generate_random_string
-from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, CHARACTER
+from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from data.crypto.mgsv_crypt import Crypt_MGSV
 
 
@@ -208,7 +208,7 @@ class SFOContext:
 
         max_len = param.max_length | param.actual_length
 
-        if ctx.CATEGORY == CHARACTER:
+        if ctx.CATEGORY == TypeCategory.CHARACTER:
             if ctx.bytelen >= max_len:
                raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}! Remember last byte is reserved for null termination for this parameter.")
         else:
