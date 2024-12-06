@@ -16,8 +16,8 @@ class Cint:
             raise ValueError(f"Format string {self.fmt} does not match expected byte length {blen_expected}!")
         
         if signed:
-            self.max =  (1 << (self.bits - 1)) - 1
-            self.min = -(1 << (self.bits - 1))
+            self.max =  (1 << (bits - 1)) - 1
+            self.min = -(1 << (bits - 1))
             self.cast = self.__cast_signed
         else:
             self.max = (1 << bits) - 1
