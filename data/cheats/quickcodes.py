@@ -1,10 +1,6 @@
 import aiofiles
-import numpy as np
 import re
-import struct
-from struct import unpack, pack
-
-np.seterr(all="ignore") # no need for any warnings
+from utils.type_helpers import uint8, uint16, uint32, uint64, int32, int64
 
 # Example
 # 80010008 EA372703
@@ -72,8 +68,8 @@ class QuickCodes:
             await savegame.write(self.data)
 
     async def apply_code(self) -> None:
-        pointer = end_pointer = np.int_(0)
-        ptr_value = np.uint32(0)
+        pointer = end_pointer = int64()
+        ptr = uint32()
 
         await self.read_file()
 
@@ -93,18 +89,18 @@ class QuickCodes:
                         #   X= Address/Offset
                         #   Y= Value to write
                         #   T=Address/Offset type (0 = Normal / 8 = Offset From Pointer)
-                        bytes_ = np.uint8(1 << (ord(line[0]) - 0x30))
+                        bytes_ = uint8(1 << (ord(line[0]) - 0x30)).value
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
+                        off = int32(tmp6)
                         if line[1] == "8":
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        off = off.value
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
-                        val = pack("<I", val)
+                        val = uint32(tmp8, "little")
 
-                        self.data[off:off + bytes_] = val[(4 - bytes_):(4 - bytes_) + bytes_]
+                        self.data[off:off + bytes_] = val.as_bytes[(4 - bytes_):(4 - bytes_) + bytes_]
 
                     case "3":
                         #	Increase / Decrease Write
@@ -134,69 +130,62 @@ class QuickCodes:
                         t = line[1]
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
+                        off = int32(tmp6)
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        write = off.value
                         
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
-
-                        write = off
+                        val = uint32(tmp8).value
 
                         match t:
                             case "0" | "8":
-                                wv8 = np.uint8(self.data[write])
+                                wv8 = self.data[write]
                                 wv8 += (val & 0x000000FF)
 
                                 self.data[write] = wv8
                             
                             case "1" | "9":
-                                wv16 = np.uint16(unpack("<H", self.data[write:write + 2])[0])
-                                wv16 += (val & 0x0000FFFF)
-                                wv16 = pack("<H", wv32)
+                                wv16 = uint16(self.data[write:write + 2], "little")
+                                wv16.value = wv16.value + (val & 0x0000FFFF)
                                 
-                                self.data[write:write + 2] = wv16
+                                self.data[write:write + 2] = wv16.as_bytes
                             
                             case "2" | "A":
-                                wv32 = np.uint32(unpack("<I", self.data[write:write + 4])[0])
-                                wv32 += val
-                                wv32 = pack("<I" , wv32)
+                                wv32 = uint32(self.data[write:write + 4], "little")
+                                wv32.value = wv32.value + val
 
-                                self.data[write:write + 4] = wv32
+                                self.data[write:write + 4] = wv32.as_bytes
 
                             case "3" | "B":
-                                wv64 = np.uint64(unpack("<Q", self.data[write:write + 8])[0])
-                                wv64 += val
-                                wv64 = pack("<Q", wv64)
+                                wv64 = uint64(self.data[write:write + 8], "little")
+                                wv64.value = wv64.value + val
 
-                                self.data[write:write + 8] = wv64
+                                self.data[write:write + 8] = wv64.as_bytes
 
                             case "4" | "C":
-                                wv8 = np.uint8(self.data[write])
+                                wv8 = self.data[write]
                                 wv8 -= (val & 0x000000FF)
 
                                 self.data[write] = wv8
 
                             case "5" | "D":
-                                wv16 = np.uint16(unpack("<H", self.data[write:write + 2])[0])
-                                wv16 -= (val & 0x0000FFFF)
-                                wv16 = pack("<H", wv16)
+                                wv16 = uint16(self.data[write:write + 2], "little")
+                                wv16.value = wv16.value - (val & 0x0000FFFF)
 
-                                self.data[write:write + 2] = wv16
+                                self.data[write:write + 2] = wv16.as_bytes
                             
                             case "6" | "E":
-                                wv32 = np.uint32(unpack("<I", self.data[write:write + 4])[0])
-                                wv32 -= val
-                                wv32 = pack("<I", wv32)
+                                wv32 = uint32(self.data[write:write + 4], "little")
+                                wv32.value = wv32.value - val
 
-                                self.data[write:write + 4] = wv32
+                                self.data[write:write + 4] = wv32.as_bytes
                             
                             case "7" | "F":
-                                wv64 = np.uint64(unpack("<Q", self.data[write:write + 8])[0])
-                                wv64 -= val
-                                wv64 = pack("<Q", wv64)
+                                wv64 = uint64(self.data[write:write + 8], "little")
+                                wv64.value = wv64.value - val
 
-                                self.data[write:write + 8] = wv64
+                                self.data[write:write + 8] = wv64.as_bytes
                             
                     case "4":
                         #	multi write
@@ -215,12 +204,13 @@ class QuickCodes:
                         t = line[1]
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
+                        off = int32(tmp6)
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        off = off.value
                         
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
+                        val = uint32(tmp8, "little")
 
                         line = self.lines[line_index + 1]
                         line_index += 1
@@ -228,40 +218,38 @@ class QuickCodes:
                         if t in ["4", "5", "6", "C", "D", "E"]:
                             # NNNNWWWW VVVVVVVV
                             tmp4 = line[:4]
-                            n = np.intc(int(tmp4, 16))
+                            n = int32(tmp4).value
                         else:
                             # 4NNNWWWW VVVVVVVV
                             tmp3 = line[1:4]
-                            n = np.intc(int(tmp3, 16))
+                            n = int32(tmp3).value
 
                         tmp4 = line[4:8]
-                        incoff = np.intc(int(tmp4, 16))
+                        incoff = int32(tmp4).value
 
                         tmp8 = line[9:17]
-                        incval = np.uint32(int(tmp8, 16))
+                        incval = uint32(tmp8).value
 
                         for i in range(n):
                             write = off + (incoff * i)
 
                             match t:
                                 case "0" | "8" | "4" | "C":
-                                    wv8 = np.uint8(val)
+                                    wv8 = uint8(val.value)
 
-                                    self.data[write] = wv8
+                                    self.data[write] = wv8.value
                                 
                                 case "1" | "9" | "5" | "D":
-                                    wv16 = np.uint16(val)
-                                    wv16 = pack("<H", wv16)
+                                    wv16 = uint16(val.value, "little")
 
-                                    self.data[write:write + 2] = wv16
+                                    self.data[write:write + 2] = wv16.as_bytes
                                 
                                 case "2" | "A" | "6" | "E":
                                     wv32 = val
-                                    wv32 = pack("<I", wv32)
 
-                                    self.data[write:write + 4] = wv32
+                                    self.data[write:write + 4] = wv32.as_bytes
                             
-                            val += incval
+                            val.value = val.value + incval
 
                     case "5":
                         #	copy bytes
@@ -274,26 +262,26 @@ class QuickCodes:
                         #	 0 = From start of the data
                         #	 8 = From found from a search
                         tmp6 = line[2:8]
-                        off_src = np.intc(int(tmp6, 16))
+                        off_src = int32(tmp6).value
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
+                        val = uint32(tmp8).value
 
                         src = off_src
 
                         if line[1] == "8":
-                            src += pointer
+                            src += pointer.value
 
                         line = self.lines[line_index + 1]
                         line_index += 1
 
                         tmp6 = line[2:8]
-                        off_dst = np.intc(int(tmp6, 16))
+                        off_dst = int32(tmp6).value
 
                         dst = off_dst
                         
                         if line[1] == "8":
-                            dst += pointer
+                            dst += pointer.value
 
                         self.data[dst:dst + val] = self.data[src:src + val]
                     
@@ -317,94 +305,93 @@ class QuickCodes:
                         z = line[7]
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
+                        val = uint32(tmp8, "little")
 
                         write = 0
                         off = 0
 
                         if t in ["8", "9", "A"]:
-                            off += pointer
+                            off += pointer.value
 
                         match w:
                             case "0":
                                 # 0X = Read "address" from file (X = 0:none, 1:add, 2:multiply)
                                 if x == "1":
-                                    val += ptr_value 
-                                write += (val + off)
+                                    val.value = val.value + ptr.value
+                                write += (val.value + off)
                             
                                 if y == "1":
-                                    pointer = np.int_(val)
+                                    pointer.value = val.value
                                 
                                 match t:
                                     case "0" | "8":
                                         # Data size = 8 bits
 						                # 000000VV
-                                        ptr_value = np.uint32(self.data[write])
+                                        wv8 = self.data[write]
+                                        ptr.value = wv8
 
                                     case "1" | "9":
                                         # Data size = 16 bits
 						                # 0000VVVV
-                                        wv16 = unpack("<H", self.data[write:write + 2])[0]
-                                        ptr_value = np.uint32(wv16)
+                                        wv16 = uint16(self.data[write:write + 2], "little")
+                                        ptr.value = wv16.value
                                     
                                     case "2" | "A":
                                         # Data size = 32 bits
 						                # VVVVVVVV
-                                        wv32 = unpack("<I", self.data[write:write + 4])[0]
-                                        ptr_value = np.uint32(wv32)
+                                        wv32 = uint32(self.data[write:write + 4], "little")
+                                        ptr.value = wv32.value
 
                             case "1":
                                 # 1X = Move pointer from obtained address ?? (X = 0:add, 1:substract, 2:multiply)
                                 match x:
                                     case "0":
-                                        ptr_value += val
+                                        ptr.value = ptr.value + val.value
                                     
                                     case "1":
-                                        ptr_value -= val
+                                        ptr.value = ptr.value - val.value
                                     
                                     case "2":
-                                        ptr_value *= val
+                                        ptr.value = ptr.value * val.value
                                 
                                 if z == "1":
-                                    ptr_value += pointer
-                                pointer = np.intc(ptr_value)
+                                    ptr.value = ptr.value + pointer.value
+                                pointer.value = ptr.value
                             
                             case "2":
                                 # 2X = Move pointer ?? (X = 0:add, 1:substract, 2:multiply)
                                 match x:
                                     case "0":
-                                        pointer += val
+                                        pointer.value = pointer.value + val.value
                                     
                                     case "1":
-                                        pointer -= val
+                                        pointer.value = pointer.value - val.value
                                     
                                     case "2":
-                                        pointer *= val
+                                        pointer.value = pointer.value * val.value
                                     
                                 if y == "1":
-                                    ptr_value = np.uint32(pointer)
+                                    ptr.value = pointer.value
                             
                             case "4":
                                 # 4X = Write value: X=0 at read address, X=1 at pointer address
-                                write += pointer
+                                write += pointer.value
 
                                 match t:
                                     case "0" | "8":
-                                        wv8 = np.uint8(val)
+                                        wv8 = uint8(val.value)
                         
                                         self.data[write] = wv8
                                     
                                     case "1" | "9":
-                                        wv16 = np.uint16(val)
-                                        wv16 = pack("<H", wv16)
+                                        wv16 = uint16(val, "little")
 
-                                        self.data[write:write + 2] = wv16
+                                        self.data[write:write + 2] = wv16.as_bytes
 
                                     case "2" | "A":
                                         wv32 = val
-                                        wv32 = pack("<I", wv32)
 
-                                        self.data[write:write + 4] = wv32
+                                        self.data[write:write + 4] = wv32.as_bytes
                     
                     case "7":
                         #	Writes Bytes up to a specified Maximum/Minimum to a specific Address
@@ -429,60 +416,61 @@ class QuickCodes:
                         t = line[1]
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
+                        off = int32(tmp6)
 
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        write = off.value
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
-
-                        write = off
+                        val = uint32(tmp8).value
 
                         match t:
                             case "0" | "8":
                                 val &= 0x000000FF
-                                wv8 = np.uint8(self.data[write])
-                                if val > wv8: wv8 = val
+                                wv8 = self.data[write]
+                                if val > wv8: 
+                                    wv8 = val
 
                                 self.data[write] = wv8
 
                             case "1" | "9":
                                 val &= 0x0000FFFF
-                                wv16 = np.uint16(self.data[write:write + 2])
-                                if val > wv16: wv16 = val
-                                wv16 = pack("<H", wv16)
+                                wv16 = uint16(self.data[write:write + 2], "little")
+                                if val > wv16.value: 
+                                    wv16.value = val
 
-                                self.data[write:write + 2] = wv16
+                                self.data[write:write + 2] = wv16.as_bytes
                             
                             case "2" | "A":
-                                wv32 = np.uint32(self.data[write:write + 4])
-                                if val > wv32: wv32 = val
-                                wv32 = pack("<I", wv32)
+                                wv32 = uint32(self.data[write:write + 4], "little")
+                                if val > wv32.value: 
+                                    wv32.value = val
 
-                                self.data[write:write + 4] = wv32
+                                self.data[write:write + 4] = wv32.as_bytes
                             
                             case "4" | "C":
                                 val &= 0x000000FF
-                                wv8 = np.uint8(self.data[write])
-                                if val < wv8: wv8 = val
+                                wv8 = self.data[write]
+                                if val < wv8: 
+                                    wv8 = val
 
                                 self.data[write] = wv8
 
                             case "5" | "D":
                                 val &= 0x0000FFFF
-                                wv16 = np.uint16(self.data[write:write + 2])
-                                if val < wv16: wv16 = val
-                                wv16 = pack("<H", wv16)
+                                wv16 = uint16(self.data[write:write + 2], "little")
+                                if val < wv16.value: 
+                                    wv16.value = val
 
-                                self.data[write:write + 2] = wv16
+                                self.data[write:write + 2] = wv16.as_bytes
 
                             case "6" | "E":
-                                wv32 = np.uint32(self.data[write:write + 4])
-                                if val < wv32: wv32 = val
-                                wv32 = pack("<I", wv32)
+                                wv32 = uint32(self.data[write:write + 4], "little")
+                                if val < wv32.value: 
+                                    wv32.value = val
 
-                                self.data[write:write + 4] = wv32
+                                self.data[write:write + 4] = wv32.as_bytes
 
                     case "8":
                         #	Search Type
@@ -495,38 +483,39 @@ class QuickCodes:
                         t = line[1]
 
                         tmp3 = line[2:4]
-                        cnt = np.intc(int(tmp3, 16))
+                        cnt = int32(tmp3).value
 
                         tmp4 = line[4:8]
-                        length = np.intc(int(tmp4, 16))
+                        length = int32(tmp4).value
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
+                        val = uint32(tmp8, "big")
 
                         find = bytearray((length + 3) & ~3)
 
-                        if not cnt: cnt = np.intc(1)
+                        if not cnt: 
+                            cnt = 1
 
-                        find[:4] = pack(">I", val)
+                        find[:4] = val.as_bytes
 
                         for i in range(4, length, 8):
                             line = self.lines[line_index + 1]
                             line_index += 1
 
                             tmp8 = line[:8]
-                            val = np.uint32(int(tmp8, 16))
+                            val.value = tmp8
 
-                            find[i:i + 4] = pack(">I", val)
+                            find[i:i + 4] = val.as_bytes
 
                             tmp8 = line[9:17]
-                            val = np.uint32(int(tmp8, 16))
+                            val.value = tmp8
 
                             if i + 4 < length:
-                                find[(i + 4):(i + 4) + 4] = pack(">I", val)
+                                find[(i + 4):(i + 4) + 4] = val.as_bytes
 
-                        pointer = np.int_(self.search_data(self.data, len(self.data), pointer if t == "8" else 0, find, length, cnt))
+                        pointer.value = self.search_data(self.data, len(self.data), pointer.value if t == "8" else 0, find, length, cnt)
 
-                        if pointer < 0:
+                        if pointer.value < 0:
                             while line_index < len(self.lines):
                                 line_index += 1
 
@@ -536,7 +525,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = np.int_(0)
+                            pointer.value = 0
 
                     case "9":
                         #	Pointer Manipulator (Set/Move Pointer)
@@ -565,34 +554,34 @@ class QuickCodes:
                         #	Step Back From End of File Code (CONFIRMED CODE)
                         #	94000000 XXXXXXXX
                         tmp8 = line[9:17]
-                        off = np.uint32(int(tmp8, 16))
+                        off = uint32(tmp8).value
 
                         match line[1]:
                             case "0":
-                                val = np.uint32(unpack(">I", self.data[off:off + 4])[0])
-                                pointer = np.int_(val)
+                                val = uint32(self.data[off:off + 4], "big")
+                                pointer.value = val.value
                             
                             case "1":
-                                val = np.uint32(unpack("<I", self.data[off:off + 4])[0])
-                                pointer = np.int_(val)
+                                val = uint32(self.data[off:off + 4], "little")
+                                pointer.value = val.value
                             
                             case "2":
-                                pointer += off
+                                pointer.value = pointer.value + off
                             
                             case "3":
-                                pointer -= off
+                                pointer.value = pointer.value - off
                             
                             case "4": 
-                                pointer = np.int_(len(self.data) - off)
+                                pointer.value = len(self.data) - off
                             
                             case "5":
-                                pointer = np.int_(off)
+                                pointer.value = off
 
                             case "D":
-                                end_pointer = np.int_(off)
+                                end_pointer.value = off
 
                             case "E":
-                                end_pointer = np.int_(pointer + off)
+                                end_pointer.value = pointer.value + off
 
                     case "A":
                         #	Multi-write
@@ -602,13 +591,13 @@ class QuickCodes:
                         t = line[1]
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
-
+                        off = int32(tmp6)
                         if t == "8":
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        off = off.value
 
                         tmp8 = line[9:17]
-                        size = int(tmp8, 16) & 0xFF_FF_FF_FF
+                        size = uint32(tmp8).value
 
                         write = bytearray((size + 3) & ~3)
 
@@ -617,17 +606,15 @@ class QuickCodes:
                             line_index += 1
 
                             tmp8 = line[:8]
-                            val = np.uint32(int(tmp8, 16))
-                            val = pack(">I", val)
+                            val = uint32(tmp8, "big")
 
-                            write[i:i + 4] = val
+                            write[i:i + 4] = val.as_bytes
 
                             tmp8 = line[9:17]
-                            val = np.uint32(int(tmp8, 16))
-                            val = pack(">I", val)
+                            val.value = tmp8
 
                             if (i + 4) < size:
-                                write[(i + 4):(i + 4) + 4] = val
+                                write[(i + 4):(i + 4) + 4] = val.as_bytes
                         
                         self.data[off:off + size] = write[:size] 
 
@@ -649,41 +636,40 @@ class QuickCodes:
                         t = line[1]
 
                         tmp3 = line[2:4] 
-                        cnt = np.intc(int(tmp3, 16))
+                        cnt = int32(tmp3).value
 
                         tmp4 = line[4:8]
-                        length = np.intc(int(tmp4, 16))
+                        length = int32(tmp4).value
 
                         tmp8 = line[9:17]
-                        val = np.uint32(int(tmp8, 16))
-                        val = pack(">I", val)
+                        val = uint32(tmp8, "big")
 
                         find = bytearray((length + 3) & ~3)
-                        if not cnt: cnt = np.intc(1)
-                        if not end_pointer: end_pointer = np.int_(len(self.data) - 1)
+                        if not cnt: 
+                            cnt = 1
+                        if not end_pointer.value: 
+                            end_pointer.value = len(self.data) - 1
 
-                        find[:4] = val
+                        find[:4] = val.as_bytes
 
                         for i in range(4, length, 8):
                             line = self.lines[line_index + 1]
                             line_index += 1
 
                             tmp8 = line[:8]
-                            val = np.uint32(int(tmp8, 16))
-                            val = pack(">I", val)
+                            val.value = tmp8
 
-                            find[i:i + 4] = val
+                            find[i:i + 4] = val.as_bytes
 
                             tmp8 = line[9:17]
-                            val = np.uint32(int(tmp8, 16))
-                            val = pack(">I", val)
+                            val.value = tmp8
 
                             if (i + 4) < length:
-                                find[(i + 4):(i + 4) + 4] = val
+                                find[(i + 4):(i + 4) + 4] = val.as_bytes
 
-                        pointer = np.int_(self.reverse_search_data(self.data, len(self.data), pointer if t == "8" else end_pointer, find, length, cnt))
+                        pointer.value = self.reverse_search_data(self.data, len(self.data), pointer.value if t == "8" else end_pointer.value, find, length, cnt)
                         
-                        if pointer < 0:
+                        if pointer.value < 0:
                             while line_index < len(self.lines):
                                 line_index += 1
 
@@ -693,7 +679,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = np.int_(0)
+                            pointer.value = 0
                     
                     case "C":
                         #	Address Byte Search (Set Pointer)
@@ -715,27 +701,28 @@ class QuickCodes:
                         t = line[1]
 
                         tmp3 = line[2:4]
-                        cnt = np.intc(int(tmp3, 16))
+                        cnt = int32(tmp3).value
 
                         tmp4 = line[4:8]
-                        length = np.intc(int(tmp4, 16))
+                        length = int32(tmp4).value
 
                         tmp8 = line[9:17]
-                        addr = np.uint32(int(tmp8, 16))
-
+                        addr = uint32(tmp8)
                         if t in ["8", "C"]:
-                            addr += pointer
+                            addr.value = addr.value + pointer.value
+                        addr = addr.value
 
                         find = self.data[addr:]
 
-                        if not cnt: cnt = np.intc(1)
+                        if not cnt: 
+                            cnt = 1
 
                         if t in ["4", "C"]:
-                            pointer = np.int_(self.search_data(self.data, addr + length, 0, find, length, cnt))
+                            pointer.value = self.search_data(self.data, addr + length, 0, find, length, cnt)
                         else:
-                            pointer = np.int_(self.search_data(self.data, len(self.data), addr + length, find, length, cnt))
+                            pointer.value = self.search_data(self.data, len(self.data), addr + length, find, length, cnt)
 
-                        if pointer < 0:
+                        if pointer.value < 0:
                             while line_index < len(self.lines):
                                 line_index += 1
 
@@ -745,7 +732,7 @@ class QuickCodes:
                                     
                                     line = self.lines[line_index]
                                     line_index += 1
-                            pointer = np.int_(0)
+                            pointer.value = 0
 
                     case "D":
                         #	2 Byte Test Commands (Code Skipper)
@@ -770,17 +757,18 @@ class QuickCodes:
                         bit = line[11]
 
                         tmp6 = line[2:8]
-                        off = np.intc(int(tmp6, 16))
+                        off = int32(tmp6)
                         if t == "8":
-                            off += pointer
+                            off.value = off.value + pointer.value
+                        off = off.value
 
                         tmp3 = line[9:11]
-                        l = np.intc(int(tmp3, 16))
+                        l = int32(tmp3)
 
                         tmp4 = line[13:17]
-                        val = np.intc(int(tmp4, 16))
+                        val = int32(tmp4).value
 
-                        src = unpack("<H", self.data[off:off + 2])[0]
+                        src = uint16(self.data[off:off + 2], "little").value
 
                         if bit == "1":
                             val &= 0xFF
@@ -788,28 +776,28 @@ class QuickCodes:
                         
                         match op:
                             case "0":
-                                off = np.intc((src == val))
+                                off = (src == val)
 
                             case "1":
-                                off = np.intc((src != val))
+                                off = (src != val)
 
                             case "2":
-                                off = np.intc((src > val))
+                                off = (src > val)
                             
                             case "3":
-                                off = np.intc((src < val))
+                                off = (src < val)
 
                             case _:
-                                off = np.intc(1)
+                                off = 1
                         
                         if not off:
-                            while l > 0:
-                                l -= 1
+                            while l.value > 0:
+                                l.value = l.value - 1
                                 line = self.lines[line_index + 1]
                                 line_index += 1
             # except NotImplementedError:
             #     raise QuickCodesError("A code-type you entered has not yet been implemented!")
-            except (ValueError, IOError, IndexError, struct.error):
+            except (ValueError, IOError, IndexError):
                 raise QuickCodesError("Invalid code!")
 
             line_index += 1
