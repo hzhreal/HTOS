@@ -68,7 +68,8 @@ class QuickCodes:
             await savegame.write(self.data)
 
     async def apply_code(self) -> None:
-        pointer = end_pointer = int64()
+        pointer = int64()
+        end_pointer = uint64()
         ptr = uint32()
 
         await self.read_file()
