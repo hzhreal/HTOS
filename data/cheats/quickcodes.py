@@ -94,7 +94,7 @@ class QuickCodes:
                         tmp6 = line[2:8]
                         off = int32(tmp6)
                         if line[1] == "8":
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         off = off.value
 
                         tmp8 = line[9:17]
@@ -132,7 +132,7 @@ class QuickCodes:
                         tmp6 = line[2:8]
                         off = int32(tmp6)
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         write = off.value
                         
                         tmp8 = line[9:17]
@@ -147,19 +147,19 @@ class QuickCodes:
                             
                             case "1" | "9":
                                 wv16 = uint16(self.data[write:write + 2], "little")
-                                wv16.value = wv16.value + (val & 0x0000FFFF)
+                                wv16.value += (val & 0x0000FFFF)
                                 
                                 self.data[write:write + 2] = wv16.as_bytes
                             
                             case "2" | "A":
                                 wv32 = uint32(self.data[write:write + 4], "little")
-                                wv32.value = wv32.value + val
+                                wv32.value += val
 
                                 self.data[write:write + 4] = wv32.as_bytes
 
                             case "3" | "B":
                                 wv64 = uint64(self.data[write:write + 8], "little")
-                                wv64.value = wv64.value + val
+                                wv64.value += val
 
                                 self.data[write:write + 8] = wv64.as_bytes
 
@@ -171,19 +171,19 @@ class QuickCodes:
 
                             case "5" | "D":
                                 wv16 = uint16(self.data[write:write + 2], "little")
-                                wv16.value = wv16.value - (val & 0x0000FFFF)
+                                wv16.value -= (val & 0x0000FFFF)
 
                                 self.data[write:write + 2] = wv16.as_bytes
                             
                             case "6" | "E":
                                 wv32 = uint32(self.data[write:write + 4], "little")
-                                wv32.value = wv32.value - val
+                                wv32.value -= val
 
                                 self.data[write:write + 4] = wv32.as_bytes
                             
                             case "7" | "F":
                                 wv64 = uint64(self.data[write:write + 8], "little")
-                                wv64.value = wv64.value - val
+                                wv64.value -= val
 
                                 self.data[write:write + 8] = wv64.as_bytes
                             
@@ -206,7 +206,7 @@ class QuickCodes:
                         tmp6 = line[2:8]
                         off = int32(tmp6)
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         off = off.value
                         
                         tmp8 = line[9:17]
@@ -249,7 +249,7 @@ class QuickCodes:
 
                                     self.data[write:write + 4] = wv32.as_bytes
                             
-                            val.value = val.value + incval
+                            val.value += incval
 
                     case "5":
                         #	copy bytes
@@ -317,7 +317,7 @@ class QuickCodes:
                             case "0":
                                 # 0X = Read "address" from file (X = 0:none, 1:add, 2:multiply)
                                 if x == "1":
-                                    val.value = val.value + ptr.value
+                                    val.value += ptr.value
                                 write += (val.value + off)
                             
                                 if y == "1":
@@ -346,29 +346,29 @@ class QuickCodes:
                                 # 1X = Move pointer from obtained address ?? (X = 0:add, 1:substract, 2:multiply)
                                 match x:
                                     case "0":
-                                        ptr.value = ptr.value + val.value
+                                        ptr.value += val.value
                                     
                                     case "1":
-                                        ptr.value = ptr.value - val.value
+                                        ptr.value -= val.value
                                     
                                     case "2":
-                                        ptr.value = ptr.value * val.value
+                                        ptr.value *= val.value
                                 
                                 if z == "1":
-                                    ptr.value = ptr.value + pointer.value
+                                    ptr.value += pointer.value
                                 pointer.value = ptr.value
                             
                             case "2":
                                 # 2X = Move pointer ?? (X = 0:add, 1:substract, 2:multiply)
                                 match x:
                                     case "0":
-                                        pointer.value = pointer.value + val.value
+                                        pointer.value += val.value
                                     
                                     case "1":
-                                        pointer.value = pointer.value - val.value
+                                        pointer.value -= val.value
                                     
                                     case "2":
-                                        pointer.value = pointer.value * val.value
+                                        pointer.value *= val.value
                                     
                                 if y == "1":
                                     ptr.value = pointer.value
@@ -419,7 +419,7 @@ class QuickCodes:
                         off = int32(tmp6)
 
                         if t in ["8", "9", "A", "C", "D", "E"]:
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         write = off.value
 
                         tmp8 = line[9:17]
@@ -566,10 +566,10 @@ class QuickCodes:
                                 pointer.value = val.value
                             
                             case "2":
-                                pointer.value = pointer.value + off
+                                pointer.value += off
                             
                             case "3":
-                                pointer.value = pointer.value - off
+                                pointer.value -= off
                             
                             case "4": 
                                 pointer.value = len(self.data) - off
@@ -593,7 +593,7 @@ class QuickCodes:
                         tmp6 = line[2:8]
                         off = int32(tmp6)
                         if t == "8":
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         off = off.value
 
                         tmp8 = line[9:17]
@@ -709,7 +709,7 @@ class QuickCodes:
                         tmp8 = line[9:17]
                         addr = uint32(tmp8)
                         if t in ["8", "C"]:
-                            addr.value = addr.value + pointer.value
+                            addr.value += pointer.value
                         addr = addr.value
 
                         find = self.data[addr:]
@@ -759,7 +759,7 @@ class QuickCodes:
                         tmp6 = line[2:8]
                         off = int32(tmp6)
                         if t == "8":
-                            off.value = off.value + pointer.value
+                            off.value += pointer.value
                         off = off.value
 
                         tmp3 = line[9:11]
@@ -792,7 +792,7 @@ class QuickCodes:
                         
                         if not off:
                             while l.value > 0:
-                                l.value = l.value - 1
+                                l.value -= 1
                                 line = self.lines[line_index + 1]
                                 line_index += 1
             # except NotImplementedError:
