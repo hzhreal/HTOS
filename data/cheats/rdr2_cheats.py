@@ -153,8 +153,12 @@ class Cheats_RDR2:
         
         # display money like for example 555500 as 5,555.00
         moneyformatted = str(money)
-        moneyWhole = f"{int(moneyformatted[:-2]): ,}"
-        moneyCent = f".{moneyformatted[-2:]}"
+        if len(moneyformatted) > 2:
+            moneyWhole = f"{int(moneyformatted[:-2]): ,}"
+            moneyCent = f".{moneyformatted[-2:]}"
+        else:
+            moneyWhole = moneyformatted
+            moneyCent = ".00"
         moneyformatted = moneyWhole + moneyCent
 
         stats["Money"] = moneyformatted
