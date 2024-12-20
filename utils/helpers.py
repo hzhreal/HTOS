@@ -391,7 +391,8 @@ async def replaceDecrypted(
           upload_individually: bool, 
           upload_decrypted: str, 
           savePairName: str,
-          savesize: int
+          savesize: int,
+          ignore_secondlayer_checks: bool
         ) -> list[str]:
 
     """Used in the encrypt command to replace files one by one, or how many you want at once."""
@@ -417,7 +418,9 @@ async def replaceDecrypted(
             attachmentPath = await upload1(d_ctx, upload_decrypted)
             newPath = os.path.join(upload_decrypted, lastN)
             await aiofiles.os.rename(attachmentPath, newPath)
-            await crypthelp.extra_import(Crypto, titleid, newPath)
+
+            if not ignore_secondlayer_checks:
+                await crypthelp.extra_import(Crypto, titleid, newPath)
 
             await fInstance.replacer(cwdHere, lastN)
             completed.append(file)
@@ -487,7 +490,9 @@ async def replaceDecrypted(
                             filePath = os.path.join(upload_decrypted, file)
                             newRename = os.path.join(upload_decrypted, lastN)
                             await aiofiles.os.rename(filePath, newRename)
-                            await crypthelp.extra_import(Crypto, titleid, newRename)
+
+                            if not ignore_secondlayer_checks:
+                                await crypthelp.extra_import(Crypto, titleid, newRename)
 
                             await fInstance.replacer(cwdHere, lastN) 
                             completed.append(lastN)  

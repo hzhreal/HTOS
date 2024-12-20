@@ -42,7 +42,8 @@ class CreateSave(commands.Cog):
               ctx: discord.ApplicationContext, 
               savename: Option(str, description="The name of the save."), # type: ignore
               saveblocks: saveblocks_annotation, # type: ignore
-              playstation_id: Option(str, description=PS_ID_DESC, default="") # type: ignore
+              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
+              ignore_secondlayer_checks: bool = False
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
@@ -146,7 +147,7 @@ class CreateSave(commands.Cog):
             await handleTitles(scesys_local, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = await obtainCUSA(scesys_local)
             
-            if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT: # dont want to create unnecessary overhead
+            if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT and not ignore_secondlayer_checks: # dont want to create unnecessary overhead
                 for gamesave in uploaded_file_paths_special:
                     embsl = discord.Embed(
                         title=f"Gamesaves: Second layer\n{gamesave}",

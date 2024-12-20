@@ -31,7 +31,8 @@ class Encrypt(commands.Cog):
               ctx: discord.ApplicationContext, 
               upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), # type: ignore
               include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), # type: ignore
-              playstation_id: Option(str, description=PS_ID_DESC, default="") # type: ignore
+              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
+              ignore_secondlayer_checks: bool = False
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
@@ -103,7 +104,7 @@ class Encrypt(commands.Cog):
                     await C1ftp.dlparamonly_grab(location_to_scesys)
                     title_id = await obtainCUSA(newPARAM_PATH)
  
-                    completed = await replaceDecrypted(d_ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save, pfs_header["size"])
+                    completed = await replaceDecrypted(d_ctx, C1ftp, files, title_id, mount_location_new, upload_individually, newUPLOAD_DECRYPTED, save, pfs_header["size"], ignore_secondlayer_checks)
 
                     if include_sce_sys:
                         if len(await aiofiles.os.listdir(newUPLOAD_DECRYPTED)) > 0:
