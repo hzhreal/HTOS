@@ -11,7 +11,7 @@ from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
@@ -43,7 +43,7 @@ class CreateSave(commands.Cog):
               savename: Option(str, description="The name of the save."), # type: ignore
               saveblocks: saveblocks_annotation, # type: ignore
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              ignore_secondlayer_checks: bool = False
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()

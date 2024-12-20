@@ -10,7 +10,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, SCE_SYS_CONTENTS, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color, Embed_t,
     emb6, emb14
 )
@@ -32,7 +32,7 @@ class Encrypt(commands.Cog):
               upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), # type: ignore
               include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), # type: ignore
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              ignore_secondlayer_checks: bool = False
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()

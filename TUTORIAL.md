@@ -33,7 +33,8 @@ If the game has second layer of encryption that is implemented, you will get pro
 **encrypt**: Accepts save pairs that will get resigned, and you will get prompted to replace the files inside the save.  
 **Parameters**:
 - upload_individually, Choose if you want to upload the decrypted files one by one, or the ones you want at once. Put to true if you want to swap all the files in the save. If you put it to false, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format. The bot will prompt you on the details.
-- include_sce_sys, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.  
+- include_sce_sys, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames. 
+- ignore_secondlayer_checks, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
 If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 
 //
@@ -108,6 +109,7 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 **Parameters**:  
 - savename, the name you want to give the save  
 - saveblocks, the size of the save (saveblocks * 2¹⁵) 
+- ignore_secondlayer_checks, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
 
 //
 

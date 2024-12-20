@@ -145,6 +145,7 @@ ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for th
 CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
+IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."
 
 BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 

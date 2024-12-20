@@ -52,6 +52,7 @@ from .constants import (
     UPLOAD_TIMEOUT,
     SYS_FILE_MAX,
     PS_ID_DESC,
+    IGNORE_SECONDLAYER_DESC,
     BASE_ERROR_MSG,
     QR_FOOTER1,
     QR_FOOTER2,
