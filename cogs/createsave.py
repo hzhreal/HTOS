@@ -147,11 +147,14 @@ class CreateSave(commands.Cog):
         try:
             await handleTitles(scesys_local, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = await obtainCUSA(scesys_local)
-            
+
             if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT and not ignore_secondlayer_checks: # dont want to create unnecessary overhead
+                path_filter = os.path.join(newUPLOAD_DECRYPTED, "")
+                path_idx = len(path_filter)
                 for gamesave in uploaded_file_paths_special:
+                    displaysave = gamesave[path_idx:]
                     embsl = discord.Embed(
-                        title=f"Gamesaves: Second layer\n{gamesave}",
+                        title=f"Gamesaves: Second layer\n{displaysave}",
                         description="Checking for supported second layer encryption/compression...",
                         colour=Color.DEFAULT.value
                     )
