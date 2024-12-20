@@ -62,7 +62,7 @@ class CreateSave(commands.Cog):
         
         embSceSys = discord.Embed(
             title=f"Upload: sce_sys contents\n{savename}",
-            description="Please attach the sce_sys files you want to upload.",
+            description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
             colour=Color.DEFAULT.value
         )
         embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -73,7 +73,8 @@ class CreateSave(commands.Cog):
                 "Please attach the gamesaves files you want to upload.\n"
                 "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
                 f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{DISC_UPL_SPLITVALUE}savedata'.\n\n"
-                "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded."
+                "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
+                "*Or type 'EXIT' to cancel command.*"
             ),
             colour=Color.DEFAULT.value
         )
