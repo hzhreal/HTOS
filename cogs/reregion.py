@@ -189,8 +189,9 @@ class ReRegion(commands.Cog):
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
-                
-            if len(savenames) == 1:
+
+            save_amount = len(savenames)   
+            if save_amount == 1:
                 finishedFiles = "".join(savenames)
             else: finishedFiles = ", ".join(savenames)
 
@@ -210,7 +211,7 @@ class ReRegion(commands.Cog):
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
 
-            if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)) and finishedFiles > 1:
+            if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)) and save_amount > 1:
                 await ctx.send(
                     "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once.",
                     ephemeral=True, reference=msg
