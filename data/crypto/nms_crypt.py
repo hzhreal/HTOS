@@ -22,14 +22,14 @@ class Crypt_NMS:
     def pathChecks(files: list[str]) -> list[str]:
         filtered_files = []
         for path in files:
-            file_name = os.path.basename(path)
-            if file_name.lower().endswith(".hg") and "savedata" in file_name.lower():
+            file_name = os.path.basename(str(path)).lower()
+            if file_name.endswith(".hg") and "savedata" in file_name:
                 filtered_files.append(path)
         return filtered_files
     
     @staticmethod
     def nameCheck(path: str) -> bool:
-        file_name = os.path.basename(path).lower()
+        file_name = os.path.basename(str(path)).lower()
         return file_name.endswith(".hg") and "savedata" in file_name
 
     @staticmethod
