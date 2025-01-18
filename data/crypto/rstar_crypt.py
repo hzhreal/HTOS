@@ -52,7 +52,6 @@ class Crypt_Rstar:
         elif isinstance(name, list):
             valid = []
             for path in name:
-                path = str(path)
                 filename = os.path.basename(path).lower()
                 if not filename.startswith(("pgta", "profile")):
                     valid.append(path)

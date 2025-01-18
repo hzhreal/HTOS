@@ -13,14 +13,12 @@ class Crypt_Terraria:
     def filter_paths(paths: list[str]) -> list[str]:
         filtered_paths = []
         for path in paths:
-            path = str(path)
             if path.endswith(".plr") or path.endswith(".wld"):
                 filtered_paths.append(path)
         return filtered_paths
     
     @staticmethod
     def filter_path(path: str) -> bool:
-        path = str(path)
         return path.endswith(".plr") or path.endswith(".wld")
 
     @staticmethod
