@@ -1,6 +1,7 @@
 import aiofiles
 import struct
 import re
+import os
 from enum import Enum
 from typing import Literal
 from data.crypto.common import CustomCrypto as CC
@@ -42,6 +43,22 @@ class Crypt_Rstar:
         GTAV_PC_HEADER_OFFSET: {"key": PC_KEY, "type": TitleHashTypes.STANDARD},
         RDR2_PC_HEADER_OFFSET: {"key": PC_KEY, "type": TitleHashTypes.DATE}
     }
+
+    @staticmethod
+    def namecheck(name: str | list[str]) -> bool | list[str]:
+        if isinstance(name, str):
+            filename = os.path.basename(name).lower()
+            return not filename.startswith(("pgta", "profile"))
+        elif isinstance(name, list):
+            valid = []
+            for path in name:
+                path = str(path)
+                filename = os.path.basename(path).lower()
+                if not filename.startswith(("pgta", "profile")):
+                    valid.append(path)
+            return valid
+        else:
+            return False
 
     @staticmethod
     def jooat(data: bytes | bytearray, seed: int = 0x3FAC7125, byteorder: Literal["little", "big"] = "big") -> uint32:
@@ -88,6 +105,9 @@ class Crypt_Rstar:
 
     @staticmethod
     async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
+        if not Crypt_Rstar.namecheck(fileToEncrypt):
+            return
+
         key = Crypt_Rstar.TYPES[start_offset]["key"]
         type_ = Crypt_Rstar.TYPES[start_offset]["type"]
 
@@ -105,6 +125,9 @@ class Crypt_Rstar:
             data_before = await file.read(start_offset)  # Read data before the encrypted part
             await file.seek(start_offset)  # Move the file pointer to the start_offset
             data_to_encrypt = await file.read()  # Read the part to encrypt
+
+            # Leave out the empty space that autosaves have
+            data_to_encrypt, null_off = CC.trim_trailing_bytes(data_to_encrypt, len(data_to_encrypt) - 1, 0x00)
 
             # checksum handling
             for chunk in [m.start() for m in re.finditer(b"CHKS\x00", data_to_encrypt)]: # calculate checksums for each chunk
@@ -124,7 +147,10 @@ class Crypt_Rstar:
                 await file.write(new_hash.as_bytes)
             
             await file.seek(start_offset)
-            data_to_encrypt = await file.read()
+            if null_off != -1:
+                data_to_encrypt = await file.read(null_off + 1) # Read upto the empty space that autosaves have
+            else:
+                data_to_encrypt = await file.read()
 
         # Truncate the data to be a multiple of the block size
         t_decrypted_data = CC.truncate_to_blocksize(data_to_encrypt, CC.AES_BLOCKSIZE)
@@ -133,13 +159,14 @@ class Crypt_Rstar:
         encrypted_data = CC.encrypt_aes_ecb(t_decrypted_data, key)
 
         # Combine all the parts and save the new encrypted data to a new file (e.g., "encrypted_SGTA50000")
-        async with aiofiles.open(fileToEncrypt, "wb") as encrypted_file:
+        async with aiofiles.open(fileToEncrypt, "r+b") as encrypted_file:
             await encrypted_file.write(data_before)
             await encrypted_file.write(encrypted_data)
 
     @staticmethod
     async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
         files = await CC.obtainFiles(upload_decrypted)
+        files = Crypt_Rstar.namecheck(files)
         key = Crypt_Rstar.TYPES[start_offset]["key"]
 
         for file_name in files:
@@ -149,20 +176,26 @@ class Crypt_Rstar:
                 data_before = await file.read(start_offset)  # Read data before the encrypted part
                 await file.seek(start_offset)  # Move the file pointer to the start_offset
                 data_to_decrypt = await file.read()  # Read the part to decrypt
+
+            # Leave out the empty space that autosaves have
+            data_to_decrypt, _ = CC.trim_trailing_bytes(data_to_decrypt, len(data_to_decrypt) - 1, 0x00)
                 
-            # Pad the data to be a multiple of the block size
+            # Truncate the data to be a multiple of the block size
             t_encrypted_data = CC.truncate_to_blocksize(data_to_decrypt, CC.AES_BLOCKSIZE)
 
             # Decrypt the data
             decrypted_data = CC.decrypt_aes_ecb(t_encrypted_data, key)
 
             # Save the decrypted data to a new file (e.g., "decrypted_SGTA50000")
-            async with aiofiles.open(file_name, "wb") as decrypted_file:
+            async with aiofiles.open(file_name, "r+b") as decrypted_file:
                 await decrypted_file.write(data_before)
                 await decrypted_file.write(decrypted_data)
     
     @staticmethod
     async def checkEnc_ps(fileName: str, title_ids: list[str]) -> None:
+        if not Crypt_Rstar.namecheck(fileName):
+            return
+
         async with aiofiles.open(fileName, "rb") as savegame:
             if title_ids == GTAV_TITLEID:
                 await savegame.seek(Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
