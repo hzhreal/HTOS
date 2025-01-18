@@ -10,10 +10,10 @@ class Crypt_RCube:
         elif isinstance(name, list):
             valid = []
             for path in name:
-                path_ = str(path)
-                if path_.endswith(".dat"):
-                    valid.append(path_)
-                return valid
+                path = str(path)
+                if path.endswith(".dat"):
+                    valid.append(path)
+            return valid
         else:
             return False
 
