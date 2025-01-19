@@ -36,10 +36,11 @@ class CustomCrypto:
         return data + bytes([pad_value] * pad_len), pad_len
     
     @staticmethod
-    def trim_trailing_bytes(data: bytes | bytearray, off: int, byte: int) -> tuple[bytes | bytearray, int]:
+    def trim_trailing_bytes(data: bytes | bytearray, off: int, byte: int = 0) -> tuple[bytes | bytearray, int]:
         """Start from off and move backward, stop when a byte that differs from the given has been reached. Return new data and the occurence offset."""
         size = len(data)
         assert 0 <= off < size
+        byte &= 0xFF
 
         stop_off = -1
         for i in range(off, -1, -1):
@@ -52,10 +53,11 @@ class CustomCrypto:
         return data[:stop_off + 1], stop_off
     
     @staticmethod
-    def trim_leading_bytes(data: bytes | bytearray, off: int, byte: int) -> tuple[bytes | bytearray, int]:
+    def trim_leading_bytes(data: bytes | bytearray, off: int, byte: int = 0) -> tuple[bytes | bytearray, int]:
         """Start from off and move forward, stop when a byte that differs from the given has been reached. Return new data and the occurence offset."""
         size = len(data)
         assert 0 <= off < size
+        byte &= 0xFF
 
         stop_off = -1
         for i in range(off, size):

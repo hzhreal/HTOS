@@ -126,7 +126,7 @@ class Crypt_Rstar:
             data_to_encrypt = await file.read()  # Read the part to encrypt
 
             # Leave out the empty space that autosaves have
-            data_to_encrypt, null_off = CC.trim_trailing_bytes(data_to_encrypt, len(data_to_encrypt) - 1, 0x00)
+            data_to_encrypt, null_off = CC.trim_trailing_bytes(data_to_encrypt, len(data_to_encrypt) - 1)
 
             # checksum handling
             for chunk in [m.start() for m in re.finditer(b"CHKS\x00", data_to_encrypt)]: # calculate checksums for each chunk
@@ -177,7 +177,7 @@ class Crypt_Rstar:
                 data_to_decrypt = await file.read()  # Read the part to decrypt
 
             # Leave out the empty space that autosaves have
-            data_to_decrypt, _ = CC.trim_trailing_bytes(data_to_decrypt, len(data_to_decrypt) - 1, 0x00)
+            data_to_decrypt, _ = CC.trim_trailing_bytes(data_to_decrypt, len(data_to_decrypt) - 1)
                 
             # Truncate the data to be a multiple of the block size
             t_encrypted_data = CC.truncate_to_blocksize(data_to_decrypt, CC.AES_BLOCKSIZE)
