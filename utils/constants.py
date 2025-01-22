@@ -134,7 +134,7 @@ SMT5_TITLEID = ["CUSA42697", "CUSA42698"]
 RCUBE_TITLEID = ["CUSA16074", "CUSA27390"]
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = 100 * 1024 * 1024  # 100 MB, discord file limit
+FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit for nitro users
 SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
