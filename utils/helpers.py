@@ -510,9 +510,8 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str) -> N
     zipfiles(zipupPath, file_name)
     final_file = os.path.join(zipupPath, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
-    file_size_mb = final_size / (1024 * 1024)
 
-    if file_size_mb < BOT_DISCORD_UPLOAD_LIMIT:
+    if final_size < BOT_DISCORD_UPLOAD_LIMIT:
         await d_ctx.ctx.send(file=discord.File(final_file), reference=d_ctx.msg)
     else:
         file_url = await GDapi.uploadzip(final_file, file_name)

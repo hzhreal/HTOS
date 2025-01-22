@@ -39,7 +39,7 @@ class Convert(commands.Cog):
 
         await ctx.respond(embed=embConverting)
 
-        if savefile.size / (1024 * 1024) > BOT_DISCORD_UPLOAD_LIMIT:
+        if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return

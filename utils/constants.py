@@ -134,12 +134,12 @@ SMT5_TITLEID = ["CUSA42697", "CUSA42698"]
 RCUBE_TITLEID = ["CUSA16074", "CUSA27390"]
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit
+FILE_LIMIT_DISCORD = 100 * 1024 * 1024  # 100 MB, discord file limit
 SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
-BOT_DISCORD_UPLOAD_LIMIT = 25 # 25 mb minimum when no nitro boosts in server
+BOT_DISCORD_UPLOAD_LIMIT = 8 * 1024 * 1024 # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
 ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
 CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
