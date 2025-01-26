@@ -90,7 +90,7 @@ class QuickCodes:
                         #   X= Address/Offset
                         #   Y= Value to write
                         #   T=Address/Offset type (0 = Normal / 8 = Offset From Pointer)
-                        bytes_ = uint8(1 << (ord(line[0]) - 0x30)).value
+                        bytes_ = uint8(1 << (ord(line[0]) - 0x30)).value # how many bytes to write
 
                         tmp6 = line[2:8]
                         off = int32(tmp6)
@@ -100,8 +100,7 @@ class QuickCodes:
 
                         tmp8 = line[9:17]
                         val = uint32(tmp8, "little")
-
-                        self.data[off:off + bytes_] = val.as_bytes[(4 - bytes_):(4 - bytes_) + bytes_]
+                        self.data[off:off + bytes_] = val.as_bytes[:bytes_]
 
                     case "3":
                         #	Increase / Decrease Write
