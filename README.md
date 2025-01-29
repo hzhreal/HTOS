@@ -72,11 +72,11 @@ How to obtain NPPSO:
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
 ### Everything else
-- Download the (pkg)[https://github.com/hzhreal/cecie.nim/releases/tag/v3.00] from and install it on your PS4
-- Download the (config.ini)[https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini] file from and edit it with your desired 
+- Download the [pkg](https://github.com/hzhreal/cecie.nim/releases/tag/v3.00) from and install it on your PS4
+- Download the [config.ini](https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini) file from and edit it with your desired 
   socket port and upload folder (path on PS4)
 - Upload the `config.ini` file to `/data/cecie` on your PS4.
-- Set up a (Google Drive Service Account)[https://support.google.com/a/answer/7378726?hl=en] and grab the json file with the key (its free), if the json file has the key `universal_domain`, you can remove it, in the case of an error
+- Set up a [Google Drive Service Account](https://support.google.com/a/answer/7378726?hl=en) and grab the json file with the key (its free), if the json file has the key `universal_domain`, you can remove it, in the case of an error
 - Clone the repository and open the `.env` file, edit it as follows:  
   ```IP```: PS4 IP address  
   ```FTP_PORT```: The port that your FTP payload uses  
@@ -100,7 +100,7 @@ How to obtain NPPSO:
 - Make sure to use the latest `cecie.nim release
 
 ### No jailbroken PS4?
-- Join my (Discord)[https://discord.gg/fHfmjaCXtb] where the bot is hosted, free to use and often hosted
+- Join my [Discord](https://discord.gg/fHfmjaCXtb) where the bot is hosted, free to use and often hosted
 
 ### Credits
 - https://github.com/Team-Alua/cecie.nim for creating the homebrew app that makes this possible, in addition to helping me
