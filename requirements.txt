@@ -13,3 +13,4 @@ zstandard
 lz4
 python-dateutil
 audioop-lts ; python_version >= "3.13"
+mmh3

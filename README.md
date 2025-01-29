@@ -26,7 +26,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Account ID database, do not include playstation_id parameter if you want to use previously stored account ID
 - Interactive user interface
 
-| Second layer encryption game list        | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support (more than keystone & title id swapping) |
+| Extra security/layers supported game list| PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support (more than keystone & title id swapping) |
 | ---------------------------------------- | ----------------------------------- | ------------------------ | ---------------------------------------------------------------- |
 | Borderlands 3                            | Borderlands 3                       |                          |                                     |
 | Dead Island 1 (compression only)         |                                     |                          |                                     |
@@ -41,6 +41,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | Raspberry Cube                           |                                     |                          |                                     |
 | Red Dead Redemption 2                    | Red Dead Redemption 2               | Red Dead Redemption 2    |                                     |
 | Resident Evil Revelations 2              |                                     |                          |                                     |
+| Resident Evil 7: Biohazard               |                                     |                          |                                     |
 | Shin Megami Tensei 5                     |                                     |                          |                                     |
 | Terraria (.plr & some .wld)              |                                     |                          |                                     |
 | The Last of Us                           |                                     |                          |                                     |
