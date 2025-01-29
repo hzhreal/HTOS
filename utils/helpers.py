@@ -408,7 +408,7 @@ async def replaceDecrypted(
 
             emb18 = discord.Embed(
                 title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-                description=f"Please attach a decrypted savefile that you want to upload, MUST be equivalent to {file} (can be any name).",
+                description=f"Please attach a decrypted savefile that you want to upload, MUST be equivalent to {file} (can be any name). Or type 'EXIT' to cancel command.",
                 colour=Color.DEFAULT.value
             )
             emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -444,7 +444,9 @@ async def replaceDecrypted(
 
         emb18 = discord.Embed(
             title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-            description=f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}', here are the contents:",
+            description=(
+                f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}'. Or type 'EXIT' to cancel command."
+                "\n\nHere are the contents:"),
             colour=Color.DEFAULT.value
         )
         emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
