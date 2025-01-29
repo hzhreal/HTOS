@@ -40,7 +40,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | No Man's Sky (savedata.hg)               |                                     |                          |                                     |
 | Raspberry Cube                           |                                     |                          |                                     |
 | Red Dead Redemption 2                    | Red Dead Redemption 2               | Red Dead Redemption 2    |                                     |
-| Resident Evil Revelations 2              |                                     |                          |                                     |
+| Resident Evil: Revelations 2             |                                     |                          |                                     |
 | Resident Evil 7: Biohazard               |                                     |                          |                                     |
 | Shin Megami Tensei 5                     |                                     |                          |                                     |
 | Terraria (.plr & some .wld)              |                                     |                          |                                     |
@@ -72,39 +72,37 @@ How to obtain NPPSO:
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
 ### Everything else
-- Download the pkg from https://github.com/hzhreal/cecie.nim/releases/tag/v3.00 and install it on your PS4
-- Download the config.ini file from https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini and edit it with your desired 
+- Download the (pkg)[https://github.com/hzhreal/cecie.nim/releases/tag/v3.00] from and install it on your PS4
+- Download the (config.ini)[https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini] file from and edit it with your desired 
   socket port and upload folder (path on PS4)
-- Upload the config.ini file to `/data/cecie` on your PS4.
-- Set up a Google Drive Service Account and grab the json file with the key 
-  https://support.google.com/a/answer/7378726?hl=en (its free), if the json file has the key "universal_domain", you can remove it, in the case of an error
-- Download the code from the bot and open the `.env` file, edit it as follows:  
+- Upload the `config.ini` file to `/data/cecie` on your PS4.
+- Set up a (Google Drive Service Account)[https://support.google.com/a/answer/7378726?hl=en] and grab the json file with the key (its free), if the json file has the key `universal_domain`, you can remove it, in the case of an error
+- Clone the repository and open the `.env` file, edit it as follows:  
   ```IP```: PS4 IP address  
   ```FTP_PORT```: The port that your FTP payload uses  
-  ```CECIE_PORT```: The port that you used in the config.ini file  
-  ```UPLOAD_PATH```: The path that you used in the config.ini file  
+  ```CECIE_PORT```: The port that you used in the `config.ini` file  
+  ```UPLOAD_PATH```: The path that you used in the `config.ini` file  
   ```MOUNT_PATH```: The path on your PS4 where the saves will be mounted  
   ```GOOGLE_DRIVE_JSON_PATH```: The path to the Google Drive Service Account json file  
   ```STORED_SAVES_FOLDER_PATH```: The path to the folder where you store saves for use in the quickresign command, format inside the folder is ```{NAME OF GAME}/{CUSAXXXXX}/{ANY NAME FOR SAVE}/{THE .BIN AND FILE}```  
   ```TOKEN```: Discord bot token  
   ```NPSSO```: The NPSSO token  
-- Cd into the directory and run `pip install -r requirements.txt`
-- Run bot.py
-- Run the `/init` command in the channel you want the private threads to get created in, the button will work even if you restart the bot because it is a persistent view
-- Make sure you are running the pkg
+- Run `pip install -r requirements.txt` inside the directory where the bot is located to install the necessary packages
+- Execute `bot.py` using Python
+- Run the `/init` command in the channel you want the private threads to get created in, you will only need to do this once in each server.
+- Make sure the pkg is running when the bot is
 - Enjoy!
   
 ### Disclaimers
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example `/data/example/mount` & 
-  `/data/example/upload`, these paths will get deleted and remade so you should not store anything there
+  `/data/example/upload`, these paths will get wiped and remade, so you should not store anything there
 - Saves created using this application will work on SaveWizard as long as you copy it from your PS4
-- Make sure to use the latest cecie.nim release
+- Make sure to use the latest `cecie.nim release
 
 ### No jailbroken PS4?
-- Join my discord where the bot is hosted, free to use and often hosted
-  https://discord.gg/fHfmjaCXtb
+- Join my (Discord)[https://discord.gg/fHfmjaCXtb] where the bot is hosted, free to use and often hosted
 
-## Credits
+### Credits
 - https://github.com/Team-Alua/cecie.nim for creating the homebrew app that makes this possible, in addition to helping me
 - https://github.com/dylanbbk & https://github.com/iCrazeiOS for help
 - https://github.com/bucanero/save-decrypters for the extra encryption methods
