@@ -120,4 +120,4 @@ from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorks
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
 from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, wait_for_msg, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator
-from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory
+from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState

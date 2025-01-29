@@ -8,9 +8,21 @@ class TypeCategory(Enum):
     CHARACTER = 2
     CHARACTER_SPECIAL = 3
 
+class CIntSignednessState(Enum):
+    SIGNED = True
+    UNSIGNED = False
+
 class Cint:
     def __init__(self, bits: int, signed: bool, fmt: str, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        self.fmt = self.FMT_TABLE[endianness] + fmt
+        if fmt == "":
+            fmt_set = (bits, signed)
+            fmt_search = self.FMT_TABLE.get(fmt_set)
+            if fmt_search is None:
+                raise ValueError("No format available.")
+
+            fmt = fmt_search
+
+        self.fmt = self.ENDIANNESS_TABLE[endianness] + fmt
         blen_expected = ceil(bits / 8)
         if struct.calcsize(self.fmt) != blen_expected:
             raise ValueError(f"Format string {self.fmt} does not match expected byte length {blen_expected}!")
@@ -19,10 +31,12 @@ class Cint:
             self.max =  (1 << (bits - 1)) - 1
             self.min = -(1 << (bits - 1))
             self.cast = self.__cast_signed
+            self.signedness = CIntSignednessState.SIGNED
         else:
             self.max = (1 << bits) - 1
             self.MIN = 0
             self.cast = self.__cast_unsigned
+            self.signedness = CIntSignednessState.UNSIGNED
 
         match value:
             case int():
@@ -42,10 +56,21 @@ class Cint:
             
     CATEGORY = TypeCategory.INTEGER
 
-    FMT_TABLE = {
+    ENDIANNESS_TABLE = {
         "little": "<",
         "big": ">",
         "None": ""
+    }
+
+    FMT_TABLE = {
+        (8, False): "B", 
+        (16, False): "H",
+        (32, False): "I",
+        (64, False): "Q",
+        (8, True): "b",
+        (16, True): "h",
+        (32, True): "i",
+        (64, True): "q"
     }
 
     @property
