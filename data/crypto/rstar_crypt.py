@@ -44,16 +44,18 @@ class Crypt_Rstar:
         RDR2_PC_HEADER_OFFSET: {"key": PC_KEY, "type": TitleHashTypes.DATE}
     }
 
+    UNSUPPORTED_FORMATS = ("pgta", "prdr", "profile", "player")
+
     @staticmethod
     def namecheck(name: str | list[str]) -> bool | list[str]:
         if isinstance(name, str):
             filename = os.path.basename(name).lower()
-            return not filename.startswith(("pgta", "profile"))
+            return not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS)
         elif isinstance(name, list):
             valid = []
             for path in name:
                 filename = os.path.basename(path).lower()
-                if not filename.startswith(("pgta", "profile")):
+                if not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS):
                     valid.append(path)
             return valid
         else:
