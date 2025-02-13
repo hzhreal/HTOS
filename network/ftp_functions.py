@@ -7,7 +7,7 @@ import aiofiles.os
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
 # from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -263,13 +263,12 @@ class FTPps:
             raise FTPError("FTP ERROR!")
 
     async def swappng(self, location_to_scesys: str) -> None:
-        pngname = "icon0.png"
-        full_pngpath = os.path.join(self.PNGPATH, pngname)
+        full_pngpath = os.path.join(self.PNGPATH, ICON0_NAME)
         
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
                 await ftp.change_directory(location_to_scesys)
-                await self.uploadStream(ftp, full_pngpath, pngname)
+                await self.uploadStream(ftp, full_pngpath, ICON0_NAME)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
