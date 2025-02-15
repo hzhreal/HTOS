@@ -302,13 +302,14 @@ class FTPps:
             
     async def dlencrypted_bulk(self, reregion: bool, account_id: str, savenames: str) -> None:
     
-        try: title_id = await orbis.obtainCUSA(self.PARAM_PATH)
-        except orbis.OrbisError as e: raise orbis.OrbisError(e)
+        try: 
+            title_id = await orbis.obtainCUSA(self.PARAM_PATH)
+        except orbis.OrbisError as e: 
+            raise orbis.OrbisError(e)
 
         savefilespath = os.path.join(self.DOWNLOAD_ENCRYPTED_PATH, "PS4", "SAVEDATA", account_id, title_id)
 
-        if not await aiofiles.ospath.exists(savefilespath):
-            await aiofiles.os.makedirs(savefilespath)
+        await aiofiles.os.makedirs(savefilespath, exist_ok=True)
 
         try:
             async with aioftp.Client.context(self.IP, self.PORT) as ftp:
