@@ -14,7 +14,7 @@ from discord.ext import commands
 from enum import Enum
 from psnawp_api import PSNAWP
 
-VERSION = "v1.2.0"
+VERSION = "v2.0.0"
 
 # LOGGER
 def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
