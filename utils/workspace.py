@@ -7,9 +7,8 @@ import aiofiles
 import aiofiles.os
 import aiohttp
 from ftplib import FTP, error_perm
-from aioftp.errors import AIOFTPException
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound, PSNAWPAuthenticationError
-from network import FTPps
+from network import FTPps, FTPError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
@@ -136,29 +135,36 @@ def startup():
         logger.exception(f"Error creating databases: {e}")
         exit(-1)
 
-async def cleanup(fInstance: FTPps, clean_list: list[str], saveList: list[str], mountPaths: list[str]) -> None:
+async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_saveList: list[str] | None, remote_mount_paths: list[str] | None) -> None:
     """Used to cleanup after a command utilizing the ps4 (remote)."""
-    for folderpath in clean_list:
-        try:
-            shutil.rmtree(folderpath)
-        except OSError as e:
-            logger.error(f"Error accessing {folderpath} when cleaning up: {e}")
+    if local_folders is not None and len(local_folders) > 0:
+        for folderpath in local_folders:
+            try:
+                if await aiofiles.os.path.exists(folderpath):
+                    shutil.rmtree(folderpath)
+            except OSError as e:
+                logger.error(f"Error accessing {folderpath} when cleaning up: {e}")
 
-    if mountPaths is not None and len(mountPaths) > 0:
-        for mountlocation in mountPaths:
-            await fInstance.delete_folder_contents_ftp(mountlocation)
-        
-    if saveList is not None and len(saveList) > 0:
+    if remote_saveList is not None and len(remote_saveList) > 0:
         try:
-            await fInstance.deleteList(PS_UPLOADDIR, saveList)
-        except AIOFTPException as e:
+            await fInstance.deleteList(PS_UPLOADDIR, remote_saveList)
+        except FTPError as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
-def cleanupSimple(clean_list: list[str]) -> None:
+    if remote_mount_paths is not None and len(remote_mount_paths) > 0:
+        for mountlocation in remote_mount_paths[:]:
+            try:
+                await fInstance.delete_folder_contents(mountlocation)
+                remote_mount_paths.remove(mountlocation)
+            except FTPError as e:
+                logger.error(f"An error occurred when cleaning up (FTP): {e}")
+
+async def cleanupSimple(clean_list: list[str]) -> None:
     """Used to cleanup after a command that does not utilize the ps4 (local only)."""
     for folderpath in clean_list:
         try:
-            shutil.rmtree(folderpath)
+            if await aiofiles.os.path.exists(folderpath):
+                shutil.rmtree(folderpath)
         except OSError as e:
             logger.error(f"Error accessing {folderpath} when cleaning up (simple): {e}")
 
@@ -201,15 +207,16 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         await ctx.respond(embed=blacklist_emb)
         raise WorkspaceError(BLACKLIST_MESSAGE)
 
-def enumerateFiles(fileList: list[str], randomString: str) -> list[str]:
+def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
     """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
-    for i, name in enumerate(fileList):
-        if name.endswith("bin"):
-            fileList[i] = os.path.splitext(os.path.basename(name))[0] + f"_{randomString}.bin" 
-        else:
-            fileList[i] = os.path.basename(name) + f"_{randomString}"
-
-    return fileList
+    out = []
+    for i in range(0, len(files), 2):
+        path = files[i]
+        base = os.path.splitext(os.path.basename(path))[0]
+        s = f"{base}_{rand_str}"
+        out.append(s)
+        out.append(s + ".bin")
+    return out
 
 async def get_savename_from_bin_ext(path: str) -> str:
     savename = ""
@@ -513,29 +520,3 @@ async def check_version() -> None:
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
-
-# async def blacklist_parse(target_section: str, target_value: str) -> bool:
-#     COMMENT_CHAR = "#"
-#     SECTION_START = "["
-#     SECTION_END = "]"
-
-#     async with aiofiles.open(BLACKLIST_CONF_PATH) as conf:
-#         section = ""
-#         async for line in conf:
-#             line = line.rstrip()
-
-#             if not line or line.lstrip().startswith(COMMENT_CHAR):
-#                 continue
-
-#             if line.startswith(SECTION_START) and SECTION_END in line:
-#                 section = line[line.find(SECTION_START) + 1 : line.find(SECTION_END)]
-#                 continue
-
-#             stripped_line = line.strip()
-#             if stripped_line[:2].lower() == "0x":
-#                 stripped_line = stripped_line[2:]
-
-#             if section == target_section:
-#                 if stripped_line.lower() == target_value.lower():
-#                     return True
-#     return False

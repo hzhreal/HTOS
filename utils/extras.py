@@ -2,9 +2,8 @@ import os
 import zipfile
 import random
 import string
-import aiofiles.os
 from PIL import Image, UnidentifiedImageError
-from utils.constants import ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL
+from utils.constants import ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL, EMBED_DESC_LIM
 from utils.exceptions import FileError
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
@@ -53,11 +52,31 @@ def pngprocess(path: str, size: tuple[int, int]) -> None:
 
     image.close()
 
-async def obtain_savenames(dir_: str) -> list[str]:
+async def obtain_savenames(saves: list[str]) -> list[str]:
     savenames = []
-    saves = await aiofiles.os.listdir(dir_)
-
-    for fileName in saves:
-        if not fileName.endswith(".bin"):
-            savenames.append(fileName)
+    for i in range(0, len(saves), 2):
+        path = saves[i]
+        base = os.path.splitext(path)[0]
+        savenames.append(base)
     return savenames
+
+def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIM // 4) -> str:
+    assert pos > 0
+    
+    savenames = [os.path.basename(x) for x in savenames]
+
+    if len(savenames) == 1:
+        return savenames[0]
+    
+    delim = ", "
+    finished_files = delim.join(savenames)
+    strlen = len(finished_files)
+    i = len(savenames) - 1
+    while strlen > pos and pos != 0:
+        strlen -= (len(savenames[i]) + len(delim))
+        finished_files = finished_files[:strlen]
+        i -= 1
+    if i != len(savenames) - 1:
+        finished_files += ", ..."
+    
+    return finished_files

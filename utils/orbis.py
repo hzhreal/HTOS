@@ -5,12 +5,19 @@ import os
 import discord
 import asyncio
 import struct
+import shutil
+from enum import Enum
 from dataclasses import dataclass
-from utils.constants import XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, PARAM_NAME, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, Color, Embed_t
-from utils.extras import generate_random_string
+from network import FTPps, SocketPS
+from utils.constants import (
+    MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
+    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, 
+    Color, Embed_t
+)
+from utils.extras import generate_random_string, obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
+from utils.workspace import enumerateFiles
 from data.crypto.mgsv_crypt import Crypt_MGSV
-
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -51,6 +58,105 @@ class OrbisError(Exception):
     """Exception raised for errors relating to Orbis."""
     def __init__(self, message: str) -> None:
         self.message = message
+
+@dataclass
+class SaveBatch:
+    fInstance: FTPps
+    sInstance: SocketPS
+    user_id: str
+    entry: list[str]
+    mount_paths: list[str]
+    new_download_encrypted_path: str
+
+    async def construct(self) -> None:
+        dname = os.path.dirname(self.entry[0])
+        self.rand_str = os.path.basename(dname)
+        self.fInstance.upload_encrypted_path = dname
+        self.fInstance.download_encrypted_path = os.path.join(self.new_download_encrypted_path, self.rand_str)
+
+        if not await aiofiles.os.path.exists(self.fInstance.download_encrypted_path) and self.new_download_encrypted_path:
+            await aiofiles.os.mkdir(self.fInstance.download_encrypted_path)
+
+        self.mount_location = MOUNT_LOCATION + "/" + self.rand_str
+        self.mount_paths.append(self.mount_location)
+        self.location_to_scesys = self.mount_location + "/sce_sys"
+
+        self.savenames = await obtain_savenames(self.entry)
+        self.savecount = len(self.savenames)
+
+        self.entry = enumerateFiles(self.entry, self.rand_str)
+
+        self.printed = completed_print(self.savenames)
+
+@dataclass
+class SaveFile:
+    class ElementChoice(Enum):
+        SFO = 0
+        KEYSTONE = 1
+
+    path: str
+    batch: SaveBatch
+    reregion_check: bool = False
+
+    async def construct(self) -> None:
+        self.basename = os.path.basename(self.path)
+        self.dirname = os.path.dirname(self.path)
+        self.realSave = f"{self.basename}_{self.batch.rand_str}"
+        self.title_id = None
+        self.sfo_ctx = None
+        self.downloaded_sys_elements = set()
+
+        await aiofiles.os.rename(self.path, os.path.join(self.dirname, self.realSave))
+        await aiofiles.os.rename(self.path + ".bin", os.path.join(self.dirname, self.realSave + ".bin"))
+    
+    async def dump(self) -> None:
+        await self.batch.fInstance.uploadencrypted_bulk(self.realSave)
+        await self.batch.fInstance.make1(self.batch.mount_location)
+        await self.batch.sInstance.socket_dump(self.batch.mount_location, self.realSave)
+    
+    async def resign(self) -> None:
+        if not self.ElementChoice.SFO in self.downloaded_sys_elements:
+            await self.batch.fInstance.download_sfo(self.batch.location_to_scesys)
+        if self.sfo_ctx is None:
+            self.sfo_ctx = await sfo_ctx_create(self.batch.fInstance.sfo_file_path)
+        if self.title_id is None:
+            self.title_id = obtainCUSA(self.sfo_ctx)
+        resign(self.sfo_ctx, self.batch.user_id)
+        if self.reregion_check:
+            await self.__reregion()
+        await sfo_ctx_write(self.sfo_ctx, self.batch.fInstance.sfo_file_path)
+        await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
+        await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
+        await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
+    
+    async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
+        for element in elements:
+            match element:
+                case self.ElementChoice.SFO:
+                    await self.batch.fInstance.download_sfo(self.batch.location_to_scesys)
+                    self.sfo_ctx = await sfo_ctx_create(self.batch.fInstance.sfo_file_path)
+                    self.title_id = obtainCUSA(self.sfo_ctx)
+                    self.downloaded_sys_elements.add(self.ElementChoice.SFO)
+                case self.ElementChoice.KEYSTONE:
+                    await self.batch.fInstance.retrievekeystone(self.batch.location_to_scesys)
+                    self.downloaded_sys_elements.add(self.ElementChoice.KEYSTONE)
+
+    async def __reregion(self) -> None:
+        dec_path = ""
+        if self.title_id in MGSV_TPP_TITLEID or self.title_id in MGSV_GZ_TITLEID:
+            dec_path = self.batch.fInstance.download_decrypted_path
+            await self.batch.fInstance.download_folder(self.batch.mount_location, dec_path, True)
+        await reregion_write(self.sfo_ctx, self.title_id, dec_path)
+        if dec_path:
+            await self.batch.fInstance.upload_folder(self.batch.mount_location, dec_path)
+            shutil.rmtree(dec_path)
+            await aiofiles.os.mkdir(dec_path)
+
+@dataclass
+class PFSHeader:
+    basic_block_size: int
+    data_block_count: int
+    size: int
 
 @dataclass
 class SFOHeader:
@@ -416,22 +522,29 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
                     valid_attachments_final.append(attachment_nested)
                     break
     
-    return valid_attachments_final 
+    return valid_attachments_final
 
-async def obtainCUSA(param_path: str) -> str:
+async def sfo_ctx_create(sfo_path: str) -> SFOContext:
+    async with aiofiles.open(sfo_path, "rb") as sfo:
+        sfo_data = bytearray(await sfo.read())
+    ctx = SFOContext()
+    ctx.sfo_read(sfo_data)
+    return ctx
+
+async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
+    sfo_data = ctx.sfo_write()
+    async with aiofiles.open(sfo_path, "wb") as sfo:
+        await sfo.write(sfo_data)
+
+def obtainCUSA(ctx: SFOContext) -> str:
     """Obtains TITLE_ID from sfo file."""
-    param_local_path = os.path.join(param_path, PARAM_NAME)
-
-    async with aiofiles.open(param_local_path, "rb") as file:
-        sfo_data = bytearray(await file.read())
-
-    context = SFOContext()
-    context.sfo_read(sfo_data)
-    data_title_id = context.sfo_get_param_value("TITLE_ID")
+    data_title_id = ctx.sfo_get_param_value("TITLE_ID")
     data_title_id = bytearray(filter(lambda x: x != 0x00, data_title_id))
 
-    try: title_id = data_title_id.decode("utf-8")
-    except UnicodeDecodeError: raise OrbisError("Invalid title ID in param.sfo!")
+    try: 
+        title_id = data_title_id.decode("utf-8")
+    except UnicodeDecodeError: 
+        raise OrbisError("Invalid title ID in param.sfo!")
     
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
@@ -441,31 +554,17 @@ async def obtainCUSA(param_path: str) -> str:
 def check_titleid(titleid: str) -> bool:
     return bool(TITLE_ID_RE.fullmatch(titleid))
 
-async def resign(paramPath: str, account_id: str) -> None:
+def resign(ctx: SFOContext, account_id: str) -> None:
     """Traditional resigning."""
-    async with aiofiles.open(paramPath, "rb") as file_param:
-        sfo_data = bytearray(await file_param.read())
+    ctx.sfo_patch_parameter("ACCOUNT_ID", account_id)
 
-    context = SFOContext()
-    context.sfo_read(sfo_data)
-    context.sfo_patch_parameter("ACCOUNT_ID", account_id)
-    new_sfo_data = context.sfo_write()
-
-    async with aiofiles.open(paramPath, "wb") as file_param:
-        await file_param.write(new_sfo_data)
-
-async def reregion_write(paramPath: str, title_id: str, decFilesPath: str) -> None:
+async def reregion_write(ctx: SFOContext, title_id: str, decFilesPath: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
-    async with aiofiles.open(paramPath, "rb") as file_param:
-       sfo_data = bytearray(await file_param.read())
-    
-    context = SFOContext()
-    context.sfo_read(sfo_data)
-    context.sfo_patch_parameter("TITLE_ID", title_id)
+    ctx.sfo_patch_parameter("TITLE_ID", title_id)
 
     if title_id in XENO2_TITLEID:
         newname = title_id + "01"
-        context.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
+        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
     
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
         try: 
@@ -474,35 +573,7 @@ async def reregion_write(paramPath: str, title_id: str, decFilesPath: str) -> No
             raise OrbisError("Error changing MGSV crypt!")
         
         newname = Crypt_MGSV.KEYS[title_id]["name"]
-        context.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
-    
-    new_sfo_data = context.sfo_write()
-
-    async with aiofiles.open(paramPath, "wb") as file_param:
-        await file_param.write(new_sfo_data) 
-
-async def obtainID(paramPath: str) -> str | None:
-    """Obtains accountID from the sfo file."""
-    paramPath = os.path.join(paramPath, PARAM_NAME)
-    
-    async with aiofiles.open(paramPath, "rb") as file_param:
-        sfo_data = bytearray(await file_param.read())
-    
-    context = SFOContext()
-    context.sfo_read(sfo_data)
-    accid_data = context.sfo_get_param_value("ACCOUNT_ID")
-
-    try: 
-        account_id = accid_data.decode("utf-8")
-        if account_id[:2].lower() == "0x":
-           account_id = account_id[2:]
-    except UnicodeDecodeError:
-        account_id = hex(struct.unpack("<Q", accid_data)[0])[2:]
-
-    if not checkid(account_id):
-        raise OrbisError("Invalid account ID in param.sfo!")
-
-    return account_id
+        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
 async def reregionCheck(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
     """Renames the save after Re-regioning for the games that need it, random string is appended at the end for no overwriting."""
@@ -510,7 +581,7 @@ async def reregionCheck(title_id: str, savePath: str, original_savePath: str, or
         newnameFile = os.path.join(savePath, title_id + "01")
         newnameBin = os.path.join(savePath, title_id + "01.bin")
         if await aiofiles.os.path.exists(newnameFile) and await aiofiles.os.path.exists(newnameBin):
-            randomString = generate_random_string(5)
+            randomString = generate_random_string(RANDOMSTRING_LENGTH)
             newnameFile = os.path.join(savePath, title_id + f"01_{randomString}")
             newnameBin = os.path.join(savePath, title_id + f"01_{randomString}.bin")
         if await aiofiles.os.path.exists(original_savePath) and await aiofiles.os.path.exists(original_savePath_bin):
@@ -522,44 +593,31 @@ async def reregionCheck(title_id: str, savePath: str, original_savePath: str, or
         newnameFile = os.path.join(savePath, new_regionName)
         newnameBin = os.path.join(savePath, new_regionName + ".bin")
         if await aiofiles.os.path.exists(newnameFile) and await aiofiles.os.path.exists(newnameBin):
-            randomString = generate_random_string(5)
+            randomString = generate_random_string(RANDOMSTRING_LENGTH)
             newnameFile = os.path.join(savePath, new_regionName + f"_{randomString}")
             newnameBin = os.path.join(savePath, new_regionName + f"_{randomString}.bin")
         if await aiofiles.os.path.exists(original_savePath) and await aiofiles.os.path.exists(original_savePath_bin):
             await aiofiles.os.rename(original_savePath, newnameFile)
             await aiofiles.os.rename(original_savePath_bin, newnameBin)
 
-async def handleTitles(paramPath: str, account_id: str, maintitle: str = "", subtitle: str = "", **extraPatches: str | int) -> None:
+def handleTitles(ctx: SFOContext, maintitle: str = "", subtitle: str = "", **extraPatches: str | int) -> None:
     """Used to alter MAINTITLE & SUBTITLE in the sfo file, for the change titles command."""
-    paramPath = os.path.join(paramPath, PARAM_NAME)
     toPatch = {
-        "ACCOUNT_ID": account_id,
         "MAINTITLE": maintitle, 
         "SUBTITLE": subtitle, 
         **extraPatches
     }
     # maintitle or subtitle may be empty because the user can choose one or both to edit, therefore we remove the key that is an empty str
     toPatch = {key: value for key, value in toPatch.items() if value}
- 
-    async with aiofiles.open(paramPath, "rb") as file_param:
-        sfo_data = bytearray(await file_param.read())
-    
-    context = SFOContext()
-    context.sfo_read(sfo_data)
 
     for key in toPatch:
-        context.sfo_patch_parameter(key, toPatch[key])
-
-    new_sfo_data = context.sfo_write()
-
-    async with aiofiles.open(paramPath, "wb") as file_param:
-        await file_param.write(new_sfo_data)
+        ctx.sfo_patch_parameter(key, toPatch[key])
 
 def validate_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))
 
 # Thanks to https://github.com/B-a-t-a-n-g for showing me how to parse the header
-async def parse_pfs_header(pfs_path: str) -> dict[str, int]:
+async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> None | PFSHeader:
     async with aiofiles.open(pfs_path, "rb") as pfs:
         await pfs.seek(0x20)
         basic_block_size = struct.unpack("<I", await pfs.read(0x04))[0]
@@ -573,17 +631,24 @@ async def parse_pfs_header(pfs_path: str) -> dict[str, int]:
     if expected_file_size != actual_file_size:
         raise OrbisError(f"Expected savesize {expected_file_size} but got {actual_file_size} for file {os.path.basename(pfs_path)}!")
 
-    pfs_header = {
-        "basic_block_size": basic_block_size,
-        "data_block_count": data_block_count,
-        "size": expected_file_size | actual_file_size
-    }
-    return pfs_header
+    if header is None:
+        header = PFSHeader(basic_block_size, data_block_count, actual_file_size)
+        return header
+    header.basic_block_size = basic_block_size
+    header.data_block_count = data_block_count
+    header.size = expected_file_size | actual_file_size
 
-async def parse_sealedkey(keypath: str) -> None:
+async def parse_sealedkey(keypath: str, key: PfsSKKey | None = None) -> None | PfsSKKey:
     async with aiofiles.open(keypath, "rb") as sealed_key:
         data = bytearray(await sealed_key.read())
     
-    enc_key = PfsSKKey(data)
-    if not enc_key.validate():
+    if key is None:
+        key = PfsSKKey(data)
+        retkey = True
+    else:
+        key.data = data
+        retkey = False
+
+    if not key.validate():
         raise OrbisError(f"Invalid sealed key: {os.path.basename(keypath)}!")
+    return key if retkey else None

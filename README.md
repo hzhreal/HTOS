@@ -97,17 +97,18 @@ How to obtain NPPSO:
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example `/data/example/mount` & 
   `/data/example/upload`, these paths will get wiped and remade, so you should not store anything there
 - Saves created using this application will work on SaveWizard as long as you copy it from your PS4
-- Make sure to use the latest `cecie.nim release
+- Make sure to use the latest `cecie.nim` release
 
 ### No jailbroken PS4?
 - Join my [Discord](https://discord.gg/fHfmjaCXtb) where the bot is hosted, free to use and often hosted
 
-### Credits
-- https://github.com/Team-Alua/cecie.nim for creating the homebrew app that makes this possible, in addition to helping me
-- https://github.com/dylanbbk & https://github.com/iCrazeiOS for help
-- https://github.com/bucanero/save-decrypters for the extra encryption methods
-- https://github.com/bucanero/pfd_sfo_tools/blob/master/sfopatcher/src/sfo.c for the param.sfo parser
-- https://github.com/bucanero/apollo-lib/blob/main/source/patches.c#L2781 for the quick codes implementation
-- https://github.com/Zhaxxy/rdr2_enc_dec/blob/main/rdr2_enc_dec.py for the checksum
-- https://github.com/Zhaxxy/xenoverse2_ps4_decrypt for Xenoverse 2 extra layer of encryption
-- https://github.com/monkeyman192/MBINCompiler/releases/tag/v5.02.0-pre2 for No Man's Sky obfuscation (mapping.json)
+### Acknowledgements
+- [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
+- [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
+- [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)
+- [DylanBBK](https://github.com/dylanbbk)
+- [iCraze](https://github.com/iCrazeiOS)
+- [monkeyman192](https://github.com/monkeyman192): [MBINCompiler](https://github.com/monkeyman192/MBINCompiler)
+- [Team-Alua](https://github.com/Team-Alua): [Cecie](https://github.com/Team-Alua/cecie.nim)
+- [Zhaxxy](https://github.com/Zhaxxy): [rdr2_enc_dec](https://github.com/Zhaxxy/rdr2_enc_dec)
+- [Zhaxxy](https://github.com/Zhaxxy): [xenoverse2_ps4_decrypt](https://github.com/Zhaxxy/xenoverse2_ps4_decrypt)

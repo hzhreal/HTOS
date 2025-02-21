@@ -17,7 +17,7 @@ from psnawp_api import PSNAWP
 VERSION = "v1.2.0"
 
 # LOGGER
-def setup_logger(path: str, logger_type: str) -> logging.Logger:
+def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
     dirname = os.path.dirname(path)
 
     if not os.path.exists(dirname):
@@ -40,7 +40,7 @@ def setup_logger(path: str, logger_type: str) -> logging.Logger:
         "handlers": {
             logger_type: {
                 "class": "logging.handlers.RotatingFileHandler",
-                "level": "DEBUG",
+                "level": level,
                 "formatter": "detailed",
                 "filename": path,
                 "maxBytes": 25 * 1024 * 1024,
@@ -49,7 +49,7 @@ def setup_logger(path: str, logger_type: str) -> logging.Logger:
         },
         "loggers": {
             logger_type: {
-                "level": "INFO",
+                "level": level,
                 "handlers": [
                     logger_type
                 ]
@@ -59,8 +59,8 @@ def setup_logger(path: str, logger_type: str) -> logging.Logger:
     logging.config.dictConfig(config=logging_config)
 
     return logger
-logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS")
-blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS")
+logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS", "ERROR")
+blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS", "INFO")
 
 # CONFIG
 IP = str(os.getenv("IP"))
@@ -135,23 +135,26 @@ SMT5_TITLEID = ["CUSA42697", "CUSA42698"]
 RCUBE_TITLEID = ["CUSA16074", "CUSA27390"]
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = 500 * 1024 * 1024  # 500 MB, discord file limit for nitro users
-SYS_FILE_MAX = 1 * 1024 * 1024 # sce_sys files are not that big so 1 MB, keep this low
+FILE_LIMIT_DISCORD = 500 * 1024**2  # 500 MB, discord file limit for nitro users
+SYS_FILE_MAX = 1 * 1024**2 # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
-BOT_DISCORD_UPLOAD_LIMIT = 8 * 1024 * 1024 # 8 mb minimum when no nitro boosts in server
+BOT_DISCORD_UPLOAD_LIMIT = 8 * 1024**2 # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
 ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
 CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."
+SHARED_GD_LINK_DESC = "A link to your shared Google Drive folder, if you want the bot to use your storage."
 
 BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 
 QR_FOOTER1 = "Respond with the number of your desired game, or type 'EXIT' to quit."
 QR_FOOTER2 = "Respond with the number of your desired save, or type 'BACK' to go to the game menu."
+
+ZIPOUT_NAME = ["PS4", ".zip"] # name, ext
 
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
@@ -206,13 +209,6 @@ embgdt = discord.Embed(
 )
 embgdt.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-emb6 = discord.Embed(
-    title="Upload alert: Error",
-    description="You did not upload 2 savefiles in one response to the bot, or you uploaded invalid files!",
-    colour=Color.DEFAULT.value
-)
-emb6.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 embhttp = discord.Embed(
     title="HttpError",
     description="Are you sure that you uploaded binary content?",
@@ -262,33 +258,12 @@ emb21 = discord.Embed(
 )
 emb21.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-emb22 = discord.Embed(
-    title="Obtain process: Keystone",
-    description="Obtaining keystone, please wait...",
-    colour=Color.DEFAULT.value
-)
-emb22.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 embpng = discord.Embed(
     title="PNG Process",
     description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embpng.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embpng1 = discord.Embed(
-    title="PNG process: Initializing",
-    description="Mounting save.",
-    colour=Color.DEFAULT.value
-) 
-embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embpng2 = discord.Embed(
-    title="PNG process: Downloading",
-    description="Save mounted",
-    colour=Color.DEFAULT.value
-)
-embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb8 = discord.Embed(
     title="Error: PSN username",
@@ -345,13 +320,6 @@ embDone_G = discord.Embed(
     colour=Color.DEFAULT.value
 )
 embDone_G.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-emb_conv_choice = discord.Embed(
-    title="Converter: Choice",
-    description=f"Could not recognize the platform of the save, please choose what platform to convert the save to.",
-    colour=Color.DEFAULT.value
-)
-emb_conv_choice.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_upl_savegame = discord.Embed(
     title="Upload files",

@@ -14,16 +14,16 @@ class SocketError(Exception):
 
 class SocketPS:
   """Async functions to mainly interact with cecie."""
-  def __init__(self, HOST: str, PORT: int, maxConnections: int = 16) -> None:
-    self.HOST = HOST
-    self.PORT = PORT
+  def __init__(self, host: str, port: int, maxConnections: int = 16) -> None:
+    self.host = host
+    self.port = port
     self.semaphore = asyncio.Semaphore(maxConnections) # Maximum 16 mounts at once
   SUCCESS = "srOk"
   async def send_tcp_message_with_response(self, message: str, deserialize: bool = True) -> str | bytes:
     writer = None
     try:
       async with self.semaphore:
-        reader, writer = await asyncio.open_connection(self.HOST, self.PORT)
+        reader, writer = await asyncio.open_connection(self.host, self.port)
         writer.write(message.encode("utf-8"))
         await writer.drain()
       
@@ -44,7 +44,7 @@ class SocketPS:
         await writer.wait_closed()
       
   async def testConnection(self) -> None:
-    _, writer = await asyncio.wait_for(asyncio.open_connection(self.HOST, self.PORT), timeout=10)
+    _, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), timeout=10)
     writer.close()
     await writer.wait_closed()
 

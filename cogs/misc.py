@@ -60,7 +60,7 @@ class Misc(commands.Cog):
         latency = self.bot.latency * 1000
         result = 0
 
-        C1ftp = FTPps(IP, PORT_FTP, None, None, None, None, None, None, None, None)
+        C1ftp = FTPps(IP, PORT_FTP, "", "", "", "", "", "", "", "")
         C1socket = SocketPS(IP, PORT_CECIE)
 
         ftp_result = socket_result = "Unavailable"

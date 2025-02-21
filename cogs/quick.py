@@ -2,7 +2,6 @@ import discord
 import asyncio
 import os
 import shutil
-import aiofiles.os
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
@@ -10,16 +9,16 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color, Embed_t,
     emb_upl_savegame, embTimedOut, working_emb
 )
 from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
-from utils.extras import generate_random_string
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator
-from utils.orbis import OrbisError
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt
+from utils.orbis import OrbisError, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
+from utils.extras import completed_print
 from utils.exceptions import FileError
 
 class Quick(commands.Cog):
@@ -29,7 +28,12 @@ class Quick(commands.Cog):
     quick_group = discord.SlashCommandGroup("quick")
 
     @quick_group.command(description="Resign pre stored saves.")
-    async def resign(self, ctx: discord.ApplicationContext, playstation_id: Option(str, description=PS_ID_DESC, default="")) -> None: # type: ignore
+    async def resign(
+              self, 
+              ctx: discord.ApplicationContext, 
+              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+            ) -> None:
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -43,13 +47,13 @@ class Quick(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-
+            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
             msg = await ctx.edit(embed=working_emb)
             msg = await ctx.fetch_message(msg.id) # fetch for paginator.edit()
             d_ctx = DiscordContext(ctx, msg)
             stored_saves = await listStoredSaves()
             response = await run_qr_paginator(d_ctx, stored_saves)
-        except (PSNIDError, WorkspaceError, TimeoutError) as e:
+        except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -62,43 +66,39 @@ class Quick(commands.Cog):
             embExit = discord.Embed(title="Exited.", colour=Color.DEFAULT.value)
             embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embExit, view=None)
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             return
-
-        random_string = generate_random_string(RANDOMSTRING_LENGTH)
-        saveName = os.path.basename(response)
-        realSave = f"{saveName}_{random_string}"
-        uploaded_file_paths = [realSave, realSave + ".bin"]
+        
+        entry = [response, response + ".bin"]
+        batch = SaveBatch(C1ftp, C1socket, user_id, entry, mountPaths, newDOWNLOAD_ENCRYPTED)
+        savefile = SaveFile("", batch)
 
         try:
-            shutil.copyfile(response, os.path.join(newUPLOAD_ENCRYPTED, realSave))
-            shutil.copyfile(response + ".bin", os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
+            await batch.construct()
+
+            savepath = os.path.join(newUPLOAD_ENCRYPTED, os.path.basename(response))
+            shutil.copyfile(response, savepath)
+            shutil.copyfile(response + ".bin", savepath + ".bin")
+            
+            savefile.path = savepath
+            await savefile.construct()
 
             emb4 = discord.Embed(
                 title="Resigning process: Encrypted",
-                description=f"Your save (**{saveName}**) is being resigned, please wait...",
+                description=f"Your save (**{savefile.basename}**) is being resigned, please wait...",
                 colour=Color.DEFAULT.value
             )
             emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
             await ctx.edit(embed=emb4)
-            await C1ftp.uploadencrypted_bulk(realSave)
-            mount_location_new = MOUNT_LOCATION + "/" + random_string
-            await C1ftp.make1(mount_location_new)
-            mountPaths.append(mount_location_new)
-            await C1socket.socket_dump(mount_location_new, realSave)
-            location_to_scesys = mount_location_new + "/sce_sys"
-            await C1ftp.dlparam(location_to_scesys, user_id)
-            await C1socket.socket_update(mount_location_new, realSave)
-            await C1ftp.dlencrypted_bulk(False, user_id, realSave)
+
+            await savefile.resign()
 
             emb5 = discord.Embed(
                 title="Resigning process (Encrypted): Successful",
-                description=f"**{saveName}** resigned to **{playstation_id or user_id}**",
+                description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}**",
                 colour=Color.DEFAULT.value
             )
             emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
             await ctx.edit(embed=emb5)
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
@@ -111,38 +111,41 @@ class Quick(commands.Cog):
             elif isinstance(e, OrbisError): 
                 logger.error(f"{response} is a invalid save") # If OrbisError is raised you have stored an invalid save
 
-            await errorHandling(d_ctx.msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             return
         except Exception as e:
-            await errorHandling(d_ctx.msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
         embRdone = discord.Embed(
             title="Resigning process (Encrypted): Successful",
-            description=f"**{saveName}** resigned to **{playstation_id or user_id}**.",
+            description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}**.",
             colour=Color.DEFAULT.value
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         
         await ctx.edit(embed=embRdone)
 
+        zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
+
         try: 
-            await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+            await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
         except GDapiError as e:
-            await errorHandling(d_ctx.msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
 
         # await asyncio.sleep(1)
-        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+        await cleanup(C1ftp, workspaceFolders, batch.entry, mountPaths)
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     async def codes(
               self, 
               ctx: discord.ApplicationContext, 
-              codes: str, 
+              codes: str,
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
@@ -156,14 +159,17 @@ class Quick(commands.Cog):
         msg = await ctx.fetch_message(msg.id)
         d_ctx = DiscordContext(ctx, msg)
 
+        opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
+
         try:
-            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False)
+            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
-        except (TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (TimeoutError, GDapiError, FileError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             return
@@ -172,33 +178,31 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
         
-        completed = []
+        batches = len(uploaded_file_paths)
 
-        if len(uploaded_file_paths) >= 1:
-            savefiles = await aiofiles.os.listdir(newUPLOAD_DECRYPTED)
+        i = 1
+        for entry in uploaded_file_paths:
+            count_entry = len(entry)
+            completed = []
+            dname = os.path.dirname(entry[0])
+            out_path = dname
+            rand_str = os.path.basename(dname)
 
-            for savefile in savefiles:
-                savegame = os.path.join(newUPLOAD_DECRYPTED, savefile)
+            j = 1
+            for savegame in entry:
+                basename = os.path.basename(savegame)
                 
                 embLoading = discord.Embed(
                     title="Loading",
-                    description=f"Loading {savefile}...",
+                    description=f"Loading **{basename}**... (file {j}/{count_entry}, batch {i}/{batches}).",
                     colour=Color.DEFAULT.value
                 )
                 embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-                embApplied = discord.Embed(
-                    title="Success!",
-                    description=f"Quick codes applied to {savefile}.",
-                    colour=Color.DEFAULT.value
-                )
-                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
                 await msg.edit(embed=embLoading)
 
                 try:
                     qc = QuickCodes(savegame, codes)
-                    await qc.apply_code()  
+                    await qc.apply_code()
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await errorHandling(msg, e, workspaceFolders, None, None, None)
@@ -208,31 +212,39 @@ class Quick(commands.Cog):
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
-        
+
+                embApplied = discord.Embed(
+                    title="Success!",
+                    description=f"Quick codes applied to **{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
+                    colour=Color.DEFAULT.value
+                )
+                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 await msg.edit(embed=embApplied)
-                completed.append(savefile)
+                completed.append(basename)
+                j += 1
 
-        if len(completed) == 1:
-            finishedFiles = "".join(completed)
-        else: finishedFiles = ", ".join(completed)
+            finished_files = completed_print(completed)
 
-        embCompleted = discord.Embed(
-            title="Success!",
-            description=f"Quick codes applied to {finishedFiles}.",
-            colour=Color.DEFAULT.value
-        )
-        embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await msg.edit(embed=embCompleted)
+            embCompleted = discord.Embed(
+                title="Success!",
+                description=f"Quick codes applied to **{finished_files}** ({i}/{batches}).",
+                colour=Color.DEFAULT.value
+            )
+            embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            await msg.edit(embed=embCompleted)
 
-        try: 
-            await send_final(d_ctx, "savegame_CodeApplied.zip", newUPLOAD_DECRYPTED)
-        except GDapiError as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            return
+            zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-        await asyncio.sleep(1)
-        cleanupSimple(workspaceFolders)
+            try: 
+                await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
+            except GDapiError as e:
+                await errorHandling(msg, e, workspaceFolders, None, None, None)
+                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                return
+
+            await asyncio.sleep(1)
+            i += 1
+        await cleanupSimple(workspaceFolders)
     
     @quick_group.command(description="Add cheats to your save.")
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
@@ -244,11 +256,10 @@ class Quick(commands.Cog):
 
         embLoading = discord.Embed(
             title="Loading",
-            description=f"Loading cheats process for {game}...",
+            description=f"Loading cheats process for **{game}**...",
             colour=Color.DEFAULT.value
         )
         embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
         await ctx.respond(embed=embLoading)
 
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
@@ -287,7 +298,7 @@ class Quick(commands.Cog):
         await ctx.respond(file=discord.File(savegame))
         await asyncio.sleep(1)
 
-        cleanupSimple(workspaceFolders)
+        await cleanupSimple(workspaceFolders)
     
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Quick(bot))

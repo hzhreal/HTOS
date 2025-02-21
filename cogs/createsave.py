@@ -10,26 +10,27 @@ from network import FTPps, SocketPS, SocketError, FTPError
 from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
+    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
+    IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
-from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError
-from utils.extras import generate_random_string
+from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError, sfo_ctx_create, sfo_ctx_write
 from utils.exceptions import PSNIDError, FileError
 from utils.namespaces import Crypto
 
-# comment out the option you do not need
-savesize_presets = [
-    OptionChoice("25 MB", (25 * 1024**2) >> 15),
-    OptionChoice("50 MB", (50 * 1024**2) >> 15),
-    OptionChoice("75 MB", (75 * 1024**2) >> 15),
-    OptionChoice("100 MB", (100 * 1024**2) >> 15),
-]
 saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will determine savesize (blocks * {SAVEBLOCKS_MAX})."
-saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
+# comment out the option you do not need
+# Here presets are commented out, feel free to choose whatever
+# savesize_presets = [
+#     OptionChoice("25 MB", (25 * 1024**2) >> 15),
+#     OptionChoice("50 MB", (50 * 1024**2) >> 15),
+#     OptionChoice("75 MB", (75 * 1024**2) >> 15),
+#     OptionChoice("100 MB", (100 * 1024**2) >> 15),
+# ]
+# saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
 saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=96, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
 
 class CreateSave(commands.Cog):
@@ -43,6 +44,7 @@ class CreateSave(commands.Cog):
               savename: Option(str, description="The name of the save."), # type: ignore
               saveblocks: saveblocks_annotation, # type: ignore
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
               ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
             ) -> None:
         
@@ -58,7 +60,7 @@ class CreateSave(commands.Cog):
         DISC_UPL_SPLITVALUE = "SLASH"
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
         savesize = saveblocks << 15
-        await aiofiles.os.makedirs(scesys_local)
+        rand_str = os.path.basename(newUPLOAD_DECRYPTED)
         
         embSceSys = discord.Embed(
             title=f"Upload: sce_sys contents\n{savename}",
@@ -85,6 +87,7 @@ class CreateSave(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
+            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
 
             # value checks
             if not validate_savedirname(savename):
@@ -105,10 +108,10 @@ class CreateSave(commands.Cog):
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
 
             # handle sce_sys first
-            uploaded_file_paths_sys = await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
-            if len(uploaded_file_paths_sys) == 0:
-                raise FileError("No valid sce_sys files uploaded!")
-            elif len(uploaded_file_paths_sys) < len(MANDATORY_SCE_SYS_CONTENTS):
+            await aiofiles.os.mkdir(scesys_local)
+            await asyncio.sleep(0.5)
+            uploaded_file_paths_sys = (await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False))[0]
+            if len(uploaded_file_paths_sys) < len(MANDATORY_SCE_SYS_CONTENTS):
                 raise FileError("Not enough sce_sys files uploaded!")
 
             mandatory_sys_found = 0
@@ -126,8 +129,6 @@ class CreateSave(commands.Cog):
             # next, other files (gamesaves)
             await msg.edit(embed=embgs)
             uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
-            if len(uploaded_file_paths_special) == 0:
-                raise FileError("No gamesaves uploaded!")
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
@@ -143,14 +144,15 @@ class CreateSave(commands.Cog):
             return
         
         uploaded_file_paths = []
-        # we dont care enough to add check if any gamesaves were uploaded
+        sfo_path = os.path.join(scesys_local, PARAM_NAME)
         try:
-            await handleTitles(scesys_local, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
-            title_id = await obtainCUSA(scesys_local)
+            sfo_ctx = await sfo_ctx_create(sfo_path)
+            handleTitles(sfo_ctx, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
+            title_id = obtainCUSA(sfo_ctx)
+            await sfo_ctx_write(sfo_ctx, sfo_path)
 
             if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT and not ignore_secondlayer_checks: # dont want to create unnecessary overhead
-                path_filter = os.path.join(newUPLOAD_DECRYPTED, "")
-                path_idx = len(path_filter)
+                path_idx = len(newUPLOAD_DECRYPTED) + (newUPLOAD_DECRYPTED[-1] != os.path.sep)
                 for gamesave in uploaded_file_paths_special:
                     displaysave = gamesave[path_idx:]
                     embsl = discord.Embed(
@@ -171,16 +173,12 @@ class CreateSave(commands.Cog):
             embc.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await msg.edit(embed=embc)
 
-            # gen a new name for file to not get overwritten with anything on the console
-            random_string = generate_random_string(RANDOMSTRING_LENGTH)
-            random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
-
-            temp_savename = savename + f"_{random_string}"
-            mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
+            temp_savename = savename + f"_{rand_str}"
+            mount_location_new = MOUNT_LOCATION + "/" + rand_str
             location_to_scesys = mount_location_new + "/" + "sce_sys"
 
             await C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)
-            uploaded_file_paths.extend([temp_savename, f"{savename}_{random_string}.bin"])
+            uploaded_file_paths.extend([temp_savename, f"{savename}_{rand_str}.bin"])
             
             # now mount save and get ready to upload files to it
             await C1ftp.make1(mount_location_new)
@@ -188,10 +186,10 @@ class CreateSave(commands.Cog):
             mountPaths.append(mount_location_new)
             await C1socket.socket_dump(mount_location_new, temp_savename)
 
-            # yh uploaded now! make sure all sce_sys files are uploaded with var
+            # upload now
             await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)
             shutil.rmtree(scesys_local)
-            await C1ftp.ftp_upload_folder(mount_location_new, newUPLOAD_DECRYPTED)
+            await C1ftp.upload_folder(mount_location_new, newUPLOAD_DECRYPTED)
 
             await C1socket.socket_update(mount_location_new, temp_savename)
             
@@ -225,11 +223,12 @@ class CreateSave(commands.Cog):
             colour=Color.DEFAULT.value
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        
         await msg.edit(embed=embRdone)
 
+        zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
+
         try: 
-            await send_final(d_ctx, "PS4.zip", newDOWNLOAD_ENCRYPTED)
+            await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
         except GDapiError as e:
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")

@@ -54,9 +54,11 @@ from .constants import (
     SYS_FILE_MAX,
     PS_ID_DESC,
     IGNORE_SECONDLAYER_DESC,
+    SHARED_GD_LINK_DESC,
     BASE_ERROR_MSG,
     QR_FOOTER1,
     QR_FOOTER2,
+    ZIPOUT_NAME,
     SCE_SYS_CONTENTS,
     MANDATORY_SCE_SYS_CONTENTS,
     ICON0_MAXSIZE,
@@ -85,7 +87,6 @@ from .constants import (
     Embed_t,
     embUtimeout,
     embgdt,
-    emb6,
     embhttp,
     embEncrypted1,
     embDecrypt1,
@@ -93,10 +94,7 @@ from .constants import (
     emb20,
     emb4,
     emb21,
-    emb22,
     embpng,
-    embpng1,
-    embpng2,
     embnt,
     emb8,
     embvalidpsn,
@@ -105,7 +103,6 @@ from .constants import (
     embTitleErr,
     embTimedOut,
     embDone_G,
-    emb_conv_choice,
     emb_upl_savegame,
     loadSFO_emb,
     finished_emb,
@@ -115,10 +112,10 @@ from .constants import (
     blacklist_emb,
     embChannelError
 )
-from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames
-from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, obtainID, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, PARAM_NAME, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey, parse_sealedkey
+from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames, completed_print
+from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey, parse_sealedkey, PFSHeader, SaveBatch, SaveFile
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savename_from_bin_ext, blacklist_write_db, blacklist_check_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db
 from .exceptions import FileError, PSNIDError
 from .namespaces import Cheats, Converter, Crypto
-from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, wait_for_msg, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator
+from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, wait_for_msg, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt
 from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState

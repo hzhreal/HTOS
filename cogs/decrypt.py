@@ -9,14 +9,13 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import GDapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, RANDOMSTRING_LENGTH, MOUNT_LOCATION, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
     logger, Color, Embed_t,
-    emb6, embDecrypt1
+    embDecrypt1
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, enumerateFiles
-from utils.extras import generate_random_string, obtain_savenames
+from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, upload2, errorHandling, send_final
-from utils.orbis import obtainCUSA, OrbisError
+from utils.orbis import OrbisError, SaveBatch, SaveFile
 from utils.namespaces import Crypto
 from utils.exceptions import FileError
 
@@ -28,7 +27,8 @@ class Decrypt(commands.Cog):
     async def decrypt(
               self, 
               ctx: discord.ApplicationContext, 
-              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder.") # type: ignore
+              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."), # type: ignore
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
         
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
@@ -47,6 +47,7 @@ class Decrypt(commands.Cog):
         d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
 
         try:
+            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
@@ -62,63 +63,64 @@ class Decrypt(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             return
                 
-        savenames = await obtain_savenames(newUPLOAD_ENCRYPTED)
-    
-        if len(uploaded_file_paths) >= 2:
-            random_string = generate_random_string(RANDOMSTRING_LENGTH)
-            uploaded_file_paths = enumerateFiles(uploaded_file_paths, random_string)
-            for save in savenames:
-                destination_directory = os.path.join(newDOWNLOAD_DECRYPTED, f"dec_{save}")
-                realSave = f"{save}_{random_string}"
-                random_string_mount = generate_random_string(RANDOMSTRING_LENGTH)
+        batches = len(uploaded_file_paths)
+        batch = SaveBatch(C1ftp, C1socket, "", [], mountPaths, "")
+        savefile = SaveFile("", batch)
 
-                emb11 = discord.Embed(
-                    title="Decrypt process: Initializing",
-                    description=f"Mounting {save}.",
-                    colour=Color.DEFAULT.value
-                )
-                emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                
+        i = 1
+        for entry in uploaded_file_paths:
+            batch.entry = entry
+            try:
+                await batch.construct()
+                destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str) 
+                await aiofiles.os.mkdir(destination_directory_outer)
+            except OSError as e:
+                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                return
+
+            j = 1
+            for savepath in batch.savenames:
+                savefile.path = savepath
                 try:
-                    await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save), os.path.join(newUPLOAD_ENCRYPTED, realSave))
-                    await aiofiles.os.rename(os.path.join(newUPLOAD_ENCRYPTED, save + ".bin"), os.path.join(newUPLOAD_ENCRYPTED, realSave + ".bin"))
+                    await savefile.construct()
+                    destination_directory = os.path.join(destination_directory_outer, f"dec_{savefile.basename}")
                     await aiofiles.os.mkdir(destination_directory)
+
+                    emb11 = discord.Embed(
+                        title="Decryption process: Initializing",
+                        description=f"Mounting {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        colour=Color.DEFAULT.value
+                    )
+                    emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await msg.edit(embed=emb11)
-                    await C1ftp.uploadencrypted_bulk(realSave)
-                    mount_location_new = MOUNT_LOCATION + "/" + random_string_mount
-                    await C1ftp.make1(mount_location_new)
-                    mountPaths.append(mount_location_new)
-                    await C1socket.socket_dump(mount_location_new, realSave)
+            
+                    await savefile.dump()
 
                     emb_dl = discord.Embed(
-                        title="Decrypt process: Downloading",
-                        description=f"{save} mounted, downloading decrypted savefile.",
+                        title="Decryption process: Downloading",
+                        description=f"{savefile.basename} mounted (save {j}/{batch.savecount}, batch {i}/{batches}), downloading decrypted savefile...",
                         colour=Color.DEFAULT.value
                     ) 
                     emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                     await msg.edit(embed=emb_dl)
 
-                    if include_sce_sys:
-                        await C1ftp.ftp_download_folder(mount_location_new, destination_directory, False)
-                    else:
-                        await C1ftp.ftp_download_folder(mount_location_new, destination_directory, True)
-                    
-                    location_to_scesys = mount_location_new + "/sce_sys"
-                    await C1ftp.dlparamonly_grab(location_to_scesys)
-                    title_id_grab = await obtainCUSA(newPARAM_PATH)
-                    await aiofiles.os.rename(destination_directory, destination_directory + f"_{title_id_grab}")
-                    destination_directory = destination_directory + f"_{title_id_grab}"
+                    await C1ftp.download_folder(batch.mount_location, destination_directory, not include_sce_sys)
+
+                    await savefile.download_sys_elements([savefile.ElementChoice.SFO])
+
+                    await aiofiles.os.rename(destination_directory, destination_directory + f"_{savefile.title_id}")
+                    destination_directory += f"_{savefile.title_id}"
+                    await extra_decrypt(d_ctx, Crypto, savefile.title_id, destination_directory, savefile.basename)
 
                     emb13 = discord.Embed(
-                        title="Decrypt process: Successful",
-                        description=f"Downloaded the decrypted save of **{save}** from **{title_id_grab}**.",
+                        title="Decryption process: Successful",
+                        description=f"Downloaded the decrypted save of **{savefile.basename}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
                         colour=Color.DEFAULT.value
                     )
                     emb13.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    
-                    await extra_decrypt(d_ctx, Crypto, title_id_grab, destination_directory, save)
-
                     await msg.edit(embed=emb13)
+                    j += 1
 
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:
                     status = "expected"
@@ -127,46 +129,38 @@ class Decrypt(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     return
-            
-            if len(savenames) == 1:
-                finishedFiles = "".join(savenames)
-            else: finishedFiles = ", ".join(savenames)
 
             embDdone = discord.Embed(
                 title="Decryption process: Successful",
-                description=f"**{finishedFiles}** has been decrypted.",
+                description=f"**{batch.printed}** has been decrypted (batch {i}/{batches}).",
                 colour=Color.DEFAULT.value
             )
             embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await msg.edit(embed=embDdone)
 
-            if len(await aiofiles.os.listdir(newDOWNLOAD_DECRYPTED)) == 1:
-                zip_name = os.listdir(newDOWNLOAD_DECRYPTED)
-                zip_name = "".join(zip_name)
-                zip_name += ".zip"
+            if batches == 1:
+                zipname = os.path.basename(destination_directory) + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
             else:
-                zip_name = "Decrypted-Saves.zip"
+                zipname = "Decrypted-Saves" + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
 
             try: 
-                await send_final(d_ctx, zip_name, newDOWNLOAD_DECRYPTED)
+                await send_final(d_ctx, zipname, destination_directory_outer, shared_gd_folderid)
             except GDapiError as e:
-                await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 return
             
             await asyncio.sleep(1)
-            await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
-
-        else:
-            await msg.edit(embed=emb6)
-            cleanupSimple(workspaceFolders)
+            await cleanup(C1ftp, None, batch.entry, mountPaths)
+            i += 1
+        await cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Decrypt(bot))

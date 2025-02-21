@@ -9,12 +9,11 @@ import aiofiles.os
 from discord.ext import pages
 from dataclasses import dataclass
 from typing import Literal, Callable
+from enum import Enum
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound, PSNAWPAuthenticationError
 from google_drive import GDapi, GDapiError
-# from data.crypto.helpers import extra_import
 from network import FTPps
-# from utils.orbis import checkSaves, handle_accid, checkid
 from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
     NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE,
@@ -80,6 +79,20 @@ class threadButton(discord.ui.View):
         except discord.Forbidden as e:
             logger.error(f"Can not clear old thread: {e}")
 
+class UploadMethod(Enum):
+    DISCORD = 0
+    GOOGLE_DRIVE = 1
+
+class UploadGoogleDriveChoice:
+    STANDARD = 0
+    SPECIAL = 1
+
+@dataclass
+class UploadOpt:
+    gd_choice: UploadGoogleDriveChoice
+    gd_allow_duplicates: bool
+    method: UploadMethod | None = None
+
 async def clean_msgs(messages: list[discord.Message]) -> None:
     for msg in messages:
         try:
@@ -90,7 +103,7 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
 async def errorHandling(
           ctx: discord.ApplicationContext | discord.Message, 
           error: str, 
-          workspaceFolders: list[str], 
+          workspaceFolders: list[str] | None, 
           uploaded_file_paths: list[str] | None, 
           mountPaths: list[str] | None, 
           C1ftp: FTPps | None
@@ -102,10 +115,10 @@ async def errorHandling(
     )
     embe.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
     await ctx.edit(embed=embe)
-    if (uploaded_file_paths is not None) and (mountPaths is not None) and (C1ftp is not None) and error != CON_FAIL_MSG:
+    if C1ftp is not None and error != CON_FAIL_MSG:
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
     else:
-        cleanupSimple(workspaceFolders)
+        await cleanupSimple(workspaceFolders)
 
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
@@ -139,39 +152,52 @@ async def upload2(
           sys_files: bool, 
           ps_save_pair_upload: bool, 
           ignore_filename_check: bool,
-          savesize: int | None = None
-        ) -> list[str]:
+          savesize: int | None = None,
+          opt: UploadOpt | None = None
+        ) -> list[list[str]]:
+    
+    if opt is None:
+        opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, False)
 
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
     
     if len(message.attachments) > max_files:
-        return []
+        raise FileError(f"Attachments uploaded cannot exceed {max_files}!")
 
     elif len(message.attachments) >= 1:
         attachments = message.attachments
         uploaded_file_paths = []
-        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        download_cycle = []
 
+        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        filecount = len(valid_attachments)
+        if filecount == 0:
+            raise FileError("Invalid files uploaded, or no files found!")
+
+        i = 1
         for attachment in valid_attachments:
             file_path = os.path.join(saveLocation, attachment.filename)
             await attachment.save(file_path)
             logger.info(f"Saved {attachment.filename} to {file_path}")
             
-            emb1 = discord.Embed(
-                title="Upload alert: Successful", 
-                description=f"File '{attachment.filename}' has been successfully uploaded and saved.", 
-                colour=Color.DEFAULT.value
-            )
-            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await d_ctx.msg.edit(embed=emb1)
-
-            uploaded_file_paths.append(file_path)
             # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
                 await orbis.parse_pfs_header(file_path)
             elif ps_save_pair_upload and attachment.filename.endswith(".bin"):
                 await orbis.parse_sealedkey(file_path)
-        
+
+            emb1 = discord.Embed(
+                title="Upload alert: Successful", 
+                description=f"File '{attachment.filename}' has been successfully uploaded and saved ({i}/{filecount}).", 
+                colour=Color.DEFAULT.value
+            )
+            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            await d_ctx.msg.edit(embed=emb1)
+
+            download_cycle.append(file_path)
+            i += 1
+        uploaded_file_paths.append(download_cycle)
+        opt.method = UploadMethod.DISCORD
         await message.delete() # delete afterwards for reliability
 
     elif message.content == "EXIT":
@@ -181,14 +207,20 @@ async def upload2(
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = await GDapi.grabfolderid(google_drive_link, d_ctx.msg)
-            if not folder_id: raise GDapiError("Could not find the folder id!")
-            uploaded_file_paths = await GDapi.downloadsaves_gd(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check)
-           
+            folder_id = GDapi.grabfolderid(google_drive_link)
+            if not folder_id: 
+                raise GDapiError("Could not find the folder id!")
+            if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
+                uploaded_file_paths = await GDapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)
+            else:
+                uploaded_file_paths = await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)
+
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-        
+
+        opt.method = UploadMethod.GOOGLE_DRIVE
+       
     return uploaded_file_paths
 
 async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:  
@@ -226,11 +258,10 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = await GDapi.grabfolderid(google_drive_link, d_ctx.msg)
-            if not folder_id: raise GDapiError("Could not find the folder id!")
+            folder_id = GDapi.grabfolderid(google_drive_link)
+            if not folder_id: 
+                raise GDapiError("Could not find the folder id!")
             files = await GDapi.downloadsaves_gd(d_ctx.msg, folder_id, saveLocation, max_files=1, sys_files=None, ps_save_pair_upload=False, ignore_filename_check=False)
-            if len(files) == 0:
-                raise FileError("No files downloaded!")
             file_path = files[0]
 
         except asyncio.TimeoutError:
@@ -243,13 +274,18 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
     
     if len(message.attachments) > max_files:
-        return []
+        raise FileError(f"Attachments uploaded cannot exceed {max_files}!")
 
     elif len(message.attachments) >= 1:
         attachments = message.attachments
         uploaded_file_paths = []
-        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, False, False, True, savesize)
 
+        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, False, False, True, savesize)
+        filecount = len(valid_attachments)
+        if filecount == 0:
+            raise FileError("Invalid files uploaded!")
+
+        i = 1
         for attachment in valid_attachments:
             rel_file_path = attachment.filename.split(splitvalue)
             rel_file_path = "/".join(rel_file_path)
@@ -272,13 +308,14 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             
             emb1 = discord.Embed(
                 title="Upload alert: Successful", 
-                description=f"File '{rel_file_path}' has been successfully uploaded and saved.", 
+                description=f"File '{rel_file_path}' has been successfully uploaded and saved ({i}/{filecount}).", 
                 colour=Color.DEFAULT.value
             )
             emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)  
             await d_ctx.msg.edit(embed=emb1)
 
             uploaded_file_paths.append(full_path)
+            i += 1
         
         await message.delete()
 
@@ -289,9 +326,10 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = await GDapi.grabfolderid(google_drive_link, d_ctx.msg)
-            if not folder_id: raise GDapiError("Could not find the folder id!")
-            uploaded_file_paths = await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)
+            folder_id = GDapi.grabfolderid(google_drive_link)
+            if not folder_id: 
+                raise GDapiError("Could not find the folder id!")
+            uploaded_file_paths = (await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize))[0]
            
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -389,7 +427,7 @@ async def replaceDecrypted(
           titleid: str, 
           mountLocation: str, 
           upload_individually: bool, 
-          upload_decrypted: str, 
+          local_download_path: str, 
           savePairName: str,
           savesize: int,
           ignore_secondlayer_checks: bool
@@ -415,8 +453,8 @@ async def replaceDecrypted(
 
             await d_ctx.msg.edit(embed=emb18)
 
-            attachmentPath = await upload1(d_ctx, upload_decrypted)
-            newPath = os.path.join(upload_decrypted, lastN)
+            attachmentPath = await upload1(d_ctx, local_download_path)
+            newPath = os.path.join(local_download_path, lastN)
             await aiofiles.os.rename(attachmentPath, newPath)
 
             if not ignore_secondlayer_checks:
@@ -445,7 +483,12 @@ async def replaceDecrypted(
         emb18 = discord.Embed(
             title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
             description=(
-                f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}'. Or type 'EXIT' to cancel command."
+                "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
+                "FOR **DISCORD ATTACHMENT UPLOAD**:\n"
+                f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}'.\n"
+                "\nFOR **GOOGLE DRIVE LINK UPLOAD**:\n"
+                "UPLOAD WITH ANY FOLDER STRUCTURE!\n\n"
+                "*Or type 'EXIT' to cancel command*."
                 "\n\nHere are the contents:"),
             colour=Color.DEFAULT.value
         )
@@ -466,60 +509,63 @@ async def replaceDecrypted(
         if current_chunk:
             await send_chunk(msg_container, current_chunk)
 
-        uploaded_file_paths = await upload2(d_ctx, upload_decrypted, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, savesize=savesize)
+        opt = UploadOpt(UploadGoogleDriveChoice.SPECIAL, False)
+        uploaded_file_paths = (await upload2(d_ctx, local_download_path, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, savesize=savesize, opt=opt))[0]
 
         for msg in msg_container:
             await msg.delete(delay=0.5)
 
-        if len(uploaded_file_paths) >= 1:
-            for file in await aiofiles.os.listdir(upload_decrypted):
-                file1 = file.split(SPLITVALUE)
-                if file1[0] == "": file1 = file1[1:]
-                file1 = "/".join(file1)
+        if opt.method == UploadMethod.DISCORD:
+            for path in uploaded_file_paths:
+                file = os.path.basename(path)
+                file_constructed = file.split(SPLITVALUE)
+                if file_constructed[0] == "": 
+                    file_constructed = file_constructed[1:]
+                file_constructed = "/".join(file_constructed)
 
-                if file1 not in files:
-                    await aiofiles.os.remove(os.path.join(upload_decrypted, file))
+                if file_constructed not in files:
+                    await aiofiles.os.remove(path)
                     
                 else:
                     for saveFile in files:
-                        if file1 == saveFile:
+                        if file_constructed == saveFile:
                             lastN = os.path.basename(saveFile)
                             cwdHere = saveFile.split("/")
                             cwdHere = cwdHere[:-1]
                             cwdHere = "/".join(cwdHere)
                             cwdHere = mountLocation + "/" + cwdHere
 
-                            filePath = os.path.join(upload_decrypted, file)
-                            newRename = os.path.join(upload_decrypted, lastN)
-                            await aiofiles.os.rename(filePath, newRename)
+                            file_renamed = os.path.join(local_download_path, lastN)
+                            await aiofiles.os.rename(path, file_renamed)
 
                             if not ignore_secondlayer_checks:
-                                await crypthelp.extra_import(Crypto, titleid, newRename)
+                                await crypthelp.extra_import(Crypto, titleid, file_renamed)
 
                             await fInstance.replacer(cwdHere, lastN) 
-                            completed.append(lastN)  
-                    
+                            completed.append(lastN)
         else:
-            raise FileError("No files passed check!")
-
+            await fInstance.upload_folder(mountLocation, local_download_path)
+            idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)
+            completed.extend([x[idx:] for x in uploaded_file_paths])
+    
     if len(completed) == 0:
-        raise FileError("Could not replace any files")
+        raise FileError("Could not replace any files!")
 
     return completed
 
-async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str) -> None:
+async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shared_gd_folderid: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
     zipfiles(zipupPath, file_name)
     final_file = os.path.join(zipupPath, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 
-    if final_size < BOT_DISCORD_UPLOAD_LIMIT:
+    if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         await d_ctx.ctx.send(file=discord.File(final_file), reference=d_ctx.msg)
     else:
-        file_url = await GDapi.uploadzip(final_file, file_name)
+        file_url = await GDapi.uploadzip(final_file, file_name, shared_gd_folderid)
         embg = discord.Embed(
             title="Google Drive: Upload complete",
-            description=file_url,
+            description=f"[Download]({file_url})",
             colour=Color.DEFAULT.value
         )
         embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

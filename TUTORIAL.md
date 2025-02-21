@@ -11,12 +11,13 @@ When you do a command that takes save pairs (encrypted saves which is a file and
 All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning (you can upload in bulk when you upload the ones you want to resign and re-region. Quick code command also accepts multiple savegames.
 
 ## Commands
-**common parameter**: playstation_id, YOUR PLAYSTATION NETWORK USERNAME  
+**common parameters**: 
+playstation_id: YOUR PLAYSTATION NETWORK USERNAME  
 It will get converted to your account ID using the psn api. 
-
 If it fails you will get prompted to write in your accound ID, you can find it in the folders by looking into the folders of a savefile from your account. 
+Your account ID will be saved and you do not need to include the parameter if you want to use the previously stored one.  
 
-Your account ID will be saved and you do not need to include the parameter if you want to use the previously stored one.
+shared_gd_link: A link to your shared Google Drive folder. Make sure to set write permission for everyone. This is optional.  
 
 # List of commands
 

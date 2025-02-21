@@ -6,7 +6,7 @@ from data.converter.common import ConverterError
 from data.crypto import Crypt_BL3 as crypt
 from data.crypto.common import CryptoError
 from utils.helpers import TimeoutHelper
-from utils.constants import OTHER_TIMEOUT, emb_conv_choice, logger, Color, Embed_t
+from utils.constants import OTHER_TIMEOUT, logger, Color, Embed_t
 
 class BL3_conv_button(discord.ui.View):
     """Discord button that is called when a decrypted BL3 save needs converting, gives user the choice of what platform to convert the save to."""
@@ -62,13 +62,13 @@ class BL3_conv_button(discord.ui.View):
 
 class Converter_BL3:
     @staticmethod
-    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool) -> str:
+    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool, emb_btn: discord.Embed) -> str:
         async with aiofiles.open(filePath, "rb") as savegame:
             original_saveData = await savegame.read()
         
         if crypt.searchData(original_saveData, crypt.COMMON):
             conv_button = BL3_conv_button(ctx, helper, filePath, ttwl)
-            await ctx.edit(embed=emb_conv_choice, view=conv_button)
+            await ctx.edit(embed=emb_btn, view=conv_button)
             await helper.await_done()
             return conv_button.result
         
