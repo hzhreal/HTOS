@@ -21,7 +21,7 @@ from utils.constants import (
     embgdt, embUtimeout, embnt, emb8, embvalidpsn
 )
 from utils.exceptions import PSNIDError, FileError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError, get_savename_from_bin_ext, blacklist_check_db
+from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, WorkspaceError, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
 
 @dataclass
@@ -83,9 +83,13 @@ class UploadMethod(Enum):
     DISCORD = 0
     GOOGLE_DRIVE = 1
 
-class UploadGoogleDriveChoice:
+class UploadGoogleDriveChoice(Enum):
     STANDARD = 0
     SPECIAL = 1
+
+class ReturnTypes(Enum):
+    EXIT = 0
+    SUCCESS = 1
 
 @dataclass
 class UploadOpt:
@@ -632,11 +636,11 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
             raise WorkspaceError("Could not find game!")
         return game, selected_game
 
-async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> str:
+async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> tuple[ReturnTypes, list[str]]:
     while True:
         game, game_dict = await qr_interface_main(d_ctx, stored_saves)
         if game == "EXIT" and game_dict == "EXIT":
-            return "EXIT"
+            return ReturnTypes.EXIT, []
 
         pages_list = []
         selection = {}
@@ -687,7 +691,7 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         
         else:
             selected_save = selection[int(message.content) - 1]
-            savename = await get_savename_from_bin_ext(selected_save)
-            if not savename:
-                raise WorkspaceError("Failed to get save!")
-            return os.path.join(selected_save, savename)
+            savenames = await get_savenames_from_bin_ext(selected_save)
+            if len(savenames) == 0:
+                raise WorkspaceError("Failed to get saves!")
+            return ReturnTypes.SUCCESS, [os.path.join(selected_save, x) for x in savenames]

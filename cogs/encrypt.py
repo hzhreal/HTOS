@@ -103,7 +103,7 @@ class Encrypt(commands.Cog):
                     await savefile.dump()
                     await savefile.download_sys_elements([savefile.ElementChoice.SFO])
                 
-                    files = await C1ftp.ftpListContents(batch.mount_location)
+                    files = await C1ftp.list_files(batch.mount_location)
                     if len(files) == 0: 
                         raise FileError("Could not list any decrypted saves!")
 

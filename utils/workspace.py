@@ -218,16 +218,17 @@ def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
         out.append(s + ".bin")
     return out
 
-async def get_savename_from_bin_ext(path: str) -> str:
-    savename = ""
-    files = await aiofiles.os.listdir(path)
+async def get_savenames_from_bin_ext(path: str) -> list[str]:
+    savenames = []
+    saves = await aiofiles.os.listdir(path)
     
-    for filename in files:
-        name, ext = os.path.splitext(filename)
-        if ext == ".bin":
-            if name in files:
-                savename = name
-    return savename
+    for save in saves:
+        base, ext = os.path.splitext(save)
+        if ext != ".bin":
+            continue
+        if base in saves:
+            savenames.append(base)
+    return savenames
 
 async def listStoredSaves() -> dict[str, dict[str, dict[str, str]]]:
     """Lists the saves in the stored folder, used in the quick resign command."""
@@ -254,7 +255,7 @@ async def listStoredSaves() -> dict[str, dict[str, dict[str, str]]]:
                     for save in gameSaves:
                         savePath = os.path.join(STORED_SAVES_FOLDER, game, region, save)
                         if await aiofiles.os.path.isdir(savePath):
-                            if await get_savename_from_bin_ext(savePath):
+                            if len(await get_savenames_from_bin_ext(savePath)) > 0:
                                 stored_saves[game][region][save] = savePath
     
     return stored_saves

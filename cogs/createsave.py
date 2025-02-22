@@ -11,13 +11,13 @@ from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, MANDATORY_SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
+    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
-from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError, sfo_ctx_create, sfo_ctx_write
+from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError
 from utils.namespaces import Crypto
 
@@ -111,20 +111,7 @@ class CreateSave(commands.Cog):
             await aiofiles.os.mkdir(scesys_local)
             await asyncio.sleep(0.5)
             uploaded_file_paths_sys = (await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False))[0]
-            if len(uploaded_file_paths_sys) < len(MANDATORY_SCE_SYS_CONTENTS):
-                raise FileError("Not enough sce_sys files uploaded!")
-
-            mandatory_sys_found = 0
-            for sys_file in uploaded_file_paths_sys:
-                if mandatory_sys_found == len(MANDATORY_SCE_SYS_CONTENTS):
-                    break
-
-                sys_file_name = os.path.basename(sys_file)
-                if sys_file_name in MANDATORY_SCE_SYS_CONTENTS:
-                    mandatory_sys_found += 1
-            if mandatory_sys_found != len(MANDATORY_SCE_SYS_CONTENTS):
-                # we are trying to have a valid save
-                raise FileError("All mandatory sce_sys files are not uploaded! We are trying to create a valid save here.")
+            sys_files_validator(uploaded_file_paths_sys)
 
             # next, other files (gamesaves)
             await msg.edit(embed=embgs)

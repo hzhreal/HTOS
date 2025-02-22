@@ -269,12 +269,12 @@ class FTPps:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
     
-    async def ftpListContents(self, mountpath: str) -> list[str]:
+    async def list_files(self, target_path: str, recursive: bool = True) -> list[str]:
         files = []
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
-                await ftp.change_directory(mountpath)
-                async for path in ftp.list(recursive=True):
+                await ftp.change_directory(target_path)
+                async for path in ftp.list(recursive=recursive):
                     files.append(path)
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -289,8 +289,7 @@ class FTPps:
             and attributes.get("type", "") != "dir"
             and attributes.get("type", "") != "cdir"
             and attributes.get("type", "") != "pdir"
-            ]
-
+        ]
         return files
     
     async def deleteList(self, uploadDir: str, fileList: list[str]) -> None:

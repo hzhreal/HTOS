@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from network import FTPps, SocketPS
 from utils.constants import (
     MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
-    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, 
+    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS,
     Color, Embed_t
 )
 from utils.extras import generate_random_string, obtain_savenames, completed_print
@@ -97,6 +97,7 @@ class SaveFile:
     path: str
     batch: SaveBatch
     reregion_check: bool = False
+    validity_check: bool = True
 
     async def construct(self) -> None:
         self.basename = os.path.basename(self.path)
@@ -113,6 +114,9 @@ class SaveFile:
         await self.batch.fInstance.uploadencrypted_bulk(self.realSave)
         await self.batch.fInstance.make1(self.batch.mount_location)
         await self.batch.sInstance.socket_dump(self.batch.mount_location, self.realSave)
+        if self.validity_check:
+            sys_files = await self.batch.fInstance.list_files(self.batch.location_to_scesys, recursive=False)
+            sys_files_validator(sys_files)
     
     async def resign(self) -> None:
         if not self.ElementChoice.SFO in self.downloaded_sys_elements:
@@ -652,3 +656,20 @@ async def parse_sealedkey(keypath: str, key: PfsSKKey | None = None) -> None | P
     if not key.validate():
         raise OrbisError(f"Invalid sealed key: {os.path.basename(keypath)}!")
     return key if retkey else None
+
+def sys_files_validator(sys_files: list[str]) -> None:
+    n = len(sys_files)
+    n_mandatory = len(MANDATORY_SCE_SYS_CONTENTS)
+    if n < n_mandatory:
+        raise OrbisError("Not enough sce_sys files!")
+
+    n = 0
+    for file in sys_files:
+        if n == n_mandatory:
+            break
+
+        sys_file_name = os.path.basename(file)
+        if sys_file_name in MANDATORY_SCE_SYS_CONTENTS:
+            n += 1
+    if n != n_mandatory:
+        raise OrbisError("All mandatory sce_sys files are not present!")
