@@ -6,8 +6,7 @@ import aiofiles
 import aiofiles.os
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
-# from utils.orbis import check_titleid, resign, reregion_write, obtainCUSA, reregionCheck, OrbisError
-from utils.constants import SYS_FILE_MAX, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""

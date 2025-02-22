@@ -104,7 +104,7 @@ class GDapi:
     async def fileCheck(
               ctx: discord.ApplicationContext | discord.Message, 
               file_data: list[dict[str, str | int]], 
-              sys_files: list[str] | None, 
+              sys_files: frozenset[str] | None, 
               ps_save_pair_upload: bool, 
               ignore_filename_check: bool, 
               savesize: int | None = None
@@ -248,7 +248,7 @@ class GDapi:
               cls, 
               ctx: discord.ApplicationContext | discord.Message, 
               folder_id: str,
-              sys_files: list[str] | None,
+              sys_files: frozenset[str] | None,
               ps_save_pair_upload: bool,
               ignore_filename_check: bool,
               mounted_len_checks: bool = False,
@@ -477,7 +477,7 @@ class GDapi:
               folder_id: str, 
               download_dir: str, 
               max_files: int,
-              sys_files: list[str] | None, 
+              sys_files: frozenset[str] | None, 
               ps_save_pair_upload: bool, 
               ignore_filename_check: bool,
               allow_duplicates: bool = False
