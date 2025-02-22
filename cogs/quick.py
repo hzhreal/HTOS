@@ -88,7 +88,6 @@ class Quick(commands.Cog):
             batch.entry = entry
             await batch.construct()
 
-            cnt = len(batch.entry)
             i = 1
             for savepath in batch.savenames:
                 savefile.path = savepath
@@ -96,7 +95,7 @@ class Quick(commands.Cog):
 
                 emb4 = discord.Embed(
                     title="Resigning process: Encrypted",
-                    description=f"Your save (**{savefile.basename}**) is being resigned ({i}/{cnt}), please wait...",
+                    description=f"Your save (**{savefile.basename}**) is being resigned ({i}/{batch.savecount}), please wait...",
                     colour=Color.DEFAULT.value
                 )
                 emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -107,7 +106,7 @@ class Quick(commands.Cog):
 
                 emb5 = discord.Embed(
                     title="Resigning process (Encrypted): Successful",
-                    description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}** ({i}/{cnt}).",
+                    description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}** ({i}/{batch.savecount}).",
                     colour=Color.DEFAULT.value
                 )
                 emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
