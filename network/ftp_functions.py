@@ -247,8 +247,8 @@ class FTPps:
             raise FTPError("FTP ERROR!")
 
     async def upload_scesysContents(self, ctx: discord.ApplicationContext | discord.Message, filepaths: list[str], sce_sysPath: str) -> None:
+        n = len(filepaths)
         i = 1
-        n = len(filepath)
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
                 await ftp.change_directory(sce_sysPath)
@@ -263,6 +263,7 @@ class FTPps:
 
                     await self.uploadStream(ftp, filepath, filename)
                     await ctx.edit(embed=embSuccess)
+                    i += 1
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
