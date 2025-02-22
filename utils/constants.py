@@ -115,9 +115,11 @@ RDR2_TITLEID = frozenset(["CUSA03041", "CUSA08519", "CUSA08568", "CUSA15698"])
 XENO2_TITLEID = frozenset(["CUSA05350", "CUSA05088", "CUSA04904", "CUSA05085", "CUSA05774"])
 BL3_TITLEID = frozenset(["CUSA07823", "CUSA08025"])
 WONDERLANDS_TITLEID = frozenset(["CUSA23766", "CUSA23767"])
-NDOG_TITLEID = frozenset(["CUSA00557", "CUSA00559", "CUSA00552", "CUSA00556", "CUSA00554", # tlou remastered
-                "CUSA00341", "CUSA00917", "CUSA00918", "CUSA04529", "CUSA00912", # uncharted 4
-                "CUSA07875", "CUSA09564", "CUSA07737", "CUSA08347", "CUSA08352"]) # uncharted the lost legacy
+NDOG_TITLEID = frozenset([
+    "CUSA00557", "CUSA00559", "CUSA00552", "CUSA00556", "CUSA00554", # tlou remastered
+    "CUSA00341", "CUSA00917", "CUSA00918", "CUSA04529", "CUSA00912", # uncharted 4
+    "CUSA07875", "CUSA09564", "CUSA07737", "CUSA08347", "CUSA08352" # uncharted the lost legacy
+])
 NDOG_COL_TITLEID = frozenset(["CUSA02344", "CUSA02343", "CUSA02826", "CUSA02320", "CUSA01399"]) # the nathan drake collection
 NDOG_TLOU2_TITLEID = frozenset(["CUSA07820", "CUSA10249", "CUSA13986", "CUSA14006"]) # tlou part 2
 MGSV_TPP_TITLEID = frozenset(["CUSA01140", "CUSA01154", "CUSA01099"])
@@ -154,7 +156,7 @@ BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and i
 QR_FOOTER1 = "Respond with the number of your desired game, or type 'EXIT' to quit."
 QR_FOOTER2 = "Respond with the number of your desired save, or type 'BACK' to go to the game menu."
 
-ZIPOUT_NAME = frozenset(["PS4", ".zip"]) # name, ext
+ZIPOUT_NAME = ("PS4", ".zip") # name, ext
 
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 

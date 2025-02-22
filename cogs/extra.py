@@ -5,6 +5,7 @@ from discord.ext import commands
 from io import BytesIO
 from utils.orbis import checkid
 from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace, WorkspaceError
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class Extra(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -98,14 +99,17 @@ class Extra(commands.Cog):
                 account_id = account_id[2:]
             else:
                 await ctx.respond("Invalid format!", ephemeral=True)
+                await INSTANCE_LOCK_global.release()
                 return
         
         if not checkid(account_id):
             await ctx.respond("Invalid format!", ephemeral=True)
+            await INSTANCE_LOCK_global.release()
             return
         
         await write_accountid_db(ctx.author.id, account_id.lower())
         await ctx.respond("Stored!", ephemeral=True)
+        await INSTANCE_LOCK_global.release()
     
     @add.error
     async def on_add_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:

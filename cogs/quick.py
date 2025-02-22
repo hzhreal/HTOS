@@ -20,6 +20,7 @@ from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
 from utils.extras import completed_print
 from utils.exceptions import FileError
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class Quick(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -56,10 +57,12 @@ class Quick(commands.Cog):
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
 
         if res == ReturnTypes.EXIT:
@@ -67,6 +70,7 @@ class Quick(commands.Cog):
             embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             await ctx.edit(embed=embExit, view=None)
             await cleanupSimple(workspaceFolders)
+            await INSTANCE_LOCK_global.release()
             return
 
         entry = []
@@ -122,10 +126,12 @@ class Quick(commands.Cog):
 
             await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(d_ctx.msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
         
         embRdone = discord.Embed(
@@ -143,9 +149,11 @@ class Quick(commands.Cog):
         except GDapiError as e:
             await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
 
         await cleanup(C1ftp, workspaceFolders, batch.entry, mountPaths)
+        await INSTANCE_LOCK_global.release()
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     async def codes(
@@ -175,14 +183,17 @@ class Quick(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (TimeoutError, GDapiError, FileError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
         
         batches = len(uploaded_file_paths)
@@ -214,10 +225,12 @@ class Quick(commands.Cog):
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await errorHandling(msg, e, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    await INSTANCE_LOCK_global.release()
                     return
                 except Exception as e:
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                    await INSTANCE_LOCK_global.release()
                     return
 
                 embApplied = discord.Embed(
@@ -247,11 +260,13 @@ class Quick(commands.Cog):
             except GDapiError as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release()
                 return
 
             await asyncio.sleep(1)
             i += 1
         await cleanupSimple(workspaceFolders)
+        await INSTANCE_LOCK_global.release()
     
     @quick_group.command(description="Add cheats to your save.")
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
@@ -272,6 +287,7 @@ class Quick(commands.Cog):
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release()
             return
 
         savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
@@ -296,16 +312,19 @@ class Quick(commands.Cog):
         except QuickCheatsError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
         
         await ctx.respond(file=discord.File(savegame))
         await asyncio.sleep(1)
 
         await cleanupSimple(workspaceFolders)
+        await INSTANCE_LOCK_global.release()
     
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Quick(bot))

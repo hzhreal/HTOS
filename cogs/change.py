@@ -19,6 +19,7 @@ from utils.extras import pngprocess
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
 from utils.orbis import handleTitles, OrbisError, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class Change(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -67,14 +68,17 @@ class Change(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
                 
         batches = len(uploaded_file_paths)
@@ -89,6 +93,7 @@ class Change(commands.Cog):
             except OSError as e:
                 await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                await INSTANCE_LOCK_global.release()
                 return
             
             j = 1
@@ -136,10 +141,12 @@ class Change(commands.Cog):
                         status = "unexpected"
                     await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
+                    await INSTANCE_LOCK_global.release()
                     return
                 except Exception as e:
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                    await INSTANCE_LOCK_global.release()
                     return
 
             embPdone = discord.Embed(
@@ -157,12 +164,14 @@ class Change(commands.Cog):
             except GDapiError as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release()
                 return
             
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mountPaths)
             i += 1
         await cleanupSimple(workspaceFolders)
+        await INSTANCE_LOCK_global.release()
 
     @change_group.command(description="Change the titles of your save.")
     async def title(
@@ -201,14 +210,17 @@ class Change(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
                 
         batches = len(uploaded_file_paths)
@@ -223,6 +235,7 @@ class Change(commands.Cog):
             except OSError as e:
                 await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                await INSTANCE_LOCK_global.release()
                 return
 
             j = 1
@@ -262,10 +275,12 @@ class Change(commands.Cog):
                         status = "unexpected"
                     await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
+                    await INSTANCE_LOCK_global.release()
                     return
                 except Exception as e:
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                    await INSTANCE_LOCK_global.release()
                     return
 
             embTdone = discord.Embed(
@@ -283,12 +298,14 @@ class Change(commands.Cog):
             except GDapiError as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release()
                 return
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mountPaths)
             i += 1
         await cleanupSimple(workspaceFolders)
+        await INSTANCE_LOCK_global.release()
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Change(bot))

@@ -6,6 +6,7 @@ from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE
 from utils.orbis import PfsSKKey
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class Sealed_Key(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -30,6 +31,7 @@ class Sealed_Key(commands.Cog):
         if sealed_key.size != SEALED_KEY_ENC_SIZE:
             e = f"Invalid size: must be {SEALED_KEY_ENC_SIZE} bytes!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release()
             return
 
         enc_key = bytearray(await sealed_key.read())
@@ -38,6 +40,7 @@ class Sealed_Key(commands.Cog):
         if not sealedkey_t.validate():
             e = "Invalid sealed key!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release()
             return
 
         try:
@@ -56,11 +59,14 @@ class Sealed_Key(commands.Cog):
         except SocketError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
+        await INSTANCE_LOCK_global.release()
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Sealed_Key(bot))

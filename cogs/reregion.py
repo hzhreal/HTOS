@@ -17,6 +17,7 @@ from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanu
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
 from utils.orbis import OrbisError, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class ReRegion(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -54,14 +55,17 @@ class ReRegion(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
 
         batch = SaveBatch(C1ftp, C1socket, user_id, uploaded_file_paths, mountPaths, newDOWNLOAD_ENCRYPTED)
@@ -106,10 +110,12 @@ class ReRegion(commands.Cog):
                 status = "unexpected"
             await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
 
         await msg.edit(embed=emb20)
@@ -120,14 +126,17 @@ class ReRegion(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
             
         batches = len(uploaded_file_paths)
@@ -140,6 +149,7 @@ class ReRegion(commands.Cog):
             except OSError as e:
                 await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                await INSTANCE_LOCK_global.release()
                 return
 
             j = 1
@@ -177,10 +187,12 @@ class ReRegion(commands.Cog):
                         status = "unexpected"
                     await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
+                    await INSTANCE_LOCK_global.release()
                     return
                 except Exception as e:
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                    await INSTANCE_LOCK_global.release()
                     return
 
             embRgdone = discord.Embed(
@@ -198,6 +210,7 @@ class ReRegion(commands.Cog):
             except GDapiError as e:
                 await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release()
                 return
 
             if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)) and j > 2:
@@ -208,8 +221,9 @@ class ReRegion(commands.Cog):
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mountPaths)
-            i +=1
+            i += 1
         await cleanupSimple(workspaceFolders)
+        await INSTANCE_LOCK_global.release()
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(ReRegion(bot))

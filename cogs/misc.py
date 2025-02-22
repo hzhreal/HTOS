@@ -10,6 +10,7 @@ from utils.constants import (
 from utils.helpers import threadButton, errorHandling
 from utils.workspace import fetchall_threadid_db, delall_threadid_db, WorkspaceError, makeWorkspace
 from utils.orbis import keyset_to_fw
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -48,11 +49,14 @@ class Misc(commands.Cog):
                 status = "unexpected"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
+        await INSTANCE_LOCK_global.release()
 
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:

@@ -4,7 +4,8 @@ import asyncio
 import os
 import shutil
 from discord.ext import commands
-from discord import Option, OptionChoice
+from discord import Option
+# from discord import OptionChoice (uncomment if you use preset)
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, SocketError, FTPError
 from google_drive import GDapi, GDapiError
@@ -20,6 +21,7 @@ from utils.helpers import DiscordContext, errorHandling, upload2, send_final, ps
 from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError
 from utils.namespaces import Crypto
+from utils.instance_lock import INSTANCE_LOCK_global
 
 saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will determine savesize (blocks * {SAVEBLOCKS_MAX})."
 # comment out the option you do not need
@@ -120,14 +122,17 @@ class CreateSave(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
         
         uploaded_file_paths = []
@@ -198,10 +203,12 @@ class CreateSave(commands.Cog):
                 status = "unexpected"
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
         
         embRdone = discord.Embed(
@@ -219,10 +226,11 @@ class CreateSave(commands.Cog):
         except GDapiError as e:
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
 
-        await asyncio.sleep(1)
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)   
+        await INSTANCE_LOCK_global.release()
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(CreateSave(bot))

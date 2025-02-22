@@ -56,7 +56,7 @@ async def obtain_savenames(saves: list[str]) -> list[str]:
     savenames = []
     for i in range(0, len(saves), 2):
         path = saves[i]
-        base = os.path.splitext(path)[0]
+        base = path.removesuffix(".bin")
         savenames.append(base)
     return savenames
 

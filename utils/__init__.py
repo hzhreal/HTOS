@@ -115,7 +115,8 @@ from .constants import (
 from .extras import zipfiles, generate_random_string, pngprocess, obtain_savenames, completed_print
 from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, reregionCheck, checkSaves, OrbisError, handleTitles, SFO_MAGIC, SFO_VERSION, SAVEDIR_RE, TITLE_ID_RE, ACCID_RE, SFOHeader, SFOIndexTable, SFOContextParam, SFOContext, validate_savedirname, parse_pfs_header, PfsSKKey, parse_sealedkey, PFSHeader, SaveBatch, SaveFile, sys_files_validator
 from .workspace import startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, WorkspaceError, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savenames_from_bin_ext, blacklist_write_db, blacklist_check_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db
-from .exceptions import FileError, PSNIDError
+from .exceptions import FileError, PSNIDError, InstanceError
 from .namespaces import Cheats, Converter, Crypto
 from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, wait_for_msg, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt, ReturnTypes
 from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState
+from .instance_lock import MAXIMUM_INSTANCES_AT_ONCE, InstanceLock, INSTANCE_LOCK_global

@@ -7,6 +7,7 @@ from utils.workspace import makeWorkspace, WorkspaceError
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
 from utils.orbis import SFOContext, OrbisError
+from utils.instance_lock import INSTANCE_LOCK_global
 
 class SFO_Editor(SFOContext):
     """Discord utilities to parse and patch param.sfo."""
@@ -72,11 +73,14 @@ class SFO(commands.Cog):
         except OrbisError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
+        await INSTANCE_LOCK_global.release()
 
     @sfo_group.command(description="Patch parameters in a param.sfo file to modify the save.")
     async def write(
@@ -138,6 +142,7 @@ class SFO(commands.Cog):
         except OrbisError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
             if isinstance(e, ValueError):
@@ -146,8 +151,9 @@ class SFO(commands.Cog):
                 err = BASE_ERROR_MSG
             await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release()
             return
-
+        await INSTANCE_LOCK_global.release()
         # cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:

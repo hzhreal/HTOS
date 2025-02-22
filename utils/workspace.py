@@ -12,11 +12,14 @@ from network import FTPps, FTPError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, logger, blacklist_logger, psnawp,
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, 
+    logger, blacklist_logger, psnawp, Embed_t, Color,
     embChannelError, retry_emb, blacklist_emb
 )
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
+from utils.instance_lock import INSTANCE_LOCK_global
+from utils.exceptions import InstanceError
 
 class WorkspaceError(Exception):
     """Exception raised for errors to the workspace."""
@@ -207,12 +210,25 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         await ctx.respond(embed=blacklist_emb)
         raise WorkspaceError(BLACKLIST_MESSAGE)
 
+    # check if there are available instance slots
+    try:
+        await INSTANCE_LOCK_global.acquire()
+    except InstanceError as e:
+        emb_il = discord.Embed(
+            title="Too many users at the moment!",
+            description=e,
+            colour=Color.YELLOW.value
+        )
+        emb_il.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        await ctx.respond(embed=emb_il)
+        raise WorkspaceError(e)
+
 def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
     """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
     out = []
     for i in range(0, len(files), 2):
         path = files[i]
-        base = os.path.splitext(os.path.basename(path))[0]
+        base = os.path.basename(path).removesuffix(".bin")
         s = f"{base}_{rand_str}"
         out.append(s)
         out.append(s + ".bin")
