@@ -343,8 +343,6 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
 
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     """Used to obtain an account ID, either through converting from username, obtaining from db, or manually. Utilizes the PSN API or a website doing it for us."""
-    await ctx.defer()
-    
     user_id = ""
 
     if username == "":

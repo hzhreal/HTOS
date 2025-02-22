@@ -186,6 +186,8 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     
 async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
     """Used for checking if a command is being run in a valid thread."""
+    await ctx.defer()
+    
     threadId = uint64(thread_id, "big")
 
     try:
