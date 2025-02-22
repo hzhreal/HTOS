@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 import shutil
 import aiosqlite
@@ -61,7 +62,7 @@ def startup():
             try: os.makedirs(path)
             except:
                 print(f"Can not create essential folders, make sure they are created!\n{', '.join(FOLDERS)}")
-                exit()
+                sys.exit()
         else:
             if path != STORED_SAVES_FOLDER:
                 shutil.rmtree(path)
@@ -69,7 +70,7 @@ def startup():
                 try: os.makedirs(path)
                 except:
                     print(f"Can not create essential folders, make sure they are created!\n{', '.join(FOLDERS)}")
-                    exit()
+                    sys.exit()
 
     with FTP() as ftp:
         try:
@@ -136,7 +137,7 @@ def startup():
     except sqlite3.Error as e:
         print(f"Error creating databases: {e}\nExiting...")
         logger.exception(f"Error creating databases: {e}")
-        exit(-1)
+        sys.exit()
 
 async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_saveList: list[str] | None, remote_mount_paths: list[str] | None) -> None:
     """Used to cleanup after a command utilizing the ps4 (remote)."""
