@@ -138,7 +138,12 @@ class ReRegion(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release()
             return
-            
+   
+        if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)):
+            special_reregion = True
+        else:
+            special_reregion = False
+
         batches = len(uploaded_file_paths)
 
         i = 1
@@ -152,6 +157,7 @@ class ReRegion(commands.Cog):
                 await INSTANCE_LOCK_global.release()
                 return
 
+            extra_msg = ""
             j = 1
             for savepath in batch.savenames:
                 savefile.path = savepath
@@ -205,19 +211,16 @@ class ReRegion(commands.Cog):
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
+            if special_reregion and not extra_msg and j > 2:
+                extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
+
             try: 
-                await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
+                await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid, extra_msg)
             except GDapiError as e:
                 await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()
                 return
-
-            if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)) and j > 2:
-                await ctx.send(
-                    "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once.",
-                    ephemeral=True, reference=msg
-                )
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mountPaths)

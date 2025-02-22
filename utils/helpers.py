@@ -555,19 +555,19 @@ async def replaceDecrypted(
 
     return completed
 
-async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shared_gd_folderid: str = "") -> None:
+async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
     zipfiles(zipupPath, file_name)
     final_file = os.path.join(zipupPath, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
-        await d_ctx.ctx.send(file=discord.File(final_file), reference=d_ctx.msg)
+        await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
     else:
         file_url = await GDapi.uploadzip(final_file, file_name, shared_gd_folderid)
         embg = discord.Embed(
             title="Google Drive: Upload complete",
-            description=f"[Download]({file_url})",
+            description=f"[Download]({file_url})\n{extra_msg}",
             colour=Color.DEFAULT.value
         )
         embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
