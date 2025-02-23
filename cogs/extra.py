@@ -4,8 +4,9 @@ from discord import Option
 from discord.ext import commands
 from io import BytesIO
 from utils.orbis import checkid
-from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace, WorkspaceError
+from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.exceptions import WorkspaceError
 
 class Extra(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:

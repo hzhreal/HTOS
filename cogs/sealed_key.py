@@ -2,11 +2,12 @@ import discord
 from discord.ext import commands
 from io import BytesIO
 from network.socket_functions import SocketPS, SocketError
-from utils.workspace import makeWorkspace, WorkspaceError
+from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE
 from utils.orbis import PfsSKKey
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.exceptions import WorkspaceError
 
 class Sealed_Key(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:

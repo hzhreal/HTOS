@@ -11,10 +11,10 @@ from utils.constants import (
     logger, Color, Embed_t,
     embTimedOut
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanupSimple
+from utils.workspace import initWorkspace, makeWorkspace, cleanupSimple
 from utils.helpers import errorHandling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
 from utils.extras import completed_print
-from utils.exceptions import FileError
+from utils.exceptions import FileError, WorkspaceError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Convert(commands.Cog):

@@ -10,10 +10,10 @@ from utils.constants import (
     logger, Color, Embed_t,
     embEncrypted1
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple
+from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
-from utils.orbis import OrbisError, SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError
+from utils.orbis import SaveBatch, SaveFile
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Resign(commands.Cog):

@@ -20,12 +20,7 @@ from utils.constants import (
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
 from utils.instance_lock import INSTANCE_LOCK_global
-from utils.exceptions import InstanceError
-
-class WorkspaceError(Exception):
-    """Exception raised for errors to the workspace."""
-    def __init__(self, message: str) -> None:
-        self.message = message   
+from utils.exceptions import InstanceError, WorkspaceError
 
 def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
     """Blocking FTP function to delete folders, used in startup to cleanup."""

@@ -13,13 +13,13 @@ from utils.constants import (
     logger, Color, Embed_t,
     emb_upl_savegame, embTimedOut, working_emb
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple, listStoredSaves
+from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple, listStoredSaves
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes
-from utils.orbis import OrbisError, SaveBatch, SaveFile
+from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
 from utils.extras import completed_print
-from utils.exceptions import FileError
+from utils.exceptions import FileError, OrbisError, WorkspaceError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Quick(commands.Cog):

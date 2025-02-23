@@ -3,11 +3,12 @@ import asyncio
 from io import BytesIO
 from discord import Option
 from discord.ext import commands
-from utils.workspace import makeWorkspace, WorkspaceError
+from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
-from utils.orbis import SFOContext, OrbisError
+from utils.orbis import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.exceptions import WorkspaceError, OrbisError
 
 class SFO_Editor(SFOContext):
     """Discord utilities to parse and patch param.sfo."""

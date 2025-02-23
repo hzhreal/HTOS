@@ -14,11 +14,11 @@ from utils.constants import (
     logger, Color, Embed_t,
     emb14
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple
+from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import completed_print
 from utils.helpers import psusername, upload2, errorHandling, send_final, UploadOpt, UploadGoogleDriveChoice
-from utils.orbis import OrbisError, SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError
+from utils.orbis import SaveBatch, SaveFile
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
 from utils.helpers import DiscordContext, replaceDecrypted
 from utils.instance_lock import INSTANCE_LOCK_global
 

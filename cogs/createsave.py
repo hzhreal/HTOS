@@ -16,10 +16,10 @@ from utils.constants import (
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
-from utils.workspace import makeWorkspace, WorkspaceError, initWorkspace, cleanup
+from utils.workspace import makeWorkspace, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
-from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, OrbisError, sfo_ctx_create, sfo_ctx_write, sys_files_validator
-from utils.exceptions import PSNIDError, FileError
+from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
 from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
 

@@ -13,11 +13,11 @@ from utils.constants import (
     logger, Color, Embed_t,
     embDecrypt1
 )
-from utils.workspace import initWorkspace, makeWorkspace, WorkspaceError, cleanup, cleanupSimple
+from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, upload2, errorHandling, send_final
-from utils.orbis import OrbisError, SaveBatch, SaveFile
+from utils.orbis import SaveBatch, SaveFile
 from utils.namespaces import Crypto
-from utils.exceptions import FileError
+from utils.exceptions import FileError, OrbisError, WorkspaceError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Decrypt(commands.Cog):

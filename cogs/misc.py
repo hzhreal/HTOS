@@ -8,9 +8,10 @@ from utils.constants import (
     BASE_ERROR_MSG
 )
 from utils.helpers import threadButton, errorHandling
-from utils.workspace import fetchall_threadid_db, delall_threadid_db, WorkspaceError, makeWorkspace
+from utils.workspace import fetchall_threadid_db, delall_threadid_db, makeWorkspace
 from utils.orbis import keyset_to_fw
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.exceptions import WorkspaceError
 
 class Misc(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:

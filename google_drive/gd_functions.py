@@ -10,9 +10,9 @@ import utils.orbis as orbis
 from discord.ext import tasks
 from aiogoogle import Aiogoogle, HTTPError
 from dateutil import parser
-from typing import Any
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
+from utils.exceptions import OrbisError
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -153,7 +153,7 @@ class GDapi:
                 await asyncio.sleep(1)
 
             elif savesize is not None and total_size > savesize:
-                raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+                raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
             
             else:
                 total_size += file_size
@@ -570,7 +570,7 @@ class GDapi:
         elif total_filesize > cls.TOTAL_SIZE_LIMIT:
             raise GDapiError(f"Total size cannot exceed: {cls.TOTAL_SIZE_LIMIT}!")
         elif savesize is not None and total_filesize > savesize:
-            raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
 
         uploaded_file_paths = []
         async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:

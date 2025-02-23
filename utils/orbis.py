@@ -17,6 +17,7 @@ from utils.constants import (
 from utils.extras import generate_random_string, obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerateFiles
+from utils.exceptions import OrbisError
 from data.crypto.mgsv_crypt import Crypt_MGSV
 
 SFO_MAGIC = 0x46535000
@@ -53,11 +54,6 @@ SFO_TYPES = {
     "SUBTITLE":             utf_8(""),
     "TITLE_ID":             utf_8("")
 }
-
-class OrbisError(Exception):
-    """Exception raised for errors relating to Orbis."""
-    def __init__(self, message: str) -> None:
-        self.message = message
 
 @dataclass
 class SaveBatch:
