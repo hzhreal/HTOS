@@ -103,6 +103,7 @@ How to obtain NPPSO:
 - Join my [Discord](https://discord.gg/fHfmjaCXtb) where the bot is hosted, free to use and often hosted
 
 ### Acknowledgements
+- [Batang](https://github.com/B-a-t-a-n-g)
 - [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
 - [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
 - [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)

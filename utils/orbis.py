@@ -616,7 +616,6 @@ def handleTitles(ctx: SFOContext, maintitle: str = "", subtitle: str = "", **ext
 def validate_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))
 
-# Thanks to https://github.com/B-a-t-a-n-g for showing me how to parse the header
 async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> None | PFSHeader:
     async with aiofiles.open(pfs_path, "rb") as pfs:
         await pfs.seek(0x20)
