@@ -77,8 +77,6 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
                         await Crypto.SMT5.decryptFile(destination_directory)
                     case "RCUBE":
                         await Crypto.RCube.decryptFile(destination_directory)
-            except CryptoError as e:
-                raise CryptoError(e)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
             

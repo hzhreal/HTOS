@@ -438,7 +438,7 @@ async def replaceDecrypted(
     """Used in the encrypt command to replace files one by one, or how many you want at once."""
     from utils.namespaces import Crypto
     completed = []
-    if upload_individually or len(files) == 1:
+    if upload_individually:
         total_count = 0
         for file in files:
             fullPath = mountLocation + "/" + file
