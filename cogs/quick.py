@@ -74,7 +74,7 @@ class Quick(commands.Cog):
             return
 
         entry = []
-        batch = SaveBatch(C1ftp, C1socket, user_id, [], mountPaths, newDOWNLOAD_ENCRYPTED)
+        batch = SaveBatch(C1ftp, C1socket, user_id, entry, mountPaths, newDOWNLOAD_ENCRYPTED)
         savefile = SaveFile("", batch)
 
         try:
@@ -85,7 +85,6 @@ class Quick(commands.Cog):
                 entry.append(target_path)
                 entry.append(target_path + ".bin")
 
-            batch.entry = entry
             await batch.construct()
 
             i = 1
