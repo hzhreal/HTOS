@@ -196,7 +196,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
                 for paths in workspaceList:
                     await aiofiles.os.makedirs(paths)
             else:
-                await ctx.respond(embed=embChannelError)
+                await ctx.respond(embed=embChannelError, ephemeral=True)
                 raise WorkspaceError("Invalid channel!")
     except aiosqlite.Error:
         await ctx.respond(embed=retry_emb)
