@@ -13,6 +13,7 @@ from zipfile import (
 from discord.ext import commands
 from enum import Enum
 from psnawp_api import PSNAWP
+from utils.conversions import mb_to_bytes, saveblocks_to_bytes
 
 VERSION = "v2.0.0"
 
@@ -137,12 +138,12 @@ SMT5_TITLEID = frozenset(["CUSA42697", "CUSA42698"])
 RCUBE_TITLEID = frozenset(["CUSA16074", "CUSA27390"])
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = 500 * 1024**2  # 500 MB, discord file limit for nitro users
-SYS_FILE_MAX = 1 * 1024**2 # sce_sys files are not that big so 1 MB, keep this low
+FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
+SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
-BOT_DISCORD_UPLOAD_LIMIT = 8 * 1024**2 # 8 mb minimum when no nitro boosts in server
+BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(8) # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
 ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
 CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
@@ -167,13 +168,13 @@ ICON0_MAXSIZE = 0x1C800
 ICON0_FORMAT = (228, 128)
 ICON0_NAME = "icon0.png"
 
-KEYSTONE_SIZE = SEALED_KEY_ENC_SIZE = 0x60
+KEYSTONE_SIZE = SEALED_KEY_ENC_SIZE = SAVEBLOCKS_MIN = 0x60
 KEYSTONE_NAME = "keystone"
 
 PARAM_NAME = "param.sfo"
 
-SAVEBLOCKS_MAX = 2**15 # SAVESIZE WILL BE SAVEBLOCKS * 2¹⁵
-SAVESIZE_MAX = SAVEBLOCKS_MAX << 15
+SAVEBLOCKS_MAX = 32768 # SAVESIZE WILL BE SAVEBLOCKS * 2¹⁵
+SAVESIZE_MAX = saveblocks_to_bytes(SAVEBLOCKS_MAX)
 
 MAX_PATH_LEN = 1024
 MAX_FILENAME_LEN = 255

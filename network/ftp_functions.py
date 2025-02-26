@@ -7,6 +7,7 @@ import aiofiles.os
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
 from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
+from utils.conversions import mb_to_bytes
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -36,7 +37,7 @@ class FTPps:
         self.keystone_file_path = os.path.join(self.keystone_path, KEYSTONE_NAME)
         self.png_file_path = os.path.join(self.png_path, ICON0_NAME)
     
-    CHUNKSIZE = 15 * 1024 * 1024 # 15MB
+    CHUNKSIZE = mb_to_bytes(15)
     
     @staticmethod
     async def checkSysFileSize(ftp: aioftp.Client, file: str, keystone: bool) -> bool:

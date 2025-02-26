@@ -109,8 +109,10 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 `/createsave`: Create a save from scratch, will resign aswell. Follow instructions by bot on how to upload the files to put inside the save.
 **Parameters**:  
 - `savename`, the name you want to give the save  
-- `saveblocks`, the size of the save (saveblocks * 2¹⁵) 
+- `saveblocks`, the size of the save (saveblocks * 2¹⁵)  
+- `savesize_mb`, the size of the save in MB 
 - `ignore_secondlayer_checks`, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
+`saveblocks` and `savesize_mb` represent the same concept, you must choose at least one of them. `saveblocks` has priority over `savesize_mb`.  
 
 //
 

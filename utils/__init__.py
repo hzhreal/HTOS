@@ -66,6 +66,7 @@ from .constants import (
     ICON0_NAME,
     KEYSTONE_SIZE,
     SEALED_KEY_ENC_SIZE,
+    SAVEBLOCKS_MIN,
     KEYSTONE_NAME,
     PARAM_NAME,
     SAVEBLOCKS_MAX,
@@ -120,3 +121,4 @@ from .namespaces import Cheats, Converter, Crypto
 from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, wait_for_msg, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt, ReturnTypes
 from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState
 from .instance_lock import MAXIMUM_INSTANCES_AT_ONCE, InstanceLock, INSTANCE_LOCK_global
+from .conversions import mb_to_bytes, gb_to_bytes, saveblocks_to_bytes, bytes_to_mb, mb_to_saveblocks

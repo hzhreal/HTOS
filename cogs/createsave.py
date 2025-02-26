@@ -5,14 +5,13 @@ import os
 import shutil
 from discord.ext import commands
 from discord import Option
-# from discord import OptionChoice (uncomment if you use preset)
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, SocketError, FTPError
 from google_drive import GDapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME,
-    SAVEBLOCKS_MAX, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
+    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX,
+    SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
 )
@@ -22,29 +21,27 @@ from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, sfo_ctx_
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
 from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks, bytes_to_mb
 
-saveblocks_desc = f"Max is {SAVEBLOCKS_MAX}, the value you put in will determine savesize (blocks * {SAVEBLOCKS_MAX})."
-# comment out the option you do not need
-# Here presets are commented out, feel free to choose whatever
-# savesize_presets = [
-#     OptionChoice("25 MB", (25 * 1024**2) >> 15),
-#     OptionChoice("50 MB", (50 * 1024**2) >> 15),
-#     OptionChoice("75 MB", (75 * 1024**2) >> 15),
-#     OptionChoice("100 MB", (100 * 1024**2) >> 15),
-# ]
-# saveblocks_annotation = Option(int, description="Size of the save.", choices=savesize_presets) # preset (100 MB max)
-saveblocks_annotation = Option(int, description=saveblocks_desc, min_value=96, max_value=SAVEBLOCKS_MAX) # no preset (1 GB max)
+SAVEBLOCKS_DESC = f"The value you put in will determine savesize (blocks * 32768)."
+
+SAVESIZE_MB_MIN = 3 # keep in mind minimum saveblocks
+SAVESIZE_MB_MAX = bytes_to_mb(SAVESIZE_MAX)
+SAVESIZE_MB_DESC = "The value you put in will determine savesize (in MB)."
 
 class CreateSave(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+
+    DISC_UPL_SPLITVALUE = "SLASH"
 
     @discord.slash_command(description="Create savedata from scratch.")
     async def createsave(
               self, 
               ctx: discord.ApplicationContext, 
               savename: Option(str, description="The name of the save."), # type: ignore
-              saveblocks: saveblocks_annotation, # type: ignore
+              saveblocks: Option(int, description=SAVEBLOCKS_DESC, min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX, default=0), # type: ignore
+              savesize_mb: Option(int, description=SAVESIZE_MB_DESC, min_value=SAVESIZE_MB_MIN, max_value=SAVESIZE_MB_MAX, default=0), # type: ignore 
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
               ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
@@ -59,11 +56,20 @@ class CreateSave(commands.Cog):
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
-        DISC_UPL_SPLITVALUE = "SLASH"
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
-        savesize = saveblocks << 15
         rand_str = os.path.basename(newUPLOAD_DECRYPTED)
-        
+
+        # saveblocks takes priority
+        if saveblocks:
+            savesize = saveblocks_to_bytes(saveblocks)
+        elif savesize_mb:
+            saveblocks = mb_to_saveblocks(savesize_mb)
+            savesize = saveblocks_to_bytes(saveblocks)
+        else:
+            e = "You need to add the `saveblocks` or `savesize_mb` argument!"
+            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            return
+
         embSceSys = discord.Embed(
             title=f"Upload: sce_sys contents\n{savename}",
             description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
@@ -76,7 +82,7 @@ class CreateSave(commands.Cog):
             description=(
                 "Please attach the gamesaves files you want to upload.\n"
                 "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
-                f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{DISC_UPL_SPLITVALUE}savedata'.\n\n"
+                f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{self.DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{self.DISC_UPL_SPLITVALUE}savedata'.\n\n"
                 "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
                 "*Or type 'EXIT' to cancel command.*"
             ),
@@ -117,7 +123,7 @@ class CreateSave(commands.Cog):
 
             # next, other files (gamesaves)
             await msg.edit(embed=embgs)
-            uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, DISC_UPL_SPLITVALUE, savesize)
+            uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)

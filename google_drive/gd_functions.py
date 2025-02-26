@@ -13,6 +13,7 @@ from dateutil import parser
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
 from utils.exceptions import OrbisError
+from utils.conversions import gb_to_bytes
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -39,7 +40,7 @@ class GDapiError(Exception):
 class GDapi:
     """Async functions to interact with the Google Drive API."""
     SAVEGAME_MAX = SAVESIZE_MAX
-    TOTAL_SIZE_LIMIT = 2 * 1024**3 # 2 GB
+    TOTAL_SIZE_LIMIT = gb_to_bytes(2)
     MAX_USER_NESTING = 100 # how deep a user can go when uploading files to create a save with
     MAX_FILES_IN_DIR = MAX_FILES
     credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))

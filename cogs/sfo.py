@@ -5,7 +5,7 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, loadSFO_emb, finished_emb
+from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, loadSFO_emb, finished_emb
 from utils.orbis import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
@@ -56,7 +56,7 @@ class SFO(commands.Cog):
 
         await ctx.respond(embed=loadSFO_emb)
 
-        if sfo.size / (1024 * 1024) > SYS_FILE_MAX:
+        if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return
@@ -95,7 +95,7 @@ class SFO(commands.Cog):
               format: Option(str, description="utf-8", default=""), # type: ignore
               maintitle: Option(str, description="utf-8", default=""), # type: ignore
               params: Option(str, description="utf-8-special", default=""), # type: ignore
-              savedata_blocks: Option(int, description="uint64", default="", min_value=1, max_value=SAVEBLOCKS_MAX), # type: ignore
+              savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX), # type: ignore
               savedata_directory: Option(str, description="utf-8", default=""), # type: ignore
               savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
               subtitle: Option(str, description="utf-8", default=""), # type: ignore
@@ -122,7 +122,7 @@ class SFO(commands.Cog):
 
         await ctx.respond(embed=loadSFO_emb)
 
-        if sfo.size / (1024 * 1024) > SYS_FILE_MAX:
+        if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             return
@@ -155,7 +155,6 @@ class SFO(commands.Cog):
             await INSTANCE_LOCK_global.release()
             return
         await INSTANCE_LOCK_global.release()
-        # cleanupSimple(workspaceFolders)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(SFO(bot))
