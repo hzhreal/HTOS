@@ -7,6 +7,7 @@ import discord
 import aiofiles
 import aiofiles.os
 import aiohttp
+from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFound, PSNAWPAuthenticationError
 from network import FTPps, FTPError
@@ -21,6 +22,10 @@ from utils.extras import generate_random_string
 from utils.type_helpers import uint64
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import InstanceError, WorkspaceError
+
+@dataclass
+class WorkspaceOpt:
+    ignore_startup: bool = False
 
 def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
     """Blocking FTP function to delete folders, used in startup to cleanup."""
@@ -46,8 +51,11 @@ def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
     except error_perm as e:
         logger.error(f"An error occurred: {e}")
 
-def startup():
+def startup(opt: WorkspaceOpt):
     """Makes sure everything exists and cleans up unnecessary files, used when starting up bot."""
+    if opt.ignore_startup:
+        return
+
     FOLDERS = [UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, 
                 DOWNLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED,
                 PNG_PATH, PARAM_PATH, KEYSTONE_PATH, STORED_SAVES_FOLDER]
