@@ -163,6 +163,7 @@ class ReRegion(commands.Cog):
                 try:
                     await savefile.construct()
                     savefile.title_id = target_titleid
+                    savefile.downloaded_sys_elements.add(savefile.ElementChoice.KEYSTONE)
 
                     emb4 = discord.Embed(
                         title="Re-regioning process: Encrypted",

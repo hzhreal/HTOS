@@ -194,7 +194,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         await ctx.defer()
     except discord.HTTPException as e:
         logger.exception(f"Error while deferring: {e}")
-        raise WorkspaceError()
+        raise WorkspaceError("Please try again!")
     
     threadId = uint64(thread_id, "big")
 
