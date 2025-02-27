@@ -293,14 +293,16 @@ class Quick(commands.Cog):
 
         try:
             await ctx.respond(embed=embLoading)
+            msg = await ctx.edit(embed=embLoading)
+            msg = await ctx.fetch_message(msg.id)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to msg: {e}")
+            logger.exception(e)
             await INSTANCE_LOCK_global.release()
             return
 
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             await INSTANCE_LOCK_global.release()
             return
 
@@ -315,27 +317,26 @@ class Quick(commands.Cog):
                     platform = await Cheats.GTAV.initSavefile(savegame)
                     stats = await Cheats.GTAV.fetchStats(savegame, platform)
                     embLoaded = Cheats.GTAV.loaded_embed(stats)
-                    await ctx.edit(embed=embLoaded, view=Cheats.GTAV.CheatsButton(ctx, helper, savegame, platform))
+                    await msg.edit(embed=embLoaded, view=Cheats.GTAV.CheatsButton(ctx, helper, savegame, platform))
                 case "RDR 2":
                     platform = await Cheats.RDR2.initSavefile(savegame)
                     stats = await Cheats.RDR2.fetchStats(savegame, platform)
                     embLoaded = Cheats.RDR2.loaded_embed(stats)
-                    await ctx.edit(embed=embLoaded, view=Cheats.RDR2.CheatsButton(ctx, helper, savegame, platform))
+                    await msg.edit(embed=embLoaded, view=Cheats.RDR2.CheatsButton(ctx, helper, savegame, platform))
             await helper.await_done()
+
+            await ctx.send(file=discord.File(savegame), reference=msg)
         
         except QuickCheatsError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release()
             return
-        
-        await ctx.respond(file=discord.File(savegame))
-        await asyncio.sleep(1)
 
         await cleanupSimple(workspaceFolders)
         await INSTANCE_LOCK_global.release()
