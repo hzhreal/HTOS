@@ -118,7 +118,11 @@ async def errorHandling(
         colour=Color.DEFAULT.value
     )
     embe.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-    await ctx.edit(embed=embe)
+    try:
+        await ctx.edit(embed=embe)
+    except discord.HTTPException as e:
+        logger.exception(f"Error while editing msg: {e}")
+
     if C1ftp is not None and error != CON_FAIL_MSG:
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
     else:

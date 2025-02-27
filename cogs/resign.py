@@ -128,13 +128,16 @@ class Resign(commands.Cog):
                 description=f"**{batch.printed}** resigned to **{playstation_id or user_id}** (batch {i}/{batches}).",
                 colour=Color.DEFAULT.value)
             embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embRdone)
+            try:
+                await msg.edit(embed=embRdone)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except GDapiError as e:
+            except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()

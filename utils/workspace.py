@@ -190,7 +190,11 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     
 async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
     """Used for checking if a command is being run in a valid thread."""
-    await ctx.defer()
+    try:
+        await ctx.defer()
+    except discord.HTTPException as e:
+        logger.exception(f"Error while deferring: {e}")
+        raise WorkspaceError()
     
     threadId = uint64(thread_id, "big")
 
@@ -375,6 +379,7 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
             await db.commit()
     except aiosqlite.Error as e:
         logger.error(f"Could not write account ID to database: {e}")
+        raise WorkspaceError("Failed to write!")
 
 async def blacklist_write_db(disc_user: discord.User | None, account_id: str | None) -> None:
     """Add entry to the blacklist db."""
@@ -408,13 +413,11 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
             await db.commit()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not write to blacklist database: {e}")
+        raise WorkspaceError("DB FAIL!")
 
 async def blacklist_check_db(disc_userid: int | None, account_id: str | None) -> bool | None:
     """Check if value is blacklisted, only use argument, leave other to None."""
-    if disc_userid is None and account_id is None:
-        return # nothing provided
-    elif disc_userid is not None and account_id is not None:
-        return # invalid usage
+    assert (disc_userid is None) != (account_id is None)
     
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
@@ -443,8 +446,7 @@ async def blacklist_check_db(disc_userid: int | None, account_id: str | None) ->
 
 async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> None:
     """Delete entry in blacklist db."""
-    if disc_userid is None and account_id is None:
-        return
+    assert disc_userid is not None or account_id is not None
     
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
@@ -464,6 +466,7 @@ async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> N
             await db.commit()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not remove entry from blacklist database: {e}")
+        raise WorkspaceError("DB FAIL!")
 
 async def blacklist_delall_db() -> None:
     """Delete all entries in blacklist db."""
@@ -477,6 +480,7 @@ async def blacklist_delall_db() -> None:
             await db.commit()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not delete all entries in blacklist database: {e}")
+        raise WorkspaceError("DB FAIL!")
 
 async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | list[dict[str | None, int]]]:
     """Obtain all entries inside the blacklist db."""
@@ -495,6 +499,7 @@ async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | lis
             userids = await cursor.fetchall()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not fetch all blacklist database entries: {e}")
+        raise WorkspaceError("DB FAIL!")
 
     for accid, username in accids:
         accid = uint64(accid, "big")

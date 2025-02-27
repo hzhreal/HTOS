@@ -54,11 +54,17 @@ class SFO(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        await ctx.respond(embed=loadSFO_emb)
+        try:
+            await ctx.respond(embed=loadSFO_emb)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to interaction: {e}")
+            await INSTANCE_LOCK_global.release()
+            return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release()
             return
 
         sfo_data = bytearray(await sfo.read())
@@ -120,11 +126,17 @@ class SFO(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        await ctx.respond(embed=loadSFO_emb)
+        try:
+            await ctx.respond(embed=loadSFO_emb)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to interaction: {e}")
+            await INSTANCE_LOCK_global.release()
+            return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release()
             return
 
         sfo_data = bytearray(await sfo.read())

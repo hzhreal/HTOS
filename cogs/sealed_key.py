@@ -27,7 +27,12 @@ class Sealed_Key(commands.Cog):
             colour=Color.DEFAULT.value
         )
         embLoad.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.respond(embed=embLoad)
+        try:
+            await ctx.respond(embed=embLoad)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to interaction: {e}")
+            await INSTANCE_LOCK_global.release()
+            return
 
         if sealed_key.size != SEALED_KEY_ENC_SIZE:
             e = f"Invalid size: must be {SEALED_KEY_ENC_SIZE} bytes!"

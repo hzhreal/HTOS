@@ -118,9 +118,8 @@ class ReRegion(commands.Cog):
             await INSTANCE_LOCK_global.release()
             return
 
-        await msg.edit(embed=emb20)
-
-        try: 
+        try:
+            await msg.edit(embed=emb20)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = GDapi.getErrStr_HTTPERROR(e)
@@ -207,7 +206,10 @@ class ReRegion(commands.Cog):
                 colour=Color.DEFAULT.value
             )
             embRgdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embRgdone)
+            try:
+                await msg.edit(embed=embRgdone)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
@@ -216,7 +218,7 @@ class ReRegion(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid, extra_msg)
-            except GDapiError as e:
+            except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()

@@ -41,14 +41,14 @@ class Convert(commands.Cog):
             colour=Color.DEFAULT.value
         )
         emb_conv_upl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.respond(embed=emb_conv_upl)
-        msg = await ctx.edit(embed=emb_conv_upl)
-        msg = await ctx.fetch_message(msg.id)
-        d_ctx = DiscordContext(ctx, msg)
 
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
 
         try:
+            await ctx.respond(embed=emb_conv_upl)
+            msg = await ctx.edit(embed=emb_conv_upl)
+            msg = await ctx.fetch_message(msg.id)
+            d_ctx = DiscordContext(ctx, msg)
             shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
@@ -127,7 +127,11 @@ class Convert(commands.Cog):
                     )
                     ret = False
                 embCDone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await msg.edit(embed=embCDone)
+                try:
+                    await msg.edit(embed=embCDone)
+                except discord.HTTPException as e:
+                    logger.exception(f"Error while editing msg: {e}")
+
                 await asyncio.sleep(1)
                 if ret:
                     await cleanupSimple(workspaceFolders)
@@ -144,13 +148,16 @@ class Convert(commands.Cog):
                 colour=Color.DEFAULT.value
             )
             embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embCompleted)
+            try:
+                await msg.edit(embed=embCompleted)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
 
             zipname = "savegame_Converted" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
             try: 
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
-            except GDapiError as e:
+            except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()

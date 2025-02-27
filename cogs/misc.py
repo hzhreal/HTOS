@@ -25,7 +25,12 @@ class Misc(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        await ctx.respond(embed=loadkeyset_emb)
+        try:
+            await ctx.respond(embed=loadkeyset_emb)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to msg: {e}")
+            await INSTANCE_LOCK_global.release()
+            return
 
         C1socket = SocketPS(IP, PORT_CECIE)
 
@@ -61,7 +66,12 @@ class Misc(commands.Cog):
 
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:
-        await ctx.defer()
+        try:
+            await ctx.defer()
+        except discord.HTTPException as e:
+            logger.exception(f"Error while deferring: {e}")
+            return
+
         latency = self.bot.latency * 1000
         result = 0
 
@@ -97,7 +107,11 @@ class Misc(commands.Cog):
 
         embResult = discord.Embed(title=desc, colour=color)
         embResult.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.respond(embed=embResult)
+        try:
+            await ctx.respond(embed=embResult)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to msg: {e}")
+            return
     
     @discord.slash_command(description="Send the panel to create threads.")
     @commands.is_owner()
@@ -132,7 +146,6 @@ class Misc(commands.Cog):
     async def on_clear_threads_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
         if isinstance(error, commands.NotOwner):
             await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
-       
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Misc(bot))

@@ -42,12 +42,11 @@ class Decrypt(commands.Cog):
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
-        await ctx.respond(embed=embDecrypt1)
-        msg = await ctx.edit(embed=embDecrypt1)
-        msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
-        d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
-
         try:
+            await ctx.respond(embed=embDecrypt1)
+            msg = await ctx.edit(embed=embDecrypt1)
+            msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
+            d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
             shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
@@ -150,7 +149,10 @@ class Decrypt(commands.Cog):
                 colour=Color.DEFAULT.value
             )
             embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embDdone)
+            try:
+                await msg.edit(embed=embDdone)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
 
             if batches == 1:
                 zipname = os.path.basename(destination_directory) + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
@@ -159,7 +161,7 @@ class Decrypt(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, destination_directory_outer, shared_gd_folderid)
-            except GDapiError as e:
+            except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()

@@ -44,6 +44,8 @@ class Quick(commands.Cog):
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
+
+        msg = ctx
         
         try:
             user_id = await psusername(ctx, playstation_id)
@@ -55,12 +57,12 @@ class Quick(commands.Cog):
             stored_saves = await listStoredSaves()
             res, savepaths = await run_qr_paginator(d_ctx, stored_saves)
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release()
             return
@@ -68,7 +70,10 @@ class Quick(commands.Cog):
         if res == ReturnTypes.EXIT:
             embExit = discord.Embed(title="Exited.", colour=Color.DEFAULT.value)
             embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embExit, view=None)
+            try:
+                await msg.edit(embed=embExit, view=None)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
             await cleanupSimple(workspaceFolders)
             await INSTANCE_LOCK_global.release()
             return
@@ -98,7 +103,7 @@ class Quick(commands.Cog):
                     colour=Color.DEFAULT.value
                 )
                 emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await ctx.edit(embed=emb4)
+                await msg.edit(embed=emb4)
 
                 await savefile.dump()
                 await savefile.resign()
@@ -109,7 +114,7 @@ class Quick(commands.Cog):
                     colour=Color.DEFAULT.value
                 )
                 emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await ctx.edit(embed=emb5)
+                await msg.edit(embed=emb5)
                 i += 1
 
         except (SocketError, FTPError, OrbisError, OSError) as e:
@@ -122,12 +127,12 @@ class Quick(commands.Cog):
             elif isinstance(e, OrbisError): 
                 logger.error(f"There is invalid save(s) in {savepaths}") # If OrbisError is raised you have stored an invalid save
 
-            await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release()
             return
         except Exception as e:
-            await errorHandling(d_ctx.msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release()
             return
@@ -138,14 +143,17 @@ class Quick(commands.Cog):
             colour=Color.DEFAULT.value
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.edit(embed=embRdone)
+        try:
+            await msg.edit(embed=embRdone)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while editing msg: {e}")
 
         zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
 
         try: 
             await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-        except GDapiError as e:
-            await errorHandling(d_ctx.msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+        except (GDapiError, discord.HTTPException) as e:
+            await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release()
             return
@@ -167,14 +175,13 @@ class Quick(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
 
-        await ctx.respond(embed=emb_upl_savegame)
-        msg = await ctx.edit(embed=emb_upl_savegame)
-        msg = await ctx.fetch_message(msg.id)
-        d_ctx = DiscordContext(ctx, msg)
-
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
 
         try:
+            await ctx.respond(embed=emb_upl_savegame)
+            msg = await ctx.edit(embed=emb_upl_savegame)
+            msg = await ctx.fetch_message(msg.id)
+            d_ctx = DiscordContext(ctx, msg)
             shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
@@ -214,11 +221,18 @@ class Quick(commands.Cog):
                     colour=Color.DEFAULT.value
                 )
                 embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await msg.edit(embed=embLoading)
+                embApplied = discord.Embed(
+                    title="Success!",
+                    description=f"Quick codes applied to **{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
+                    colour=Color.DEFAULT.value
+                )
+                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
                 try:
+                    await msg.edit(embed=embLoading)
                     qc = QuickCodes(savegame, codes)
                     await qc.apply_code()
+                    await msg.edit(embed=embApplied)
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await errorHandling(msg, e, workspaceFolders, None, None, None)
@@ -231,13 +245,6 @@ class Quick(commands.Cog):
                     await INSTANCE_LOCK_global.release()
                     return
 
-                embApplied = discord.Embed(
-                    title="Success!",
-                    description=f"Quick codes applied to **{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
-                    colour=Color.DEFAULT.value
-                )
-                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await msg.edit(embed=embApplied)
                 completed.append(basename)
                 j += 1
 
@@ -249,13 +256,16 @@ class Quick(commands.Cog):
                 colour=Color.DEFAULT.value
             )
             embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embCompleted)
+            try:
+                await msg.edit(embed=embCompleted)
+            except discord.HTTPException as e:
+                logger.exception(f"Error while editing msg: {e}")
 
             zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
             try: 
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
-            except GDapiError as e:
+            except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release()
@@ -280,7 +290,13 @@ class Quick(commands.Cog):
             colour=Color.DEFAULT.value
         )
         embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.respond(embed=embLoading)
+
+        try:
+            await ctx.respond(embed=embLoading)
+        except discord.HTTPException as e:
+            logger.exception(f"Error while responding to msg: {e}")
+            await INSTANCE_LOCK_global.release()
+            return
 
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
@@ -289,11 +305,11 @@ class Quick(commands.Cog):
             return
 
         savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
-        await savefile.save(savegame)
-
         helper = TimeoutHelper(embTimedOut)
 
         try:
+            await savefile.save(savegame)
+
             match game:
                 case "GTA V":
                     platform = await Cheats.GTAV.initSavefile(savegame)
