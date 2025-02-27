@@ -123,6 +123,7 @@ class SaveFile:
             self.title_id = obtainCUSA(self.sfo_ctx)
         resign(self.sfo_ctx, self.batch.user_id)
         if self.reregion_check:
+            await self.batch.fInstance.upload_keystone(self.batch.location_to_scesys)
             await self.__reregion()
         await sfo_ctx_write(self.sfo_ctx, self.batch.fInstance.sfo_file_path)
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)

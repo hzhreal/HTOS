@@ -110,7 +110,7 @@ class FTPps:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 
-    async def keystoneswap(self, location_to_scesys: str) -> None:
+    async def upload_keystone(self, location_to_scesys: str) -> None:
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
                 await ftp.change_directory(location_to_scesys)
