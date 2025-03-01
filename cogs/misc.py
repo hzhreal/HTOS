@@ -55,14 +55,11 @@ class Misc(commands.Cog):
                 status = "unexpected"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
-            await INSTANCE_LOCK_global.release()
-            return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+        finally:
             await INSTANCE_LOCK_global.release()
-            return
-        await INSTANCE_LOCK_global.release()
 
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:
