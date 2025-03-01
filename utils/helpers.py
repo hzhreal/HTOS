@@ -16,7 +16,7 @@ from google_drive import GDapi, GDapiError
 from network import FTPps
 from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE,
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, WELCOME_MESSAGE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
     embgdt, embUtimeout, embnt, emb8, embvalidpsn
 )
@@ -65,7 +65,7 @@ class threadButton(discord.ui.View):
         
         try:
             thread = await interaction.channel.create_thread(name=interaction.user.name, auto_archive_duration=10080)
-            await thread.send(interaction.user.mention)
+            await thread.send(WELCOME_MESSAGE.format(interaction.user.mention))
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
             
         except (WorkspaceError, discord.Forbidden) as e:

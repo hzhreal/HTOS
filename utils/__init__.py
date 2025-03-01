@@ -52,6 +52,7 @@ from .constants import (
     MAX_FILES,
     UPLOAD_TIMEOUT,
     SYS_FILE_MAX,
+    WELCOME_MESSAGE,
     PS_ID_DESC,
     IGNORE_SECONDLAYER_DESC,
     SHARED_GD_LINK_DESC,
