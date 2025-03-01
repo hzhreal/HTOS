@@ -109,25 +109,33 @@ class Extra(commands.Cog):
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except WorkspaceError: return
+
+        msg = ctx
         
         try:
-            await ctx.defer(ephemeral=True)
-        
+            msg = await ctx.edit(content="Adding...")
+            msg = await ctx.fetch_message(msg.id)
+            
             if len(account_id) == 18:
-                if account_id[:2].lower() == "0x":
-                    account_id = account_id[2:]
-                else:
+                if account_id[:2].lower() != "0x":
                     raise ValueError()
+                account_id = account_id[2:]
             
             if not checkid(account_id):
                 raise ValueError()
             
             await write_accountid_db(ctx.author.id, account_id.lower())
-            await ctx.respond("Stored!")
+            await msg.edit(content="Stored!")
         except ValueError:
-            await ctx.respond("Invalid format!")
+            try:
+                await msg.edit(content="Invalid format!")
+            except discord.HTTPException as e:
+                logger.exception(f"Error responding to msg: {e}")
         except WorkspaceError as e:
-            await ctx.respond(e)
+            try:
+                await msg.edit(content=e)
+            except discord.HTTPException as e:
+                logger.exception(f"Error responding to msg: {e}")
         except discord.HTTPException as e:
             logger.exception(e)
         finally:
