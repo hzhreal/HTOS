@@ -72,7 +72,7 @@ How to obtain NPPSO:
 - If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
 
 ### Everything else
-- Download the [pkg](https://github.com/hzhreal/cecie.nim/releases/tag/v3.00) from and install it on your PS4
+- Download the [pkg](https://github.com/hzhreal/cecie.nim/releases/latest) from and install it on your PS4
 - Download the [config.ini](https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini) file from and edit it with your desired 
   socket port and upload folder (path on PS4)
 - Upload the `config.ini` file to `/data/cecie` on your PS4.
