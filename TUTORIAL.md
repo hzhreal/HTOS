@@ -55,8 +55,8 @@ If the game has second layer of encryption that is implemented, the savefiles yo
 
 `/change title`: Accepts a save pair that will get resigned, and the titles of the save will be swapped.  
 **Parameters**: 
-- `maintitle`, for example Grand Theft Auto V
-- `subtitle`, for example Franklin and Lamar (1.6%)
+- `maintitle`, for example `Grand Theft Auto V`  
+- `subtitle`, for example `Franklin and Lamar (1.6%)`  
 These are changed in the param.sfo file.  
 
 //
@@ -112,7 +112,7 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 - `saveblocks`, the size of the save (saveblocks * 2¹⁵)  
 - `savesize_mb`, the size of the save in MB 
 - `ignore_secondlayer_checks`, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
-`saveblocks` and `savesize_mb` represent the same concept, you must choose at least one of them. `saveblocks` has priority over `savesize_mb`.  
+- `saveblocks` and `savesize_mb` represent the same concept, you must choose at least one of them. `saveblocks` has priority over `savesize_mb`.  
 
 //
 
