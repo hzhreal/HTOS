@@ -36,7 +36,7 @@ If the game has second layer of encryption that is implemented, you will get pro
 - `upload_individually`, Choose if you want to upload the decrypted files one by one, or the ones you want at once. Put to true if you want to swap all the files in the save. If you put it to false, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format. The bot will prompt you on the details.
 - `include_sce_sys`, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames. 
 - `ignore_secondlayer_checks`, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
-If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
+- If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 
 //
 
