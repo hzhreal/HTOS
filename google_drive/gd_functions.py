@@ -75,6 +75,7 @@ class GDapi:
         if isinstance(err, dict):
             errCode = err.get("code")
         else:
+            logger.error(f"Unexpected GD error (1): {err}")
             return "UNEXPECTED GD ERROR."
 
         errMsg = []
@@ -84,7 +85,7 @@ class GDapi:
             for error in err_list:
                 errMsg.append(error.get("reason"))
         else:
-            logger.error(f"Unknown GD error: {err}")
+            logger.error(f"Unexpected GD error (2): {err_list}")
 
         if len(errMsg) == 1:
             errMsg = errMsg[0]
@@ -100,10 +101,16 @@ class GDapi:
 
         err = e.res.content.get("error")
         if not isinstance(err, dict):
-            logger.error(f"Unknown GD error: {err}")
-            raise GDapiError("Unknown GD error!")
+            logger.error(f"Unexpected GD error (1): {err}")
+            raise GDapiError("Unexpected GD error!")
         errCode = err.get("code")
-        errReason = err.get("errors")[0].get("reason")
+
+        err_list = err.get("errors")
+        if not isinstance(err_list, list):
+            logger.error(f"Unexpected GD error (2): {err_list}")
+            raise GDapiError("Unexpected GD error!")
+        errReason = err_list[0].get("reason")
+
         return errCode, errReason
     
     @staticmethod
