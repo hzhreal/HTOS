@@ -189,14 +189,14 @@ class FTPps:
                 await ftp.download(folder_path, downloadpath, write_into=True)
 
             logger.info(f"Downloaded {folder_path} to {downloadpath}")
-
-            if ignoreSceSys: 
-                shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
-
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
-        
+        logger.info(f"Downloaded {folder_path} to {downloadpath}")
+
+        if ignoreSceSys:
+            shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
+    
     async def upload_folder(self, folderpath: str, local_path: str) -> None:
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
@@ -274,9 +274,10 @@ class FTPps:
         files = []
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
-                await ftp.change_directory(target_path)
-                async for path in ftp.list(recursive=recursive):
-                    files.append(path)
+                if await ftp.exists(target_path):
+                    await ftp.change_directory(target_path)
+                    async for path in ftp.list(recursive=recursive):
+                        files.append(path)
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
