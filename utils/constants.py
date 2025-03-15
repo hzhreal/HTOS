@@ -164,7 +164,7 @@ ZIPOUT_NAME = ("PS4", ".zip") # name, ext
 # ORBIS CONSTANTS THAT DOES NOT NEED TO BE IN orbis.py
 
 SCE_SYS_CONTENTS = frozenset(["param.sfo", "icon0.png", "keystone", "sce_icon0png1", "sce_paramsfo1"])
-MANDATORY_SCE_SYS_CONTENTS = frozenset(["param.sfo", "icon0.png", "keystone"])
+MANDATORY_SCE_SYS_CONTENTS = frozenset(["param.sfo", "keystone"])
 
 ICON0_MAXSIZE = 0x1C800
 ICON0_FORMAT = (228, 128)
