@@ -11,7 +11,7 @@ Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
 Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
 Crypto = SimpleNamespace(
     BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2, 
-    Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev=Crypt_Rev2,
+    Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev2=Crypt_Rev2,
     DL=Crypt_DL, RGG=Crypt_RGG, DI2=Crypt_DI2, 
     NMS=Crypt_NMS, TERRARIA=Crypt_Terraria, SMT5=Crypt_SMT5,
     RCube=Crypt_RCube, RE7=Crypt_RE7

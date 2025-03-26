@@ -269,7 +269,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             folder_id = GDapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            files = await GDapi.downloadsaves_gd(d_ctx.msg, folder_id, saveLocation, max_files=1, sys_files=None, ps_save_pair_upload=False, ignore_filename_check=False)
+            files = await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
             file_path = files[0]
 
         except asyncio.TimeoutError:
