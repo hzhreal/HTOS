@@ -6,7 +6,7 @@ from utils.helpers import DiscordContext, TimeoutHelper
 from utils.constants import (
     logger, Color, Embed_t, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
-    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
+    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
     TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID
 )
 
@@ -195,7 +195,7 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -
         elif title_id in REV2_TITLEID:
             await Crypto.Rev2.checkEnc_ps(file_name)
 
-        elif title_id in RE7_TITLEID:
+        elif title_id in RE7_TITLEID or title_id in RERES_TITLEID:
             await Crypto.RE7.checkEnc_ps(file_name)
 
         elif title_id in DL1_TITLEID:

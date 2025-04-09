@@ -40,6 +40,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 | No Man's Sky (savedata.hg)               |                                     |                          |                                     |
 | Raspberry Cube                           |                                     |                          |                                     |
 | Red Dead Redemption 2                    | Red Dead Redemption 2               | Red Dead Redemption 2    |                                     |
+| Resident Evil: Resistance                |                                     |                          |                                     |
 | Resident Evil: Revelations 2             |                                     |                          |                                     |
 | Resident Evil 7: Biohazard               |                                     |                          |                                     |
 | Shin Megami Tensei 5                     |                                     |                          |                                     |

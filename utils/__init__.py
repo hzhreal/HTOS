@@ -39,6 +39,7 @@ from .constants import (
     MGSV_GZ_TITLEID,
     REV2_TITLEID,
     RE7_TITLEID,
+    RERES_TITLEID,
     DL1_TITLEID,
     DL2_TITLEID,
     RGG_TITLEID,
