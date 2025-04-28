@@ -11,13 +11,13 @@ When you do a command that takes save pairs (encrypted saves which is a file and
 All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning (you can upload in bulk when you upload the ones you want to resign and re-region). The quick codes command and convert command also accepts multiple savegames.  
 
 ## Commands
-**common arguments**: 
+**common Arguments**: 
 `playstation_id`: YOUR PLAYSTATION NETWORK USERNAME  
 It will get converted to your account ID using the PSN API. 
 If it fails you will get prompted to write in your account ID, you can find it in the folders by looking into the folders of a savefile from your account. 
-Your account ID will be saved and you do not need to include the argument if you want to use the previously stored one.  
+Your account ID will be saved and you do not need to include the Argument if you want to use the previously stored one.  
 
-`shared_gd_link`: A link to your shared Google Drive folder. Make sure to set write permission for everyone. Only if you want the bot to upload the the file to your shared drive, this is optional.  
+`shared_gd_link`: A link to your shared Google Drive folder. Make sure to set write permission for everyone. Only if you want the bot to upload the file to your shared drive, this is optional.  
 
 # List of commands
 
@@ -26,13 +26,13 @@ Your account ID will be saved and you do not need to include the argument if you
 //
 
 `/decrypt`: Accept save pairs that will get decrypted so you can obtain the files inside it.   
-**argument**: `include_sce_sys`, this is just if you want the system files of the save   
+**Argument**: `include_sce_sys`, this is just if you want the system files of the save   
 If the game has second layer of encryption that is implemented, you will get prompted if you want it removed or not.  
 
 //
 
 `/encrypt`: Accepts save pairs that will get resigned, and you will get prompted to replace the files inside the save.  
-**arguments**:
+**Arguments**:
 - `upload_individually`, Choose if you want to upload the decrypted files one by one, or the ones you want at once. Put to true if you want to swap all the files in the save. If you put it to false, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format. The bot will prompt you on the details.
 - `include_sce_sys`, Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames. 
 - `ignore_secondlayer_checks`, Choose if you want the bot to neglect checking if the files inside your save can be encrypted/compressed.  
@@ -45,7 +45,7 @@ If the game has second layer of encryption that is implemented, you will get pro
 //
 
 `/change picture`: Accepts a save pair that will get resigned and the save png will get swapped.  
-**argument**: `picture`, this is the file you want to swap the picture with  
+**Argument**: `picture`, this is the file you want to swap the picture with  
 
 //
 
@@ -54,7 +54,7 @@ If the game has second layer of encryption that is implemented, you will get pro
 //
 
 `/change title`: Accepts a save pair that will get resigned, and the titles of the save will be swapped.  
-**arguments**: 
+**Arguments**: 
 - `maintitle`, for example `Grand Theft Auto V`  
 - `subtitle`, for example `Franklin and Lamar (1.6%)`  
 These are changed in the param.sfo file.  
@@ -62,7 +62,7 @@ These are changed in the param.sfo file.
 //
 
 `/convert`: Accepts a savegame that is decrypted (second layer of encryption can be present). The savefile will be converted from PS4 to PC or vice versa.   
-**arguments**:
+**Arguments**:
 - `game`, select the game of the savefile
 - `savefile`, the file itself
 The platform will get automatically detected, if not you will be prompted.  
@@ -73,41 +73,41 @@ The platform will get automatically detected, if not you will be prompted.
 //
 
 `/quick cheats`: Accepts a savegame that you can add quick cheats to (second layer of encryption can be present). The bot will prompt you with a UI that you can use to add whatever cheats that is available.   
-**arguments**
+**Arguments**
 - `game`, select the game of the savefile
 - `savefile`, the file itself   
 
 //
 
 `/quick codes`: Accepts savegames that you can apply save wizard quick codes to (must be fully decrypted).  
-**arguments**
+**Arguments**
 - `codes`, the save wizard quick codes
-- `endianness`, try without this argument first, if it does not work put it to big  
+- `endianness`, try without this Argument first, if it does not work put it to big  
 The save you input must be fully decrypted, then you can encrypt with the bot, however if there is a type of encryption/checksum that is not implemented in the bot it will not work.
 
 //
 
 `/sfo read`: Accepts a param.sfo file, the data it contains will be shown.  
-**arguments**:
+**Arguments**:
 - `sfo`, the file itself
 
 //
 
 `/sfo write`: Accepts a param.sfo file, you can patch the keys it contains  
-**arguments**:
+**Arguments**:
 - `sfo`, the file itself
-- The rest of the arguments are keys in the param.sfo file that you can choose to patch
+- The rest of the Arguments are keys in the param.sfo file that you can choose to patch
 
 //
 
 `/sealed_key decrypt`: Accepts a .bin file that you can find in a save pair. It will return the secret key it contains.  
-**argument**:
+**Argument**:
 - `sealed_key`, the file itself
 
 //
 
 `/createsave`: Create a save from scratch, will resign aswell. Follow instructions by bot on how to upload the files to put inside the save.
-**arguments**:  
+**Arguments**:  
 - `savename`, the name you want to give the save  
 - `saveblocks`, the size of the save (saveblocks * 2¹⁵)  
 - `savesize_mb`, the size of the save in MB 
@@ -117,7 +117,7 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 //
 
 `/store_accountid`: Store your account ID in the database. Use this if obtaining your account ID with username does not work.
-**argument**:
+**Argument**:
 - `account_id`, your account ID in hexadecimal format
 
 //
@@ -135,18 +135,18 @@ The save you input must be fully decrypted, then you can encrypt with the bot, h
 //
 
 `/blacklist add`: Bot owner can blacklist someone
-**arguments**:
+**Arguments**:
 - `ps_accountid`, PlayStation account ID in hexadecimal format
 - `user`, Discord user
-Minimum 1 argument  
+Minimum 1 Argument  
 
 //
 
 `/blacklist remove`: Bot owner can remove someone from the blacklist
-**arguments**:
+**Arguments**:
 - `ps_accountid`, PlayStation account ID in hexadecimal format
 - `user`, Discord user  
-Minimum 1 argument  
+Minimum 1 Argument  
 
 //
 
