@@ -151,7 +151,7 @@ WELCOME_MESSAGE = "Welcome {}!"
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."
-SHARED_GD_LINK_DESC = "A link to your shared Google Drive folder, if you want the bot to use your storage."
+SHARED_GD_LINK_DESC = "A link to your shared Google Drive folder, if you want the bot to upload the file to your shared drive."
 
 BASE_ERROR_MSG = "An unexpected server-side error has occurred! Try again, and if it occurs multiple times, please contact the host."
 
