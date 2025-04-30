@@ -397,14 +397,14 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
 
             if account_id is not None:
                 accid = int(account_id, 16)
+                username = None
                 if NPSSO_global.val:
                     try:
                         ps_user = psnawp.user(account_id=str(accid))
                         username = ps_user.online_id
                     except PSNAWPNotFound:
-                        username = None
+                        pass
                     except PSNAWPAuthenticationError:
-                        username = None
                         NPSSO_global.val = ""
                 accid = uint64(accid, "big")
                 
