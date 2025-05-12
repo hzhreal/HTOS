@@ -18,6 +18,7 @@ from utils.extras import generate_random_string, obtain_savenames, completed_pri
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerateFiles
 from utils.exceptions import OrbisError
+from utils.conversions import bytes_to_mb
 from data.crypto.mgsv_crypt import Crypt_MGSV
 
 SFO_MAGIC = 0x46535000
@@ -433,7 +434,7 @@ async def checkSaves(
         elif attachment.size > FILE_LIMIT_DISCORD:
             embFileLarge = discord.Embed(
                 title="Upload alert: Error",
-                description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
+                description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.",
                 colour=Color.DEFAULT.value
             )
             embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -451,7 +452,7 @@ async def checkSaves(
             await asyncio.sleep(1)
 
         elif savesize is not None and total_count > savesize:
-            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
         
         else: 
             total_count += attachment.size
@@ -503,7 +504,7 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
             if attachment.size > FILE_LIMIT_DISCORD:
                 embFileLarge = discord.Embed(
                     title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.",
+                    description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.",
                     colour=Color.DEFAULT.value
                 )
                 embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

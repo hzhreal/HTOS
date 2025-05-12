@@ -23,6 +23,7 @@ from utils.constants import (
 from utils.exceptions import PSNIDError, FileError, WorkspaceError
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
+from utils.conversions import bytes_to_mb
 
 @dataclass
 class DiscordContext:
@@ -243,7 +244,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
 
         elif attachment.size > FILE_LIMIT_DISCORD:
             await message.delete()
-            raise FileError(f"DISCORD UPLOAD ERROR: File size of '{attachment.filename}' exceeds the limit of {int(FILE_LIMIT_DISCORD / 1024 / 1024)} MB.")
+            raise FileError(f"DISCORD UPLOAD ERROR: File size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.")
         
         else:
             save_path = saveLocation
@@ -470,7 +471,7 @@ async def replaceDecrypted(
             completed.append(file)
             total_count += await aiofiles.os.path.getsize(newPath)
         if total_count > savesize:
-            raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+            raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
     
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:

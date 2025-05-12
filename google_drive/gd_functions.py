@@ -13,7 +13,7 @@ from dateutil import parser
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
 from utils.exceptions import OrbisError
-from utils.conversions import gb_to_bytes
+from utils.conversions import gb_to_bytes, bytes_to_mb
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -148,7 +148,7 @@ class GDapi:
             elif file_size > GDapi.SAVEGAME_MAX:
                 embFileLarge = discord.Embed(
                     title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
+                    description=f"Sorry, the file size of '{file_name}' exceeds the limit of {bytes_to_mb(GDapi.SAVEGAME_MAX)} MB.",
                     colour=Color.DEFAULT.value
                 )
                 embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -166,7 +166,7 @@ class GDapi:
                 await asyncio.sleep(1)
 
             elif savesize is not None and total_size > savesize:
-                raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+                raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
             
             else:
                 total_size += file_size
@@ -224,7 +224,7 @@ class GDapi:
                 if file_size > GDapi.SAVEGAME_MAX:
                     embFileLarge = discord.Embed(
                         title="Upload alert: Error",
-                        description=f"Sorry, the file size of '{file_name}' exceeds the limit of {int(GDapi.SAVEGAME_MAX / 1024 / 1024)} MB.",
+                        description=f"Sorry, the file size of '{file_name}' exceeds the limit of {bytes_to_mb(GDapi.SAVEGAME_MAX)} MB.",
                         colour=Color.DEFAULT.value
                     )
                     embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -508,7 +508,7 @@ class GDapi:
         elif filecount > max_files:
             raise GDapiError(f"Amount of files cannot exceed {max_files}!")
         elif total_filesize > cls.TOTAL_SIZE_LIMIT:
-            raise GDapiError(f"Total size cannot exceed: {cls.TOTAL_SIZE_LIMIT}!")
+            raise GDapiError(f"Total size cannot exceed: {bytes_to_mb(cls.TOTAL_SIZE_LIMIT)} MB!")
 
         if allow_duplicates:
             # enforce no files in root, only dirs
@@ -583,7 +583,7 @@ class GDapi:
         elif total_filesize > cls.TOTAL_SIZE_LIMIT:
             raise GDapiError(f"Total size cannot exceed: {cls.TOTAL_SIZE_LIMIT}!")
         elif savesize is not None and total_filesize > savesize:
-            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {savesize}!")
+            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         uploaded_file_paths = []
         async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
