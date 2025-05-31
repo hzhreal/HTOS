@@ -154,7 +154,7 @@ class Decrypt(commands.Cog):
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 
-            if batches == 1:
+            if batches == 1 and len(batch.savenames) == 1:
                 zipname = os.path.basename(destination_directory) + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
             else:
                 zipname = "Decrypted-Saves" + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
