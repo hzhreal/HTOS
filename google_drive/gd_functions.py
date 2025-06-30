@@ -468,7 +468,7 @@ class GDapi:
                 errReason = err.get("errors")[0].get("reason")
                 if errCode == 403 and errReason == "storageQuotaExceeded":
                     await cls.clear_drive()
-                    raise GDapiError("Google drive storage quota was exceeded, tried cleared the storage. Please retry.")
+                    raise GDapiError("Google drive storage quota was exceeded, tried clearing the storage. Please retry.")
                 raise GDapiError(cls.getErrStr_HTTPERROR(e))
 
             await aiogoogle.as_service_account(
