@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from utils.exceptions import InstanceError
 
 MAXIMUM_INSTANCES_AT_ONCE = 32
-INSTANCES_PER_USER = 1
+MAXIMUM_INSTANCES_PER_USER = 1
 
 @dataclass
 class InstanceLock:
@@ -38,4 +38,4 @@ class InstanceLock:
             if self.instances[disc_userid] == 0:
                 del self.instances[disc_userid]
 
-INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE, INSTANCES_PER_USER)
+INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE, MAXIMUM_INSTANCES_PER_USER)
