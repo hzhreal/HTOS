@@ -31,13 +31,13 @@ class Sealed_Key(commands.Cog):
             await ctx.respond(embed=embLoad)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to interaction: {e}")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if sealed_key.size != SEALED_KEY_ENC_SIZE:
             e = f"Invalid size: must be {SEALED_KEY_ENC_SIZE} bytes!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         enc_key = bytearray(await sealed_key.read())
@@ -46,7 +46,7 @@ class Sealed_Key(commands.Cog):
         if not sealedkey_t.validate():
             e = "Invalid sealed key!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         try:
@@ -65,14 +65,14 @@ class Sealed_Key(commands.Cog):
         except SocketError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Sealed_Key(bot))

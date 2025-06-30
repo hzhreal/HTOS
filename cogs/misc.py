@@ -29,7 +29,7 @@ class Misc(commands.Cog):
             await ctx.respond(embed=loadkeyset_emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to msg: {e}")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         C1socket = SocketPS(IP, PORT_CECIE)
@@ -59,7 +59,7 @@ class Misc(commands.Cog):
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         finally:
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @discord.slash_command(description="Checks if the bot is functional.")
     async def ping(self, ctx: discord.ApplicationContext) -> None:

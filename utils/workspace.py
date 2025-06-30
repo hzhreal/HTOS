@@ -222,7 +222,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
 
     # check if there are available instance slots
     try:
-        await INSTANCE_LOCK_global.acquire()
+        await INSTANCE_LOCK_global.acquire(ctx.author.id)
     except InstanceError as e:
         emb_il = discord.Embed(
             title="Too many users at the moment!",

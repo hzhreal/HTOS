@@ -59,12 +59,12 @@ class Quick(commands.Cog):
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if res == ReturnTypes.EXIT:
@@ -75,7 +75,7 @@ class Quick(commands.Cog):
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
             await cleanupSimple(workspaceFolders)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         entry = []
@@ -129,12 +129,12 @@ class Quick(commands.Cog):
 
             await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
         embRdone = discord.Embed(
@@ -155,11 +155,11 @@ class Quick(commands.Cog):
         except (GDapiError, discord.HTTPException) as e:
             await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         await cleanup(C1ftp, workspaceFolders, batch.entry, mountPaths)
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     async def codes(
@@ -188,17 +188,17 @@ class Quick(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
         batches = len(uploaded_file_paths)
@@ -237,12 +237,12 @@ class Quick(commands.Cog):
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await errorHandling(msg, e, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
-                    await INSTANCE_LOCK_global.release()
+                    await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
                     await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-                    await INSTANCE_LOCK_global.release()
+                    await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
                 completed.append(basename)
@@ -268,13 +268,13 @@ class Quick(commands.Cog):
             except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
-                await INSTANCE_LOCK_global.release()
+                await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 
             await asyncio.sleep(1)
             i += 1
         await cleanupSimple(workspaceFolders)
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
     
     @quick_group.command(description="Add cheats to your save.")
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
@@ -297,13 +297,13 @@ class Quick(commands.Cog):
             msg = await ctx.fetch_message(msg.id)
         except discord.HTTPException as e:
             logger.exception(e)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
             await errorHandling(msg, e, workspaceFolders, None, None, None)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
@@ -330,16 +330,16 @@ class Quick(commands.Cog):
         except QuickCheatsError as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         await cleanupSimple(workspaceFolders)
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
     
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Quick(bot))

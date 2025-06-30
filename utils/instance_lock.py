@@ -1,26 +1,41 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from utils.exceptions import InstanceError
 
 MAXIMUM_INSTANCES_AT_ONCE = 32
+INSTANCES_PER_USER = 1
 
 @dataclass
 class InstanceLock:
     maximum_instances: int
-    instances: int = 0
+    maximum_instances_per_user: int
+
+    instances: dict[int, int] = field(default_factory=dict)
+    instances_len: int = 0
 
     def __post_init__(self) -> None:
         self.lock = asyncio.Lock()
 
-    async def acquire(self) -> None:
+    async def acquire(self, disc_userid: int) -> None:
         async with self.lock:
-            if self.instances == self.maximum_instances:
+            if self.instances_len == self.maximum_instances:
                 raise InstanceError("There are no available slots! Please try again later.")
-            self.instances += 1
+            
+            user_occupied_slots = self.instances.get(disc_userid, 0)
+            if user_occupied_slots == self.maximum_instances_per_user:
+                raise InstanceError(f"You can only have {self.maximum_instances_per_user} active instance(s) at a time!")
+            
+            self.instances[disc_userid] = user_occupied_slots + 1
+            self.instances_len += 1
     
-    async def release(self) -> None:
+    async def release(self, disc_userid: int) -> None:
         async with self.lock:
-            if self.instances > 0:
-                self.instances -= 1
+            assert disc_userid in self.instances and self.instances_len > 0
 
-INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE)
+            self.instances[disc_userid] -= 1
+            self.instances_len -= 1
+
+            if self.instances[disc_userid] == 0:
+                del self.instances[disc_userid]
+
+INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE, INSTANCES_PER_USER)

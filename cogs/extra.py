@@ -139,7 +139,7 @@ class Extra(commands.Cog):
         except discord.HTTPException as e:
             logger.exception(e)
         finally:
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
     
     @add.error
     async def on_add_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:

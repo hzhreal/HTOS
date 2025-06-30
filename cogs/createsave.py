@@ -128,17 +128,17 @@ class CreateSave(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
         uploaded_file_paths = []
@@ -209,12 +209,12 @@ class CreateSave(commands.Cog):
                 status = "unexpected"
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
         embRdone = discord.Embed(
@@ -235,11 +235,11 @@ class CreateSave(commands.Cog):
         except (GDapiError, discord.HTTPException) as e:
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)   
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(CreateSave(bot))

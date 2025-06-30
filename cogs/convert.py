@@ -55,17 +55,17 @@ class Convert(commands.Cog):
             err = GDapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
         batches = len(uploaded_file_paths)
@@ -106,12 +106,12 @@ class Convert(commands.Cog):
                 except ConverterError as e:
                     await errorHandling(ctx, e, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
-                    await INSTANCE_LOCK_global.release()
+                    await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
                     await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-                    await INSTANCE_LOCK_global.release()
+                    await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
                 ret = True
@@ -135,7 +135,7 @@ class Convert(commands.Cog):
                 await asyncio.sleep(1)
                 if ret:
                     await cleanupSimple(workspaceFolders)
-                    await INSTANCE_LOCK_global.release()
+                    await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 completed.append(basename)
                 j += 1
@@ -160,13 +160,13 @@ class Convert(commands.Cog):
             except (GDapiError, discord.HTTPException) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
-                await INSTANCE_LOCK_global.release()
+                await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 
             await asyncio.sleep(1)
             i += 1
         await cleanupSimple(workspaceFolders)
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Convert(bot))

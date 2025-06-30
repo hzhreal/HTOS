@@ -58,13 +58,13 @@ class SFO(commands.Cog):
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to interaction: {e}")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         sfo_data = bytearray(await sfo.read())
@@ -80,14 +80,14 @@ class SFO(commands.Cog):
         except OrbisError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @sfo_group.command(description="Patch parameters in a param.sfo file to modify the save.")
     async def write(
@@ -130,13 +130,13 @@ class SFO(commands.Cog):
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to interaction: {e}")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         sfo_data = bytearray(await sfo.read())
@@ -155,7 +155,7 @@ class SFO(commands.Cog):
         except OrbisError as e:
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
             if isinstance(e, ValueError):
@@ -164,9 +164,9 @@ class SFO(commands.Cog):
                 err = BASE_ERROR_MSG
             await errorHandling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
-            await INSTANCE_LOCK_global.release()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        await INSTANCE_LOCK_global.release()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(SFO(bot))
