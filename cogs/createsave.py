@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, SocketError, FTPError
-from google_drive import GDapi, GDapiError
+from google_drive import gdapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX,
@@ -95,7 +95,7 @@ class CreateSave(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
 
             # value checks
             if not validate_savedirname(savename):
@@ -125,7 +125,7 @@ class CreateSave(commands.Cog):
             await msg.edit(embed=embgs)
             uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
-            err = GDapi.getErrStr_HTTPERROR(e)
+            err = gdapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)

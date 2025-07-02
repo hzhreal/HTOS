@@ -4,7 +4,7 @@ import asyncio
 from discord.ext import commands
 from discord import Option
 from data.converter import ConverterError
-from google_drive.gd_functions import GDapi, GDapiError, HTTPError
+from google_drive.gd_functions import gdapi, GDapiError, HTTPError
 from utils.namespaces import Converter
 from utils.constants import (
     BASE_ERROR_MSG, SHARED_GD_LINK_DESC, MAX_FILES, ZIPOUT_NAME,
@@ -49,10 +49,10 @@ class Convert(commands.Cog):
             msg = await ctx.edit(embed=emb_conv_upl)
             msg = await ctx.fetch_message(msg.id)
             d_ctx = DiscordContext(ctx, msg)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
-            err = GDapi.getErrStr_HTTPERROR(e)
+            err = gdapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)

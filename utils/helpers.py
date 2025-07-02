@@ -12,7 +12,7 @@ from typing import Literal, Callable
 from enum import Enum
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
-from google_drive import GDapi, GDapiError
+from google_drive import gdapi, GDapiError
 from network import FTPps
 from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
@@ -132,12 +132,12 @@ async def errorHandling(
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (len(message.attachments) >= 1) or (message.content and GDapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+        return (len(message.attachments) >= 1) or (message.content and gdapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
     
 """Makes the bot expect a single file through discord or google drive."""
 def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (len(message.attachments) == 1) or (message.content and GDapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+        return (len(message.attachments) == 1) or (message.content and gdapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
 
 def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
@@ -216,13 +216,13 @@ async def upload2(
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = GDapi.grabfolderid(google_drive_link)
+            folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
             if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                uploaded_file_paths = await GDapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)
+                uploaded_file_paths = await gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)
             else:
-                uploaded_file_paths = await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)
+                uploaded_file_paths = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)
 
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -267,10 +267,10 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = GDapi.grabfolderid(google_drive_link)
+            folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            files = await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
+            files = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
             file_path = files[0]
 
         except asyncio.TimeoutError:
@@ -335,10 +335,10 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         try:
             google_drive_link = message.content
             await message.delete()
-            folder_id = GDapi.grabfolderid(google_drive_link)
+            folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            uploaded_file_paths = (await GDapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize))[0]
+            uploaded_file_paths = (await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize))[0]
            
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -569,7 +569,7 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
     else:
-        file_url = await GDapi.uploadzip(final_file, file_name, shared_gd_folderid)
+        file_url = await gdapi.uploadzip(final_file, file_name, shared_gd_folderid)
         embg = discord.Embed(
             title="Google Drive: Upload complete",
             description=f"[Download]({file_url})\n{extra_msg}",

@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
-from google_drive import GDapi, GDapiError
+from google_drive import gdapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
@@ -50,7 +50,7 @@ class Quick(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
             msg = await ctx.edit(embed=working_emb)
             msg = await ctx.fetch_message(msg.id) # fetch for paginator.edit()
             d_ctx = DiscordContext(ctx, msg)
@@ -182,10 +182,10 @@ class Quick(commands.Cog):
             msg = await ctx.edit(embed=emb_upl_savegame)
             msg = await ctx.fetch_message(msg.id)
             d_ctx = DiscordContext(ctx, msg)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
-            err = GDapi.getErrStr_HTTPERROR(e)
+            err = gdapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)

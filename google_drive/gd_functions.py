@@ -8,8 +8,15 @@ import re
 import datetime
 import utils.orbis as orbis
 from discord.ext import tasks
-from aiogoogle import Aiogoogle, HTTPError
+from aiogoogle import Aiogoogle, auth, HTTPError, models
 from dateutil import parser
+from enum import Enum, auto
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
 from utils.exceptions import OrbisError
@@ -18,38 +25,76 @@ from utils.conversions import gb_to_bytes, bytes_to_mb
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
 
-@tasks.loop(hours=1, reconnect=False)
-async def checkGDrive() -> None:
-    cur_time = datetime.datetime.now()
-    files = await GDapi.list_drive()
-
-    for file in files:
-        file_id = file["id"]
-
-        created_time = parser.isoparse(file["createdTime"]) # RFC3339
-        day_ahead = created_time + datetime.timedelta(days=1)
-
-        if cur_time.date() >= day_ahead.date():
-            await GDapi.delete_file(file_id)
-
 class GDapiError(Exception):
     """Exception raised for errors related to the GDapi class."""
     def __init__(self, message: str) -> None:
         self.message = message
 
 class GDapi:
+    class AccountType(Enum):
+        SERVICE_ACCOUNT = auto()
+        PERSONAL_ACCOUNT = auto()
+
     """Async functions to interact with the Google Drive API."""
     SAVEGAME_MAX = SAVESIZE_MAX
     TOTAL_SIZE_LIMIT = gb_to_bytes(2)
     MAX_USER_NESTING = 100 # how deep a user can go when uploading files to create a save with
     MAX_FILES_IN_DIR = MAX_FILES
     credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
+    scope = ["https://www.googleapis.com/auth/drive"]
 
-    creds = {
-        "scopes": ["https://www.googleapis.com/auth/drive"],
-        **json.load(open(credentials_path))
-    }
-    
+    def __init__(self) -> None:
+        self.authorize()
+
+    def authorize(self) -> None:
+        if os.path.exists(self.credentials_path):
+            serviceacc_creds = {
+                "scopes": self.scope,
+                **json.load(open(self.credentials_path))
+            }
+            acc_type = serviceacc_creds.get("type", "")
+            if acc_type == "service_account":
+                self.creds = {"service_account_creds": serviceacc_creds}
+                self.account_type = self.AccountType.SERVICE_ACCOUNT
+                return
+            try:
+                creds = Credentials.from_authorized_user_file(self.credentials_path, self.scope)
+            except ValueError:
+                creds = None
+        else:
+            creds = None
+
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, self.scope)
+                creds = flow.run_local_server(port=0)
+            with open(self.credentials_path, "w") as token:
+                token.write(creds.to_json())
+        build("drive", "v3", credentials=creds)
+
+        client_creds = auth.creds.ClientCreds(
+            creds.client_id,
+            creds.client_secret,
+            creds.scopes
+        )
+        user_creds = auth.creds.UserCreds(
+            refresh_token=creds.refresh_token,
+            scopes=creds.scopes,
+            id_token=creds.id_token,
+            token_uri=creds.token_uri
+        )
+        self.creds = {"client_creds": client_creds, "user_creds": user_creds}
+        self.account_type = self.AccountType.PERSONAL_ACCOUNT
+
+    async def send_req(self, aiogoogle: Aiogoogle, req: models.Request) -> models.Response:
+        match self.account_type:
+            case self.AccountType.SERVICE_ACCOUNT:
+                return await aiogoogle.as_service_account(req)
+            case self.AccountType.PERSONAL_ACCOUNT:
+                return await aiogoogle.as_user(req)
+
     @staticmethod
     def grabfolderid(folder_link: str) -> str:
         if not folder_link:
@@ -256,9 +301,8 @@ class GDapi:
                         break             
         return valid_saves_final
     
-    @classmethod
     async def list_dir(
-              cls, 
+              self, 
               ctx: discord.ApplicationContext | discord.Message, 
               folder_id: str,
               sys_files: frozenset[str] | None,
@@ -276,7 +320,7 @@ class GDapi:
                 path = "the root"
             embfn = discord.Embed(
                 title="Upload alert: Error",
-                description=f"Sorry, the amount of files/folders in {path} exceeds {cls.MAX_FILES_IN_DIR}.",
+                description=f"Sorry, the amount of files/folders in {path} exceeds {self.MAX_FILES_IN_DIR}.",
                 colour=Color.DEFAULT.value
             )
             embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -286,30 +330,30 @@ class GDapi:
         if files is None:
             files = []
 
-        if cur_nesting > cls.MAX_USER_NESTING:
-            raise GDapiError(f"Max level nesting of {cls.MAX_USER_NESTING} reached!")
+        if cur_nesting > self.MAX_USER_NESTING:
+            raise GDapiError(f"Max level nesting of {self.MAX_USER_NESTING} reached!")
 
         entries = []
         next_page_token = ""
 
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
             while next_page_token is not None:
-                # List files in the folder
-                res = await aiogoogle.as_service_account(
-                    drive_v3.files.list(
-                        q=f"'{folder_id}' in parents and trashed=false", 
-                        fields="files(name, id, size, mimeType), nextPageToken",
-                        pageSize=1000,
-                        pageToken=next_page_token
-                    )
+                req = drive_v3.files.list(
+                    q=f"'{folder_id}' in parents and trashed=false", 
+                    fields="files(name, id, size, mimeType), nextPageToken",
+                    pageSize=1000,
+                    pageToken=next_page_token
                 )
+
+                res = await self.send_req(aiogoogle, req)
+
                 entries.extend(res.get("files", []))
                 next_page_token = res.get("nextPageToken")
 
         count = len(entries)
-        if count > cls.MAX_FILES_IN_DIR:
+        if count > self.MAX_FILES_IN_DIR:
             await warn_filecount(rel_path)
             return files, total_filesize
 
@@ -333,7 +377,7 @@ class GDapi:
                             raise GDapiError(f"Path: {rel_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
                 else:
                     rel_path = file_name
-                await cls.list_dir(ctx, file_id, sys_files, ps_save_pair_upload, ignore_filename_check, mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files)
+                await self.list_dir(ctx, file_id, sys_files, ps_save_pair_upload, ignore_filename_check, mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files)
                 # go up one level
                 rel_path = os.path.dirname(rel_path)
             else:
@@ -367,98 +411,103 @@ class GDapi:
 
         return files, total_filesize
 
-    @classmethod
-    async def list_drive(cls) -> list[dict[str, str]]:
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+    async def list_drive(self) -> list[dict[str, str]]:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
             files = []
             next_page_token = ""
 
             while next_page_token is not None:
-                request = drive_v3.files.list(
+                req = drive_v3.files.list(
+                    q="'me' in owners",
                     pageSize=1000,
                     fields="nextPageToken, files(id, createdTime)",
                     pageToken=next_page_token
                 )
                 
-                response = await aiogoogle.as_service_account(request)
-                files.extend(response.get("files", []))
-                next_page_token = response.get("nextPageToken")
+                res = await self.send_req(aiogoogle, req)
+                files.extend(res.get("files", []))
+                next_page_token = res.get("nextPageToken")
             
             return files
 
-    @classmethod
-    async def clear_drive(cls, files: list[dict[str, str]] | None = None) -> None:
+    async def clear_drive(self, files: list[dict[str, str]] | None = None) -> None:
         if files is None:
-            files = await cls.list_drive()
+            files = await self.list_drive()
 
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+        for file in files:
+            file_id = file["id"]
+            await self.delete_file(file_id)
+
+    async def delete_file(self, fileid: str) -> None:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
-            for file in files:
-                file_id = file["id"]
-                request = drive_v3.files.delete(fileId=file_id)
-                await aiogoogle.as_service_account(request)
-
-    @classmethod
-    async def delete_file(cls, fileid: str) -> None:
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
-            drive_v3 = await aiogoogle.discover("drive", "v3")
-
-            request = drive_v3.files.delete(fileId=fileid)
-            await aiogoogle.as_service_account(request)
-
-    @classmethod
-    async def check_writeperm(cls, folderid: str) -> bool:
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
-            drive_v3 = await aiogoogle.discover("drive", "v3")
-
-            request = drive_v3.permissions.list(fileId=folderid, fields="permissions")
+            req = drive_v3.files.get(fileId=fileid, fields="capabilities")
             try:
-                res = await aiogoogle.as_service_account(request)
+                res = await self.send_req(aiogoogle, req)
+            except HTTPError:
+                # does not exist
+                return
+            can_delete = res.get("capabilities", {}).get("canDelete", False)
+
+            if can_delete:
+                req = drive_v3.files.delete(fileId=fileid)
+                await self.send_req(aiogoogle, req)
+
+    async def check_writeperm(self, folderid: str) -> bool:
+        async with Aiogoogle(**self.creds) as aiogoogle:
+            drive_v3 = await aiogoogle.discover("drive", "v3")
+
+            req = drive_v3.permissions.list(fileId=folderid, fields="permissions")
+            try:
+                res = await self.send_req(aiogoogle, req)
             except HTTPError as e:
-                code, reason = cls.parse_HTTPERROR_simple(e)
+                code, reason = self.parse_HTTPERROR_simple(e)
                 if code == 403 and reason == "insufficientFilePermissions":
                     return False
-                raise GDapiError(cls.getErrStr_HTTPERROR(e))
+                raise GDapiError(self.getErrStr_HTTPERROR(e))
 
         if res["permissions"][0]["role"] != "writer":
             return False
         return True
 
-    @classmethod
-    async def parse_sharedfolder_link(cls, link: str) -> str:
+    async def parse_sharedfolder_link(self, link: str) -> str:
         if not link:
             return ""
 
-        folderid = cls.grabfolderid(link)
+        folderid = self.grabfolderid(link)
         if not folderid:
             raise GDapiError("Invalid shared folder ID!")
 
-        writeperm = await cls.check_writeperm(folderid)
+        writeperm = await self.check_writeperm(folderid)
         if not writeperm:
             raise GDapiError("Shared folder has insufficent permissions! Enable write permission.")
         return folderid
 
-    @classmethod
-    async def uploadzip(cls, pathToFile: str, fileName: str, shared_folderid: str = "") -> str:
+    async def uploadzip(self, pathToFile: str, fileName: str, shared_folderid: str = "") -> str:
         metadata = {"name": fileName}
         if shared_folderid:
             metadata["parents"] = [shared_folderid]
         
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
             
             try:
-                response = await aiogoogle.as_service_account(
-                    drive_v3.files.create(
-                        pipe_from=await aiofiles.open(pathToFile, "rb"), 
-                        fields="id", 
-                        json=metadata,
-                        supportsAllDrives=True
-                        )
+                req = drive_v3.files.create(
+                    pipe_from=await aiofiles.open(pathToFile, "rb"), 
+                    fields="id", 
+                    json=metadata,
+                    supportsAllDrives=True
                 )
+                res = await self.send_req(aiogoogle, req)
+
+                req = drive_v3.permissions.create(
+                    fileId=res["id"], 
+                    json={"role": "reader", "type": "anyone", "allowFileDiscovery": False}
+                )
+                await self.send_req(aiogoogle, req)
             except HTTPError as e:
                 if e.res is None:
                     raise GDapiError("Failed to upload to Google Drive, please try again.")
@@ -467,25 +516,18 @@ class GDapi:
                 errCode = err.get("code")
                 errReason = err.get("errors")[0].get("reason")
                 if errCode == 403 and errReason == "storageQuotaExceeded":
-                    await cls.clear_drive()
+                    await self.clear_drive()
                     raise GDapiError("Google drive storage quota was exceeded, tried clearing the storage. Please retry.")
-                raise GDapiError(cls.getErrStr_HTTPERROR(e))
+                raise GDapiError(self.getErrStr_HTTPERROR(e))
 
-            await aiogoogle.as_service_account(
-                drive_v3.permissions.create(
-                    fileId=response["id"], 
-                    json={"role": "reader", "type": "anyone", "allowFileDiscovery": False})
-            )
-
-        file_url = f"https://drive.google.com/file/d/{response['id']}"
+        file_url = f"https://drive.google.com/file/d/{res['id']}"
         
         logger.info(f"Uploaded {pathToFile} to google drive")
         
         return file_url
 
-    @classmethod
     async def downloadsaves_recursive(
-              cls, 
+              self, 
               ctx: discord.ApplicationContext | discord.Message, 
               folder_id: str, 
               download_dir: str, 
@@ -496,19 +538,19 @@ class GDapi:
               allow_duplicates: bool = False
             ) -> list[list[str]]:
         """Setting `ps_save_pair_upload` to `True` will also set `allow_duplicates` to `True`."""
-        
+
         if ps_save_pair_upload:
             allow_duplicates = True
 
-        files, total_filesize = await cls.list_dir(ctx, folder_id, sys_files, ps_save_pair_upload, ignore_filename_check)
+        files, total_filesize = await self.list_dir(ctx, folder_id, sys_files, ps_save_pair_upload, ignore_filename_check)
         filecount = len(files)
         uploaded_file_paths = []
         if filecount == 0:
             raise GDapiError("Invalid files uploaded, or no files found!")
         elif filecount > max_files:
             raise GDapiError(f"Amount of files cannot exceed {max_files}!")
-        elif total_filesize > cls.TOTAL_SIZE_LIMIT:
-            raise GDapiError(f"Total size cannot exceed: {bytes_to_mb(cls.TOTAL_SIZE_LIMIT)} MB!")
+        elif total_filesize > self.TOTAL_SIZE_LIMIT:
+            raise GDapiError(f"Total size cannot exceed: {bytes_to_mb(self.TOTAL_SIZE_LIMIT)} MB!")
 
         if allow_duplicates:
             # enforce no files in root, only dirs
@@ -519,7 +561,7 @@ class GDapi:
 
         download_cycle = []
         i = 1
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
             for file in files:
@@ -536,11 +578,12 @@ class GDapi:
                         download_cycle = []
                     else:
                         continue
-
-                # Download the file
-                await aiogoogle.as_service_account(
-                    drive_v3.files.get(fileId=file_id, pipe_to=await aiofiles.open(download_path, "wb"), alt="media")
-                )
+                        
+                async with aiofiles.open(download_path, "wb") as file:
+                    req = drive_v3.files.get(
+                        fileId=file_id, pipe_to=file, alt="media"
+                    )
+                    await self.send_req(aiogoogle, req)
                 logger.info(f"Saved {file_name} to {download_path}")
             
                 # run a quick check
@@ -563,9 +606,8 @@ class GDapi:
             
         return uploaded_file_paths
     
-    @classmethod
     async def downloadfiles_recursive(
-              cls, 
+              self, 
               ctx: discord.ApplicationContext | discord.Message, 
               dst_local_dir: str, 
               folder_id: str, 
@@ -574,19 +616,19 @@ class GDapi:
             ) -> list[list[str]]:
 
         """For encrypt & createsave command."""
-        files, total_filesize = await cls.list_dir(ctx, folder_id, None, False, True, mounted_len_checks=True)
+        files, total_filesize = await self.list_dir(ctx, folder_id, None, False, True, mounted_len_checks=True)
         filecount = len(files)
         if filecount == 0:
             raise GDapiError("Invalid files uploaded, or no files found!")
         elif filecount > max_files:
             raise GDapiError(f"Amount of files cannot exceed {max_files}!")
-        elif total_filesize > cls.TOTAL_SIZE_LIMIT:
-            raise GDapiError(f"Total size cannot exceed: {cls.TOTAL_SIZE_LIMIT}!")
+        elif total_filesize > self.TOTAL_SIZE_LIMIT:
+            raise GDapiError(f"Total size cannot exceed: {self.TOTAL_SIZE_LIMIT}!")
         elif savesize is not None and total_filesize > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         uploaded_file_paths = []
-        async with Aiogoogle(service_account_creds=cls.creds) as aiogoogle:
+        async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
             i = 1
@@ -597,13 +639,13 @@ class GDapi:
                 download_path = os.path.join(dst_local_dir, file_path)
                 await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
 
-                # Download the file
-                await aiogoogle.as_service_account(
-                    drive_v3.files.get(
+                async with aiofiles.open(download_path, "wb") as file:
+                    req = drive_v3.files.get(
                         fileId=file_id, 
-                        pipe_to=await aiofiles.open(download_path, "wb"), 
-                        alt="media")
-                )
+                        pipe_to=file, 
+                        alt="media"
+                    )
+                    await self.send_req(aiogoogle, req)
             
                 uploaded_file_paths.append(download_path)
 
@@ -618,3 +660,19 @@ class GDapi:
                 i += 1
      
         return [uploaded_file_paths]
+
+gdapi = GDapi()
+
+@tasks.loop(hours=1, reconnect=False)
+async def checkGDrive() -> None:
+    cur_time = datetime.datetime.now()
+    files = await gdapi.list_drive()
+
+    for file in files:
+        file_id = file["id"]
+
+        created_time = parser.isoparse(file["createdTime"]) # RFC3339
+        day_ahead = created_time + datetime.timedelta(days=1)
+
+        if cur_time.date() >= day_ahead.date():
+            await gdapi.delete_file(file_id)

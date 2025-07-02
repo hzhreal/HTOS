@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
-from google_drive import GDapi, GDapiError
+from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME,
@@ -52,7 +52,7 @@ class Change(commands.Cog):
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
             msg = await ctx.edit(embed=embpng)
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
@@ -65,7 +65,7 @@ class Change(commands.Cog):
             if png_size > ICON0_MAXSIZE:
                 raise FileError(f"Image turned out to be too big: {png_size}/{ICON0_MAXSIZE}!")
         except HTTPError as e:
-            err = GDapi.getErrStr_HTTPERROR(e)
+            err = gdapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -204,13 +204,13 @@ class Change(commands.Cog):
         try: 
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
-            shared_gd_folderid = await GDapi.parse_sharedfolder_link(shared_gd_link)
+            shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
             msg = await ctx.edit(embed=embTitleChange)
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
-            err = GDapi.getErrStr_HTTPERROR(e)
+            err = gdapi.getErrStr_HTTPERROR(e)
             await errorHandling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
