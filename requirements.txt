@@ -14,3 +14,6 @@ lz4
 python-dateutil
 audioop-lts ; python_version >= "3.13"
 mmh3
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
