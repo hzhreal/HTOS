@@ -19,7 +19,7 @@ class InstanceLock:
     async def acquire(self, disc_userid: int) -> None:
         async with self.lock:
             if self.instances_len == self.maximum_instances:
-                raise InstanceError("There are no available slots! Please try again later.")
+                raise InstanceError(f"There are no available slots! Maximum of {self.maximum_instances} reached. Please try again later.")
             
             user_occupied_slots = self.instances.get(disc_userid, 0)
             if user_occupied_slots == self.maximum_instances_per_user:

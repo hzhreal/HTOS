@@ -99,6 +99,7 @@ class Misc(commands.Cog):
         desc = (
             f"FTP: **{ftp_result}**\n"
             f"CECIE: **{socket_result}**\n"
+            f"Active instances: {INSTANCE_LOCK_global.instances_len}/{INSTANCE_LOCK_global.maximum_instances}\n"
             f"Latency: **{latency: .2f}** ms"
         )
 
