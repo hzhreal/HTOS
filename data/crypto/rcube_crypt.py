@@ -19,7 +19,7 @@ class Crypt_RCube:
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
         files = await CC.obtainFiles(folderPath)
-        files = await Crypt_RCube.namecheck(files)
+        files = Crypt_RCube.namecheck(files)
 
         for filePath in files:
             async with aiofiles.open(filePath, "rb") as savegame:
