@@ -10,7 +10,7 @@ from network import FTPps, SocketPS, SocketError, FTPError
 from google_drive import gdapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX,
+    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX, COMMAND_COOLDOWN,
     SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
@@ -36,6 +36,7 @@ class CreateSave(commands.Cog):
     DISC_UPL_SPLITVALUE = "SLASH"
 
     @discord.slash_command(description="Create savedata from scratch.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def createsave(
               self, 
               ctx: discord.ApplicationContext, 

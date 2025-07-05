@@ -7,7 +7,7 @@ from data.converter import ConverterError
 from google_drive.gd_functions import gdapi, GDapiError, HTTPError
 from utils.namespaces import Converter
 from utils.constants import (
-    BASE_ERROR_MSG, SHARED_GD_LINK_DESC, MAX_FILES, ZIPOUT_NAME,
+    BASE_ERROR_MSG, SHARED_GD_LINK_DESC, MAX_FILES, ZIPOUT_NAME, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embTimedOut
 )
@@ -22,6 +22,7 @@ class Convert(commands.Cog):
         self.bot = bot
 
     @discord.slash_command(description="Convert a ps4 savefile to pc or vice versa on supported games that needs converting.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def convert(
               self, 
               ctx: discord.ApplicationContext, 

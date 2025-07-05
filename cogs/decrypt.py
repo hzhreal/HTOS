@@ -9,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embDecrypt1
 )
@@ -25,6 +25,7 @@ class Decrypt(commands.Cog):
         self.bot = bot
     
     @discord.slash_command(description="Decrypt a savefile and download the contents.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def decrypt(
               self, 
               ctx: discord.ApplicationContext, 

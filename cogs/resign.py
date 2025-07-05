@@ -6,7 +6,7 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embEncrypted1
 )
@@ -21,6 +21,7 @@ class Resign(commands.Cog):
         self.bot = bot
     
     @discord.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
               self, 
               ctx: discord.ApplicationContext, 

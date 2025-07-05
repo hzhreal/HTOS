@@ -3,6 +3,7 @@ load_dotenv()
 
 import discord
 import argparse
+from discord.ext import commands
 from utils.constants import bot, TOKEN
 from utils.workspace import WorkspaceOpt, startup, check_version
 from utils.helpers import threadButton
@@ -19,6 +20,14 @@ async def on_ready() -> None:
     print(
         f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot"
     )
+
+@bot.event
+async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
+    match error:
+        case commands.CommandOnCooldown():
+            await ctx.respond(f"You are on cooldown. Try again in {int(error.retry_after)} seconds.", ephemeral=True)
+        case commands.NotOwner():
+            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
 
 @bot.event
 async def on_message(message: discord.Message) -> None:

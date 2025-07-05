@@ -1,7 +1,6 @@
 import aiofiles.ospath
 import discord
 import asyncio
-import aiofiles.os
 import os
 from discord.ext import commands
 from discord import Option
@@ -10,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME,
+    ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embpng, embTitleChange, embTitleErr
 )
@@ -28,6 +27,7 @@ class Change(commands.Cog):
     change_group = discord.SlashCommandGroup("change")
     
     @change_group.command(description="Changes the picture of your save, this is just cosmetic.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def picture(
               self, 
               ctx: discord.ApplicationContext, 
@@ -177,6 +177,7 @@ class Change(commands.Cog):
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @change_group.command(description="Change the titles of your save.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def title(
               self, 
               ctx: discord.ApplicationContext, 

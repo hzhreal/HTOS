@@ -9,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     emb_upl_savegame, embTimedOut, working_emb
 )
@@ -29,6 +29,7 @@ class Quick(commands.Cog):
     quick_group = discord.SlashCommandGroup("quick")
 
     @quick_group.command(description="Resign pre stored saves.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
               self, 
               ctx: discord.ApplicationContext, 
@@ -162,6 +163,7 @@ class Quick(commands.Cog):
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def codes(
               self, 
               ctx: discord.ApplicationContext, 
@@ -277,6 +279,7 @@ class Quick(commands.Cog):
         await INSTANCE_LOCK_global.release(ctx.author.id)
     
     @quick_group.command(description="Add cheats to your save.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 

@@ -8,7 +8,7 @@ from aiogoogle import HTTPError
 from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
     logger, Color, Embed_t,
     emb21, emb20
@@ -24,6 +24,7 @@ class ReRegion(commands.Cog):
         self.bot = bot
     
     @discord.slash_command(description="Change the region of a save (Must be from the same game).")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def reregion(
               self, 
               ctx: discord.ApplicationContext, 

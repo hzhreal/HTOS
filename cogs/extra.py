@@ -3,7 +3,7 @@ import json
 from discord import Option
 from discord.ext import commands
 from io import BytesIO
-from utils.constants import logger
+from utils.constants import COMMAND_COOLDOWN, logger
 from utils.orbis import checkid
 from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -101,6 +101,7 @@ class Extra(commands.Cog):
             await ctx.respond(e)
 
     @discord.slash_command(description="Store your account ID in hexadecimal format.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def store_accountid(
               self, 
               ctx: discord.ApplicationContext,
@@ -140,26 +141,6 @@ class Extra(commands.Cog):
             logger.exception(e)
         finally:
             await INSTANCE_LOCK_global.release(ctx.author.id)
-    
-    @add.error
-    async def on_add_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
-    
-    @remove.error
-    async def on_remove_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
-    
-    @remove_all.error
-    async def on_remove_all_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
-
-    @show.error
-    async def on_show_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Extra(bot))

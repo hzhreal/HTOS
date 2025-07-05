@@ -9,7 +9,7 @@ from network import FTPps, SocketPS, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME,
+    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     SCE_SYS_CONTENTS, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, CON_FAIL, CON_FAIL_MSG, SHARED_GD_LINK_DESC,
     logger, Color, Embed_t,
     emb14
@@ -27,6 +27,7 @@ class Encrypt(commands.Cog):
         self.bot = bot
 
     @discord.slash_command(description="Swap the decrypted savefile from the encrypted ones you upload.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def encrypt(
               self, 
               ctx: discord.ApplicationContext, 

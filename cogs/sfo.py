@@ -5,7 +5,7 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, loadSFO_emb, finished_emb
+from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN, loadSFO_emb, finished_emb
 from utils.orbis import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
@@ -49,6 +49,7 @@ class SFO(commands.Cog):
     sfo_group = discord.SlashCommandGroup("sfo")
 
     @sfo_group.command(description="Parse a param.sfo file to obtain information about the save.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def read(self, ctx: discord.ApplicationContext, sfo: discord.Attachment) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
@@ -90,6 +91,7 @@ class SFO(commands.Cog):
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @sfo_group.command(description="Patch parameters in a param.sfo file to modify the save.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def write(
               self, 
               ctx: discord.ApplicationContext, 

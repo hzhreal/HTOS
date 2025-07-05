@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from network import FTPps, SocketPS, SocketError
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t, bot,
     embinit, loadkeyset_emb,
     BASE_ERROR_MSG
@@ -20,6 +20,7 @@ class Misc(commands.Cog):
     info_group = discord.SlashCommandGroup("info")
 
     @info_group.command(description="Display the maximum firmware/keyset the hoster's console can mount/unmount a save from.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def keyset(self, ctx: discord.ApplicationContext) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
@@ -62,6 +63,7 @@ class Misc(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @discord.slash_command(description="Checks if the bot is functional.")
+    @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def ping(self, ctx: discord.ApplicationContext) -> None:
         try:
             await ctx.defer()
@@ -116,11 +118,6 @@ class Misc(commands.Cog):
     async def init(self, ctx: discord.ApplicationContext) -> None:
         await ctx.respond("Sending panel...", ephemeral=True)
         await ctx.send(embed=embinit, view=threadButton())
-
-    @init.error
-    async def on_init_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
        
     @discord.slash_command(description="Remove all threads created by the bot.")
     @commands.is_owner()
@@ -139,11 +136,6 @@ class Misc(commands.Cog):
             logger.error(f"Error clearing all threads: {e}")
         
         await ctx.respond(f"Cleared {len(db_dict)} thread(s)!", ephemeral=True)
-    
-    @clear_threads.error
-    async def on_clear_threads_error(self, ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.NotOwner):
-            await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Misc(bot))
