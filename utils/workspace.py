@@ -202,12 +202,9 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         async with aiosqlite.connect(DATABASENAME_THREADS) as db:
             cursor = await db.cursor()
             await cursor.execute("SELECT * FROM Threads WHERE disc_threadid = ?", (threadId.as_bytes,))
-            row = await cursor.fetchone()
 
-            if row:
-                for paths in workspaceList:
-                    await aiofiles.os.makedirs(paths)
-            else:
+            row = await cursor.fetchone()
+            if not row:
                 await ctx.respond(embed=embChannelError)
                 raise WorkspaceError("Invalid channel!")
     except aiosqlite.Error:
@@ -232,6 +229,16 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         emb_il.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.respond(embed=emb_il)
         raise WorkspaceError(e)
+
+    # passed
+    for path in workspaceList:
+        try:
+            await aiofiles.os.makedirs(path)
+        except OSError as e:
+            logger.error(f"Error creating folder {path}: {e}")
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            await ctx.respond(embed=retry_emb)
+            raise WorkspaceError("Please try again.")
 
 def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
     """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
