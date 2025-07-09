@@ -6,7 +6,7 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, SocketPS, SocketError, FTPError
+from network import FTPps, C1socket, SocketError, FTPError
 from google_drive import gdapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
@@ -55,7 +55,6 @@ class CreateSave(commands.Cog):
         except WorkspaceError: return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
         rand_str = os.path.basename(newUPLOAD_DECRYPTED)

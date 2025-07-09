@@ -3,7 +3,7 @@ import asyncio
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, SocketPS, FTPError, SocketError
+from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
@@ -36,7 +36,6 @@ class Resign(commands.Cog):
         except WorkspaceError: return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
         
         msg = ctx

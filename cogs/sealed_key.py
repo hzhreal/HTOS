@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from io import BytesIO
-from network.socket_functions import SocketPS, SocketError
+from network.socket_functions import C1socket, SocketError
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
 from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
@@ -51,7 +51,6 @@ class Sealed_Key(commands.Cog):
             return
 
         try:
-            C1socket = SocketPS(IP, PORT_CECIE)
             await C1socket.socket_decryptsdkey(sealedkey_t)
 
             embdec = discord.Embed(

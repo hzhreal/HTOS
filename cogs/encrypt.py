@@ -5,7 +5,7 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, SocketPS, FTPError, SocketError
+from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
@@ -45,7 +45,6 @@ class Encrypt(commands.Cog):
         except WorkspaceError: return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        C1socket = SocketPS(IP, PORT_CECIE)
         mountPaths = []
 
         msg = ctx

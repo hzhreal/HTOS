@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from network import FTPps, SocketPS, SocketError
+from network import FTPps, C1socket, SocketError
 from utils.constants import (
     IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t, bot,
@@ -32,8 +32,6 @@ class Misc(commands.Cog):
             logger.exception(f"Error while responding to msg: {e}")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-
-        C1socket = SocketPS(IP, PORT_CECIE)
 
         try:
             keyset = await C1socket.socket_keyset()
@@ -75,7 +73,6 @@ class Misc(commands.Cog):
         result = 0
 
         C1ftp = FTPps(IP, PORT_FTP, "", "", "", "", "", "", "", "")
-        C1socket = SocketPS(IP, PORT_CECIE)
 
         ftp_result = socket_result = "Unavailable"
 

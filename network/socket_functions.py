@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import json
-from utils.constants import logger
+from utils.constants import IP, PORT_CECIE, logger
 
 class SocketError(Exception):
   """Exception raised for errors relating to the socket."""
@@ -34,7 +34,7 @@ class SocketPS:
           response = json.loads(response)
         return response
     
-    except (ConnectionError, asyncio.TimeoutError) as e:
+    except ConnectionError as e:
       logger.error(f"An error occured while sending tcp message (Cecie): {e}")
       raise SocketError("Error communicating with socket.")
     
@@ -116,3 +116,5 @@ class SocketPS:
       raise SocketError("Failed to decrypt sealed key!")
     
     sealed_key.dec_key.extend(json.loads(response["json"]))
+  
+C1socket = SocketPS(IP, PORT_CECIE)
