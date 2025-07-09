@@ -166,14 +166,16 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
     assert tasks_len >= embeds_len
 
     result = []
-
+    cancel_task_created = False
     for i in range(tasks_len):
         embed = None
         if i < embeds_len:
             embed = ordered_embeds[i]
 
         main_task = asyncio.create_task(ordered_tasks[i]())
-        cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=None))
+        if not cancel_task_created:
+            cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=None))
+            cancel_task_created = True
 
         if embed is not None:
             await d_ctx.msg.edit(embed=embed)
@@ -183,16 +185,16 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
             return_when=asyncio.FIRST_COMPLETED
         )
         if main_task in done:
-            cancel_task.cancel()
-
             try:
                 res = await main_task
                 result.append(res)
             finally:
-                try:
-                    await cancel_task
-                except asyncio.CancelledError:
-                    pass
+                if i == tasks_len - 1:
+                    cancel_task.cancel()
+                    try:
+                        await cancel_task
+                    except asyncio.CancelledError:
+                        pass
         else:
             main_task.cancel()
 
