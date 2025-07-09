@@ -4,10 +4,13 @@ import discord
 import shutil
 import aiofiles
 import aiofiles.os
+import asyncio
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
 from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
 from utils.conversions import mb_to_bytes
+
+FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
 
 class FTPError(Exception):
     """Exception raised for errors relating to FTP."""
@@ -307,8 +310,9 @@ class FTPps:
             raise FTPError("FTP ERROR!")
         
     async def testConnection(self) -> None:
-        async with aioftp.Client.context(self.ip, self.port, connection_timeout=10):
-           pass
+        async with FTP_SEMAPHORE_ALT:
+            async with aioftp.Client.context(self.ip, self.port, connection_timeout=10):
+                pass
         
     async def create_ctx(self) -> aioftp.Client:
         try:
