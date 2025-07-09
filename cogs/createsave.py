@@ -68,6 +68,7 @@ class CreateSave(commands.Cog):
         else:
             e = "You need to add the `saveblocks` or `savesize_mb` argument!"
             await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         embSceSys = discord.Embed(
