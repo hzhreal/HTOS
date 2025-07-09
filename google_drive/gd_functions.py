@@ -685,3 +685,4 @@ async def checkGDrive() -> None:
             except HTTPError as e:
                 logger.error(f"GD-Error while cleaning drive (unexpected): {e}")
                 print("Failed to check drive, check logs.")
+                return
