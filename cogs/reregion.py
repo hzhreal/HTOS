@@ -207,7 +207,7 @@ class ReRegion(commands.Cog):
             embRgdone = discord.Embed(
                 title="Re-region: Successful",
                 description=(
-                    f"**{batch.printed}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (batch {i}/{batches})."
+                    f"**{batch.printed}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."         
                 ),

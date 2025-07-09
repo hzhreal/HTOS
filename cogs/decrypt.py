@@ -145,7 +145,7 @@ class Decrypt(commands.Cog):
             embDdone = discord.Embed(
                 title="Decryption process: Successful",
                 description=(
-                    f"**{batch.printed}** has been decrypted (batch {i}/{batches})."
+                    f"**{batch.printed}** has been decrypted (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),

@@ -151,7 +151,7 @@ class Change(commands.Cog):
             embPdone = discord.Embed(
                 title="PNG process: Successful",
                 description=(
-                    f"Altered the save png of **{batch.printed}** and resigned to **{playstation_id or user_id}** (batch {i}/{batches})."
+                    f"Altered the save png of **{batch.printed}** and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),
@@ -296,7 +296,7 @@ class Change(commands.Cog):
             embTdone = discord.Embed(
                 title="Title altering process: Successful",
                 description=(
-                    f"Altered the save titles of **{batch.printed}**, and resigned to **{playstation_id or user_id}** (batch {i}/{batches})."
+                    f"Altered the save titles of **{batch.printed}**, and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),

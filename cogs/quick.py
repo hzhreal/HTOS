@@ -141,7 +141,7 @@ class Quick(commands.Cog):
         embRdone = discord.Embed(
             title="Resigning process (Encrypted): Successful",
             description=(
-                f"**{batch.printed}** resigned to **{playstation_id or user_id}**."
+                f"**{batch.printed}** resigned to **{playstation_id or user_id}**.\n"
                 "Uploading file...\n"
                 "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
             ),
@@ -259,7 +259,7 @@ class Quick(commands.Cog):
             embCompleted = discord.Embed(
                 title="Success!",
                 description=(
-                    f"Quick codes applied to **{finished_files}** ({i}/{batches})."
+                    f"Quick codes applied to **{finished_files}** ({i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),

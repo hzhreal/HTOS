@@ -179,7 +179,7 @@ class Encrypt(commands.Cog):
             embComplete = discord.Embed(
                 title="Encryption process: Successful",
                 description=(
-                    f"Encrypted files into **{batch.printed}** for **{playstation_id or user_id}** (batch {i}/{batches})."
+                    f"Encrypted files into **{batch.printed}** for **{playstation_id or user_id}** (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),

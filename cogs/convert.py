@@ -146,7 +146,7 @@ class Convert(commands.Cog):
             embCompleted = discord.Embed(
                 title="Success!",
                 description=(
-                    f"Converted **{finished_files}** (batch {i}/{batches})."
+                    f"Converted **{finished_files}** (batch {i}/{batches}).\n"
                     "Uploading file...\n"
                     "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
                 ),

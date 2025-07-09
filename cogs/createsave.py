@@ -221,7 +221,7 @@ class CreateSave(commands.Cog):
         embRdone = discord.Embed(
             title="Creation process: Successful",
             description=(
-                f"**{savename}** created & resigned to **{playstation_id or user_id}**."
+                f"**{savename}** created & resigned to **{playstation_id or user_id}**.\n"
                 "Uploading file...\n"
                 "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
             ),
