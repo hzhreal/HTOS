@@ -666,7 +666,12 @@ gdapi = GDapi()
 @tasks.loop(hours=1, reconnect=False)
 async def checkGDrive() -> None:
     cur_time = datetime.datetime.now()
-    files = await gdapi.list_drive()
+    try:
+        files = await gdapi.list_drive()
+    except HTTPError as e:
+        logger.error(f"GD-Error while listing drive (unexpected): {e}")
+        print("Failed to check drive, check logs.")
+        return
 
     for file in files:
         file_id = file["id"]
@@ -675,4 +680,8 @@ async def checkGDrive() -> None:
         day_ahead = created_time + datetime.timedelta(days=1)
 
         if cur_time.date() >= day_ahead.date():
-            await gdapi.delete_file(file_id)
+            try:
+                await gdapi.delete_file(file_id)
+            except HTTPError as e:
+                logger.error(f"GD-Error while cleaning drive (unexpected): {e}")
+                print("Failed to check drive, check logs.")
