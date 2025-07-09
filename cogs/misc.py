@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from network import FTPps, C1socket, SocketError
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t, bot,
     embinit, loadkeyset_emb,
     BASE_ERROR_MSG

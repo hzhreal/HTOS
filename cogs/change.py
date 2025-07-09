@@ -8,16 +8,16 @@ from aiogoogle import HTTPError
 from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embpng, embTitleChange, embTitleErr
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import pngprocess
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
 from utils.orbis import handleTitles, SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Change(commands.Cog):
@@ -69,7 +69,7 @@ class Change(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -103,24 +103,24 @@ class Change(commands.Cog):
 
                     embpng1 = discord.Embed(
                         title="PNG process: Initializng",
-                        description=f"Your save (**{savefile.basename}**) is being mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Your save (**{savefile.basename}**) is being mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embpng1)
-
-                    await savefile.dump()
+                    task = [savefile.dump]
+                    await task_handler(d_ctx, task, [embpng1])
 
                     embpng2 = discord.Embed(
                         title="PNG process: Initializng",
-                        description=f"Your save (**{savefile.basename}**) has mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Your save (**{savefile.basename}**) has mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embpng2)
-
-                    await C1ftp.swappng(batch.location_to_scesys)
-                    await savefile.resign()
+                    tasks = [
+                        lambda: C1ftp.swappng(batch.location_to_scesys),
+                        savefile.resign
+                    ]
+                    await task_handler(d_ctx, tasks, [embpng2])
 
                     embpngs = discord.Embed(
                         title="PNG process: Successful",
@@ -131,7 +131,7 @@ class Change(commands.Cog):
                     await msg.edit(embed=embpngs)
                     j += 1
 
-                except (SocketError, FTPError, OrbisError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
@@ -150,7 +150,11 @@ class Change(commands.Cog):
 
             embPdone = discord.Embed(
                 title="PNG process: Successful",
-                description=f"Altered the save png of **{batch.printed}** and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).",
+                description=(
+                    f"Altered the save png of **{batch.printed}** and resigned to **{playstation_id or user_id}** (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embPdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -163,7 +167,7 @@ class Change(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -214,7 +218,7 @@ class Change(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -248,16 +252,20 @@ class Change(commands.Cog):
 
                     embTitleChange1 = discord.Embed(
                         title="Title altering process: Initializng",
-                        description=f"Processing {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Processing {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to attempt cancelling.",
                         colour=Color.DEFAULT.value
                     )
                     embTitleChange1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embTitleChange1)
+                    tasks = [
+                        savefile.dump,
+                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])    
+                    ]
+                    await task_handler(d_ctx, tasks, [embTitleChange1])
 
-                    await savefile.dump()
-                    await savefile.download_sys_elements([savefile.ElementChoice.SFO])
                     handleTitles(savefile.sfo_ctx, maintitle, subtitle)
-                    await savefile.resign()
+
+                    task = [savefile.resign()]
+                    await task_handler(d_ctx, task, [])
 
                     embTitleSuccess = discord.Embed(
                         title="Title altering process: Successful",
@@ -268,7 +276,7 @@ class Change(commands.Cog):
                     await msg.edit(embed=embTitleSuccess)
                     j += 1
 
-                except (SocketError, FTPError, OrbisError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
@@ -287,7 +295,11 @@ class Change(commands.Cog):
 
             embTdone = discord.Embed(
                 title="Title altering process: Successful",
-                description=f"Altered the save titles of **{batch.printed}**, and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).",
+                description=(
+                    f"Altered the save titles of **{batch.printed}**, and resigned to **{playstation_id or user_id}** (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embTdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -300,7 +312,7 @@ class Change(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

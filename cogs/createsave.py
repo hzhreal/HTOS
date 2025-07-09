@@ -10,7 +10,7 @@ from network import FTPps, C1socket, SocketError, FTPError
 from google_drive import gdapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
-    IP, PORT_FTP, PORT_CECIE, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX, COMMAND_COOLDOWN,
     SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
@@ -18,7 +18,7 @@ from utils.constants import (
 from utils.workspace import makeWorkspace, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
 from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
-from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks, bytes_to_mb
@@ -130,7 +130,7 @@ class CreateSave(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -219,7 +219,11 @@ class CreateSave(commands.Cog):
         
         embRdone = discord.Embed(
             title="Creation process: Successful",
-            description=f"**{savename}** created & resigned to **{playstation_id or user_id}**.",
+            description=(
+                f"**{savename}** created & resigned to **{playstation_id or user_id}**."
+                "Uploading file...\n"
+                "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+            ),
             colour=Color.DEFAULT.value
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -232,7 +236,7 @@ class CreateSave(commands.Cog):
 
         try: 
             await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
-        except (GDapiError, discord.HTTPException) as e:
+        except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)

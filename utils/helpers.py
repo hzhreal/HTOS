@@ -1,3 +1,4 @@
+import asyncio.selector_events
 import discord
 import asyncio
 import os
@@ -8,7 +9,7 @@ import utils.orbis as orbis
 import aiofiles.os
 from discord.ext import pages
 from dataclasses import dataclass
-from typing import Literal, Callable
+from typing import Literal, Callable, Awaitable, Any
 from enum import Enum
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
@@ -18,9 +19,9 @@ from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
     NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, WELCOME_MESSAGE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
-    embgdt, embUtimeout, embnt, emb8, embvalidpsn
+    embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb
 )
-from utils.exceptions import PSNIDError, FileError, WorkspaceError
+from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
 from utils.conversions import bytes_to_mb
@@ -143,16 +144,65 @@ def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext)
     if message.author == ctx.author and message.channel == ctx.channel:
         return message.content and orbis.checkid(message.content)
 
-async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord.Message, discord.ApplicationContext], bool], embed: discord.Embed, delete_response: bool = False, timeout: int = OTHER_TIMEOUT) -> discord.Message:
+def exit_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
+    if message.author == ctx.author and message.channel == ctx.channel:
+        return message.content and message.content == "EXIT"
+
+async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord.Message, discord.ApplicationContext], bool], embed: discord.Embed | None, delete_response: bool = False, timeout: int | None = OTHER_TIMEOUT) -> discord.Message:
     try:
         response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=timeout)
         if delete_response:
             await response.delete()
     except asyncio.TimeoutError:
-        await ctx.edit(embed=embed)
+        if embed is not None:
+            await ctx.edit(embed=embed)
         await asyncio.sleep(3)
         raise TimeoutError("TIMED OUT!")
     return response
+
+async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], Awaitable[Any]]], ordered_embeds: list[discord.Embed]) -> list[Any]:
+    tasks_len = len(ordered_tasks)
+    embeds_len = len(ordered_embeds)
+    assert tasks_len >= embeds_len
+
+    result = []
+
+    for i in range(tasks_len):
+        embed = None
+        if i < embeds_len:
+            embed = ordered_embeds[i]
+
+        main_task = asyncio.create_task(ordered_tasks[i]())
+        cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=None))
+
+        if embed is not None:
+            await d_ctx.msg.edit(embed=embed)
+
+        done, _ = await asyncio.wait(
+            {main_task, cancel_task},
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        if main_task in done:
+            cancel_task.cancel()
+
+            try:
+                res = await main_task
+                result.append(res)
+            finally:
+                try:
+                    await cancel_task
+                except asyncio.CancelledError:
+                    pass
+        else:
+            main_task.cancel()
+
+            try:
+                await main_task
+            except asyncio.CancelledError:
+                raise TaskCancelledError("CANCELLED!")
+            finally:
+                await cancel_task
+    return result
 
 async def upload2(
           d_ctx: DiscordContext, 
@@ -220,9 +270,12 @@ async def upload2(
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
             if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                uploaded_file_paths = await gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)
+                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
             else:
-                uploaded_file_paths = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)
+                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)]
+            await d_ctx.msg.edit(embed=cancel_notify_emb)
+            await asyncio.sleep(1)
+            uploaded_file_paths = (await task_handler(d_ctx, task, []))[0]
 
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -338,8 +391,10 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            uploaded_file_paths = (await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize))[0]
-           
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)]
+            await d_ctx.msg.edit(embed=cancel_notify_emb)
+            await asyncio.sleep(1)
+            uploaded_file_paths = (await task_handler(d_ctx, task, []))[0][0]
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
@@ -569,10 +624,10 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
     else:
-        file_url = await gdapi.uploadzip(final_file, file_name, shared_gd_folderid)
+        file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(final_file, file_name, shared_gd_folderid)], [])
         embg = discord.Embed(
             title="Google Drive: Upload complete",
-            description=f"[Download]({file_url})\n{extra_msg}",
+            description=f"[Download]({file_url[0]})\n{extra_msg}",
             colour=Color.DEFAULT.value
         )
         embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

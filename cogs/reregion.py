@@ -8,15 +8,15 @@ from aiogoogle import HTTPError
 from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
     logger, Color, Embed_t,
     emb21, emb20
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError, WorkspaceError, OrbisError
+from utils.exceptions import PSNIDError, FileError, WorkspaceError, OrbisError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class ReRegion(commands.Cog):
@@ -57,7 +57,7 @@ class ReRegion(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -77,14 +77,15 @@ class ReRegion(commands.Cog):
 
             embkstone1 = discord.Embed(
                 title="Obtain process: Keystone",
-                description=f"Obtaining keystone from file: **{savefile.basename}**, please wait...",
+                description=f"Obtaining keystone from file: **{savefile.basename}**, please wait...\nSend 'EXIT' to cancel.",
                 colour=Color.DEFAULT.value
             )
             embkstone1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embkstone1)
-
-            await savefile.dump()
-            await savefile.download_sys_elements([savefile.ElementChoice.SFO, savefile.ElementChoice.KEYSTONE])
+            tasks = [
+                savefile.dump,
+                lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO, savefile.ElementChoice.KEYSTONE])
+            ]
+            await task_handler(d_ctx, tasks, [embkstone1])
 
             target_titleid = savefile.title_id
             
@@ -101,7 +102,7 @@ class ReRegion(commands.Cog):
 
             await C1ftp.deleteList(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
 
-        except (SocketError, FTPError, OrbisError, OSError) as e:
+        except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG
@@ -127,7 +128,7 @@ class ReRegion(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -167,14 +168,15 @@ class ReRegion(commands.Cog):
 
                     emb4 = discord.Embed(
                         title="Re-regioning process: Encrypted",
-                        description=f"Your save (**{savefile.basename}**) is being re-regioned & resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Your save (**{savefile.basename}**) is being re-regioned & resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb4)
-
-                    await savefile.dump()
-                    await savefile.resign()
+                    tasks = [
+                        savefile.dump,
+                        savefile.resign
+                    ]
+                    await task_handler(d_ctx, tasks, [emb4])
 
                     emb5 = discord.Embed(
                         title="Re-regioning (Encrypted): Successful",
@@ -185,7 +187,7 @@ class ReRegion(commands.Cog):
                     await msg.edit(embed=emb5)
                     j += 1
 
-                except (SocketError, FTPError, OrbisError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
@@ -204,7 +206,11 @@ class ReRegion(commands.Cog):
 
             embRgdone = discord.Embed(
                 title="Re-region: Successful",
-                description=f"**{batch.printed}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (batch {i}/{batches}).",
+                description=(
+                    f"**{batch.printed}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."         
+                ),
                 colour=Color.DEFAULT.value
             )
             embRgdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -220,7 +226,7 @@ class ReRegion(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid, extra_msg)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

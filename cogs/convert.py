@@ -14,7 +14,7 @@ from utils.constants import (
 from utils.workspace import initWorkspace, makeWorkspace, cleanupSimple
 from utils.helpers import errorHandling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
 from utils.extras import completed_print
-from utils.exceptions import FileError, WorkspaceError
+from utils.exceptions import FileError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Convert(commands.Cog):
@@ -58,7 +58,7 @@ class Convert(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (TimeoutError, GDapiError, FileError) as e:
+        except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -145,7 +145,11 @@ class Convert(commands.Cog):
 
             embCompleted = discord.Embed(
                 title="Success!",
-                description=f"Converted **{finished_files}** (batch {i}/{batches}).",
+                description=(
+                    f"Converted **{finished_files}** (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -158,7 +162,7 @@ class Convert(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

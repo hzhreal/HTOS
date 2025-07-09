@@ -6,14 +6,14 @@ from aiogoogle import HTTPError
 from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embEncrypted1
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Resign(commands.Cog):
@@ -54,7 +54,7 @@ class Resign(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -88,14 +88,15 @@ class Resign(commands.Cog):
 
                     emb4 = discord.Embed(
                         title="Resigning process: Encrypted",
-                        description=f"Your save (**{savefile.basename}**) is being resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Your save (**{savefile.basename}**) is being resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb4)
-                    
-                    await savefile.dump()
-                    await savefile.resign()
+                    tasks = [
+                        savefile.dump,
+                        savefile.resign
+                    ]
+                    await task_handler(d_ctx, tasks, [emb4])
 
                     emb5 = discord.Embed(
                         title="Resigning process (Encrypted): Successful",
@@ -106,7 +107,7 @@ class Resign(commands.Cog):
                     await msg.edit(embed=emb5)
                     j += 1
 
-                except (SocketError, FTPError, OrbisError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
                         e = CON_FAIL_MSG
@@ -125,7 +126,11 @@ class Resign(commands.Cog):
             
             embRdone = discord.Embed(
                 title="Resigning process (Encrypted): Successful",
-                description=f"**{batch.printed}** resigned to **{playstation_id or user_id}** (batch {i}/{batches}).",
+                description=(
+                    f"**{batch.printed}** resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value)
             embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             try:
@@ -137,7 +142,7 @@ class Resign(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -148,6 +153,6 @@ class Resign(commands.Cog):
             i += 1
         await cleanupSimple(workspaceFolders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
-    
+
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Resign(bot))

@@ -4,7 +4,7 @@ from io import BytesIO
 from network.socket_functions import C1socket, SocketError
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, IP, PORT_CECIE, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
+from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
 from utils.orbis import PfsSKKey
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError

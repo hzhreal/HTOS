@@ -379,3 +379,10 @@ embChannelError = discord.Embed(title="Error",
                                     description="Invalid channel!",
                                     colour=Color.DEFAULT.value)
 embChannelError.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+cancel_notify_emb = discord.Embed(
+    title="Notice",
+    description="You can 'EXIT' if you want to cancel while the files are uploading.",
+    color=Color.DEFAULT.value
+)
+cancel_notify_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

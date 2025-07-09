@@ -9,15 +9,15 @@ from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     embDecrypt1
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
-from utils.helpers import DiscordContext, upload2, errorHandling, send_final
+from utils.helpers import DiscordContext, upload2, errorHandling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.namespaces import Crypto
-from utils.exceptions import FileError, OrbisError, WorkspaceError
+from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Decrypt(commands.Cog):
@@ -55,7 +55,7 @@ class Decrypt(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -93,25 +93,24 @@ class Decrypt(commands.Cog):
 
                     emb11 = discord.Embed(
                         title="Decryption process: Initializing",
-                        description=f"Mounting {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Mounting {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb11)
-            
-                    await savefile.dump()
+                    task = [savefile.dump]
+                    await task_handler(d_ctx, task, [emb11])
 
                     emb_dl = discord.Embed(
                         title="Decryption process: Downloading",
-                        description=f"{savefile.basename} mounted (save {j}/{batch.savecount}, batch {i}/{batches}), downloading decrypted savefile...",
+                        description=f"{savefile.basename} mounted (save {j}/{batch.savecount}, batch {i}/{batches}), downloading decrypted savefile...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     ) 
                     emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb_dl)
-
-                    await C1ftp.download_folder(batch.mount_location, destination_directory, not include_sce_sys)
-
-                    await savefile.download_sys_elements([savefile.ElementChoice.SFO])
+                    tasks = [
+                        lambda: C1ftp.download_folder(batch.mount_location, destination_directory, not include_sce_sys),
+                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
+                    ]
+                    await task_handler(d_ctx, tasks, [emb_dl])
 
                     await aiofiles.os.rename(destination_directory, destination_directory + f"_{savefile.title_id}")
                     destination_directory += f"_{savefile.title_id}"
@@ -145,7 +144,11 @@ class Decrypt(commands.Cog):
 
             embDdone = discord.Embed(
                 title="Decryption process: Successful",
-                description=f"**{batch.printed}** has been decrypted (batch {i}/{batches}).",
+                description=(
+                    f"**{batch.printed}** has been decrypted (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -161,7 +164,7 @@ class Decrypt(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, destination_directory_outer, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

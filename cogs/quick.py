@@ -9,17 +9,17 @@ from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, Color, Embed_t,
     emb_upl_savegame, embTimedOut, working_emb
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple, listStoredSaves
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes
+from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
 from utils.extras import completed_print
-from utils.exceptions import FileError, OrbisError, WorkspaceError
+from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
 class Quick(commands.Cog):
@@ -99,14 +99,15 @@ class Quick(commands.Cog):
 
                 emb4 = discord.Embed(
                     title="Resigning process: Encrypted",
-                    description=f"Your save (**{savefile.basename}**) is being resigned ({i}/{batch.savecount}), please wait...",
+                    description=f"Your save (**{savefile.basename}**) is being resigned ({i}/{batch.savecount}), please wait...\nSend 'EXIT' to cancel.",
                     colour=Color.DEFAULT.value
                 )
                 emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await msg.edit(embed=emb4)
-
-                await savefile.dump()
-                await savefile.resign()
+                tasks = [
+                    savefile.dump,
+                    savefile.resign
+                ]
+                await task_handler(d_ctx, tasks, [emb4])
 
                 emb5 = discord.Embed(
                     title="Resigning process (Encrypted): Successful",
@@ -117,7 +118,7 @@ class Quick(commands.Cog):
                 await msg.edit(embed=emb5)
                 i += 1
 
-        except (SocketError, FTPError, OrbisError, OSError) as e:
+        except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG
@@ -139,7 +140,11 @@ class Quick(commands.Cog):
         
         embRdone = discord.Embed(
             title="Resigning process (Encrypted): Successful",
-            description=f"**{batch.printed}** resigned to **{playstation_id or user_id}**.",
+            description=(
+                f"**{batch.printed}** resigned to **{playstation_id or user_id}**."
+                "Uploading file...\n"
+                "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+            ),
             colour=Color.DEFAULT.value
         )
         embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -152,7 +157,7 @@ class Quick(commands.Cog):
 
         try: 
             await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-        except (GDapiError, discord.HTTPException) as e:
+        except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -191,7 +196,7 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (TimeoutError, GDapiError, FileError) as e:
+        except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -253,7 +258,11 @@ class Quick(commands.Cog):
 
             embCompleted = discord.Embed(
                 title="Success!",
-                description=f"Quick codes applied to **{finished_files}** ({i}/{batches}).",
+                description=(
+                    f"Quick codes applied to **{finished_files}** ({i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -266,7 +275,7 @@ class Quick(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

@@ -1,3 +1,4 @@
+import asyncio.selector_events
 import discord
 import asyncio
 import aiofiles.os
@@ -9,16 +10,16 @@ from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from data.crypto import CryptoError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, PORT_CECIE, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     SCE_SYS_CONTENTS, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, CON_FAIL, CON_FAIL_MSG, SHARED_GD_LINK_DESC,
     logger, Color, Embed_t,
-    emb14
+    emb14, cancel_notify_emb
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import completed_print
-from utils.helpers import psusername, upload2, errorHandling, send_final, UploadOpt, UploadGoogleDriveChoice
+from utils.helpers import psusername, upload2, errorHandling, send_final, UploadOpt, UploadGoogleDriveChoice, task_handler
 from utils.orbis import SaveBatch, SaveFile
-from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError
+from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.helpers import DiscordContext, replaceDecrypted
 from utils.instance_lock import INSTANCE_LOCK_global
 
@@ -64,7 +65,7 @@ class Encrypt(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError) as e:
+        except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -99,14 +100,15 @@ class Encrypt(commands.Cog):
 
                     embmo = discord.Embed(
                         title="Encryption process: Initializing",
-                        description=f"Mounting **{savefile.basename}**, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...",
+                        description=f"Mounting **{savefile.basename}**, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
                         colour=Color.DEFAULT.value
                     )
                     embmo.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embmo)
-
-                    await savefile.dump()
-                    await savefile.download_sys_elements([savefile.ElementChoice.SFO])
+                    tasks = [
+                        savefile.dump,
+                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
+                    ]
+                    await task_handler(d_ctx, tasks, [embmo])
                 
                     files = await C1ftp.list_files(batch.mount_location)
                     if len(files) == 0: 
@@ -133,8 +135,11 @@ class Encrypt(commands.Cog):
                         uploaded_file_paths_sys = (await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_size))[0]
                         await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
 
-                    await savefile.download_sys_elements([savefile.ElementChoice.SFO])    
-                    await savefile.resign()
+                    tasks = [
+                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO]),
+                        savefile.resign
+                    ]
+                    await task_handler(d_ctx, tasks, [cancel_notify_emb])
 
                     dec_print = completed_print(completed)
 
@@ -152,11 +157,11 @@ class Encrypt(commands.Cog):
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
-                except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError, TimeoutError) as e:
+                except (SocketError, FTPError, OrbisError, FileError, CryptoError, GDapiError, OSError, TimeoutError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, TimeoutError):
                         pass # we dont want TimeoutError in the OSError check because its a subclass
-                    elif isinstance(e, OSError) and e.errno in CON_FAIL: 
+                    elif isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
@@ -173,7 +178,11 @@ class Encrypt(commands.Cog):
 
             embComplete = discord.Embed(
                 title="Encryption process: Successful",
-                description=f"Encrypted files into **{batch.printed}** for **{playstation_id or user_id}** (batch {i}/{batches}).",
+                description=(
+                    f"Encrypted files into **{batch.printed}** for **{playstation_id or user_id}** (batch {i}/{batches})."
+                    "Uploading file...\n"
+                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+                ),
                 colour=Color.DEFAULT.value
             )
             embComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -186,7 +195,7 @@ class Encrypt(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
