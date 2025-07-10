@@ -6,6 +6,7 @@ import aiofiles
 import aiofiles.os
 import re
 import datetime
+import aiohttp
 import utils.orbis as orbis
 from discord.ext import tasks
 from aiogoogle import Aiogoogle, auth, HTTPError, models
@@ -20,7 +21,7 @@ from googleapiclient.discovery import build
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
 from utils.exceptions import OrbisError
-from utils.conversions import gb_to_bytes, bytes_to_mb
+from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -40,10 +41,13 @@ class GDapi:
     TOTAL_SIZE_LIMIT = gb_to_bytes(2)
     MAX_USER_NESTING = 100 # how deep a user can go when uploading files to create a save with
     MAX_FILES_IN_DIR = MAX_FILES
+    CHUNKSIZE = mb_to_bytes(32)
+    RANGE_PATTERN = re.compile(r"bytes=(\d+)-(\d+)")
     credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
     scope = ["https://www.googleapis.com/auth/drive"]
 
     def __init__(self) -> None:
+        assert self.CHUNKSIZE % (256 * 1024) == 0
         self.authorize()
 
     def authorize(self) -> None:
@@ -88,12 +92,12 @@ class GDapi:
         self.creds = {"client_creds": client_creds, "user_creds": user_creds}
         self.account_type = self.AccountType.PERSONAL_ACCOUNT
 
-    async def send_req(self, aiogoogle: Aiogoogle, req: models.Request) -> models.Response:
+    async def send_req(self, aiogoogle: Aiogoogle, req: models.Request, full_res: bool = False) -> models.Response:
         match self.account_type:
             case self.AccountType.SERVICE_ACCOUNT:
-                return await aiogoogle.as_service_account(req)
+                return await aiogoogle.as_service_account(req, full_res=full_res)
             case self.AccountType.PERSONAL_ACCOUNT:
-                return await aiogoogle.as_user(req)
+                return await aiogoogle.as_user(req, full_res=full_res)
 
     @staticmethod
     def grabfolderid(folder_link: str) -> str:
@@ -486,28 +490,28 @@ class GDapi:
             raise GDapiError("Shared folder has insufficent permissions! Enable write permission.")
         return folderid
 
-    async def uploadzip(self, pathToFile: str, fileName: str, shared_folderid: str = "") -> str:
-        metadata = {"name": fileName}
+    async def uploadzip(self, file_path: str, file_name: str, shared_folderid: str = "") -> str:
+        metadata = {"name": file_name}
         if shared_folderid:
             metadata["parents"] = [shared_folderid]
-        
-        async with Aiogoogle(**self.creds) as aiogoogle:
-            drive_v3 = await aiogoogle.discover("drive", "v3")
-            
-            try:
-                req = drive_v3.files.create(
-                    pipe_from=await aiofiles.open(pathToFile, "rb"), 
-                    fields="id", 
-                    json=metadata,
-                    supportsAllDrives=True
-                )
-                res = await self.send_req(aiogoogle, req)
+        filesize = await aiofiles.os.path.getsize(file_path)
 
-                req = drive_v3.permissions.create(
-                    fileId=res["id"], 
-                    json={"role": "reader", "type": "anyone", "allowFileDiscovery": False}
+        # Initial request for resumable upload
+        async with Aiogoogle(**self.creds) as aiogoogle:
+            try:
+                drive_v3 = await aiogoogle.discover("drive", "v3")
+                req_init = models.Request(
+                    method="POST",
+                    url="https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id&supportsAllDrives=True",
+                    json=metadata,
+                    headers={
+                        "X-Upload-Content-Length": str(filesize),
+                        "Content-Type": "application/json; charset=UTF-8",
+                    },
+                    upload_file_content_type="application/zip"
                 )
-                await self.send_req(aiogoogle, req)
+                res_init = await self.send_req(aiogoogle, req_init, full_res=True)
+                location = res_init.headers["Location"]
             except HTTPError as e:
                 if e.res is None:
                     raise GDapiError("Failed to upload to Google Drive, please try again.")
@@ -520,10 +524,75 @@ class GDapi:
                     raise GDapiError("Google drive storage quota was exceeded, tried clearing the storage. Please retry.")
                 raise GDapiError(self.getErrStr_HTTPERROR(e))
 
-        file_url = f"https://drive.google.com/file/d/{res['id']}"
+        # Upload in chunks
+        file_id = None
+        start_pos = 0
+        file = await aiofiles.open(file_path, "rb")
+        async with aiohttp.ClientSession() as session:
+            while start_pos < filesize:
+                await file.seek(start_pos)
+                chunk = await file.read(self.CHUNKSIZE)
+                chunk_size = len(chunk)
+                end_pos = start_pos + chunk_size - 1
+
+                async with session.put(
+                    url=location,
+                    data=chunk,
+                    headers={
+                        "Content-Length": str(chunk_size),
+                        "Content-Range": f"bytes {start_pos}-{end_pos}/{filesize}"
+                    }
+                ) as upload_res:
+                    if upload_res.status >= 400:
+                        try:
+                            body = await upload_res.json()
+                        except aiohttp.ContentTypeError:
+                            body = await upload_res.text()
+                        logger.error(
+                            f"Google Drive upload failed:\n"
+                            f"Status: {upload_res.status} {upload_res.reason}\n"
+                            f"Response body: {body}"
+                        )
+                        await file.close()
+                        raise GDapiError(f"Upload failed with status code {upload_res.status}!")
+                    
+                    if upload_res.status == 308:
+                        range_header = upload_res.headers.get("Range", "")
+                        range_pos = self.RANGE_PATTERN.fullmatch(range_header)
+                        if not range_pos:
+                            # If Range is not present then no bytes were receieved, but we will not be retrying
+                            await file.close()
+                            raise GDapiError("Unexpected error!")
+                        start_pos = int(range_pos.group(2)) + 1
+                        
+                    elif upload_res.status in (200, 201):
+                        try:
+                            body = await upload_res.json()
+                        except aiohttp.ContentTypeError:
+                            await file.close()
+                            raise GDapi("Unexpected error!")
+                        file_id = body.get("id")
+                        logger.info(f"Uploaded {file_path} to google drive")
+                        break
+        await file.close()
         
-        logger.info(f"Uploaded {pathToFile} to google drive")
-        
+        if not file_id:
+            raise GDapiError("Failed to get file ID!")
+
+        # Set permissions
+        async with Aiogoogle(**self.creds) as aiogoogle:
+            try:
+                drive_v3 = await aiogoogle.discover("drive", "v3")
+
+                perm_req = drive_v3.permissions.create(
+                    fileId=file_id, 
+                    json={"role": "reader", "type": "anyone", "allowFileDiscovery": False}
+                )
+                await self.send_req(aiogoogle, perm_req)
+            except HTTPError as e:
+                raise GDapiError(self.getErrStr_HTTPERROR(e))
+
+        file_url = f"https://drive.google.com/file/d/{file_id}"
         return file_url
 
     async def downloadsaves_recursive(
