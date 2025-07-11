@@ -78,7 +78,7 @@ For the bot to completely function you need to input your NPSSO 64 character tok
   ```UPLOAD_PATH```: The path that you used in the `config.ini` file  
   ```MOUNT_PATH```: The path on your PS4 where the saves will be mounted  
   ```GOOGLE_DRIVE_JSON_PATH```: The path to the Google Drive credentials JSON file  
-  ```STORED_SAVES_FOLDER_PATH```: The path to the folder where you store saves for use in the `quick resign` command, format inside the folder is ```{NAME OF GAME}/{CUSAXXXXX}/{ANY NAME FOR SAVE}/{THE .BIN(s) AND FILE(s)}```,   
+  ```STORED_SAVES_FOLDER_PATH```: The path to the folder where you store saves for use in the `quick resign` command, format inside the folder is ```{NAME OF GAME}/{CUSAXXXXX}/{ANY NAME FOR SAVE}/{THE .BIN(s) AND FILE(s)}```  
   ```TOKEN```: Discord bot token  
   ```NPSSO```: The NPSSO token  
 - Run `pip install -r requirements.txt` inside the directory where the bot is located to install the necessary packages
