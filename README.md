@@ -63,21 +63,14 @@ If you wanna contribute to this list, please let me know!
 Make sure to read everything.
 
 ### NPSSO
-For the bot to completely function you need to input your NPSSO 64 character token. This is so you can be authorized to use the PSN API to obtain account ID from username.
-
-How to obtain NPPSO:
-
-- Go to playstation.com and login
-- Go to this link https://ca.account.sony.com/api/v1/ssocookie
-- Find `{"npsso":"<64 character npsso code>"}`
-- If you leave it to "None" the psn.flipscreen.games website will be used to obtain account ID
+For the bot to completely function you need to input your NPSSO 64 character token. This is so you can be authorized to use the PSN API to obtain account ID from username. Make sure to read more about it [here](https://github.com/isFakeAccount/psnawp/blob/master/README.md#getting-started) where you can find out how to obtain it. If you choose not to, then psn.flipscreen.games will be used.  
 
 ### Everything else
 - Download the [pkg](https://github.com/hzhreal/cecie.nim/releases/latest) from and install it on your PS4
 - Download the [config.ini](https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini) file from and edit it with your desired 
   socket port and upload folder (path on PS4)
 - Upload the `config.ini` file to `/data/cecie` on your PS4  
-- Set up a [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) or a [Google OAuth Client](https://support.google.com/cloud/answer/15549257?hl=en), remember to enable the Drive API and to download the JSON credentials  
+- Set up a [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) or a [Google OAuth Client](https://support.google.com/cloud/answer/15549257?hl=en), remember to enable the Drive API and to download the JSON credentials. New service accounts do not get storage, so you should setup an OAuth client instead.   
 - Clone the repository and open the `.env` file, edit it as follows:  
   ```IP```: PS4 IP address  
   ```FTP_PORT```: The port that your FTP payload uses  
