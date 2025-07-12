@@ -626,7 +626,7 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
     else:
-        file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(final_file, file_name, shared_gd_folderid)], [])
+        file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)], [])
         embg = discord.Embed(
             title="Google Drive: Upload complete",
             description=f"[Download]({file_url[0]})\n{extra_msg}",

@@ -386,3 +386,9 @@ cancel_notify_emb = discord.Embed(
     color=Color.DEFAULT.value
 )
 cancel_notify_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+gd_upl_progress_emb = discord.Embed(
+    title="Google Drive Upload",
+    color=Color.DEFAULT.value
+)
+gd_upl_progress_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

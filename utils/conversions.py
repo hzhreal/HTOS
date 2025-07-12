@@ -1,3 +1,5 @@
+import math
+
 def mb_to_bytes(n: int) -> int:
     return n << 20
 
@@ -12,3 +14,19 @@ def bytes_to_mb(n: int) -> int:
 
 def mb_to_saveblocks(n: int) -> int:
     return n << 5
+
+def round_half_up(c: float) -> int:
+    if c == 0.0:
+        return 0
+
+    negative = c < 0
+    c = abs(c)
+
+    if c - math.floor(c) < 0.5:
+        n = math.floor(c)
+    else:
+        n = math.ceil(c)
+    
+    if negative:
+        return -n
+    return n

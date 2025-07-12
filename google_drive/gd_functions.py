@@ -19,9 +19,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from utils.extras import generate_random_string
-from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t, gd_upl_progress_emb
 from utils.exceptions import OrbisError
-from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes
+from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_up
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -438,22 +438,26 @@ class GDapi:
 
     async def clear_drive(self, files: list[dict[str, str]] | None = None) -> None:
         if files is None:
-            files = await self.list_drive()
+            try:
+                files = await self.list_drive()
+            except HTTPError as e:
+                logger.error(f"Failed to list drive: {e}")
+                return
 
         for file in files:
             file_id = file["id"]
-            await self.delete_file(file_id)
+            try:
+                await self.delete_file(file_id)
+            except HTTPError:
+                pass
 
     async def delete_file(self, fileid: str) -> None:
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
             req = drive_v3.files.get(fileId=fileid, fields="capabilities")
-            try:
-                res = await self.send_req(aiogoogle, req)
-            except HTTPError:
-                # does not exist
-                return
+            res = await self.send_req(aiogoogle, req)
+           
             can_delete = res.get("capabilities", {}).get("canDelete", False)
 
             if can_delete:
@@ -490,7 +494,7 @@ class GDapi:
             raise GDapiError("Shared folder has insufficent permissions! Enable write permission.")
         return folderid
 
-    async def uploadzip(self, file_path: str, file_name: str, shared_folderid: str = "") -> str:
+    async def uploadzip(self, ctx: discord.ApplicationContext | discord.Message, file_path: str, file_name: str, shared_folderid: str = "") -> str:
         metadata = {"name": file_name}
         if shared_folderid:
             metadata["parents"] = [shared_folderid]
@@ -528,8 +532,12 @@ class GDapi:
         file_id = None
         start_pos = 0
         file = await aiofiles.open(file_path, "rb")
+        emb = gd_upl_progress_emb.copy()
         async with aiohttp.ClientSession() as session:
             while start_pos < filesize:
+                emb.description = f"{round_half_up((start_pos / filesize) * 100)}%"
+                await ctx.edit(embed=emb)
+
                 await file.seek(start_pos)
                 chunk = await file.read(self.CHUNKSIZE)
                 chunk_size = len(chunk)
@@ -572,6 +580,8 @@ class GDapi:
                             await file.close()
                             raise GDapi("Unexpected error!")
                         file_id = body.get("id")
+                        emb.description = "100%"
+                        await ctx.edit(embed=emb)
                         logger.info(f"Uploaded {file_path} to google drive")
                         break
         await file.close()
@@ -751,7 +761,5 @@ async def checkGDrive() -> None:
         if cur_time.date() >= day_ahead.date():
             try:
                 await gdapi.delete_file(file_id)
-            except HTTPError as e:
-                logger.error(f"GD-Error while cleaning drive (unexpected): {e}")
-                print("Failed to check drive, check logs.")
-                return
+            except HTTPError:
+                pass
