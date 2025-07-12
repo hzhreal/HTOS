@@ -40,7 +40,7 @@ class Quick(commands.Cog):
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         mountPaths = []
@@ -179,7 +179,7 @@ class Quick(commands.Cog):
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
 
@@ -293,7 +293,7 @@ class Quick(commands.Cog):
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         embLoading = discord.Embed(
             title="Loading",

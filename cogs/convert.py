@@ -34,7 +34,7 @@ class Convert(commands.Cog):
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         emb_conv_upl = discord.Embed(
             title=f"Conversion process: {game}",

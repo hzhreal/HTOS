@@ -392,3 +392,10 @@ gd_upl_progress_emb = discord.Embed(
     color=Color.DEFAULT.value
 )
 gd_upl_progress_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+gd_maintenance_emb = discord.Embed(
+    title="Google Drive maintenance",
+    description="Please try again later.",
+    colour=Color.YELLOW.value
+)
+gd_maintenance_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

@@ -24,7 +24,7 @@ class Misc(commands.Cog):
     async def keyset(self, ctx: discord.ApplicationContext) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadkeyset_emb)

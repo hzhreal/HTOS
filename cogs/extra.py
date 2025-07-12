@@ -109,7 +109,7 @@ class Extra(commands.Cog):
             ) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         msg = ctx
         

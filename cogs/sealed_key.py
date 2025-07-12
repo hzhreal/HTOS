@@ -20,7 +20,7 @@ class Sealed_Key(commands.Cog):
     async def decrypt(self, ctx: discord.ApplicationContext, sealed_key: discord.Attachment) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         embLoad = discord.Embed(
             title="Loading",

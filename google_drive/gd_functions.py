@@ -451,6 +451,25 @@ class GDapi:
             except HTTPError:
                 pass
 
+    async def check_drive_storage(self) -> bool:
+        async with Aiogoogle(**self.creds) as aiogoogle:
+            try:
+                drive_v3 = await aiogoogle.discover("drive", "v3")
+
+                req = drive_v3.about.get(
+                    fields="storageQuota"
+                )
+                res = await self.send_req(aiogoogle, req)
+            except HTTPError as e:
+                logger.error(f"GD-Error while checking drive storage: {e}")
+                raise GDapiError("Failed to check drive storage!")
+        storage_quota = res["storageQuota"]
+        if storage_quota:
+            limit = int(storage_quota["limit"])
+            usage = int(storage_quota["usage"])
+            return (limit - usage) >= self.TOTAL_SIZE_LIMIT
+        return False
+
     async def delete_file(self, fileid: str) -> None:
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
@@ -517,15 +536,6 @@ class GDapi:
                 res_init = await self.send_req(aiogoogle, req_init, full_res=True)
                 location = res_init.headers["Location"]
             except HTTPError as e:
-                if e.res is None:
-                    raise GDapiError("Failed to upload to Google Drive, please try again.")
-
-                err = e.res.content.get("error")
-                errCode = err.get("code")
-                errReason = err.get("errors")[0].get("reason")
-                if errCode == 403 and errReason == "storageQuotaExceeded":
-                    await self.clear_drive()
-                    raise GDapiError("Google drive storage quota was exceeded, tried clearing the storage. Please retry.")
                 raise GDapiError(self.getErrStr_HTTPERROR(e))
 
         # Upload in chunks
@@ -579,15 +589,12 @@ class GDapi:
                         except aiohttp.ContentTypeError:
                             await file.close()
                             raise GDapi("Unexpected error!")
-                        file_id = body.get("id")
+                        file_id = body["id"]
                         emb.description = "100%"
                         await ctx.edit(embed=emb)
                         logger.info(f"Uploaded {file_path} to google drive")
                         break
         await file.close()
-        
-        if not file_id:
-            raise GDapiError("Failed to get file ID!")
 
         # Set permissions
         async with Aiogoogle(**self.creds) as aiogoogle:
@@ -742,8 +749,15 @@ class GDapi:
 
 gdapi = GDapi()
 
+@tasks.loop(count=1, reconnect=False)
+async def clean_GDrive() -> None:
+    await gdapi.clear_drive()
+
 @tasks.loop(hours=1, reconnect=False)
-async def checkGDrive() -> None:
+async def check_GDrive() -> None:
+    if clean_GDrive.is_running():
+        return
+
     cur_time = datetime.datetime.now()
     try:
         files = await gdapi.list_drive()

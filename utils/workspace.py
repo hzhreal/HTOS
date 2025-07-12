@@ -11,12 +11,13 @@ from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
 from network import FTPps, FTPError
+from google_drive import gdapi, clean_GDrive, GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
     DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, 
     logger, blacklist_logger, psnawp, Embed_t, Color,
-    embChannelError, retry_emb, blacklist_emb
+    embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
 )
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
@@ -190,11 +191,7 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     
 async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
     """Used for checking if a command is being run in a valid thread."""
-    try:
-        await ctx.defer()
-    except discord.HTTPException as e:
-        logger.exception(f"Error while deferring: {e}")
-        raise WorkspaceError("Please try again!")
+    await ctx.defer()
     
     threadId = uint64(thread_id, "big")
 
@@ -229,6 +226,25 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         emb_il.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         await ctx.respond(embed=emb_il)
         raise WorkspaceError(e)
+
+    # google drive check: are we currently deleting all files or do we need to delete all files
+    if clean_GDrive.is_running():
+        await INSTANCE_LOCK_global.release(ctx.author.id)
+        await ctx.respond(embed=gd_maintenance_emb)
+        raise WorkspaceError("Please try again!")
+    try:
+        gd_check = await gdapi.check_drive_storage()
+    except GDapiError as e:
+        await INSTANCE_LOCK_global.release(ctx.author.id)
+        gd_emb = gd_maintenance_emb.copy()
+        gd_emb.description = e
+        await ctx.respond(embed=gd_emb)
+        raise WorkspaceError("Please try again!")
+    if not gd_check:
+        clean_GDrive.start()
+        await INSTANCE_LOCK_global.release(ctx.author.id)
+        await ctx.respond(embed=gd_maintenance_emb)
+        raise WorkspaceError("Please try again!")
 
     # passed
     for path in workspaceList:

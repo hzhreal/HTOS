@@ -53,7 +53,7 @@ class SFO(commands.Cog):
     async def read(self, ctx: discord.ApplicationContext, sfo: discord.Attachment) -> None:
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadSFO_emb)
@@ -126,7 +126,7 @@ class SFO(commands.Cog):
         }
         workspaceFolders = []
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
-        except WorkspaceError: return
+        except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadSFO_emb)
