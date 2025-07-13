@@ -79,17 +79,16 @@ def startup(opt: WorkspaceOpt):
     with FTP() as ftp:
         try:
             ftp.connect(IP, PORT_FTP, timeout=10)
-            login_result = ftp.login()  # Call the login method and get its return value
-            if login_result == "230 User logged in, proceed.":
-                try:
-                    ftp.mkd(MOUNT_LOCATION)
-                    ftp.mkd(PS_UPLOADDIR)
-                except: pass
-                delete_folder_contents_ftp_BLOCKING(ftp, MOUNT_LOCATION)
-                delete_folder_contents_ftp_BLOCKING(ftp, PS_UPLOADDIR)
+            ftp.login()
+            try:
                 ftp.mkd(MOUNT_LOCATION)
-                ftp.mkd(PS_UPLOADDIR) 
-                ftp.quit()
+                ftp.mkd(PS_UPLOADDIR)
+            except: pass
+            delete_folder_contents_ftp_BLOCKING(ftp, MOUNT_LOCATION)
+            delete_folder_contents_ftp_BLOCKING(ftp, PS_UPLOADDIR)
+            ftp.mkd(MOUNT_LOCATION)
+            ftp.mkd(PS_UPLOADDIR) 
+            ftp.quit()
         except:
             pass
 
