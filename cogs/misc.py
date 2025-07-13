@@ -23,7 +23,7 @@ class Misc(commands.Cog):
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def keyset(self, ctx: discord.ApplicationContext) -> None:
         workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:

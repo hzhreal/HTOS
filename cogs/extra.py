@@ -108,7 +108,7 @@ class Extra(commands.Cog):
               account_id: Option(str, description="In hexadecimal format, '0x' prefix is fine and optional.", max_length=18) # type: ignore
             ) -> None:
         workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         msg = ctx

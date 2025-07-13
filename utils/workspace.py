@@ -189,7 +189,7 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
 
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
     
-async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int) -> None:
+async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
     """Used for checking if a command is being run in a valid thread."""
     await ctx.defer()
     
@@ -228,23 +228,24 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         raise WorkspaceError(e)
 
     # google drive check: are we currently deleting all files or do we need to delete all files
-    if clean_GDrive.is_running():
-        await INSTANCE_LOCK_global.release(ctx.author.id)
-        await ctx.respond(embed=gd_maintenance_emb)
-        raise WorkspaceError("Please try again!")
-    try:
-        gd_check = await gdapi.check_drive_storage()
-    except GDapiError as e:
-        await INSTANCE_LOCK_global.release(ctx.author.id)
-        gd_emb = gd_maintenance_emb.copy()
-        gd_emb.description = e
-        await ctx.respond(embed=gd_emb)
-        raise WorkspaceError("Please try again!")
-    if not gd_check:
-        clean_GDrive.start()
-        await INSTANCE_LOCK_global.release(ctx.author.id)
-        await ctx.respond(embed=gd_maintenance_emb)
-        raise WorkspaceError("Please try again!")
+    if not skip_gd_check:
+        if clean_GDrive.is_running():
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            await ctx.respond(embed=gd_maintenance_emb)
+            raise WorkspaceError("Please try again!")
+        try:
+            gd_check = await gdapi.check_drive_storage()
+        except GDapiError as e:
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            gd_emb = gd_maintenance_emb.copy()
+            gd_emb.description = e
+            await ctx.respond(embed=gd_emb)
+            raise WorkspaceError("Please try again!")
+        if not gd_check:
+            clean_GDrive.start()
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            await ctx.respond(embed=gd_maintenance_emb)
+            raise WorkspaceError("Please try again!")
 
     # passed
     for path in workspaceList:

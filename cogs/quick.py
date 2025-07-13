@@ -302,7 +302,7 @@ class Quick(commands.Cog):
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         embLoading = discord.Embed(

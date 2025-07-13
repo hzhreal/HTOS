@@ -52,7 +52,7 @@ class SFO(commands.Cog):
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def read(self, ctx: discord.ApplicationContext, sfo: discord.Attachment) -> None:
         workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:
@@ -125,7 +125,7 @@ class SFO(commands.Cog):
             "TITLE_ID": title_id
         }
         workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:

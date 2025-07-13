@@ -19,7 +19,7 @@ class Sealed_Key(commands.Cog):
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def decrypt(self, ctx: discord.ApplicationContext, sealed_key: discord.Attachment) -> None:
         workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         embLoad = discord.Embed(
