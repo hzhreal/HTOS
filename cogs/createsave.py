@@ -242,6 +242,11 @@ class CreateSave(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
+        except Exception as e:
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            return
 
         await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)   
         await INSTANCE_LOCK_global.release(ctx.author.id)

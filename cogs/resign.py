@@ -147,6 +147,11 @@ class Resign(commands.Cog):
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
+            except Exception as e:
+                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+                await INSTANCE_LOCK_global.release(ctx.author.id)
+                return
 
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mountPaths)

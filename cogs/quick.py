@@ -162,6 +162,11 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
+        except Exception as e:
+            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            return
 
         await cleanup(C1ftp, workspaceFolders, batch.entry, mountPaths)
         await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -278,6 +283,11 @@ class Quick(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release(ctx.author.id)
+                return
+            except Exception as e:
+                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 

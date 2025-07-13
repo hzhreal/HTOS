@@ -125,7 +125,7 @@ class Decrypt(commands.Cog):
                     await msg.edit(embed=emb13)
                     j += 1
 
-                except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:
+                except (SocketError, FTPError, OrbisError, CryptoError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
@@ -167,6 +167,11 @@ class Decrypt(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await INSTANCE_LOCK_global.release(ctx.author.id)
+                return
+            except Exception as e:
+                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             
