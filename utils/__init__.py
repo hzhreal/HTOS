@@ -81,6 +81,7 @@ from .constants import (
     ZIPFILE_COMPRESSION_LEVEL,
     CREATESAVE_ENC_CHECK_LIMIT,
     OTHER_TIMEOUT,
+    GENERAL_TIMEOUT,
     COMMAND_COOLDOWN,
     CON_FAIL,
     CON_FAIL_MSG,
@@ -127,4 +128,4 @@ from .namespaces import Cheats, Converter, Crypto
 from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, exit_check, wait_for_msg, task_handler, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt, ReturnTypes
 from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState
 from .instance_lock import MAXIMUM_INSTANCES_AT_ONCE, InstanceLock, INSTANCE_LOCK_global
-from .conversions import mb_to_bytes, gb_to_bytes, saveblocks_to_bytes, bytes_to_mb, mb_to_saveblocks, round_half_up
+from .conversions import mb_to_bytes, gb_to_bytes, saveblocks_to_bytes, bytes_to_mb, mb_to_saveblocks, round_half_up, hours_to_seconds, minutes_to_seconds

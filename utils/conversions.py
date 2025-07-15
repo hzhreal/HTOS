@@ -30,3 +30,9 @@ def round_half_up(c: float) -> int:
     if negative:
         return -n
     return n
+
+def hours_to_seconds(n: int) -> int:
+    return n * 3600
+
+def minutes_to_seconds(n: int) -> int:
+    return n * 60

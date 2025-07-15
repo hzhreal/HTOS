@@ -13,7 +13,7 @@ from zipfile import (
 from discord.ext import commands
 from enum import Enum
 from psnawp_api import PSNAWP
-from utils.conversions import mb_to_bytes, saveblocks_to_bytes
+from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds
 
 VERSION = "v2.0.0"
 
@@ -140,8 +140,9 @@ RCUBE_TITLEID = frozenset(["CUSA16074", "CUSA27390"])
 FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
-UPLOAD_TIMEOUT = 600 # seconds, for uploading files or google drive folder link
-OTHER_TIMEOUT = 300 # seconds, for button click, responding to quickresign command, and responding with account id
+UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, for uploading files or google drive folder link
+OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, for button click, responding to quickresign command, and responding with account id
+GENERAL_TIMEOUT = None # seconds, for general processes like google drive uploads, 
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(8) # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes

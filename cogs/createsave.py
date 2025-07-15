@@ -16,7 +16,7 @@ from utils.constants import (
     Color, Embed_t, logger
 )
 from utils.workspace import makeWorkspace, initWorkspace, cleanup
-from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special
+from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special, task_handler
 from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
@@ -176,21 +176,28 @@ class CreateSave(commands.Cog):
             mount_location_new = MOUNT_LOCATION + "/" + rand_str
             location_to_scesys = mount_location_new + "/" + "sce_sys"
 
-            await C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)
+            task = [lambda: C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)]
+            await task_handler(d_ctx, task, [])
             uploaded_file_paths.extend([temp_savename, f"{savename}_{rand_str}.bin"])
             
             # now mount save and get ready to upload files to it
-            await C1ftp.make1(mount_location_new)
-            await C1ftp.make1(location_to_scesys)
+            tasks = [lambda: C1ftp.make1(mount_location_new), lambda: C1ftp.make1(location_to_scesys)]
+            await task_handler(d_ctx, tasks, [])
             mountPaths.append(mount_location_new)
-            await C1socket.socket_dump(mount_location_new, temp_savename)
+
+            task = [lambda: C1socket.socket_dump(mount_location_new, temp_savename)]
+            await task_handler(d_ctx, task, [])
 
             # upload now
-            await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)
+            task = [lambda: C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)]
+            await task_handler(d_ctx, task)
             shutil.rmtree(scesys_local)
-            await C1ftp.upload_folder(mount_location_new, newUPLOAD_DECRYPTED)
 
-            await C1socket.socket_update(mount_location_new, temp_savename)
+            tasks = [
+                lambda: C1ftp.upload_folder(mount_location_new, newUPLOAD_DECRYPTED),
+                lambda: C1socket.socket_update(mount_location_new, temp_savename)
+            ]
+            await task_handler(d_ctx, tasks, [])
             
             # make paths for save
             save_dirs = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4", "SAVEDATA", user_id, title_id)
@@ -198,10 +205,13 @@ class CreateSave(commands.Cog):
 
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
-            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename))
-            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+            tasks = [
+                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
+                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+            ]
+            await task_handler(d_ctx, tasks, [])
             await C1ftp.free_ctx(ftp_ctx)
-        except (SocketError, FTPError, OSError, OrbisError) as e:
+        except (SocketError, FTPError, OSError, OrbisError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
                 e = CON_FAIL_MSG

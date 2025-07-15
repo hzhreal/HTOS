@@ -17,7 +17,7 @@ from google_drive import gdapi, GDapiError
 from network import FTPps
 from utils.constants import (
     logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, WELCOME_MESSAGE,
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, WELCOME_MESSAGE, GENERAL_TIMEOUT,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
     embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb
 )
@@ -156,7 +156,7 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
     except asyncio.TimeoutError:
         if embed is not None:
             await ctx.edit(embed=embed)
-        await asyncio.sleep(3)
+            await asyncio.sleep(3)
         raise TimeoutError("TIMED OUT!")
     return response
 
@@ -166,16 +166,15 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
     assert tasks_len >= embeds_len
 
     result = []
-    cancel_task_created = False
+    cancel_task = None
     for i in range(tasks_len):
         embed = None
         if i < embeds_len:
             embed = ordered_embeds[i]
 
         main_task = asyncio.create_task(ordered_tasks[i]())
-        if not cancel_task_created:
-            cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=None))
-            cancel_task_created = True
+        if cancel_task is None:
+            cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=GENERAL_TIMEOUT))
 
         if embed is not None:
             await d_ctx.msg.edit(embed=embed)
@@ -188,22 +187,38 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
             try:
                 res = await main_task
                 result.append(res)
-            finally:
-                if i == tasks_len - 1:
-                    cancel_task.cancel()
-                    try:
-                        await cancel_task
-                    except asyncio.CancelledError:
-                        pass
+            except Exception:
+                cancel_task.cancel()
+                try:
+                    await cancel_task
+                except (asyncio.CancelledError, TimeoutError):
+                    pass
+                except Exception as e:
+                    logger.exception(f"Unexpected error: {e}")
+                raise
         else:
             main_task.cancel()
-
             try:
                 await main_task
             except asyncio.CancelledError:
-                raise TaskCancelledError("CANCELLED!")
-            finally:
+                pass
+            except Exception as e:
+                logger.exception(f"Unexpected error: {e}")
+
+            try:
                 await cancel_task
+            except TimeoutError as e:
+                raise TaskCancelledError(e)
+            raise TaskCancelledError("CANCELLED!")
+
+    cancel_task.cancel()
+    try:
+        await cancel_task
+    except (asyncio.CancelledError, TimeoutError):
+        pass
+    except Exception as e:
+        logger.exception(f"Unexpected error: {e}")
+
     return result
 
 async def upload2(
@@ -523,8 +538,9 @@ async def replaceDecrypted(
 
             if not ignore_secondlayer_checks:
                 await crypthelp.extra_import(Crypto, titleid, newPath)
-
-            await fInstance.replacer(cwdHere, lastN)
+            
+            task = [lambda: fInstance.replacer(cwdHere, lastN)]
+            await task_handler(d_ctx, task, [])
             completed.append(file)
             total_count += await aiofiles.os.path.getsize(newPath)
         if total_count > savesize:
@@ -605,10 +621,12 @@ async def replaceDecrypted(
                             if not ignore_secondlayer_checks:
                                 await crypthelp.extra_import(Crypto, titleid, file_renamed)
 
-                            await fInstance.replacer(cwdHere, lastN) 
+                            task = [lambda: fInstance.replacer(cwdHere, lastN)]
+                            await task_handler(d_ctx, task, [])
                             completed.append(lastN)
         else:
-            await fInstance.upload_folder(mountLocation, local_download_path)
+            task = [lambda: fInstance.upload_folder(mountLocation, local_download_path)]
+            await task_handler(d_ctx, task, [])
             idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)
             completed.extend([x[idx:] for x in uploaded_file_paths])
     
