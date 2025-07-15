@@ -25,6 +25,7 @@ from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelle
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
 from utils.conversions import bytes_to_mb
+from utils.instance_lock import INSTANCE_LOCK_global
 
 @dataclass
 class DiscordContext:
@@ -61,6 +62,10 @@ class threadButton(discord.ui.View):
     
     @discord.ui.button(label="Create thread", style=discord.ButtonStyle.primary, custom_id="CreateThread")
     async def callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
+        current_instance = INSTANCE_LOCK_global.instances.get(interaction.user.id)
+        if current_instance is not None:
+            await interaction.response.send_message("You can not create a new thread when you already have an active instance!", ephemeral=True)
+            return
         await interaction.response.send_message("Creating thread...", ephemeral=True)
 
         ids_to_remove = []
