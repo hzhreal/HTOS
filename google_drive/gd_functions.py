@@ -582,7 +582,6 @@ class GDapi:
                             await file.close()
                             raise GDapiError("Unexpected error!")
                         start_pos = int(range_pos.group(2)) + 1
-                        
                     elif upload_res.status in (200, 201):
                         try:
                             body = await upload_res.json()
@@ -594,6 +593,14 @@ class GDapi:
                         await ctx.edit(embed=emb)
                         logger.info(f"Uploaded {file_path} to google drive")
                         break
+                    else:
+                        await file.close()
+                        logger.error(
+                            f"Google Drive upload: Unexpected status code:\n"
+                            f"Status: {upload_res.status} {upload_res.reason}\n"
+                            f"Response body: {body}"
+                        )
+                        raise GDapiError(f"Upload failed with status code {upload_res.status}!")
         await file.close()
 
         # Set permissions
