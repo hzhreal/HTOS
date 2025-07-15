@@ -300,7 +300,7 @@ embvalidpsn = discord.Embed(
 embvalidpsn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embinit = discord.Embed(
-    title="Instance creator",
+    title="Thread creator",
     description="Click button to get started!\nYou can also use old threads that you have created with the bot.",
     colour=Color.DEFAULT.value
 )
