@@ -179,18 +179,17 @@ class CreateSave(commands.Cog):
             task = [lambda: C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)]
             await task_handler(d_ctx, task, [])
             uploaded_file_paths.extend([temp_savename, f"{savename}_{rand_str}.bin"])
-            
-            # now mount save and get ready to upload files to it
-            tasks = [lambda: C1ftp.make1(mount_location_new), lambda: C1ftp.make1(location_to_scesys)]
-            await task_handler(d_ctx, tasks, [])
+
             mountPaths.append(mount_location_new)
-
-            task = [lambda: C1socket.socket_dump(mount_location_new, temp_savename)]
-            await task_handler(d_ctx, task, [])
-
-            # upload now
-            task = [lambda: C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys)]
-            await task_handler(d_ctx, task)
+            tasks = [
+                # now mount save and get ready to upload files to it
+                lambda: C1ftp.make1(mount_location_new), 
+                lambda: C1ftp.make1(location_to_scesys),
+                # dump, and begin uploading
+                lambda: C1socket.socket_dump(mount_location_new, temp_savename),
+                lambda: C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys),
+            ]
+            await task_handler(d_ctx, tasks, [])
             shutil.rmtree(scesys_local)
 
             tasks = [
