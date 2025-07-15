@@ -7,6 +7,7 @@ from discord.ext import commands
 from utils.constants import bot, TOKEN
 from utils.workspace import WorkspaceOpt, startup, check_version
 from utils.helpers import threadButton
+from utils.conversions import round_half_up
 
 workspace_opt = WorkspaceOpt()
 
@@ -25,7 +26,7 @@ async def on_ready() -> None:
 async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException) -> None:
     match error:
         case commands.CommandOnCooldown():
-            await ctx.respond(f"You are on cooldown. Try again in {int(error.retry_after)} seconds.", ephemeral=True)
+            await ctx.respond(f"You are on cooldown. Try again in {round_half_up(error.retry_after)} seconds.", ephemeral=True)
         case commands.NotOwner():
             await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
 
