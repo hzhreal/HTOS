@@ -119,7 +119,7 @@ class FTPps:
                 await ftp.change_directory(location_to_scesys)
                 await self.uploadStream(ftp, self.keystone_file_path, KEYSTONE_NAME)
 
-        except aioftp.errors as e:
+        except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
             raise FTPError("FTP ERROR!")
 

@@ -39,6 +39,9 @@ class CustomCrypto:
     def trim_trailing_bytes(data: bytes | bytearray, off: int, byte: int = 0) -> tuple[bytes | bytearray, int]:
         """Start from off and move backward, stop when a byte that differs from the given has been reached. Return new data and the occurence offset."""
         size = len(data)
+        if not (0 <= off < size):
+            raise ValueError(f"Offset {off} is out of range for data of size {size}!")
+
         assert 0 <= off < size
         byte &= 0xFF
 

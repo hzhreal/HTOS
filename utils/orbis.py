@@ -338,8 +338,10 @@ class SFOContext:
         param_data = []
         for param in self.params:
             param: SFOContextParam
-
-            param_data.append(param.as_dict())
+            try:
+                param_data.append(param.as_dict())
+            except (struct.error, UnicodeDecodeError):
+                raise OrbisError("Failed to get param data!")
         return param_data
     
 class PfsSKKey:

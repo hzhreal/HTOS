@@ -269,7 +269,7 @@ class Change(commands.Cog):
 
                     handleTitles(savefile.sfo_ctx, maintitle, subtitle)
 
-                    task = [savefile.resign()]
+                    task = [savefile.resign]
                     await task_handler(d_ctx, task, [])
 
                     embTitleSuccess = discord.Embed(
