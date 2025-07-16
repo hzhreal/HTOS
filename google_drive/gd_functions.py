@@ -567,7 +567,6 @@ class GDapi:
                         }
                     ) as upload_res:
                         if upload_res.status >= 400:
-                            await file.close()
                             try:
                                 body = await upload_res.json()
                             except aiohttp.ContentTypeError:
@@ -584,7 +583,6 @@ class GDapi:
                             range_pos = self.RANGE_PATTERN.fullmatch(range_header)
                             if not range_pos:
                                 # If Range is not present then no bytes were receieved, but we will not be retrying
-                                await file.close()
                                 raise GDapiError("Unexpected error!")
                             start_pos = int(range_pos.group(2)) + 1
                         elif upload_res.status in (200, 201):
@@ -592,14 +590,13 @@ class GDapi:
                                 body = await upload_res.json()
                             except aiohttp.ContentTypeError:
                                 await file.close()
-                                raise GDapi("Unexpected error!")
+                                raise GDapiError("Unexpected error!")
                             file_id = body["id"]
                             emb.description = "100%"
                             await ctx.edit(embed=emb)
                             logger.info(f"Uploaded {file_path} to google drive")
                             break
                         else:
-                            await file.close()
                             logger.error(
                                 f"Google Drive upload: Unexpected status code:\n"
                                 f"Status: {upload_res.status} {upload_res.reason}\n"
@@ -607,9 +604,12 @@ class GDapi:
                             )
                             raise GDapiError(f"Upload failed with status code {upload_res.status}!")
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                    logger.error(f"GD chunk upload request error: {e}")
                     await file.close()
+                    logger.error(f"GD chunk upload request error: {e}")
                     raise GDapiError("Error while uploading chunk!")
+                except Exception:
+                    await file.close()
+                    raise
         await file.close()
 
         # Set permissions
