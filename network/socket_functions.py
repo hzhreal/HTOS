@@ -35,7 +35,7 @@ class SocketPS:
           response = json.loads(response)
         return response
     
-    except ConnectionError as e:
+    except OSError as e:
       logger.error(f"An error occured while sending tcp message (Cecie): {e}")
       raise SocketError("Error communicating with socket.")
     

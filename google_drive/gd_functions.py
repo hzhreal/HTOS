@@ -21,7 +21,7 @@ from googleapiclient.discovery import build
 from utils.extras import generate_random_string
 from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t, gd_upl_progress_emb
 from utils.exceptions import OrbisError
-from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_up
+from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_up, minutes_to_seconds
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -41,13 +41,17 @@ class GDapi:
     TOTAL_SIZE_LIMIT = gb_to_bytes(2)
     MAX_USER_NESTING = 100 # how deep a user can go when uploading files to create a save with
     MAX_FILES_IN_DIR = MAX_FILES
-    CHUNKSIZE = mb_to_bytes(32)
+    UPLOAD_CHUNKSIZE = mb_to_bytes(32)
+    UPLOAD_CHUNK_TIMEOUT = aiohttp.ClientTimeout(
+        total=minutes_to_seconds(10), 
+        sock_connect=30
+    )
     RANGE_PATTERN = re.compile(r"bytes=(\d+)-(\d+)")
     credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
     scope = ["https://www.googleapis.com/auth/drive"]
 
     def __init__(self) -> None:
-        assert self.CHUNKSIZE % (256 * 1024) == 0
+        assert self.UPLOAD_CHUNKSIZE % (256 * 1024) == 0
         self.authorize()
 
     def authorize(self) -> None:
@@ -543,64 +547,69 @@ class GDapi:
         start_pos = 0
         file = await aiofiles.open(file_path, "rb")
         emb = gd_upl_progress_emb.copy()
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=self.UPLOAD_CHUNK_TIMEOUT) as session:
             while start_pos < filesize:
                 emb.description = f"{round_half_up((start_pos / filesize) * 100)}%"
                 await ctx.edit(embed=emb)
 
                 await file.seek(start_pos)
-                chunk = await file.read(self.CHUNKSIZE)
+                chunk = await file.read(self.UPLOAD_CHUNKSIZE)
                 chunk_size = len(chunk)
                 end_pos = start_pos + chunk_size - 1
 
-                async with session.put(
-                    url=location,
-                    data=chunk,
-                    headers={
-                        "Content-Length": str(chunk_size),
-                        "Content-Range": f"bytes {start_pos}-{end_pos}/{filesize}"
-                    }
-                ) as upload_res:
-                    if upload_res.status >= 400:
-                        try:
-                            body = await upload_res.json()
-                        except aiohttp.ContentTypeError:
-                            body = await upload_res.text()
-                        logger.error(
-                            f"Google Drive upload failed:\n"
-                            f"Status: {upload_res.status} {upload_res.reason}\n"
-                            f"Response body: {body}"
-                        )
-                        await file.close()
-                        raise GDapiError(f"Upload failed with status code {upload_res.status}!")
-                    
-                    if upload_res.status == 308:
-                        range_header = upload_res.headers.get("Range", "")
-                        range_pos = self.RANGE_PATTERN.fullmatch(range_header)
-                        if not range_pos:
-                            # If Range is not present then no bytes were receieved, but we will not be retrying
+                try:
+                    async with session.put(
+                        url=location,
+                        data=chunk,
+                        headers={
+                            "Content-Length": str(chunk_size),
+                            "Content-Range": f"bytes {start_pos}-{end_pos}/{filesize}"
+                        }
+                    ) as upload_res:
+                        if upload_res.status >= 400:
                             await file.close()
-                            raise GDapiError("Unexpected error!")
-                        start_pos = int(range_pos.group(2)) + 1
-                    elif upload_res.status in (200, 201):
-                        try:
-                            body = await upload_res.json()
-                        except aiohttp.ContentTypeError:
+                            try:
+                                body = await upload_res.json()
+                            except aiohttp.ContentTypeError:
+                                body = await upload_res.text()
+                            logger.error(
+                                f"Google Drive upload failed:\n"
+                                f"Status: {upload_res.status} {upload_res.reason}\n"
+                                f"Response body: {body}"
+                            )
+                            raise GDapiError(f"Upload failed with status code {upload_res.status}!")
+                        
+                        if upload_res.status == 308:
+                            range_header = upload_res.headers.get("Range", "")
+                            range_pos = self.RANGE_PATTERN.fullmatch(range_header)
+                            if not range_pos:
+                                # If Range is not present then no bytes were receieved, but we will not be retrying
+                                await file.close()
+                                raise GDapiError("Unexpected error!")
+                            start_pos = int(range_pos.group(2)) + 1
+                        elif upload_res.status in (200, 201):
+                            try:
+                                body = await upload_res.json()
+                            except aiohttp.ContentTypeError:
+                                await file.close()
+                                raise GDapi("Unexpected error!")
+                            file_id = body["id"]
+                            emb.description = "100%"
+                            await ctx.edit(embed=emb)
+                            logger.info(f"Uploaded {file_path} to google drive")
+                            break
+                        else:
                             await file.close()
-                            raise GDapi("Unexpected error!")
-                        file_id = body["id"]
-                        emb.description = "100%"
-                        await ctx.edit(embed=emb)
-                        logger.info(f"Uploaded {file_path} to google drive")
-                        break
-                    else:
-                        await file.close()
-                        logger.error(
-                            f"Google Drive upload: Unexpected status code:\n"
-                            f"Status: {upload_res.status} {upload_res.reason}\n"
-                            f"Response body: {body}"
-                        )
-                        raise GDapiError(f"Upload failed with status code {upload_res.status}!")
+                            logger.error(
+                                f"Google Drive upload: Unexpected status code:\n"
+                                f"Status: {upload_res.status} {upload_res.reason}\n"
+                                f"Response body: {body}"
+                            )
+                            raise GDapiError(f"Upload failed with status code {upload_res.status}!")
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    logger.error(f"GD chunk upload request error: {e}")
+                    await file.close()
+                    raise GDapiError("Error while uploading chunk!")
         await file.close()
 
         # Set permissions
