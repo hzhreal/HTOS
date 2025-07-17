@@ -147,7 +147,7 @@ def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> boo
 
 def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return message.content and orbis.checkid(message.content)
+        return (message.content and orbis.checkid(message.content)) or (message.content and message.content == "EXIT")
 
 def exit_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
@@ -474,6 +474,8 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
             delmsg = True
 
             response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
+            if response.content == "EXIT":
+                raise PSNIDError("EXITED!")
             user_id = response.content
         except PSNAWPAuthenticationError:
             NPSSO_global.val = ""
@@ -500,6 +502,8 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
                 delmsg = True
 
                 response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
+                if response.content == "EXIT":
+                    raise PSNIDError("EXITED!")
                 user_id = response.content
                 break
             
