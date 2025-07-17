@@ -246,7 +246,7 @@ class CreateSave(commands.Cog):
 
         try: 
             await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
-        except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
+        except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)

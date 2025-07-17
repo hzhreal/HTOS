@@ -195,7 +195,7 @@ class Encrypt(commands.Cog):
 
             try: 
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
-            except (GDapiError, discord.HTTPException, TaskCancelledError) as e:
+            except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

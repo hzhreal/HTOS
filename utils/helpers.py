@@ -258,7 +258,12 @@ async def upload2(
         i = 1
         for attachment in valid_attachments:
             file_path = os.path.join(saveLocation, attachment.filename)
-            await attachment.save(file_path)
+            try:
+                await attachment.save(file_path)
+            except asyncio.TimeoutError:
+                raise TimeoutError("TIMED OUT!")
+            except aiohttp.ClientError:
+                raise FileError("Failed to download file.")
             logger.info(f"Saved {attachment.filename} to {file_path}")
             
             # run a quick check
@@ -324,7 +329,12 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         else:
             save_path = saveLocation
             file_path = os.path.join(save_path, attachment.filename)
-            await attachment.save(file_path)
+            try:
+                await attachment.save(file_path)
+            except asyncio.TimeoutError:
+                raise TimeoutError("TIMED OUT!")
+            except aiohttp.ClientError:
+                raise FileError("Failed to download file.")
             logger.info(f"Saved {attachment.filename} to {file_path}")
             emb16 = discord.Embed(
                 title="Upload alert: Successful", 
@@ -387,7 +397,12 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             full_path = os.path.join(dir_path, file_name)
 
-            await attachment.save(full_path)
+            try:
+                await attachment.save(full_path)
+            except asyncio.TimeoutError:
+                raise TimeoutError("TIMED OUT!")
+            except aiohttp.ClientError:
+                raise FileError("Failed to download file.")
             logger.info(f"Saved {attachment.filename} to {full_path}")
             
             emb1 = discord.Embed(
@@ -647,7 +662,12 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
     final_size = await aiofiles.os.path.getsize(final_file)
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
-        await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
+        try:
+            await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
+        except asyncio.TimeoutError:
+            raise TimeoutError("TIMED OUT!")
+        except aiohttp.ClientError:
+            raise FileError("Failed to upload file.")
     else:
         file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)], [])
         embg = discord.Embed(
