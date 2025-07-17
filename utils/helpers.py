@@ -346,7 +346,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
             files = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
-            file_path = files[0]
+            file_path = files[0][0]
 
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
