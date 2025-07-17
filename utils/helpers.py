@@ -738,17 +738,16 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
 
         for titleId, titleId_dict in game_dict.items():
             for savedesc, path in titleId_dict.items():
-                if fields_added < EMBED_FIELD_LIM:
-                    emb.add_field(name=titleId, value=f"{entries_added + 1}. {savedesc}")
-                    selection[entries_added] = path
-                    entries_added += 1
-                    fields_added += 1
-
-                else:
+                if fields_added == EMBED_FIELD_LIM:
                     pages_list.append(emb)
                     emb = emb.copy()
                     emb.clear_fields()
                     fields_added = 0
+
+                emb.add_field(name=titleId, value=f"{entries_added + 1}. {savedesc}")
+                selection[entries_added] = path
+                entries_added += 1
+                fields_added += 1
         pages_list.append(emb)
         
         if entries_added == 0:
