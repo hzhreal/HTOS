@@ -61,7 +61,7 @@ class GDapi:
 
         # check if it is a service account
         serviceacc_creds = {
-            "scopes": self.scope,
+            "scopes": SCOPE,
             **json.load(open(CREDENTIALS_PATH))
         }
         acc_type = serviceacc_creds.get("type", "")
