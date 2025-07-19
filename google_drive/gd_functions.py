@@ -47,38 +47,48 @@ class GDapi:
         sock_connect=30
     )
     RANGE_PATTERN = re.compile(r"bytes=(\d+)-(\d+)")
-    credentials_path = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
-    scope = ["https://www.googleapis.com/auth/drive"]
 
     def __init__(self) -> None:
         assert self.UPLOAD_CHUNKSIZE % (256 * 1024) == 0
         self.authorize()
 
     def authorize(self) -> None:
-        if os.path.exists(self.credentials_path):
-            serviceacc_creds = {
-                "scopes": self.scope,
-                **json.load(open(self.credentials_path))
-            }
-            acc_type = serviceacc_creds.get("type", "")
-            if acc_type == "service_account":
-                self.creds = {"service_account_creds": serviceacc_creds}
-                self.account_type = self.AccountType.SERVICE_ACCOUNT
-                return
+        CREDENTIALS_PATH = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
+        SCOPE = ["https://www.googleapis.com/auth/drive"]
+
+        if not os.path.isfile(CREDENTIALS_PATH):
+            raise GDapiError("Credentials path does not exist or is not a file!")
+
+        # check if it is a service account
+        serviceacc_creds = {
+            "scopes": self.scope,
+            **json.load(open(CREDENTIALS_PATH))
+        }
+        acc_type = serviceacc_creds.get("type", "")
+        if acc_type == "service_account":
+            self.creds = {"service_account_creds": serviceacc_creds}
+            self.account_type = self.AccountType.SERVICE_ACCOUNT
+            return
+        
+        CACHED_CREDENTIALS_PATH = os.path.join(os.path.dirname(CREDENTIALS_PATH), "token.json")
+
+        # try to get cached oauth credentials
+        if os.path.isfile(CACHED_CREDENTIALS_PATH):
             try:
-                creds = Credentials.from_authorized_user_file(self.credentials_path, self.scope)
+                creds = Credentials.from_authorized_user_file(CACHED_CREDENTIALS_PATH, SCOPE)
             except ValueError:
                 creds = None
         else:
             creds = None
 
         if not creds or not creds.valid:
+            # refresh or obtain oauth credentials
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_path, self.scope)
+                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPE)
                 creds = flow.run_local_server(port=0)
-            with open(self.credentials_path, "w") as token:
+            with open(CACHED_CREDENTIALS_PATH, "w") as token:
                 token.write(creds.to_json())
         build("drive", "v3", credentials=creds)
 
