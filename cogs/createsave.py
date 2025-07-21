@@ -25,7 +25,7 @@ from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks, bytes_to_mb
 
 SAVEBLOCKS_DESC = f"The value you put in will determine savesize (blocks * 32768)."
 
-SAVESIZE_MB_MIN = 3 # keep in mind minimum saveblocks
+SAVESIZE_MB_MIN = bytes_to_mb(saveblocks_to_bytes(SAVEBLOCKS_MIN))
 SAVESIZE_MB_MAX = bytes_to_mb(SAVESIZE_MAX)
 SAVESIZE_MB_DESC = "The value you put in will determine savesize (in MB)."
 
