@@ -599,7 +599,6 @@ class GDapi:
                             try:
                                 body = await upload_res.json()
                             except aiohttp.ContentTypeError:
-                                await file.close()
                                 raise GDapiError("Unexpected error!")
                             file_id = body["id"]
                             emb.description = "100%"
