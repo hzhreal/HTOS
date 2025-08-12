@@ -70,6 +70,7 @@ PORT_CECIE = int(os.getenv("CECIE_PORT"))
 MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
+APP_PROFILES_PATH = "profiles.json"
 UPLOAD_ENCRYPTED = os.path.join("UserSaves", "uploadencrypted")
 UPLOAD_DECRYPTED = os.path.join("UserSaves", "uploaddecrypted")
 DOWNLOAD_ENCRYPTED = os.path.join("UserSaves", "downloadencrypted")
@@ -94,12 +95,13 @@ class NPSSO:
 NPSSO_global = NPSSO()
 
 psnawp = None
-if NPSSO_global.val:
-    psnawp = PSNAWP(NPSSO_global)
-    print("psnawp initialized")
-else:
-    print("It is recommended that you register a NPSSO token.")
-    time.sleep(3)
+if __file__ == "bot.py":
+    if NPSSO_global.val:
+        psnawp = PSNAWP(NPSSO_global)
+        print("psnawp initialized")
+    else:
+        print("It is recommended that you register a NPSSO token.")
+        time.sleep(3)
 
 # BOT INITIALIZATION 
 activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
@@ -231,28 +233,28 @@ embhttp.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embEncrypted1 = discord.Embed(
     title="Resigning process: Encrypted",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embEncrypted1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embDecrypt1 = discord.Embed(
     title="Decrypt Process",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embDecrypt1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb14 = discord.Embed(
     title="Resigning process: Decrypted",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb14.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb20 = discord.Embed(
     title="Re-region process: Upload encrypted files from the FOREIGN region",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb20.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -273,7 +275,7 @@ emb21.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng = discord.Embed(
     title="PNG Process",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embpng.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -308,7 +310,7 @@ embinit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTitleChange = discord.Embed(
     title="Change title: Upload",
-    description="Please attach atleast two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embTitleChange.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -336,7 +338,7 @@ embDone_G.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_upl_savegame = discord.Embed(
     title="Upload files",
-    description=f"Please attach atleast 1 savefile, it must be fully decrypted. Or type 'EXIT' to cancel command.",
+    description=f"Please attach at least 1 savefile, it must be fully decrypted. Or type 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb_upl_savegame.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

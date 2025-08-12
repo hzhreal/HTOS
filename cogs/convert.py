@@ -163,6 +163,8 @@ class Convert(commands.Cog):
             try: 
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
+                if isinstance(e, discord.HTTPException):
+                    e = BASE_ERROR_MSG
                 await errorHandling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)

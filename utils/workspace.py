@@ -52,7 +52,7 @@ def delete_folder_contents_ftp_BLOCKING(ftp: FTP, folder_path: str) -> None:
     except error_perm as e:
         logger.error(f"An error occurred: {e}")
 
-def startup(opt: WorkspaceOpt):
+def startup(opt: WorkspaceOpt, lite: bool = False):
     """Makes sure everything exists and cleans up unnecessary files, used when starting up bot."""
     if opt.ignore_startup:
         return
@@ -91,6 +91,9 @@ def startup(opt: WorkspaceOpt):
             ftp.quit()
         except:
             pass
+    
+    if lite:
+        return
 
     try:
         conn = sqlite3.connect(DATABASENAME_THREADS)

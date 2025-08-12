@@ -15,6 +15,7 @@ from enum import Enum, auto
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google.auth.exceptions import RefreshError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
@@ -84,8 +85,13 @@ class GDapi:
         if not creds or not creds.valid:
             # refresh or obtain oauth credentials
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                except RefreshError:
+                    creds = None
             else:
+                creds = None     
+            if not creds:
                 flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPE)
                 creds = flow.run_local_server(port=0)
             with open(CACHED_CREDENTIALS_PATH, "w") as token:
