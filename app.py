@@ -7,6 +7,7 @@ from nicegui import ui
 from app_core import models
 from app_core.profile_selector import ProfileSelector
 from app_core.resign import Resign
+from app_core import Decrypt
 from utils.constants import APP_PROFILES_PATH
 from utils.workspace import WorkspaceOpt, startup
 
@@ -17,11 +18,14 @@ def initialize_tabs() -> None:
     with ui.tabs().classes("w-full") as tabs:
         p_s = ProfileSelector(profiles)
         r = Resign(profiles)
+        d = Decrypt()
     with ui.tab_panels(tabs, value=p_s.tab).classes("w-full"):
         with ui.tab_panel(p_s.tab):
             p_s.construct()
         with ui.tab_panel(r.tab):
             r.construct()
+        with ui.tab_panel(d.tab):
+            d.construct()
 
 if __name__ in {"__main__", "__mp_main__"}:
     parser = argparse.ArgumentParser()

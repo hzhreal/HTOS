@@ -7,9 +7,10 @@ from data.crypto.common import CustomCrypto as CC
 from app_core.models import Logger
 from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
+from utils.extras import FileError
 from utils.extras import generate_random_string
 
-def save_pair_check(logger: Logger, paths: list[str]) -> list[str]:
+def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None) -> list[str]:
     valid_files_temp = []
     for file in paths:
         filename = os.path.basename(file) + f"_{'X' * RANDOMSTRING_LENGTH}"
@@ -40,17 +41,21 @@ def save_pair_check(logger: Logger, paths: list[str]) -> list[str]:
                     valid_files.append(file)
                     valid_files.append(file_nested) 
 
-    if len(valid_files) == 0:
+    valid_files_cnt = len(valid_files)
+    savepair_cnt = valid_files_cnt / 2
+    if valid_files_cnt == 0:
         raise OrbisError("No valid saves found!")
+    if savepair_limit and savepair_cnt > savepair_limit:
+        raise FileError(f"Maximum savepair limit of {savepair_limit} exceeded ({savepair_cnt})!")
+
     return valid_files
 
-
-async def prepare_save_input_folder(logger: Logger, folder_path: str, output_folder_path: str) -> list[list[str]]:
+async def prepare_save_input_folder(logger: Logger, folder_path: str, output_folder_path: str, savepair_limit: int | None = None) -> list[list[str]]:
     finished_files = []
 
     files = await CC.obtainFiles(folder_path)
-    saves = save_pair_check(logger, files)
-    
+    saves = save_pair_check(logger, files, savepair_limit)
+
     # no files in output root, only folder for each batch
     cur_output_dir = os.path.join(output_folder_path, os.path.basename(output_folder_path))
     await mkdir(cur_output_dir)
