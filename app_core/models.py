@@ -7,7 +7,7 @@ from typing import Any, Callable
 from enum import Enum, auto
 
 from nicegui import ui, app
-from webview import FOLDER_DIALOG
+from webview import FileDialog
 from aiofiles.ospath import isdir
 
 from utils.orbis import checkid
@@ -124,6 +124,8 @@ class Logger:
         self.update_obj()
     
     def write(self, prefix: str | None, msg: str) -> None:
+        if not msg:
+            return
         if prefix:
             self.text += f"\n\n{prefix} {msg}"
         else:
@@ -246,13 +248,13 @@ class TabBase:
         self.logger = Logger()
 
     async def on_input(self) -> None:
-        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.in_folder = folder[0]
             self.in_label.set_content(f"```{self.in_folder}```")
     
     async def on_output(self) -> None:
-        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.out_folder = folder[0]
             self.out_label.set_content(f"```{self.out_folder}```")

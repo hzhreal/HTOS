@@ -129,3 +129,33 @@ async def calculate_foldersize(settings: Settings, folder_path: str) -> tuple[in
     for f in files:
         size += await getsize(f)
     return size, files
+
+async def check_save(path: str) -> tuple[bool, tuple[str, str]]:
+    if path.endswith(".bin"):
+        savefile = path.removesuffix(".bin")
+        binfile = path
+    else:
+        savefile = path
+        binfile = path + ".bin"
+
+    if not await isfile(savefile) or not await isfile(binfile):
+        return False, ("", "")
+    try:
+        await parse_sealedkey(binfile)
+        await parse_pfs_header(savefile)
+    except OrbisError:
+        return False, ("", "")
+    return True, (savefile, binfile)
+
+async def prepare_single_save_folder(savepair: tuple[str, str], output_folder_path: str) -> tuple[str, str]:
+    output_dir = os.path.join(output_folder_path, os.path.basename(output_folder_path))
+    await mkdir(output_dir)
+
+    outpair = []
+    for file in savepair:
+        filename = os.path.basename(file)
+        filepath_out = os.path.join(output_dir, filename)
+        shutil.copyfile(file, filepath_out)
+        outpair.append(filepath_out)
+    return tuple(outpair)
+    

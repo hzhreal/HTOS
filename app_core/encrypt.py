@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from nicegui import ui, app
-from webview import FOLDER_DIALOG
+from webview import FileDialog
 from aiofiles.ospath import isdir, getsize
 from aiofiles.os import makedirs
 
@@ -50,7 +50,7 @@ class Encrypt(TabBase):
         p = self.profiles.selected_profile.copy()
 
         self.logger.clear()
-        self.logger.info("Starting resign...")
+        self.logger.info("Starting encrypt...")
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
         workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
@@ -111,7 +111,9 @@ class Encrypt(TabBase):
                     if len(files) == 0:
                         raise FileError("Could not list any decrypted saves!")
                     parsed_list = self.parse_filelist(files)
-                    self.encrypt_folder_list.write(None, parsed_list)
+                    t = f"### {savefile.basename} ({savefile.title_id})\n\n" + parsed_list
+                    self.encrypt_folder_list.write(None, t)
+                    self.logger.info("Waiting for folder to encrypt...")
                     await self.event.wait()
 
                     encrypt_foldersize, encrypt_files = await calculate_foldersize(self.settings, self.encrypt_folder)
@@ -147,7 +149,7 @@ class Encrypt(TabBase):
         self.enable_buttons()
 
     async def on_encrypt_folder(self) -> None:
-        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.encrypt_folder = folder[0]
             self.encrypt_folder_label.set_content(f"```{self.encrypt_folder}```")
