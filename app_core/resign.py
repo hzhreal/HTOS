@@ -1,9 +1,7 @@
-from nicegui import ui, app
-from webview import FOLDER_DIALOG
-from aiofiles.ospath import isdir
+from nicegui import ui
 from aiofiles.os import makedirs
 
-from app_core.models import Profiles, Logger, Settings
+from app_core.models import Profiles, Settings, TabBase
 from app_core.helpers import prepare_save_input_folder
 from network import C1socket, FTPps, SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR
@@ -11,38 +9,9 @@ from utils.workspace import initWorkspace, cleanup, cleanupSimple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError
 
-class Resign:
+class Resign(TabBase):
     def __init__(self, profiles: Profiles, settings: Settings) -> None:
-        self.profiles = profiles
-        self.settings = settings
-        self.tab = ui.tab("Resign")
-        self.in_folder = ""
-        self.out_folder = ""
-    
-    def construct(self) -> None:
-        with ui.row():
-            ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
-            ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
-        ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
-    
-    async def on_input(self) -> None:
-        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
-        if folder:
-            self.in_folder = folder[0]
-            self.in_label.set_content(f"```{self.in_folder}```")
-    
-    async def on_output(self) -> None:
-        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
-        if folder:
-            self.out_folder = folder[0]
-            self.out_label.set_content(f"```{self.out_folder}```")
-
-    async def validation(self) -> bool:
-        return await isdir(self.in_folder) and await isdir(self.out_folder)
+        super().__init__("Resign", profiles, settings)
 
     async def on_start(self) -> None:
         if not await self.validation():
@@ -51,6 +20,7 @@ class Resign:
         if not self.profiles.is_selected():
             ui.notify("No profile selected!")
             return
+        self.disable_buttons()
 
         p = self.profiles.selected_profile.copy()
 
@@ -65,6 +35,7 @@ class Resign:
                 await makedirs(folder, exist_ok=True)
             except OSError:
                 self.logger.exception("Failed to create workspace. Stopped.")
+                self.enable_buttons()
                 return
 
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
@@ -76,10 +47,12 @@ class Resign:
         except OrbisError as e:
             cleanupSimple(workspaceFolders)
             self.logger.error(str(e) + " Stopping...")
+            self.enable_buttons()
             return
         except OSError:
             cleanupSimple(workspaceFolders)
             self.logger.exception("Unexpected error. Stopping...")
+            self.enable_buttons()
             return
 
         batches = len(saves)
@@ -94,6 +67,7 @@ class Resign:
             except OSError:
                await cleanup(C1ftp, workspaceFolders, None, mount_paths)
                self.logger.exception("Unexpected error. Stopping...")
+               self.enable_buttons()
                return
             
             j = 1
@@ -111,13 +85,16 @@ class Resign:
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
                     self.logger.error(str(e) + " Stopping...")
+                    self.enable_buttons()
                     return
                 except Exception:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
                     self.logger.exception("Unexpected error. Stopping...")
+                    self.enable_buttons()
                     return
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** resigned to {p} (batch {i}/{batches}).")
             i += 1
         self.logger.info("Done!")
+        self.enable_buttons()

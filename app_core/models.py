@@ -6,7 +6,9 @@ import traceback
 from typing import Any, Callable
 from enum import Enum, auto
 
-from nicegui import ui
+from nicegui import ui, app
+from webview import FOLDER_DIALOG
+from aiofiles.ospath import isdir
 
 from utils.orbis import checkid
 from app_core.exceptions import ProfileError, SettingsError
@@ -108,9 +110,10 @@ class Profiles:
         return len(self.profiles) == 0
     
 class Logger:
-    def __init__(self) -> None:
+    def __init__(self, dimensions: tuple[int, int] = (200, 150)) -> None:
         self.text = ""
-        with ui.scroll_area().classes("w-200 h-150 border"):
+        with ui.scroll_area().classes(f"w-{dimensions[0]} h-{dimensions[1]} border") as scroll_area:
+            self.scroll_area = scroll_area
             self.obj = ui.markdown().classes("w-full")
 
     def update_obj(self) -> None:
@@ -120,8 +123,11 @@ class Logger:
         self.text = ""
         self.update_obj()
     
-    def write(self, prefix: str, msg: str) -> None:
-        self.text += f"\n\n{prefix} {msg}"
+    def write(self, prefix: str | None, msg: str) -> None:
+        if prefix:
+            self.text += f"\n\n{prefix} {msg}"
+        else:
+            self.text += f"\n\n{msg}"
         self.update_obj()
 
     def info(self, msg: str) -> None:
@@ -136,6 +142,14 @@ class Logger:
     def exception(self, msg: str) -> None:
         msg = f"```{traceback.format_exc()}```\n\n{msg}"
         self.write("[EXCEPTION]", msg)
+
+    def hide(self) -> None:
+        self.obj.set_visibility(False)
+        self.scroll_area.set_visibility(False)
+    
+    def show(self) -> None:
+        self.obj.set_visibility(True)
+        self.scroll_area.set_visibility(True)
 
 class SettingObject(Enum):
     CHECKBOX = auto()
@@ -212,3 +226,46 @@ class Settings:
             d[k] = v.value
         with open(self.settings_path, "w") as f:
             json.dump(d, f)
+
+class TabBase:
+    def __init__(self, name: str, profiles: Profiles | None, settings: Settings | None) -> None:
+        self.profiles = profiles
+        self.settings = settings
+        self.tab = ui.tab(name)
+        self.in_folder = ""
+        self.out_folder = ""
+    
+    def construct(self) -> None:
+        with ui.row():
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.markdown()
+        with ui.row():
+            self.output_button = ui.button("Select output folder", on_click=self.on_output)
+            self.out_label = ui.markdown()
+        self.start_button = ui.button("Start", on_click=self.on_start)
+        self.logger = Logger()
+
+    async def on_input(self) -> None:
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
+        if folder:
+            self.in_folder = folder[0]
+            self.in_label.set_content(f"```{self.in_folder}```")
+    
+    async def on_output(self) -> None:
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FOLDER_DIALOG)
+        if folder:
+            self.out_folder = folder[0]
+            self.out_label.set_content(f"```{self.out_folder}```")
+
+    async def validation(self) -> bool:
+        return await isdir(self.in_folder) and await isdir(self.out_folder)
+    
+    def disable_buttons(self) -> None:
+        self.input_button.disable()
+        self.output_button.disable()
+        self.start_button.disable()
+    
+    def enable_buttons(self) -> None:
+        self.input_button.enable()
+        self.output_button.enable()
+        self.start_button.enable()

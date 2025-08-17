@@ -20,8 +20,7 @@ class SettingSelector:
         for v in self.settings.settings:
             match v.obj:
                 case SettingObject.CHECKBOX:
-                    with ui.item_section():
-                        ui.checkbox(v.desc, value=v.value, on_change=partial(self.on_change, v))
+                    ui.checkbox(v.desc, value=v.value, on_change=partial(self.on_change, v))
 
     def on_change(self, s: SettingKey, event: ValueChangeEventArguments) -> None:
         try:

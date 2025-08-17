@@ -1,7 +1,7 @@
 import os
 import shutil
 from aiofiles.os import mkdir, listdir
-from aiofiles.ospath import exists, isfile
+from aiofiles.ospath import exists, isfile, getsize
 
 from data.crypto.common import CustomCrypto as CC
 from app_core.models import Logger, Settings
@@ -118,3 +118,14 @@ async def prepare_files_input_folder(settings: Settings, folder_path: str, outpu
         finished_files_cycle.append(filepath_out)
     finished_files.append(finished_files_cycle)
     return finished_files
+
+async def calculate_foldersize(settings: Settings, folder_path: str) -> tuple[int, list[str]]:
+    if settings.recursivity.value:
+        files = CC.obtainFiles(folder_path)
+    else:
+        files = get_files_nonrecursive(folder_path)
+
+    size = 0
+    for f in files:
+        size += await getsize(f)
+    return size, files
