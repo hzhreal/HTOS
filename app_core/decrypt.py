@@ -5,7 +5,7 @@ from webview import FOLDER_DIALOG
 from aiofiles.ospath import isdir
 from aiofiles.os import makedirs, mkdir, rename
 
-from app_core.models import Logger
+from app_core.models import Logger, Settings
 from app_core.helpers import prepare_save_input_folder
 from data.crypto.helpers import extra_decrypt
 from data.crypto.common import CryptoError
@@ -17,7 +17,8 @@ from utils.namespaces import Crypto
 from utils.exceptions import OrbisError
 
 class Decrypt:
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
         self.tab = ui.tab("Decrypt")
         self.in_folder = ""
         self.out_folder = ""
@@ -74,7 +75,7 @@ class Decrypt:
         mount_paths = []
 
         try:
-            saves = await prepare_save_input_folder(self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
+            saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
             cleanupSimple(workspaceFolders)
             self.logger.error(str(e) + " Stopping...")

@@ -1,14 +1,21 @@
 import os
 import shutil
-from aiofiles.os import mkdir
-from aiofiles.ospath import exists
+from aiofiles.os import mkdir, listdir
+from aiofiles.ospath import exists, isfile
 
 from data.crypto.common import CustomCrypto as CC
-from app_core.models import Logger
+from app_core.models import Logger, Settings
 from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
 from utils.extras import FileError
 from utils.extras import generate_random_string
+
+async def get_files_nonrecursive(folder_path: str) -> list[str]:
+    files = []
+    for path in await listdir(folder_path):
+        if await isfile(path):
+            files.append(path)
+    return files
 
 def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None) -> list[str]:
     valid_files_temp = []
@@ -50,10 +57,13 @@ def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None
 
     return valid_files
 
-async def prepare_save_input_folder(logger: Logger, folder_path: str, output_folder_path: str, savepair_limit: int | None = None) -> list[list[str]]:
+async def prepare_save_input_folder(settings: Settings, logger: Logger, folder_path: str, output_folder_path: str, savepair_limit: int | None = None) -> list[list[str]]:
     finished_files = []
 
-    files = await CC.obtainFiles(folder_path)
+    if settings.recursivity.value:
+        files = await CC.obtainFiles(folder_path)
+    else:
+        files = await get_files_nonrecursive(folder_path)
     saves = save_pair_check(logger, files, savepair_limit)
 
     # no files in output root, only folder for each batch
@@ -77,6 +87,33 @@ async def prepare_save_input_folder(logger: Logger, folder_path: str, output_fol
             finished_files.append(finished_files_cycle)
             finished_files_cycle = []
     
+        shutil.copyfile(file, filepath_out)
+        finished_files_cycle.append(filepath_out)
+    finished_files.append(finished_files_cycle)
+    return finished_files
+
+async def prepare_files_input_folder(settings: Settings, folder_path: str, output_folder_path: str) -> list[list[str]]:
+    finished_files = []
+
+    if settings.recursivity.value:
+        files = await CC.obtainFiles(folder_path)
+    else:
+        files = await get_files_nonrecursive(folder_path)
+    
+    cur_output_dir = os.path.join(output_folder_path, os.path.basename(output_folder_path))
+    await mkdir(cur_output_dir)
+
+    finished_files_cycle = []
+    for file in files:
+        filename = os.path.basename(file)
+        filepath_out = os.path.join(cur_output_dir, filename)
+        if await exists(filepath_out):
+            cur_output_dir = os.path.join(output_folder_path, generate_random_string(RANDOMSTRING_LENGTH))
+            await mkdir(cur_output_dir)
+            filepath_out = os.path.join(cur_output_dir, filename)
+            finished_files.append(finished_files_cycle)
+            finished_files_cycle = []
+        
         shutil.copyfile(file, filepath_out)
         finished_files_cycle.append(filepath_out)
     finished_files.append(finished_files_cycle)

@@ -16,7 +16,7 @@ class ProfileSelector:
         except ProfileError as e:
             ui.notify(e)
 
-        self.tab = ui.tab("Profile selector")
+        self.tab = ui.tab("Profiles")
 
     def construct(self) -> None:
         self.list_container = ui.list()

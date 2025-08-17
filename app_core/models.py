@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 import json
 import traceback
-from dataclasses import dataclass
+from typing import Any, Callable
+from enum import Enum, auto
 
 from nicegui import ui
 
 from utils.orbis import checkid
-from app_core.exceptions import ProfileError
+from app_core.exceptions import ProfileError, SettingsError
 
 class Profile:
     MAX_NAME_LENGTH = 20
@@ -135,3 +136,79 @@ class Logger:
     def exception(self, msg: str) -> None:
         msg = f"```{traceback.format_exc()}```\n\n{msg}"
         self.write("[EXCEPTION]", msg)
+
+class SettingObject(Enum):
+    CHECKBOX = auto()
+
+class SettingKey:
+    def __init__(self, default_value: Any, obj: SettingObject, key: str, desc: str, value: Any | None = None, validator: Callable[[Any], bool] | None = None) -> None:
+        match obj:
+            case SettingObject.CHECKBOX:
+                self.type = bool
+        if validator is None:
+            self.validator = lambda _: True
+        else:
+            self.validator = validator
+
+        assert isinstance(default_value, self.type)
+        assert self.validator(default_value)
+        self.default_value = default_value
+
+        if value is None:
+            self._value = self.default_value
+        else:
+            self.value = value
+
+        self.obj = obj
+        self.key = key
+        self.desc = desc
+
+    @property
+    def value(self) -> Any:
+        return self._value
+    
+    @value.setter
+    def value(self, value: Any) -> None:
+        if not isinstance(value, self.type):
+            raise SettingsError(f"Invalid type (expected {self.type}, got {type(value)})!")
+        if not self.validator(value):
+            raise SettingsError("Invalid value!")
+        self._value = value
+
+class Settings:
+    recursivity = SettingKey(
+        False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
+    )
+    settings_map = {
+        recursivity.key: recursivity
+    }
+    settings = settings_map.values()
+
+    def __init__(self, settings_path: str) -> None:
+        self.settings_path = settings_path
+
+    def construct(self) -> None:
+        if not os.path.exists(self.settings_path):
+            f = open(self.settings_path, "w")
+            f.close()
+            settings_json = {}
+        else:
+            with open(self.settings_path, "rb") as f:
+                data = f.read()
+            try:
+                settings_json: dict[str, Any] = json.loads(data)
+            except json.JSONDecodeError:
+                raise SettingsError("Invalid settings file!")
+
+        for k, v in settings_json.items():
+            s = self.settings_map.get(k)
+            if s:
+                s.value = v
+        self.update()
+
+    def update(self) -> None:
+        d = {}
+        for k, v in self.settings_map.items():
+            d[k] = v.value
+        with open(self.settings_path, "w") as f:
+            json.dump(d, f)

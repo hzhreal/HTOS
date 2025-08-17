@@ -3,7 +3,7 @@ from webview import FOLDER_DIALOG
 from aiofiles.ospath import isdir
 from aiofiles.os import makedirs
 
-from app_core.models import Profiles, Logger
+from app_core.models import Profiles, Logger, Settings
 from app_core.helpers import prepare_save_input_folder
 from network import C1socket, FTPps, SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR
@@ -12,8 +12,9 @@ from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError
 
 class Resign:
-    def __init__(self, profiles: Profiles) -> None:
+    def __init__(self, profiles: Profiles, settings: Settings) -> None:
         self.profiles = profiles
+        self.settings = settings
         self.tab = ui.tab("Resign")
         self.in_folder = ""
         self.out_folder = ""
@@ -71,7 +72,7 @@ class Resign:
         mount_paths = []
 
         try:
-            saves = await prepare_save_input_folder(self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
+            saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
             cleanupSimple(workspaceFolders)
             self.logger.error(str(e) + " Stopping...")
