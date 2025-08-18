@@ -10,7 +10,7 @@ from utils.orbis import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
 
-class SFO_Editor(SFOContext):
+class SFOEditor(SFOContext):
     """Discord utilities to parse and patch param.sfo."""
     def __init__(self, sfo_data: bytearray) -> None:
         super().__init__()
@@ -71,7 +71,7 @@ class SFO(commands.Cog):
         sfo_data = bytearray(await sfo.read())
 
         try:
-            sfo_ctx = SFO_Editor(sfo_data)
+            sfo_ctx = SFOEditor(sfo_data)
             sfo_ctx.read()
             param_embeds = sfo_ctx.dict_embed()
             for emb in param_embeds:
@@ -144,10 +144,10 @@ class SFO(commands.Cog):
         sfo_data = bytearray(await sfo.read())
 
         try:
-            sfo_ctx = SFO_Editor(sfo_data)
+            sfo_ctx = SFOEditor(sfo_data)
             sfo_ctx.read()
             for key, val in parameters.items():
-                if not val: 
+                if not val:
                     continue
                 sfo_ctx.sfo_patch_parameter(key, val)
             sfo_ctx.write()

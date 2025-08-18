@@ -9,3 +9,4 @@ from .encrypt import Encrypt
 from .reregion import Reregion
 from .convert import Convert
 from .quickcodes import QuickCodes
+from .sfo_editor import SFOEditor

@@ -60,6 +60,8 @@ class ProfileSelector:
                         ui.button("Delete", on_click=partial(self.on_delete, p))
 
     def check_accid(self, accid: str) -> bool:
+        if accid.lower().startswith("0x"):
+            accid = accid[2:]
         if not checkid(accid):
             self.p.account_id = ""
             return False
@@ -72,6 +74,9 @@ class ProfileSelector:
         self.p.name = event.value
 
     def on_set_accid(self, event: ValueChangeEventArguments) -> None:
+        if event.value.lower().startswith("0x"):
+            self.p.account_id = event.value[2:]
+            return
         self.p.account_id = event.value
 
     def on_select(self, p: Profile) -> None:

@@ -13,6 +13,7 @@ from app_core.decrypt import Decrypt
 from app_core.reregion import Reregion
 from app_core.convert import Convert
 from app_core.quickcodes import QuickCodes
+from app_core.sfo_editor import SFOEditor
 from utils.constants import APP_PROFILES_PATH, APP_SETTINGS_PATH
 from utils.workspace import WorkspaceOpt, startup
 
@@ -30,6 +31,7 @@ def initialize_tabs() -> None:
             Reregion(profiles, settings),
             Convert(settings),
             QuickCodes(settings),
+            SFOEditor(),
             SettingSelector(settings)
         ]
     with ui.tab_panels(tabs, value=tab_container[0].tab).classes("w-full"):
