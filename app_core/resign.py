@@ -95,6 +95,7 @@ class Resign(TabBase):
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** resigned to {p} (batch {i}/{batches}).")
+            self.info(f"Batch can be found at {batch.new_download_encrypted_path}.")
             i += 1
         self.logger.info("Done!")
         self.enable_buttons()

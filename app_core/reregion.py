@@ -148,7 +148,8 @@ class Reregion(TabBase):
                     return
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
-            self.logger.info(f"**{batch.printed}** resigned to {p} (batch {i}/{batches}).")
+            self.logger.info(f"**{batch.printed}** re-regioned to {p} (batch {i}/{batches}).")
+            self.info(f"Batch can be found at {batch.new_download_encrypted_path}.")
             if special_reregion and not extra_msg and j > 2:
                 extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
             self.logger.info(extra_msg)

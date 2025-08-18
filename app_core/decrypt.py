@@ -122,6 +122,7 @@ class Decrypt(TabBase):
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** has been decrypted (batch {i}/{batches}).")
+            self.info(f"Batch can be found at {destination_directory_outer}.")
             i += 1
         self.logger.info("Done!")
         self.enable_buttons()
