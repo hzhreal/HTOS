@@ -23,7 +23,7 @@ class Convert(TabBase):
 
     def construct(self) -> None:
         with ui.row():
-            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
             self.in_label = ui.markdown()
         with ui.row():
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
@@ -116,6 +116,7 @@ class Convert(TabBase):
                     self.enable_buttons()
                     return
                 completed.append(basename)
+                j += 1
             
             out = os.path.join(self.out_folder, rand_str)
             finished_files = completed_print(completed)
@@ -123,6 +124,7 @@ class Convert(TabBase):
 
             self.info(f"Converted **{finished_files}** (batch {i}/{batches}).")
             self.info(f"Batch can be found at {out}.")
+            i += 1
         cleanupSimple(workspaceFolders)
         self.logger.info("Done!")
         self.event.clear()

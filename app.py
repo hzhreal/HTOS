@@ -12,6 +12,7 @@ from app_core.encrypt import Encrypt
 from app_core.decrypt import Decrypt
 from app_core.reregion import Reregion
 from app_core.convert import Convert
+from app_core.quickcodes import QuickCodes
 from utils.constants import APP_PROFILES_PATH, APP_SETTINGS_PATH
 from utils.workspace import WorkspaceOpt, startup
 
@@ -28,6 +29,7 @@ def initialize_tabs() -> None:
             Encrypt(profiles, settings),
             Reregion(profiles, settings),
             Convert(settings),
+            QuickCodes(settings),
             SettingSelector(settings)
         ]
     with ui.tab_panels(tabs, value=tab_container[0].tab).classes("w-full"):

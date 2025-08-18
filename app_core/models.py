@@ -110,9 +110,9 @@ class Profiles:
         return len(self.profiles) == 0
     
 class Logger:
-    def __init__(self, dimensions: tuple[int, int] = (200, 150)) -> None:
+    def __init__(self) -> None:
         self.text = ""
-        with ui.scroll_area().classes(f"w-{dimensions[0]} h-{dimensions[1]} border") as scroll_area:
+        with ui.scroll_area().classes("w-full h-96 border") as scroll_area:
             self.scroll_area = scroll_area
             self.obj = ui.markdown().classes("w-full")
 
