@@ -157,6 +157,7 @@ class Logger:
 
 class SettingObject(Enum):
     CHECKBOX = auto()
+    FOLDERSELECT = auto()
 
 class SettingKey:
     def __init__(
@@ -171,6 +172,8 @@ class SettingKey:
         match obj:
             case SettingObject.CHECKBOX:
                 self.type = bool
+            case SettingObject.FOLDERSELECT:
+                self.type = str
         if validator is None:
             self.validator = lambda _: True
         else:
@@ -192,6 +195,12 @@ class SettingKey:
     def restore(self) -> None:
         self.value = self.default_value
 
+    def set_value_safe(self, value: Any) -> None:
+        self.value = value
+
+    def set_value_unsafe(self, value: Any) -> None:
+        self._value = value 
+
     @property
     def value(self) -> Any:
         return self._value
@@ -208,17 +217,22 @@ class Settings:
     recursivity = SettingKey(
         False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
     )
-    # default_outfolder = SettingKey(
-    #     "", SettingObject, "Select default output folder", validator=lambda path: os.path.isdir(path)
-    # )
+    default_infolder = SettingKey(
+        "", SettingObject.FOLDERSELECT, "default_infolder", "Select default input folder"
+    )
+    default_outfolder = SettingKey(
+        "", SettingObject.FOLDERSELECT, "default_outfolder", "Select default output folder"
+    )
     settings_map = {
         recursivity.key: recursivity,
-        #default_outfolder.key: default_outfolder
+        default_infolder.key: default_infolder,
+        default_outfolder.key: default_outfolder
     }
     settings = settings_map.values()
 
     def __init__(self, settings_path: str) -> None:
         self.settings_path = settings_path
+        self.construct()
 
     def construct(self) -> None:
         if not os.path.exists(self.settings_path):
@@ -251,16 +265,16 @@ class TabBase:
         self.profiles = profiles
         self.settings = settings
         self.tab = ui.tab(name)
-        self.in_folder = ""
-        self.out_folder = ""
+        self.in_folder = self.settings.default_infolder.value
+        self.out_folder = self.settings.default_outfolder.value
     
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.input(on_change=self.on_input_label)
+            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.input(on_change=self.on_output_label)
+            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder)
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger()
 

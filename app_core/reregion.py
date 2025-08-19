@@ -21,10 +21,10 @@ class Reregion(TabBase):
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.input(on_change=self.on_input_label)
+            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.input(on_change=self.on_output_label)
+            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder)
         with ui.row():
             self.sample_save_button = ui.button("Select sample save from your region (target title id)", on_click=self.on_sample_save)
             self.sample_save_label = ui.input(on_change=self.on_sample_save_in)

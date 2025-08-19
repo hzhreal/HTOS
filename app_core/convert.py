@@ -24,10 +24,10 @@ class Convert(TabBase):
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.input(on_change=self.on_input_label)
+            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.input(on_change=self.on_output_label)
+            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder)
         self.game_dropdown = ui.select(["GTA V", "RDR 2", "BL 3", "TTWL"])
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger()
