@@ -22,12 +22,12 @@ class Convert(TabBase):
         self.special_case_result: str | ConverterError = ""
 
     def construct(self) -> None:
-        with ui.row():
-            self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
+        with ui.row().style("align-items: center"):
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+            self.out_label = ui.input(on_change=self.on_output_label)
         self.game_dropdown = ui.select(["GTA V", "RDR 2", "BL 3", "TTWL"])
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger()
@@ -122,8 +122,8 @@ class Convert(TabBase):
             finished_files = completed_print(completed)
             shutil.copytree(out_path, out, dirs_exist_ok=True)
 
-            self.info(f"Converted **{finished_files}** (batch {i}/{batches}).")
-            self.info(f"Batch can be found at {out}.")
+            self.logger.info(f"Converted **{finished_files}** (batch {i}/{batches}).")
+            self.logger.info(f"Batch can be found at ```{out}```.")
             i += 1
         await cleanupSimple(workspaceFolders)
         self.logger.info("Done!")

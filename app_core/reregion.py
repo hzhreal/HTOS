@@ -1,6 +1,7 @@
 import shutil
 
 from nicegui import ui, app
+from nicegui.events import ValueChangeEventArguments
 from webview import FileDialog
 from aiofiles.os import makedirs, mkdir
 
@@ -18,15 +19,15 @@ class Reregion(TabBase):
         self.in_sample_file = ""
 
     def construct(self) -> None:
-        with ui.row():
+        with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+            self.out_label = ui.input(on_change=self.on_output_label)
         with ui.row():
             self.sample_save_button = ui.button("Select sample save from your region (target title id)", on_click=self.on_sample_save)
-            self.sample_save_label = ui.markdown()
+            self.sample_save_label = ui.input(on_change=self.on_sample_save_in)
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger()
 
@@ -149,7 +150,7 @@ class Reregion(TabBase):
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** re-regioned to {p} (batch {i}/{batches}).")
-            self.info(f"Batch can be found at {batch.new_download_encrypted_path}.")
+            self.logger.info(f"Batch can be found at ```{batch.fInstance.download_encrypted_path}```.")
             if special_reregion and not extra_msg and j > 2:
                 extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
             self.logger.info(extra_msg)
@@ -161,7 +162,10 @@ class Reregion(TabBase):
         f = await app.native.main_window.create_file_dialog(FileDialog.OPEN)
         if f:
             self.in_sample_file = f[0]
-            self.sample_save_label.set_content(f"```{self.in_sample_file}```")
+            self.sample_save_label.set_value(self.in_sample_file)
+        
+    def on_sample_save_in(self, event: ValueChangeEventArguments) -> None:
+        self.in_sample_file = event.value
 
     async def validation(self) -> bool:
         t_v = await super().validation()
@@ -176,7 +180,9 @@ class Reregion(TabBase):
     def disable_buttons(self) -> None:
         super().disable_buttons()
         self.sample_save_button.disable()
+        self.sample_save_label.disable()
     
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.sample_save_button.enable()
+        self.sample_save_label.disable()

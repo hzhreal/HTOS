@@ -3,10 +3,12 @@ from __future__ import annotations
 import os
 import json
 import traceback
+from functools import partial
 from typing import Any, Callable
 from enum import Enum, auto
 
 from nicegui import ui, app
+from nicegui.events import ValueChangeEventArguments
 from webview import FileDialog
 from aiofiles.ospath import isdir
 
@@ -157,7 +159,15 @@ class SettingObject(Enum):
     CHECKBOX = auto()
 
 class SettingKey:
-    def __init__(self, default_value: Any, obj: SettingObject, key: str, desc: str, value: Any | None = None, validator: Callable[[Any], bool] | None = None) -> None:
+    def __init__(
+        self, 
+        default_value: Any, 
+        obj: SettingObject, 
+        key: str, 
+        desc: str, 
+        value: Any | None = None, 
+        validator: Callable[[Any], bool] | partial[Callable[[Any], bool]] | None = None
+    ) -> None:
         match obj:
             case SettingObject.CHECKBOX:
                 self.type = bool
@@ -179,6 +189,9 @@ class SettingKey:
         self.key = key
         self.desc = desc
 
+    def restore(self) -> None:
+        self.value = self.default_value
+
     @property
     def value(self) -> Any:
         return self._value
@@ -195,8 +208,12 @@ class Settings:
     recursivity = SettingKey(
         False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
     )
+    # default_outfolder = SettingKey(
+    #     "", SettingObject, "Select default output folder", validator=lambda path: os.path.isdir(path)
+    # )
     settings_map = {
-        recursivity.key: recursivity
+        recursivity.key: recursivity,
+        #default_outfolder.key: default_outfolder
     }
     settings = settings_map.values()
 
@@ -238,12 +255,12 @@ class TabBase:
         self.out_folder = ""
     
     def construct(self) -> None:
-        with ui.row():
+        with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+            self.out_label = ui.input(on_change=self.on_output_label)
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger()
 
@@ -251,23 +268,33 @@ class TabBase:
         folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.in_folder = folder[0]
-            self.in_label.set_content(f"```{self.in_folder}```")
-    
+            self.in_label.set_value(self.in_folder)
+ 
     async def on_output(self) -> None:
         folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.out_folder = folder[0]
-            self.out_label.set_content(f"```{self.out_folder}```")
+            self.out_label.set_value(self.out_folder)
+
+    def on_input_label(self, event: ValueChangeEventArguments) -> None:
+        self.in_folder = event.value
+ 
+    def on_output_label(self, event: ValueChangeEventArguments) -> None:
+        self.out_folder = event.value
 
     async def validation(self) -> bool:
         return await isdir(self.in_folder) and await isdir(self.out_folder)
     
     def disable_buttons(self) -> None:
         self.input_button.disable()
+        self.in_label.disable()
         self.output_button.disable()
+        self.out_label.disable()
         self.start_button.disable()
     
     def enable_buttons(self) -> None:
         self.input_button.enable()
+        self.in_label.enable()
         self.output_button.enable()
+        self.out_label.enable()
         self.start_button.enable()

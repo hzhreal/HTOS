@@ -23,12 +23,12 @@ class Encrypt(TabBase):
         self.event = asyncio.Event() # to prompt user to upload encrypt folder
 
     def construct(self) -> None:
-        with ui.row():
-            ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
-            ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+        with ui.row().style("align-items: center"):
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
+            self.output_button = ui.button("Select output folder", on_click=self.on_output)
+            self.out_label = ui.input(on_change=self.on_output_label)
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.encrypt_folder_list = Logger()
         self.logger = Logger()
@@ -143,7 +143,7 @@ class Encrypt(TabBase):
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"Encrypted files into **{batch.printed}** for {p} (batch {i}/{batches}).")
-            self.info(f"Batch can be found at {batch.new_download_encrypted_path}.")
+            self.logger.info(f"Batch can be found at ```{batch.fInstance.download_encrypted_path}```.")
             i += 1
         self.logger.info("Done!")
         self.event.clear()

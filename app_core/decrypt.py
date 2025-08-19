@@ -19,12 +19,12 @@ class Decrypt(TabBase):
         super().__init__("Decrypt", None, settings)
     
     def construct(self) -> None:
-        with ui.row():
-            ui.button("Select folder of savefiles", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
-            ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+        with ui.row().style("align-items: center"):
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
+            self.output_button = ui.button("Select output folder", on_click=self.on_output)
+            self.out_label = ui.input(on_change=self.on_output_label)
         self.include_sce_sys_checkbox = ui.checkbox("Include the sce_sys folder", value=True)
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
@@ -122,7 +122,7 @@ class Decrypt(TabBase):
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** has been decrypted (batch {i}/{batches}).")
-            self.info(f"Batch can be found at {destination_directory_outer}.")
+            self.logger.info(f"Batch can be found at ```{destination_directory_outer}```.")
             i += 1
         self.logger.info("Done!")
         self.enable_buttons()

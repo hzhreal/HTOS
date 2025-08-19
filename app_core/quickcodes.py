@@ -16,12 +16,12 @@ class QuickCodes(TabBase):
         super().__init__("Quickcodes", None, settings)
 
     def construct(self) -> None:
-        with ui.row():
-            self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
-            self.in_label = ui.markdown()
-        with ui.row():
+        with ui.row().style("align-items: center"):
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.input(on_change=self.on_input_label)
+        with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.markdown()
+            self.out_label = ui.input(on_change=self.on_output_label)
         self.codes_obj = ui.textarea(
             "Enter quick codes", 
             placeholder="80010008 EA372703\n00140000 00000000\n180000E8 0000270F"
@@ -102,8 +102,8 @@ class QuickCodes(TabBase):
             finished_files = completed_print(completed)
             shutil.copytree(out_path, out, dirs_exist_ok=True)
 
-            self.info(f"Applied codes to **{finished_files}** (batch {i}/{batches}).")
-            self.info(f"Batch can be found at {out}.")
+            self.logger.info(f"Applied codes to **{finished_files}** (batch {i}/{batches}).")
+            self.logger.info(f"Batch can be found at ```{out}```.")
             i += 1
         await cleanupSimple(workspaceFolders)
         self.logger.info("Done!")
