@@ -51,6 +51,7 @@ from .constants import (
     SMT5_TITLEID,
     TERRARIA_TITLEID,
     RCUBE_TITLEID,
+    DSR_TITLEID,
     FILE_LIMIT_DISCORD, 
     MAX_FILES,
     UPLOAD_TIMEOUT,

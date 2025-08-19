@@ -29,6 +29,7 @@ A Discord bot and app with tons of functionalities that can handle PS4 saves usi
 | Extra security/layers supported game list| PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support (more than keystone & title id swapping) |
 | ---------------------------------------- | ----------------------------------- | ------------------------ | ---------------------------------------------------------------- |
 | Borderlands 3                            | Borderlands 3                       |                          |                                     |
+| Dark Souls: Remastered                   |                                     |                          |                                     |
 | Dead Island 1 (compression only)         |                                     |                          |                                     |
 | Dead Island 2 (compression only)         |                                     |                          |                                     |
 | Dying Light 1 (compression only)         |                                     |                          |                                     |
@@ -98,13 +99,14 @@ For the bot to completely function you need to input your NPSSO 64 character tok
 - Join my [Discord](https://discord.gg/fHfmjaCXtb) where the bot is hosted, free to use and often hosted
 
 ### Acknowledgements
+- [Alfizari](https://github.com/alfizari): [Dark-Souls-Remastered-Save-decrypt-PS4](https://github.com/alfizari/Dark-Souls-Remastered-Save-decrypt-PS4)
 - [Batang](https://github.com/B-a-t-a-n-g)
 - [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
 - [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
 - [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)
 - [DylanBBK](https://github.com/dylanbbk)
 - [iCraze](https://github.com/iCrazeiOS)
-- [monkeyman192](https://github.com/monkeyman192): [MBINCompiler](https://github.com/monkeyman192/MBINCompiler)
+- [Monkeyman192](https://github.com/monkeyman192): [MBINCompiler](https://github.com/monkeyman192/MBINCompiler)
 - [Team-Alua](https://github.com/Team-Alua): [Cecie](https://github.com/Team-Alua/cecie.nim)
 - [Zhaxxy](https://github.com/Zhaxxy): [rdr2_enc_dec](https://github.com/Zhaxxy/rdr2_enc_dec)
 - [Zhaxxy](https://github.com/Zhaxxy): [xenoverse2_ps4_decrypt](https://github.com/Zhaxxy/xenoverse2_ps4_decrypt)
