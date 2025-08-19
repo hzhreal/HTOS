@@ -142,7 +142,7 @@ class Crypt_Xeno2:
         num_blocks = len(section2) // 0x20
         for i in range(num_blocks):
             checksum.value += section2[i * 0x20]
-        return checksum
+        return checksum.value
     
     def checksum1(data: bytes | bytearray) -> int:
         checksum = uint8(
