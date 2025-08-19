@@ -1,9 +1,8 @@
 import os
 import shutil
 from aiofiles.os import mkdir, listdir
-from aiofiles.ospath import exists, isfile, getsize
+from aiofiles.ospath import exists, isfile, isdir, getsize
 
-from data.crypto.common import CustomCrypto as CC
 from app_core.models import Logger, Settings
 from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
@@ -16,6 +15,21 @@ async def get_files_nonrecursive(folder_path: str) -> list[str]:
         full_path = os.path.join(folder_path, basename)
         if await isfile(full_path):
             files.append(full_path)
+    return files
+
+async def get_files_recursive(folder: str, files: list[str] | None = None) -> list[str]:
+    if files is None:
+        files = []
+
+    filelist = await listdir(folder)
+
+    for entry in filelist:
+        entry_path = os.path.join(folder, entry)
+
+        if await isfile(entry_path):
+            files.append(entry_path)
+        elif await isdir(entry_path):
+            await get_files_recursive(entry_path, files)
     return files
 
 def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None) -> list[str]:
@@ -62,7 +76,7 @@ async def prepare_save_input_folder(settings: Settings, logger: Logger, folder_p
     finished_files = []
 
     if settings.recursivity.value:
-        files = await CC.obtainFiles(folder_path)
+        files = await get_files_recursive(folder_path)
     else:
         files = await get_files_nonrecursive(folder_path)
     saves = save_pair_check(logger, files, savepair_limit)
@@ -97,7 +111,7 @@ async def prepare_files_input_folder(settings: Settings, folder_path: str, outpu
     finished_files = []
 
     if settings.recursivity.value:
-        files = await CC.obtainFiles(folder_path)
+        files = await get_files_recursive(folder_path)
     else:
         files = await get_files_nonrecursive(folder_path)
     
@@ -122,9 +136,9 @@ async def prepare_files_input_folder(settings: Settings, folder_path: str, outpu
 
 async def calculate_foldersize(settings: Settings, folder_path: str) -> tuple[int, list[str]]:
     if settings.recursivity.value:
-        files = CC.obtainFiles(folder_path)
+        files = await get_files_recursive(folder_path)
     else:
-        files = get_files_nonrecursive(folder_path)
+        files = await get_files_nonrecursive(folder_path)
 
     size = 0
     for f in files:
@@ -159,4 +173,3 @@ async def prepare_single_save_folder(savepair: tuple[str, str], output_folder_pa
         shutil.copyfile(file, filepath_out)
         outpair.append(filepath_out)
     return tuple(outpair)
-    

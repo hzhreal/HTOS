@@ -23,7 +23,7 @@ class Convert(TabBase):
 
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
-            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
             self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
@@ -35,6 +35,7 @@ class Convert(TabBase):
     async def on_start(self) -> None:
         if not self.game_dropdown.value:
             ui.notify("Game not selected!")
+            return
         if not await self.validation():
             ui.notify("Invalid paths!")
             return
@@ -116,6 +117,8 @@ class Convert(TabBase):
                     self.enable_buttons()
                     return
                 completed.append(basename)
+                self.event.clear()
+                self.logger.info(f"Converted {basename} (```{result}```), ({info}).")
                 j += 1
             
             out = os.path.join(self.out_folder, rand_str)
@@ -127,7 +130,6 @@ class Convert(TabBase):
             i += 1
         await cleanupSimple(workspaceFolders)
         self.logger.info("Done!")
-        self.event.clear()
         self.enable_buttons()
 
     async def special_case_handler(self, savegame: str) -> None:
@@ -135,12 +137,14 @@ class Convert(TabBase):
             ttwl = savegame == "TTWL"
             with ui.dialog() as dialog, ui.card():
                 self.dialog = dialog
-                with ui.dropdown_button("Select operation", auto_close=True):
-                    ui.item("PS4 -> PC", on_click=self.special_case_assign(partial(self.bl3_ps4_to_pc_callback, savegame, ttwl)))
-                    ui.item("PC -> PS4", on_click=self.special_case_assign(partial(self.bl3_pc_to_ps4_callback, savegame, ttwl)))
+                with ui.dropdown_button(f"Select operation ({os.path.basename(savegame)})", auto_close=True):
+                    ui.item("PS4 -> PC", on_click=partial(self.special_case_assign, partial(self.bl3_ps4_to_pc_callback, savegame, ttwl)))
+                    ui.item("PC -> PS4", on_click=partial(self.special_case_assign, partial(self.bl3_pc_to_ps4_callback, savegame, ttwl)))
             self.dialog.on("hide", dialog.open)
+            self.dialog.open()
+            await self.event.wait()
     
-    async def special_case_assign(self, call: Callable[..., Awaitable[str]]) -> None:
+    async def special_case_assign(self, call: partial[Callable[[], Awaitable[str]]]) -> None:
         try:
             res = await call()
             self.special_case_result = res
@@ -148,6 +152,7 @@ class Convert(TabBase):
             self.special_case_result = e
         finally:
             self.dialog.close()
+            self.dialog.delete()
             self.event.set()
 
     async def special_case_wrapper(self, savegame: str) -> str:
@@ -156,6 +161,7 @@ class Convert(TabBase):
             raise self.special_case_result
         return self.special_case_result
     
+    @staticmethod
     async def bl3_ps4_to_pc_callback(filepath: str, ttwl: bool) -> str:
         platform = "ps4"
         try:
@@ -165,7 +171,8 @@ class Convert(TabBase):
         except (ValueError, IOError, IndexError):
             raise ConverterError("Invalid save!")
         return Converter.BL3.obtain_ret_val(platform)
-
+    
+    @staticmethod
     async def bl3_pc_to_ps4_callback(filepath: str, ttwl: bool) -> str:
         platform = "pc"
         try:

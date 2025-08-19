@@ -2,6 +2,7 @@ import asyncio
 import os
 
 from nicegui import ui, app
+from nicegui.events import ValueChangeEventArguments
 from webview import FileDialog
 from aiofiles.ospath import isdir, getsize
 from aiofiles.os import makedirs
@@ -34,7 +35,7 @@ class Encrypt(TabBase):
         self.logger = Logger()
         with ui.row():
             self.encrypt_button = ui.button("Select folder you want to encrypt", on_click=self.on_encrypt_folder)
-            self.encrypt_label = ui.markdown()
+            self.encrypt_label = ui.input(on_change=self.on_encrypt_folder_in)
         self.continue_button = ui.button("Continue", on_click=self.on_continue)
         self.hide_encrypt_objs()
 
@@ -113,6 +114,7 @@ class Encrypt(TabBase):
                     parsed_list = self.parse_filelist(files)
                     t = f"### {savefile.basename} ({savefile.title_id})\n\n" + parsed_list
                     self.encrypt_folder_list.write(None, t)
+                    self.show_encrypt_objs()
                     self.logger.info("Waiting for folder to encrypt...")
                     await self.event.wait()
 
@@ -120,7 +122,7 @@ class Encrypt(TabBase):
                     if encrypt_foldersize > pfs_size:
                         raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(pfs_size)} MB!")
                     await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
-                    idx = len(self.u) + (self.encrypt_folder[-1] != os.path.sep)
+                    idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]
                     dec_print = completed_print(completed)
 
@@ -132,34 +134,40 @@ class Encrypt(TabBase):
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
                     self.logger.error(str(e) + " Stopping...")
                     self.event.clear()
+                    self.hide_encrypt_objs()
                     self.enable_buttons()
                     return
                 except Exception:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
                     self.logger.exception("Unexpected error. Stopping...")
                     self.event.clear()
+                    self.hide_encrypt_objs()
                     self.enable_buttons()
                     return
+                self.hide_encrypt_objs()
+                self.event.clear()
                 j += 1
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.info(f"Encrypted files into **{batch.printed}** for {p} (batch {i}/{batches}).")
             self.logger.info(f"Batch can be found at ```{batch.fInstance.download_encrypted_path}```.")
             i += 1
         self.logger.info("Done!")
-        self.event.clear()
         self.enable_buttons()
 
     async def on_encrypt_folder(self) -> None:
         folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
             self.encrypt_folder = folder[0]
-            self.encrypt_folder_label.set_content(f"```{self.encrypt_folder}```")
+            self.encrypt_label.set_value(self.encrypt_folder)
+    
+    def on_encrypt_folder_in(self, event: ValueChangeEventArguments) -> None:
+        self.encrypt_folder = event.value
 
     async def validate_encrypt_folder(self) -> bool:
         return await isdir(self.encrypt_folder)
     
-    def on_continue(self) -> None:
-        if not self.validate_encrypt_folder():
+    async def on_continue(self) -> None:
+        if not await self.validate_encrypt_folder():
             ui.notify("Invalid paths!")
             return
         self.hide_encrypt_objs()
@@ -174,12 +182,14 @@ class Encrypt(TabBase):
 
     def show_encrypt_objs(self) -> None:
         self.encrypt_folder_list.show()
-        self.encrypt_button.set_visibility(False)
+        self.encrypt_button.set_visibility(True)
         self.encrypt_label.set_visibility(True)
         self.continue_button.set_visibility(True)
 
+    @staticmethod
     def parse_filelist(files: list[str]) -> str:
         s = "```"
         for f in files:
             s += f
         s += "```"
+        return s

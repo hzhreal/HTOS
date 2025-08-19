@@ -68,7 +68,7 @@ class Reregion(TabBase):
             self.enable_buttons()
             return
 
-        batch = SaveBatch(C1ftp, C1socket, p.account_id, [], mount_paths, self.out_folder)
+        batch = SaveBatch(C1ftp, C1socket, p.account_id, list(real_sample_savepair), mount_paths, self.out_folder)
         savefile = SaveFile("", batch, True)
         try:
             await batch.construct()

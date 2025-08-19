@@ -71,7 +71,7 @@ class Decrypt(TabBase):
             return
 
         batches = len(saves)
-        batch = SaveBatch(C1ftp, C1socket, "", [], mount_paths, self.out_folder)
+        batch = SaveBatch(C1ftp, C1socket, "", [], mount_paths, "")
         savefile = SaveFile("", batch)
         
         i = 1
@@ -79,7 +79,7 @@ class Decrypt(TabBase):
             batch.entry = entry
             try:
                 await batch.construct()
-                destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str) 
+                destination_directory_outer = os.path.join(self.out_folder, batch.rand_str) 
                 await mkdir(destination_directory_outer)
             except OSError:
                await cleanup(C1ftp, workspaceFolders, None, mount_paths)

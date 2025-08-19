@@ -17,7 +17,7 @@ class QuickCodes(TabBase):
 
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
-            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
             self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
