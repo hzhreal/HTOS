@@ -2,6 +2,7 @@ import multiprocessing
 multiprocessing.set_start_method("spawn", force=True)
 
 import argparse
+import asyncio
 from nicegui import ui
 
 from app_core import models
@@ -14,14 +15,18 @@ from app_core.reregion import Reregion
 from app_core.convert import Convert
 from app_core.quickcodes import QuickCodes
 from app_core.sfo_editor import SFOEditor
-from utils.constants import APP_PROFILES_PATH, APP_SETTINGS_PATH
-from utils.workspace import WorkspaceOpt, startup
+from utils.constants import APP_PROFILES_PATH, APP_SETTINGS_PATH, VERSION
+from utils.workspace import WorkspaceOpt, startup, check_version
 
 workspace_opt = WorkspaceOpt()
 profiles = models.Profiles(APP_PROFILES_PATH)
 settings = models.Settings(APP_SETTINGS_PATH)
 
 def initialize_tabs() -> None:
+    status = asyncio.run(check_version())
+    with ui.header().classes("h-12 justify-center"):
+        ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;")
+
     with ui.tabs().classes("w-full") as tabs:
         tab_container = [
             ProfileSelector(profiles),
