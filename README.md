@@ -101,6 +101,7 @@ For the bot to completely function you need to input your NPSSO 64 character tok
 ### Acknowledgements
 - [Alfizari](https://github.com/alfizari): [Dark-Souls-Remastered-Save-decrypt-PS4](https://github.com/alfizari/Dark-Souls-Remastered-Save-decrypt-PS4)
 - [Batang](https://github.com/B-a-t-a-n-g)
+- [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
 - [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
 - [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
 - [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)
