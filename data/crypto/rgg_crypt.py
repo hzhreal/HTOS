@@ -46,13 +46,7 @@ class Crypt_RGG:
 
     @staticmethod
     async def checkEnc_ps(fileName: str) -> None:
-        null_count = 0
         async with aiofiles.open(fileName, "rb") as savegame:
             data = await savegame.read()
-        
-        for byte in data:
-            if byte == 0:
-                null_count += 1
-
-        if null_count >= len(data) / 2:
+        if CC.fraction_byte(data):
             await Crypt_RGG.encryptFile(fileName)

@@ -1,5 +1,5 @@
 # HTOS
-A discord bot with tons of functionalities that can handle PS4 saves using a jailbroken PS4.
+A Discord bot and app with tons of functionalities that can handle PS4 saves using a jailbroken PS4.
 
 ## Purposes
 - Resign encrypted saves (both with or without replacing the decrypted contents, also known as encrypting)
@@ -14,7 +14,7 @@ A discord bot with tons of functionalities that can handle PS4 saves using a jai
 - Create saves from scratch
 
 ## Functionalities
-- File uploads through discord and google drive (bulk uploads are supported on all save pair commands)
+- File uploads through Discord and Google Drive (bulk uploads are supported on all save pair commands)
 - File security checks
 - Game custom cryptography handling (extra encryption layer based on game, in table below)
 - Param.sfo parser
