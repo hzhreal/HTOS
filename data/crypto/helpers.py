@@ -1,6 +1,7 @@
 import discord
 from discord.ui.item import Item
 from types import SimpleNamespace
+
 from data.crypto import CryptoError
 from utils.helpers import DiscordContext, TimeoutHelper
 from utils.constants import (
@@ -10,7 +11,7 @@ from utils.constants import (
     TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID
 )
 
-async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
+async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
     embedTimeout = discord.Embed(
         title="Timeout Error:", 
         description="You took too long, sending the file with the format: 'Encrypted'",
@@ -88,78 +89,154 @@ async def extra_decrypt(d_ctx: DiscordContext, Crypto: SimpleNamespace, title_id
             helper.done = True
 
     if title_id in GTAV_TITLEID:
+        if not d_ctx:
+            await Crypto.Rstar.decryptFile(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
         await helper.await_done()
         
     elif title_id in RDR2_TITLEID:
+        if d_ctx:
+            await Crypto.Rstar.decryptFile(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
+        if not d_ctx:
+            await Crypto.Xeno2.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("XENO2"))
         await helper.await_done()
 
     elif title_id in BL3_TITLEID:
+        if not d_ctx:
+            await Crypto.BL3.decryptFile(destination_directory, "ps4", False)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("BL3"))
         await helper.await_done()
 
     elif title_id in WONDERLANDS_TITLEID:
+        if not d_ctx:
+            await Crypto.BL3.decryptFile(destination_directory, "ps4", True)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TTWL"))
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
+        if not d_ctx:
+            await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
         await helper.await_done()
 
     elif title_id in NDOG_COL_TITLEID:
+        if not d_ctx:
+            await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
         await helper.await_done()
 
     elif title_id in NDOG_TLOU2_TITLEID:
+        if not d_ctx:
+            await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+        if not d_ctx:
+            await Crypto.MGSV.decryptFile(destination_directory, title_id)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", title_id=title_id))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
+        if not d_ctx:
+            await Crypto.Rev2.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("REV2"))
         await helper.await_done()
 
     elif title_id in DL1_TITLEID:
+        if not d_ctx:
+            await Crypto.DL.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL1"))
         await helper.await_done()
 
     elif title_id in DL2_TITLEID:
+        if not d_ctx:
+            await Crypto.DL.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL2"))
         await helper.await_done()
     
     elif title_id in RGG_TITLEID:
+        if not d_ctx:
+            await Crypto.RGG.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RGG"))
         await helper.await_done()
 
     elif title_id in DI1_TITLEID:
+        if not d_ctx:
+            await Crypto.DL.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI1"))
         await helper.await_done()
 
     elif title_id in DI2_TITLEID:
+        if not d_ctx:
+            await Crypto.DI2.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI2"))
         await helper.await_done()
 
     elif title_id in NMS_TITLEID:
+        if not d_ctx:
+            await Crypto.NMS.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NMS"))
         await helper.await_done()
     
     elif title_id in TERRARIA_TITLEID:
+        if not d_ctx:
+            await Crypto.TERRARIA.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA"))
         await helper.await_done()
     
     elif title_id in SMT5_TITLEID:
+        if not d_ctx:
+            await Crypto.SMT5.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5"))
         await helper.await_done()
     
     elif title_id in RCUBE_TITLEID:
+        if not d_ctx:
+            await Crypto.RCube.decryptFile(destination_directory)
+            return
+
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RCUBE"))
         await helper.await_done()
 

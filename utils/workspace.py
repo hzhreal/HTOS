@@ -548,7 +548,7 @@ def semver_to_num(ver: str | int) -> int:
     ver = int("".join(ver))
     return ver
 
-async def check_version() -> None:
+async def check_version() -> str:
     from utils.constants import VERSION
 
     async with aiohttp.ClientSession() as session:
@@ -564,13 +564,16 @@ async def check_version() -> None:
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
+        return "Outdated"
     elif cur_ver_num > latest_ver_num:
         print("Attention: You are running a version of HTOS that is newer than the latest release. Please report any bugs you may encounter.")
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
+        return "Experimental"
     else:
         print("You are running the latest version of HTOS.")
         print(f"Your version: {VERSION}")
         print(f"Latest version: {latest_ver}")
         print("\n")
+        return "Stable"

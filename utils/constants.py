@@ -71,6 +71,7 @@ MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
 PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
 STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
 APP_PROFILES_PATH = "profiles.json"
+APP_SETTINGS_PATH = "settings.json"
 UPLOAD_ENCRYPTED = os.path.join("UserSaves", "uploadencrypted")
 UPLOAD_DECRYPTED = os.path.join("UserSaves", "uploaddecrypted")
 DOWNLOAD_ENCRYPTED = os.path.join("UserSaves", "downloadencrypted")

@@ -3,11 +3,17 @@ from __future__ import annotations
 import os
 import json
 import traceback
+from functools import partial
+from typing import Any, Callable
+from enum import Enum, auto
 
-from nicegui import ui
+from nicegui import ui, app
+from nicegui.events import ValueChangeEventArguments
+from webview import FileDialog
+from aiofiles.ospath import isdir
 
 from utils.orbis import checkid
-from app_core.exceptions import ProfileError
+from app_core.exceptions import ProfileError, SettingsError
 
 class Profile:
     MAX_NAME_LENGTH = 20
@@ -108,7 +114,8 @@ class Profiles:
 class Logger:
     def __init__(self) -> None:
         self.text = ""
-        with ui.scroll_area().classes("w-200 h-150 border"):
+        with ui.scroll_area().classes("w-full h-96 border") as scroll_area:
+            self.scroll_area = scroll_area
             self.obj = ui.markdown().classes("w-full")
 
     def update_obj(self) -> None:
@@ -118,8 +125,13 @@ class Logger:
         self.text = ""
         self.update_obj()
     
-    def write(self, prefix: str, msg: str) -> None:
-        self.text += f"\n\n{prefix} {msg}"
+    def write(self, prefix: str | None, msg: str) -> None:
+        if not msg:
+            return
+        if prefix:
+            self.text += f"\n\n{prefix} {msg}"
+        else:
+            self.text += f"\n\n{msg}"
         self.update_obj()
 
     def info(self, msg: str) -> None:
@@ -134,3 +146,169 @@ class Logger:
     def exception(self, msg: str) -> None:
         msg = f"```{traceback.format_exc()}```\n\n{msg}"
         self.write("[EXCEPTION]", msg)
+
+    def hide(self) -> None:
+        self.obj.set_visibility(False)
+        self.scroll_area.set_visibility(False)
+    
+    def show(self) -> None:
+        self.obj.set_visibility(True)
+        self.scroll_area.set_visibility(True)
+
+class SettingObject(Enum):
+    CHECKBOX = auto()
+    FOLDERSELECT = auto()
+
+class SettingKey:
+    def __init__(
+        self, 
+        default_value: Any, 
+        obj: SettingObject, 
+        key: str, 
+        desc: str, 
+        value: Any | None = None, 
+        validator: Callable[[Any], bool] | partial[Callable[[Any], bool]] | None = None
+    ) -> None:
+        match obj:
+            case SettingObject.CHECKBOX:
+                self.type = bool
+            case SettingObject.FOLDERSELECT:
+                self.type = str
+        if validator is None:
+            self.validator = lambda _: True
+        else:
+            self.validator = validator
+
+        assert isinstance(default_value, self.type)
+        assert self.validator(default_value)
+        self.default_value = default_value
+
+        if value is None:
+            self._value = self.default_value
+        else:
+            self.value = value
+
+        self.obj = obj
+        self.key = key
+        self.desc = desc
+
+    def restore(self) -> None:
+        self.value = self.default_value
+
+    def set_value_safe(self, value: Any) -> None:
+        self.value = value
+
+    def set_value_unsafe(self, value: Any) -> None:
+        self._value = value 
+
+    @property
+    def value(self) -> Any:
+        return self._value
+    
+    @value.setter
+    def value(self, value: Any) -> None:
+        if not isinstance(value, self.type):
+            raise SettingsError(f"Invalid type (expected {self.type}, got {type(value)})!")
+        if not self.validator(value):
+            raise SettingsError("Invalid value!")
+        self._value = value
+
+class Settings:
+    recursivity = SettingKey(
+        False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
+    )
+    default_infolder = SettingKey(
+        "", SettingObject.FOLDERSELECT, "default_infolder", "Select default input folder"
+    )
+    default_outfolder = SettingKey(
+        "", SettingObject.FOLDERSELECT, "default_outfolder", "Select default output folder"
+    )
+    settings_map = {
+        recursivity.key: recursivity,
+        default_infolder.key: default_infolder,
+        default_outfolder.key: default_outfolder
+    }
+    settings = settings_map.values()
+
+    def __init__(self, settings_path: str) -> None:
+        self.settings_path = settings_path
+        self.construct()
+
+    def construct(self) -> None:
+        if not os.path.exists(self.settings_path):
+            f = open(self.settings_path, "w")
+            f.close()
+            settings_json = {}
+        else:
+            with open(self.settings_path, "rb") as f:
+                data = f.read()
+            try:
+                settings_json: dict[str, Any] = json.loads(data)
+            except json.JSONDecodeError:
+                raise SettingsError("Invalid settings file!")
+
+        for k, v in settings_json.items():
+            s = self.settings_map.get(k)
+            if s:
+                s.value = v
+        self.update()
+
+    def update(self) -> None:
+        d = {}
+        for k, v in self.settings_map.items():
+            d[k] = v.value
+        with open(self.settings_path, "w") as f:
+            json.dump(d, f)
+
+class TabBase:
+    def __init__(self, name: str, profiles: Profiles | None, settings: Settings | None) -> None:
+        self.profiles = profiles
+        self.settings = settings
+        self.tab = ui.tab(name)
+        self.in_folder = self.settings.default_infolder.value
+        self.out_folder = self.settings.default_outfolder.value
+    
+    def construct(self) -> None:
+        with ui.row().style("align-items: center"):
+            self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
+            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
+        with ui.row().style("align-items: center"):
+            self.output_button = ui.button("Select output folder", on_click=self.on_output)
+            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder)
+        self.start_button = ui.button("Start", on_click=self.on_start)
+        self.logger = Logger()
+
+    async def on_input(self) -> None:
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
+        if folder:
+            self.in_folder = folder[0]
+            self.in_label.set_value(self.in_folder)
+ 
+    async def on_output(self) -> None:
+        folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
+        if folder:
+            self.out_folder = folder[0]
+            self.out_label.set_value(self.out_folder)
+
+    def on_input_label(self, event: ValueChangeEventArguments) -> None:
+        self.in_folder = event.value
+ 
+    def on_output_label(self, event: ValueChangeEventArguments) -> None:
+        self.out_folder = event.value
+
+    async def validation(self) -> bool:
+        return await isdir(self.in_folder) and await isdir(self.out_folder)
+    
+    def disable_buttons(self) -> None:
+        self.input_button.disable()
+        self.in_label.disable()
+        self.output_button.disable()
+        self.out_label.disable()
+        self.start_button.disable()
+    
+    def enable_buttons(self) -> None:
+        self.input_button.enable()
+        self.in_label.enable()
+        self.output_button.enable()
+        self.out_label.enable()
+        self.start_button.enable()

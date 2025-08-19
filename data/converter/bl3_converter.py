@@ -62,11 +62,13 @@ class BL3_conv_button(discord.ui.View):
 
 class Converter_BL3:
     @staticmethod
-    async def convertFile(ctx: discord.ApplicationContext, helper: TimeoutHelper, filePath: str, ttwl: bool, emb_btn: discord.Embed) -> str:
+    async def convertFile(ctx: discord.ApplicationContext | None, helper: TimeoutHelper | None, filePath: str, ttwl: bool, emb_btn: discord.Embed | None) -> str:
         async with aiofiles.open(filePath, "rb") as savegame:
             original_saveData = await savegame.read()
         
         if crypt.searchData(original_saveData, crypt.COMMON):
+            if not ctx or not helper or not emb_btn:
+                return ""
             conv_button = BL3_conv_button(ctx, helper, filePath, ttwl)
             await ctx.edit(embed=emb_btn, view=conv_button)
             await helper.await_done()
