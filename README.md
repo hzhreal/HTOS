@@ -85,7 +85,8 @@ For the bot to completely function you need to input your NPSSO 64 character tok
 - Execute `bot.py` using Python
 - Run the `/init` command in the channel you want the private threads to get created in, you will only need to do this once in each server  
 - Make sure the pkg is running when the bot is
-- Enjoy!
+- Enjoy!  
+- Execute `app.py` to use an app for local usage instead of the Discord bot. 
   
 ### Disclaimers
 - Remember to not have the same folder for mount and upload. Have them in different paths, for example `/data/example/mount` & 
