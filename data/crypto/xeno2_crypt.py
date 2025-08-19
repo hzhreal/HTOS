@@ -1,9 +1,11 @@
 import aiofiles
+import aiofiles.ospath
 import hashlib
 import struct
 from Crypto.Cipher import AES
 from data.crypto.common import CustomCrypto as CC
 from data.crypto.common import CryptoError
+from utils.type_helpers import uint8
 
 class Crypt_Xeno2:
     SAVE_HEADER_KEY = b"PR]-<Q9*WxHsV8rcW!JuH7k_ug:T5ApX"
@@ -11,9 +13,14 @@ class Crypt_Xeno2:
     SAVE_MAGIC_HEADER = b"H\x89\x01L"
     INTERNAL_KEY_OFFSETS = (0x1c, 0x4c)
     HEADER = b"#SAV"
-    
+
     @staticmethod
     async def encryptFile(filePath: str) -> None:
+        await Crypt_Xeno2.encrypt_file(filePath)
+        await Crypt_Xeno2.encryptFile_epilogue(filePath)
+
+    @staticmethod
+    async def encrypt_file(filePath: str) -> None:
         async with aiofiles.open(filePath, "rb") as decrypted_file:
             await decrypted_file.seek(-1, 2)
             decrypted_file_sub1 = await decrypted_file.tell() - 0x80
@@ -45,8 +52,40 @@ class Crypt_Xeno2:
             await encrypted_file_soon.write(enc_save)
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+    async def encryptFile_epilogue(filePath: str) -> None:
+        async with aiofiles.open(filePath, "rb") as savegame:
+            ciphertext = await savegame.read()
+        await Crypt_Xeno2.decryptFile(filePath)
+        async with aiofiles.open(filePath, "rb") as savegame:
+            plaintext = bytearray(await savegame.read())
+
+        check8 = Crypt_Xeno2.checksum8(plaintext)
+        check2 = Crypt_Xeno2.checksum2(ciphertext)
+        check3 = Crypt_Xeno2.checksum3(plaintext)
+        check4 = Crypt_Xeno2.checksum4(plaintext)
+        check5 = Crypt_Xeno2.checksum5(plaintext)
+        check6 = Crypt_Xeno2.checksum6(plaintext)
+        check7 = Crypt_Xeno2.checksum7(plaintext)
+
+        plaintext[0x15] = check7
+        plaintext[0x16] = check6
+        plaintext[0x17] = check5
+        plaintext[0x18] = check4
+        plaintext[0x19] = check3
+        plaintext[0x1B] = check2
+        plaintext[0x1A] = check8
+        plaintext[0x14] = Crypt_Xeno2.checksum1(plaintext)
+
+        async with aiofiles.open(filePath, "wb") as savegame:
+            await savegame.write(plaintext)
+        await Crypt_Xeno2.encrypt_file(filePath)
+
+    @staticmethod
+    async def decryptFile(path: str) -> None:
+        if await aiofiles.ospath.isfile(path):
+            files = [path]
+        else:
+            files = await CC.obtainFiles(path)
 
         for filePath in files:
 
@@ -94,3 +133,68 @@ class Crypt_Xeno2:
 
         if header == Crypt_Xeno2.HEADER:
             await Crypt_Xeno2.encryptFile(fileName)
+
+    def calculate_checksum(data: bytes | bytearray, start_offset: int) -> int:
+        if start_offset >= len(data):
+            raise CryptoError("Invalid save!")
+        section2 = data[start_offset:]
+        checksum = uint8()
+        num_blocks = len(section2) // 0x20
+        for i in range(num_blocks):
+            checksum.value += section2[i * 0x20]
+        return checksum.value
+    
+    def checksum1(data: bytes | bytearray) -> int:
+        checksum = uint8(
+            data[0x05]
+            + data[0x15]
+            + data[0x16]
+            + data[0x17]
+            + data[0x18]
+            + data[0x19]
+            + data[0x1A]
+            + data[0x1B]
+        )
+        return checksum.value
+
+    def checksum2(data: bytes | bytearray) -> int:
+        return Crypt_Xeno2.calculate_checksum(data, 0xA0)
+    
+    def checksum3(data: bytes | bytearray) -> int:
+        if len(data) < 0x80:
+            raise CryptoError("Invalid save!")
+        checksum = uint8(data[0x6C] + data[0x70] + data[0x74] + data[0x78])
+        return checksum.value
+
+    def checksum4(data: bytes | bytearray) -> int:
+        if len(data) < 0x80:
+            raise CryptoError("Invalid save!")
+        checksum = uint8(data[0x3C] + data[0x40] + data[0x44] + data[0x48])
+        return checksum.value
+
+    def checksum5(data: bytes | bytearray) -> int:
+        if len(data) < 0x80:
+           raise CryptoError("Invalid save!")
+        checksum = uint8()
+        for i in range(8):
+            checksum.value += data[0x4C + i * 4]
+        return checksum.value
+
+    def checksum6(data: bytes | bytearray) -> int:
+        if len(data) < 0x40:
+            raise CryptoError("Invalid save!")
+        checksum = uint8()
+        for i in range(8):
+            checksum.value += data[0x1C + i * 4]
+        return checksum.value
+
+    def checksum7(data: bytes | bytearray) -> int:
+        if len(data) < 0x14:
+            raise CryptoError("Invalid save!")
+        checksum = uint8()
+        for i in range(14):
+            checksum.value += data[0x06 + i]
+        return checksum.value
+
+    def checksum8(data: bytes | bytearray) -> int:
+        return Crypt_Xeno2.calculate_checksum(data, 0x80)

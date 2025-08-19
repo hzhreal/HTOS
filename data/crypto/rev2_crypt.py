@@ -71,14 +71,6 @@ class Crypt_Rev2:
     @staticmethod
     async def checkEnc_ps(fileName: str) -> None:
         async with aiofiles.open(fileName, "rb") as savegame:
-            await savegame.seek(0x98)
-            stat_val1 = await savegame.read(1)
-
-            await savegame.seek(0x9C)
-            stat_val2 = await savegame.read(1)
-
-            await savegame.seek(0xA0)
-            stat_val3 = await savegame.read(1)
- 
-        if stat_val1 == b"d" and stat_val2 == b"d" and stat_val3 == b"d": # not 100 on this one
+            data = await savegame.read()
+        if CC.fraction_byte(data):
             await Crypt_Rev2.encryptFile(fileName)

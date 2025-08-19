@@ -22,3 +22,4 @@ from data.crypto.nms_crypt import Crypt_NMS
 from data.crypto.terraria_crypt import Crypt_Terraria
 from data.crypto.smt5_crypt import Crypt_SMT5
 from data.crypto.rcube_crypt import Crypt_RCube
+from data.crypto.dsr_crypt import Crypt_DSR

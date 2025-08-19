@@ -133,6 +133,17 @@ class CustomCrypto:
             swapped_chunk = bytearray(reversed(chunk))
             swapped_data.extend(swapped_chunk)
         return swapped_data
+    
+    @staticmethod
+    def fraction_byte(data: bytes | bytearray, byte: int = 0, div: int = 2) -> bool:
+        assert div != 0
+        byte &= 0xFF
+
+        cnt = 0
+        for b in data:
+            if b == byte:
+                cnt += 1
+        return cnt >= (len(data) / div)
      
     @staticmethod
     async def obtainFiles(folder: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
