@@ -60,7 +60,7 @@ class QuickCodes(TabBase):
         try:
             files = await prepare_files_input_folder(self.settings, self.in_folder, newUPLOAD_DECRYPTED)
         except OSError:
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
@@ -85,12 +85,12 @@ class QuickCodes(TabBase):
                 try:
                     await qc.apply_code()
                 except QuickCodesError as e:
-                    cleanupSimple(workspaceFolders)
+                    await cleanupSimple(workspaceFolders)
                     self.logger.error(str(e) + " Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:
-                    cleanupSimple(workspaceFolders)
+                    await cleanupSimple(workspaceFolders)
                     self.logger.exception("Unexpected error. Stopping...")
                     self.enable_buttons()
                     return
@@ -105,7 +105,7 @@ class QuickCodes(TabBase):
             self.info(f"Applied codes to **{finished_files}** (batch {i}/{batches}).")
             self.info(f"Batch can be found at {out}.")
             i += 1
-        cleanupSimple(workspaceFolders)
+        await cleanupSimple(workspaceFolders)
         self.logger.info("Done!")
         self.enable_buttons()
 

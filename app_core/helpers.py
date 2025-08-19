@@ -12,9 +12,10 @@ from utils.extras import generate_random_string
 
 async def get_files_nonrecursive(folder_path: str) -> list[str]:
     files = []
-    for path in await listdir(folder_path):
-        if await isfile(path):
-            files.append(path)
+    for basename in await listdir(folder_path):
+        full_path = os.path.join(folder_path, basename)
+        if await isfile(full_path):
+            files.append(full_path)
     return files
 
 def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None) -> list[str]:

@@ -60,12 +60,12 @@ class Decrypt(TabBase):
         try:
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             self.logger.error(str(e) + " Stopping...")
             self.enable_buttons()
             return
         except OSError:
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return

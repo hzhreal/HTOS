@@ -57,7 +57,7 @@ class Convert(TabBase):
         try:
             files = await prepare_files_input_folder(self.settings, self.in_folder, newUPLOAD_DECRYPTED)
         except OSError:
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
@@ -97,20 +97,20 @@ class Convert(TabBase):
                                 result = await self.special_case_wrapper(savegame)
                 
                 except ConverterError as e:
-                    cleanupSimple(workspaceFolders)
+                    await cleanupSimple(workspaceFolders)
                     self.logger.error(str(e) + " Stopping...")
                     self.event.clear()
                     self.enable_buttons()
                     return
                 except Exception:
-                    cleanupSimple(workspaceFolders)
+                    await cleanupSimple(workspaceFolders)
                     self.logger.exception("Unexpected error. Stopping...")
                     self.event.clear()
                     self.enable_buttons()
                     return
                 
                 if result == "ERROR":
-                    cleanupSimple(workspaceFolders)
+                    await cleanupSimple(workspaceFolders)
                     self.logger.error("Invalid save. Stopping...")
                     self.event.clear()
                     self.enable_buttons()
@@ -125,7 +125,7 @@ class Convert(TabBase):
             self.info(f"Converted **{finished_files}** (batch {i}/{batches}).")
             self.info(f"Batch can be found at {out}.")
             i += 1
-        cleanupSimple(workspaceFolders)
+        await cleanupSimple(workspaceFolders)
         self.logger.info("Done!")
         self.event.clear()
         self.enable_buttons()

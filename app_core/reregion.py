@@ -62,7 +62,7 @@ class Reregion(TabBase):
         try:
             real_sample_savepair = await prepare_single_save_folder(self.sample_savepair, newUPLOAD_ENCRYPTED)
         except OSError:
-            cleanupSimple(workspaceFolders)
+            await cleanupSimple(workspaceFolders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return

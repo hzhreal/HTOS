@@ -88,7 +88,7 @@ class SFOEditor(SFOContext):
         self.info_btn = ui.button("Display info", on_click=dialog.open)
 
         self.save_btn = ui.button("Save", on_click=self.on_save)
-        self.disable_button()
+        self.disable_buttons()
 
     async def on_start(self) -> None:
         if not await isfile(self.sfopath):
@@ -111,7 +111,7 @@ class SFOEditor(SFOContext):
             self.map[param["key"]].value = param["converted_value"].rstrip("\x00")
         self.print_info()
         
-        self.enable_button()
+        self.enable_buttons()
 
     async def on_save(self) -> None:
         parameters = {
@@ -154,16 +154,16 @@ class SFOEditor(SFOContext):
     async def on_click(self) -> None:
         f = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.OPEN)
         if f:
-            self.disable_button()
+            self.disable_buttons()
             self.sfopath = f[0]
             self.sfopath_label.set_content(f"```{self.sfopath}```")
         await self.on_start()
 
-    def disable_button(self) -> None:
+    def disable_buttons(self) -> None:
         self.info_btn.disable()
         self.save_btn.disable()
     
-    def enable_button(self) -> None:
+    def enable_buttons(self) -> None:
         self.info_btn.enable()
         self.save_btn.enable()
     
