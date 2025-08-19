@@ -10,6 +10,7 @@ from zipfile import (
     #ZIP_LZMA, 
     ZIP_STORED
 )
+from sys import argv
 from discord.ext import commands
 from enum import Enum
 from psnawp_api import PSNAWP
@@ -95,14 +96,15 @@ class NPSSO:
         self.val: str = str(os.getenv("NPSSO"))
 NPSSO_global = NPSSO()
 
-psnawp = None
-if __file__ == "bot.py":
+if os.path.basename(argv[0]) == "bot.py":
     if NPSSO_global.val:
         psnawp = PSNAWP(NPSSO_global)
         print("psnawp initialized")
     else:
         print("It is recommended that you register a NPSSO token.")
         time.sleep(3)
+else:
+    psnawp = None
 
 # BOT INITIALIZATION 
 activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")

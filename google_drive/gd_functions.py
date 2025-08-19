@@ -8,6 +8,7 @@ import re
 import datetime
 import aiohttp
 import utils.orbis as orbis
+from sys import argv
 from discord.ext import tasks
 from aiogoogle import Aiogoogle, auth, HTTPError, models
 from dateutil import parser
@@ -778,7 +779,10 @@ class GDapi:
      
         return [uploaded_file_paths]
 
-gdapi = GDapi()
+if os.path.basename(argv[0]) == "bot.py":
+    gdapi = GDapi()
+else:
+    gdapi = None
 
 @tasks.loop(count=1, reconnect=False)
 async def clean_GDrive() -> None:
