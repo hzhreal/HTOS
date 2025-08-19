@@ -57,7 +57,7 @@ class Crypt_Xeno2:
             ciphertext = await savegame.read()
         await Crypt_Xeno2.decryptFile(filePath)
         async with aiofiles.open(filePath, "rb") as savegame:
-            plaintext = await savegame.read()
+            plaintext = bytearray(await savegame.read())
 
         check8 = Crypt_Xeno2.checksum8(plaintext)
         check2 = Crypt_Xeno2.checksum2(ciphertext)
@@ -177,15 +177,15 @@ class Crypt_Xeno2:
            raise CryptoError("Invalid save!")
         checksum = uint8()
         for i in range(8):
-            checksum += data[0x4C + i * 4]
-        return checksum
+            checksum.value += data[0x4C + i * 4]
+        return checksum.value
 
     def checksum6(data: bytes | bytearray) -> int:
         if len(data) < 0x40:
             raise CryptoError("Invalid save!")
         checksum = uint8()
         for i in range(8):
-            checksum += data[0x1C + i * 4]
+            checksum.value += data[0x1C + i * 4]
         return checksum.value
 
     def checksum7(data: bytes | bytearray) -> int:
@@ -193,8 +193,7 @@ class Crypt_Xeno2:
             raise CryptoError("Invalid save!")
         checksum = uint8()
         for i in range(14):
-            checksum += data[0x06 + i]
-            checksum &= 0xFF
+            checksum.value += data[0x06 + i]
         return checksum.value
 
     def checksum8(data: bytes | bytearray) -> int:
