@@ -1,6 +1,9 @@
 import multiprocessing
 multiprocessing.set_start_method("spawn", force=True)
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import argparse
 import asyncio
 from nicegui import ui
