@@ -57,4 +57,4 @@ if __name__ in {"__main__", "__mp_main__"}:
 
     ui.dark_mode().enable()
     initialize_tabs()
-    ui.run(native=True, window_size=(500, 500))
+    ui.run(native=True, window_size=(1400, 800))
