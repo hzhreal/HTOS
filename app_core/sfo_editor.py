@@ -24,48 +24,48 @@ class SFOEditor(SFOContext):
                 "ACCOUNT_ID (uint64 in hexadecimal)",
                 placeholder="0123456789ABCDEF",
                 validation={"Invalid account ID!": self.accid_0x_check}
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.attribute = ui.input(
                 "ATTRIBUTE (uint32)",
                 placeholder="123",
                 validation={"Input value is not a uint32!": self.uint32_validation}
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.category = ui.input(
                 "CATEGORY (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
         with ui.row():
             self.detail = ui.input(
                 "DETAIL (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.format = ui.input(
                 "FORMAT (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.maintitle = ui.input(
                 "MAINTITLE (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
         with ui.row():
             # parent class has attribute called param
             self.params_ = ui.input(
                 "PARAMS (utf-8-special)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.savedata_blocks = ui.input(
                 "SAVEDATA_BLOCKS (uint64)",
                 validation={f"Input value must be between {SAVEBLOCKS_MIN} and {SAVEBLOCKS_MAX}!": self.saveblock_validation}
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.savedata_directory = ui.input(
                 "SAVEDATA_DIRECTORY (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
         with ui.row():
             self.savedata_list_param = ui.input(
                 "SAVEDATA_LIST_PARAM (uint32)",
                 validation={"Input value is not a uint32!": self.uint32_validation}
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.subtitle = ui.input(
                 "SUBTITLE (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
             self.title_id = ui.input(
                 "TITLE_ID (utf-8)"
-            ).classes("w-64")
+            ).classes("w-64").props("clearable")
 
         self.map = {
             "ACCOUNT_ID": self.account_id,

@@ -18,10 +18,10 @@ class QuickCodes(TabBase):
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savegames", on_click=self.on_input)
-            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder)
+            self.in_label = ui.input(on_change=self.on_input_label, value=self.in_folder).props("clearable")
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
-            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder)
+            self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
         self.codes_obj = ui.textarea(
             "Enter quick codes", 
             placeholder="80010008 EA372703\n00140000 00000000\n180000E8 0000270F"
