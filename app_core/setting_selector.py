@@ -26,12 +26,20 @@ class SettingSelector:
                 case SettingObject.FOLDERSELECT:
                     with ui.row().style("align-items: center"):
                         ui.button(v.desc, on_click=partial(self.folder_dialog, v))
-                        self.widgets[v.key] = ui.input(on_change=lambda e: v.set_value_safe(e.value), value=v.value)
+                        self.widgets[v.key] = ui.input(value=v.value, on_change=lambda e, v=v: v.set_value_safe(e.value))
+        ui.button("Save", on_click=self.save)
+
+    def save(self) -> None:
+        try:
+            self.settings.update()
+        except OSError:
+            ui.notify("Failed to save!")
+            return
+        ui.notify("Saved! You may need to restart.")
 
     def on_change(self, s: SettingKey, event: ValueChangeEventArguments) -> None:
         try:
             s.value = event.value
-            self.settings.update()
         except SettingsError as e:
             ui.notify(e)
 
@@ -41,4 +49,3 @@ class SettingSelector:
             v.value = folder[0]
             md: ui.input = self.widgets[v.key]
             md.set_value(v.value)
-            self.settings.update()
