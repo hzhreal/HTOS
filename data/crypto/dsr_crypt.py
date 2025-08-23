@@ -1,6 +1,5 @@
 import aiofiles
 import hashlib
-from os.path import basename
 from data.crypto.common import CustomCrypto as CC
 
 class Crypt_DSR:
@@ -36,11 +35,11 @@ class Crypt_DSR:
             plaintext = await savegame.read()
         
         ciphertext = CC.encrypt_aes_cbc(plaintext, Crypt_DSR.KEY, Crypt_DSR.IV)
-        chks = hashlib.md5(ciphertext).digest()
+        out = Crypt_DSR.IV + ciphertext
+        chks = hashlib.md5(out).digest()
 
         async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(Crypt_DSR.IV)
-            await savegame.write(ciphertext)
+            await savegame.write(out)
             await savegame.write(chks)
 
     @staticmethod
