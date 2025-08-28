@@ -52,6 +52,7 @@ from .constants import (
     TERRARIA_TITLEID,
     RCUBE_TITLEID,
     DSR_TITLEID,
+    RE4R_TITLEID,
     FILE_LIMIT_DISCORD, 
     MAX_FILES,
     UPLOAD_TIMEOUT,

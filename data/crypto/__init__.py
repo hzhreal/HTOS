@@ -15,3 +15,4 @@ from .terraria_crypt import Crypt_Terraria
 from .smt5_crypt import Crypt_SMT5
 from .rcube_crypt import Crypt_RCube
 from .dsr_crypt import Crypt_DSR
+from .re4r_crypt import Crypt_RE4R

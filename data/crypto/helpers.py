@@ -8,7 +8,7 @@ from utils.constants import (
     logger, Color, Embed_t, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
-    TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID
+    TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID
 )
 
 async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
@@ -80,6 +80,8 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
                         await Crypto.RCube.decryptFile(destination_directory)
                     case "DSR":
                         await Crypto.DSR.decryptFile(destination_directory)
+                    case "RE4R":
+                        await Crypto.RE4R.decryptFile(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
             
@@ -250,6 +252,14 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
         await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DSR"))
         await helper.await_done()
 
+    elif title_id in RE4R_TITLEID:
+        if not d_ctx:
+            await Crypto.RE4R.decryptFile(destination_directory)
+            return
+
+        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RE4R"))
+        await helper.await_done()
+
 async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -314,6 +324,9 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -
 
         elif title_id in DSR_TITLEID:
             await Crypto.DSR.checkEnc_ps(file_name)
+
+        elif title_id in RE4R_TITLEID:
+            await Crypto.RE4R_checkEnc_ps(file_name)
 
     except CryptoError as e:
         raise CryptoError(e)
