@@ -41,9 +41,10 @@ A Discord bot and app with tons of functionalities that can handle PS4 saves usi
 | No Man's Sky (savedata.hg)               |                                     |                          |                                     |
 | Raspberry Cube                           |                                     |                          |                                     |
 | Red Dead Redemption 2                    | Red Dead Redemption 2               | Red Dead Redemption 2    |                                     |
+| Resident Evil 4 Remake                   |                                     |                          |                                     |
+| Resident Evil 7: Biohazard               |                                     |                          |                                     |
 | Resident Evil: Resistance                |                                     |                          |                                     |
 | Resident Evil: Revelations 2             |                                     |                          |                                     |
-| Resident Evil 7: Biohazard               |                                     |                          |                                     |
 | Shin Megami Tensei 5                     |                                     |                          |                                     |
 | Terraria (.plr & some .wld)              |                                     |                          |                                     |
 | The Last of Us                           |                                     |                          |                                     |
@@ -99,9 +100,11 @@ For the bot to completely function you need to input your NPSSO 64 character tok
 - Join my [Discord](https://discord.gg/fHfmjaCXtb) where the bot is hosted, free to use and often hosted
 
 ### Acknowledgements
+- [Alfizari](https://github.com/alfizari)
 - [Alfizari](https://github.com/alfizari): [Dark-Souls-Remastered-Save-decrypt-PS4](https://github.com/alfizari/Dark-Souls-Remastered-Save-decrypt-PS4)
 - [Batang](https://github.com/B-a-t-a-n-g)
 - [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
+- [Brotherguns5624](https://github.com/Brotherguns5624)
 - [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
 - [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
 - [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)

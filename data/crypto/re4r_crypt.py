@@ -1,49 +1,13 @@
 import aiofiles
-from os.path import basename
-from data.crypto.common import CryptoError
+import mmh3
 from data.crypto.common import CustomCrypto as CC
-from utils.type_helpers import uint64, uint32
+from utils.type_helpers import uint32
 
 class Crypt_RE4R:
-    SECRET_KEY = b""
+    SECRET_KEY = b"wa9Ui_tFKa_6E_D5gVChjM69xMKDX8QxEykYKhzb4cRNLknpCZUra"
     HEADER = b"DSSSDSSS"
-
-    @staticmethod
-    def xor_down(d: bytearray) -> bytearray:
-        size = len(d) // 4
-        l_ = 0
-        r_ = 0
-        for i in range(size):
-            l = uint32(d[i:i + 4], "little")
-            r = uint32(d[i + 4:i + 8], "little")
-
-            buf = l.as_bytes + r.as_bytes
-            buf = CC.decrypt_blowfish_ecb(buf, Crypt_RE4R.SECRET_KEY)
-
-            d[i:i + 4] = uint32(uint32(buf[:4], "little").value ^ l_).as_bytes
-            d[i + 4:i + 8] = uint32(uint32(buf[4:8], "little").value ^ r_).as_bytes
-            l_ = l.value
-            r_ = r.value
-        return d
-
-    @staticmethod
-    def xor_up(d: bytearray) -> bytearray:
-        size = len(d) // 4
-        l_ = 0
-        r_ = 0
-        for i in range(size):
-            l = uint32(d[i:i + 4], "little")
-            r = uint32(d[i + 4:i + 8], "little")
-
-            buf = bytearray(8)
-            buf[:4] = uint32(l.value ^ l_).as_bytes
-            buf[4:8] = uint32(r.value ^ r_).as_bytes
-
-            d[i:i + 8] = CC.encrypt_blowfish_ecb(buf, Crypt_RE4R.SECRET_KEY)
-
-            l_ = l.value
-            r_ = r.value
-        return d
+    IV = b"\x00" * CC.BLOWFISH_BLOCKSIZE
+    SEED = 0x_FF_FF_FF_FF
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
@@ -54,7 +18,9 @@ class Crypt_RE4R:
             async with aiofiles.open(filePath, "rb") as savegame:
                 await savegame.seek(0x10)
                 header = await savegame.read(0x10)
-                ciphertext = await savegame.read()
+                data = await savegame.read()
+
+            ciphertext = header + data
 
             header = CC.ES32(header)
             header = CC.decrypt_blowfish_ecb(header, Crypt_RE4R.SECRET_KEY)
@@ -62,45 +28,47 @@ class Crypt_RE4R:
 
             # Pad the data to be a multiple of the block size
             p_ciphertext, p_len = CC.pad_to_blocksize(ciphertext, CC.BLOWFISH_BLOCKSIZE)
-            plaintext = Crypt_RE4R.xor_down(bytearray(p_ciphertext))
+
+            p_ciphertext = CC.ES32(p_ciphertext)
+            plaintext = CC.decrypt_blowfish_cbc(p_ciphertext, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
+            plaintext = CC.ES32(plaintext)
             if p_len > 0:
                 plaintext = plaintext[:-p_len] # remove padding that we added to avoid exception
 
+            plaintext[:len(header)] = header
+
             async with aiofiles.open(filePath, "r+b") as savegame:
                 await savegame.seek(0x10)
-                await savegame.write(header)
                 await savegame.write(plaintext)
 
     @staticmethod
     async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            await savegame.seek(0, 2)
-            size = await savegame.tell()
-            size -= 8
-            if size <= 0:
-                raise CryptoError(f"File is to small ({basename(fileToEncrypt)})!")
-            await savegame.seek(0)
-
-            await savegame.seek(0x10)
+        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
+            init_header = await savegame.read(0x10)
             header = await savegame.read(0x10)
-
-            plaintext = await savegame.read(size - 0x10 - 0x10)
+            data = await savegame.read()
 
         header = CC.ES32(header)
         header = CC.encrypt_blowfish_ecb(header, Crypt_RE4R.SECRET_KEY)
+        header = CC.decrypt_blowfish_cbc(header, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
         header = CC.ES32(header)
+
+        plaintext = header + data
 
         # Pad the data to be a multiple of the block size
         p_plaintext, p_len = CC.pad_to_blocksize(plaintext, CC.BLOWFISH_BLOCKSIZE)
-        ciphertext = Crypt_RE4R.xor_up(bytearray(p_plaintext))
+
+        plaintext = CC.ES32(p_plaintext)
+        ciphertext = CC.encrypt_blowfish_cbc(plaintext, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
+        ciphertext = bytes(CC.ES32(ciphertext))
         if p_len > 0:
             ciphertext = ciphertext[:-p_len] # remove padding that we added to avoid exception
 
-        csum = uint64(0, "little")
+        ciphertext = ciphertext[:-4]
+        csum = uint32(mmh3.hash(init_header + ciphertext, Crypt_RE4R.SEED, False), "little")
 
         async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            await savegame.seek(0x10)
-            await savegame.write(header)
+            await savegame.write(init_header)
             await savegame.write(ciphertext)
             await savegame.write(csum.as_bytes)
 

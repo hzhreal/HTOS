@@ -1,4 +1,3 @@
-import asyncio.selector_events
 import discord
 import asyncio
 import os
