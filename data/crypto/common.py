@@ -109,6 +109,18 @@ class CustomCrypto:
         return decrypted_data
     
     @staticmethod
+    def encrypt_blowfish_cbc(plaintext: bytes | bytearray, key: bytes | bytearray, iv: bytes | bytearray) -> bytes:
+        cipher = Blowfish.new(key, Blowfish.MODE_CBC, iv)
+        encrypted_data = cipher.encrypt(plaintext)
+        return encrypted_data
+    
+    @staticmethod
+    def decrypt_blowfish_cbc(ciphertext: bytes | bytearray, key: bytes | bytearray, iv: bytes | bytearray) -> bytes:
+        cipher = Blowfish.new(key, Blowfish.MODE_CBC, iv)
+        decrypted_data = cipher.decrypt(ciphertext)
+        return decrypted_data
+    
+    @staticmethod
     def bytes_to_u32array(data: bytes | bytearray, byteorder: Literal["little", "big"], signed: bool = False) -> list[int]:
         u32_array = []
         for i in range(0, len(data), 4):

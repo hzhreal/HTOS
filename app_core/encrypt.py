@@ -9,13 +9,15 @@ from aiofiles.os import makedirs
 
 from app_core.models import Profiles, Logger, Settings, TabBase
 from app_core.helpers import prepare_save_input_folder, calculate_foldersize
+from data.crypto.helpers import extra_import
 from network import C1socket, FTPps, SocketError, FTPError
-from utils.constants import IP, PORT_FTP, PS_UPLOADDIR
+from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS
 from utils.workspace import initWorkspace, cleanup, cleanupSimple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError, FileError
 from utils.conversions import bytes_to_mb
 from utils.extras import completed_print
+from utils.namespaces import Crypto
 
 class Encrypt(TabBase):
     def __init__(self, profiles: Profiles, settings: Settings) -> None:
@@ -30,6 +32,7 @@ class Encrypt(TabBase):
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
             self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
+        self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.encrypt_folder_list = Logger()
         self.logger = Logger()
@@ -49,6 +52,7 @@ class Encrypt(TabBase):
         self.disable_buttons()
 
         p = self.profiles.selected_profile.copy()
+        ignore_secondlayer_checks = self.ignore_secondlayer_checks_checkbox.value
 
         self.logger.clear()
         self.logger.info("Starting encrypt...")
@@ -121,6 +125,11 @@ class Encrypt(TabBase):
                     encrypt_foldersize, encrypt_files = await calculate_foldersize(self.settings, self.encrypt_folder)
                     if encrypt_foldersize > pfs_size:
                         raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(pfs_size)} MB!")
+                    if not ignore_secondlayer_checks:
+                        for file in encrypt_files:
+                            if os.path.basename(file) in SCE_SYS_CONTENTS:
+                                continue
+                            await extra_import(Crypto, savefile.title_id, file)
                     await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]
@@ -185,6 +194,14 @@ class Encrypt(TabBase):
         self.encrypt_button.set_visibility(True)
         self.encrypt_label.set_visibility(True)
         self.continue_button.set_visibility(True)
+
+    def disable_buttons(self) -> None:
+        super().disable_buttons()
+        self.ignore_secondlayer_checks_checkbox.disable()
+    
+    def enable_buttons(self) -> None:
+        super().enable_buttons()
+        self.ignore_secondlayer_checks_checkbox.enable()
 
     @staticmethod
     def parse_filelist(files: list[str]) -> str:

@@ -126,3 +126,13 @@ class Decrypt(TabBase):
             i += 1
         self.logger.info("Done!")
         self.enable_buttons()
+
+    def disable_buttons(self) -> None:
+        super().disable_buttons()
+        self.include_sce_sys_checkbox.disable()
+        self.ignore_secondlayer_checks_checkbox.disable()
+    
+    def enable_buttons(self) -> None:
+        super().enable_buttons()
+        self.include_sce_sys_checkbox.enable()
+        self.ignore_secondlayer_checks_checkbox.enable()
