@@ -17,7 +17,7 @@ from utils.constants import (
 )
 from utils.workspace import makeWorkspace, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special, task_handler
-from utils.orbis import handleTitles, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
+from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -146,7 +146,7 @@ class CreateSave(commands.Cog):
         sfo_path = os.path.join(scesys_local, PARAM_NAME)
         try:
             sfo_ctx = await sfo_ctx_create(sfo_path)
-            handleTitles(sfo_ctx, user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
+            sfo_ctx_patch_parameters(sfo_ctx, ACCOUNT_ID=user_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = obtainCUSA(sfo_ctx)
             await sfo_ctx_write(sfo_ctx, sfo_path)
 

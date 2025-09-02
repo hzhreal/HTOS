@@ -541,6 +541,12 @@ async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
     async with aiofiles.open(sfo_path, "wb") as sfo:
         await sfo.write(sfo_data)
 
+def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: dict[str, int | str]) -> None:
+    filtered_patches = {key: value for key, value in patches.items() if value}
+
+    for key in filtered_patches:
+        ctx.sfo_patch_parameter(key, filtered_patches[key])
+
 def obtainCUSA(ctx: SFOContext) -> str:
     """Obtains TITLE_ID from sfo file."""
     data_title_id = ctx.sfo_get_param_value("TITLE_ID")
@@ -604,19 +610,6 @@ async def reregionCheck(title_id: str, savePath: str, original_savePath: str, or
         if await aiofiles.os.path.exists(original_savePath) and await aiofiles.os.path.exists(original_savePath_bin):
             await aiofiles.os.rename(original_savePath, newnameFile)
             await aiofiles.os.rename(original_savePath_bin, newnameBin)
-
-def handleTitles(ctx: SFOContext, maintitle: str = "", subtitle: str = "", **extraPatches: str | int) -> None:
-    """Used to alter MAINTITLE & SUBTITLE in the sfo file, for the change titles command."""
-    toPatch = {
-        "MAINTITLE": maintitle, 
-        "SUBTITLE": subtitle, 
-        **extraPatches
-    }
-    # maintitle or subtitle may be empty because the user can choose one or both to edit, therefore we remove the key that is an empty str
-    toPatch = {key: value for key, value in toPatch.items() if value}
-
-    for key in toPatch:
-        ctx.sfo_patch_parameter(key, toPatch[key])
 
 def validate_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))

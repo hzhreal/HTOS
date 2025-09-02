@@ -16,7 +16,7 @@ from utils.constants import (
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import pngprocess
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
-from utils.orbis import handleTitles, SaveBatch, SaveFile
+from utils.orbis import sfo_ctx_patch_parameters, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
@@ -269,7 +269,7 @@ class Change(commands.Cog):
                     ]
                     await task_handler(d_ctx, tasks, [embTitleChange1])
 
-                    handleTitles(savefile.sfo_ctx, maintitle, subtitle)
+                    sfo_ctx_patch_parameters(savefile.sfo_ctx, MAINTITLE=maintitle, SUBTITLE=subtitle)
 
                     task = [savefile.resign]
                     await task_handler(d_ctx, task, [])
