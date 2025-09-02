@@ -8,10 +8,10 @@ from aiofiles.ospath import isdir, getsize
 from aiofiles.os import makedirs
 
 from app_core.models import Profiles, Logger, Settings, TabBase
-from app_core.helpers import prepare_save_input_folder, calculate_foldersize
+from app_core.helpers import prepare_save_input_folder, calculate_foldersize, get_files_nonrecursive
 from data.crypto.helpers import extra_import
 from network import C1socket, FTPps, SocketError, FTPError
-from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS
+from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS, SCE_SYS_NAME
 from utils.workspace import initWorkspace, cleanup, cleanupSimple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError, FileError
@@ -35,7 +35,7 @@ class Encrypt(TabBase):
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.encrypt_folder_list = Logger()
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
         with ui.row():
             self.encrypt_button = ui.button("Select folder you want to encrypt", on_click=self.on_encrypt_folder)
             self.encrypt_label = ui.input(on_change=self.on_encrypt_folder_in).props("clearable")
@@ -76,7 +76,7 @@ class Encrypt(TabBase):
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
             await cleanupSimple(workspaceFolders)
-            self.logger.error(str(e) + " Stopping...")
+            self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         except OSError:
@@ -126,11 +126,28 @@ class Encrypt(TabBase):
                     if encrypt_foldersize > pfs_size:
                         raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(pfs_size)} MB!")
                     if not ignore_secondlayer_checks:
+                        self.logger.info("Doing second layer checks...")
                         for file in encrypt_files:
                             if os.path.basename(file) in SCE_SYS_CONTENTS:
                                 continue
                             await extra_import(Crypto, savefile.title_id, file)
-                    await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
+                    if self.settings.recursivity.value:
+                        await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
+                    else:
+                        ftp = await C1ftp.create_ctx()
+
+                        for file in encrypt_files:
+                            remote_path = os.path.join(batch.mount_location, os.path.basename(file))
+                            await C1ftp.uploadStream(ftp, file, remote_path)
+
+                        sys_folder = os.path.join(self.encrypt_folder, SCE_SYS_NAME)
+                        if await isdir(sys_folder):
+                            sys_files = await get_files_nonrecursive(sys_folder)
+                            for sys_file in sys_files:
+                                remote_path = os.path.join(batch.location_to_scesys, os.path.basename(sys_file))
+                                await C1ftp.uploadStream(ftp, sys_file, remote_path)
+                            encrypt_files.extend(sys_files)
+                        await C1ftp.free_ctx(ftp)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]
                     dec_print = completed_print(completed)
@@ -141,7 +158,7 @@ class Encrypt(TabBase):
 
                 except (SocketError, FTPError, OrbisError, FileError, OSError) as e:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.event.clear()
                     self.hide_encrypt_objs()
                     self.enable_buttons()

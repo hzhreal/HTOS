@@ -102,7 +102,7 @@ class Profiles:
                 return p
         return None
     
-    def select_profile(self, p: Profile) -> None:
+    def select_profile(self, p: Profile | None) -> None:
         self.selected_profile = p
         
     def is_selected(self) -> bool:
@@ -112,7 +112,8 @@ class Profiles:
         return len(self.profiles) == 0
     
 class Logger:
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings | None = None) -> None:
+        self.settings = settings
         self.text = ""
         with ui.scroll_area().classes("w-full h-96 border") as scroll_area:
             self.scroll_area = scroll_area
@@ -141,6 +142,8 @@ class Logger:
         self.write("[WARNING]", msg)
 
     def error(self, msg: str) -> None:
+        if self.settings.verbose_errors.value:
+            return self.exception(msg)
         self.write("[ERROR]", msg)
 
     def exception(self, msg: str) -> None:
@@ -214,19 +217,23 @@ class SettingKey:
         self._value = value
 
 class Settings:
-    recursivity = SettingKey(
-        False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
-    )
     default_infolder = SettingKey(
         "", SettingObject.FOLDERSELECT, "default_infolder", "Select default input folder"
     )
     default_outfolder = SettingKey(
         "", SettingObject.FOLDERSELECT, "default_outfolder", "Select default output folder"
     )
+    recursivity = SettingKey(
+        False, SettingObject.CHECKBOX, "recursivity", "Recursively search for input files where applicable"
+    )
+    verbose_errors = SettingKey(
+        False, SettingObject.CHECKBOX, "verbose_errors", "Make all error logs verbose"
+    )
     settings_map = {
-        recursivity.key: recursivity,
         default_infolder.key: default_infolder,
-        default_outfolder.key: default_outfolder
+        default_outfolder.key: default_outfolder,
+        recursivity.key: recursivity,
+        verbose_errors.key: verbose_errors
     }
     settings = settings_map.values()
 
@@ -276,7 +283,7 @@ class TabBase:
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
             self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_input(self) -> None:
         folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)

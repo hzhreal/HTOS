@@ -7,7 +7,7 @@ import aiofiles.os
 import asyncio
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
-from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger, Color, Embed_t
 from utils.conversions import mb_to_bytes
 
 FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
@@ -198,7 +198,7 @@ class FTPps:
         logger.info(f"Downloaded {folder_path} to {downloadpath}")
 
         if ignoreSceSys:
-            shutil.rmtree(os.path.join(downloadpath, "sce_sys"))
+            shutil.rmtree(os.path.join(downloadpath, SCE_SYS_NAME))
     
     async def upload_folder(self, folderpath: str, local_path: str) -> None:
         try:
@@ -289,7 +289,7 @@ class FTPps:
         files = [
             str(file) 
             for file, attributes in files 
-            if "sce_sys" not in file.parts 
+            if SCE_SYS_NAME not in file.parts 
             and file.name not in ".." and file.name not in "."
             and attributes.get("type", "") != "dir"
             and attributes.get("type", "") != "cdir"

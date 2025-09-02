@@ -4,6 +4,7 @@ from webview import FileDialog
 from aiofiles.ospath import isfile
 
 from app_core.models import Logger
+from app_core.helpers import int_validation
 from utils.constants import SAVEBLOCKS_MIN, SAVEBLOCKS_MAX
 from utils.orbis import SFOContext, checkid
 from utils.exceptions import OrbisError
@@ -27,8 +28,7 @@ class SFOEditor(SFOContext):
             ).classes("w-64").props("clearable")
             self.attribute = ui.input(
                 "ATTRIBUTE (uint32)",
-                placeholder="123",
-                validation={"Input value is not a uint32!": self.uint32_validation}
+                validation={"Input value is not a uint32!": lambda s: int_validation(s, 0, 0xFF_FF_FF_FF)}
             ).classes("w-64").props("clearable")
             self.category = ui.input(
                 "CATEGORY (utf-8)"
@@ -50,7 +50,9 @@ class SFOEditor(SFOContext):
             ).classes("w-64").props("clearable")
             self.savedata_blocks = ui.input(
                 "SAVEDATA_BLOCKS (uint64)",
-                validation={f"Input value must be between {SAVEBLOCKS_MIN} and {SAVEBLOCKS_MAX}!": self.saveblock_validation}
+                validation={
+                    f"Input value must be between {SAVEBLOCKS_MIN} and {SAVEBLOCKS_MAX}!": lambda s: int_validation(s, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX)
+                }
             ).classes("w-64").props("clearable")
             self.savedata_directory = ui.input(
                 "SAVEDATA_DIRECTORY (utf-8)"
@@ -58,7 +60,7 @@ class SFOEditor(SFOContext):
         with ui.row():
             self.savedata_list_param = ui.input(
                 "SAVEDATA_LIST_PARAM (uint32)",
-                validation={"Input value is not a uint32!": self.uint32_validation}
+                validation={"Input value is not a uint32!": lambda s: int_validation(s, 0, 0xFF_FF_FF_FF)}
             ).classes("w-64").props("clearable")
             self.subtitle = ui.input(
                 "SUBTITLE (utf-8)"
@@ -184,36 +186,6 @@ class SFOEditor(SFOContext):
             s += "\n"
         s += "\n```"
         self.info.write(None, s)
-
-    @staticmethod
-    def uint32_validation(s: str) -> bool:
-        if s.lower().startswith("0x"):
-            s = s[2:]
-            try:
-                n = int(s, 16)
-            except ValueError:
-                return False
-        else:
-            try:
-                n = int(s)
-            except ValueError:
-                return False
-        return 0 <= n <= 0x_FF_FF_FF_FF
-    
-    @staticmethod
-    def saveblock_validation(s: str) -> bool:
-        if s.lower().startswith("0x"):
-            s = s[2:]
-            try:
-                n = int(s, 16)
-            except ValueError:
-                return False
-        else:
-            try:
-                n = int(s)
-            except ValueError:
-                return False
-        return SAVEBLOCKS_MIN <= n <= SAVEBLOCKS_MAX
     
     @staticmethod
     def accid_0x_check(s: str) -> bool:

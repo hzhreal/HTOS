@@ -29,7 +29,7 @@ class Reregion(TabBase):
             self.sample_save_button = ui.button("Select sample save from your region (target title id)", on_click=self.on_sample_save)
             self.sample_save_label = ui.input(on_change=self.on_sample_save_in).props("clearable")
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_start(self) -> None:
         if not await self.validation():
@@ -86,7 +86,7 @@ class Reregion(TabBase):
             await C1ftp.deleteList(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
-            self.logger.error(str(e) + " Stopping...")
+            self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         
@@ -94,7 +94,7 @@ class Reregion(TabBase):
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
             await cleanup(C1ftp, workspaceFolders, None, mount_paths)
-            self.logger.error(str(e) + " Stopping...")
+            self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         except OSError:
@@ -139,7 +139,7 @@ class Reregion(TabBase):
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:

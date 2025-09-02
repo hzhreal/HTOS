@@ -30,7 +30,7 @@ class Convert(TabBase):
             self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
         self.game_dropdown = ui.select(["GTA V", "RDR 2", "BL 3", "TTWL"])
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_start(self) -> None:
         if not self.game_dropdown.value:
@@ -99,7 +99,7 @@ class Convert(TabBase):
                 
                 except ConverterError as e:
                     await cleanupSimple(workspaceFolders)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.event.clear()
                     self.enable_buttons()
                     return

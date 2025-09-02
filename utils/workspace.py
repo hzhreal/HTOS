@@ -169,8 +169,10 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
             except FTPError as e:
                 logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
-async def cleanupSimple(clean_list: list[str]) -> None:
+async def cleanupSimple(clean_list: list[str] | None) -> None:
     """Used to cleanup after a command that does not utilize the ps4 (local only)."""
+    if not clean_list:
+        return
     for folderpath in clean_list:
         try:
             if await aiofiles.os.path.exists(folderpath):

@@ -15,6 +15,7 @@ from app_core.resign import Resign
 from app_core.encrypt import Encrypt
 from app_core.decrypt import Decrypt
 from app_core.reregion import Reregion
+from app_core.createsave import Createsave
 from app_core.convert import Convert
 from app_core.quickcodes import QuickCodes
 from app_core.sfo_editor import SFOEditor
@@ -37,6 +38,7 @@ def initialize_tabs() -> None:
             Decrypt(settings),
             Encrypt(profiles, settings),
             Reregion(profiles, settings),
+            Createsave(profiles, settings),
             Convert(settings),
             QuickCodes(settings),
             SFOEditor(),
