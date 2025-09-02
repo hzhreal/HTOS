@@ -126,11 +126,19 @@ class Encrypt(TabBase):
                     if encrypt_foldersize > pfs_size:
                         raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(pfs_size)} MB!")
                     if not ignore_secondlayer_checks:
+                        self.logger.info("Doing second layer checks...")
                         for file in encrypt_files:
                             if os.path.basename(file) in SCE_SYS_CONTENTS:
                                 continue
                             await extra_import(Crypto, savefile.title_id, file)
-                    await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
+                    if self.settings.recursivity.value:
+                        await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
+                    else:
+                        ftp = await C1ftp.create_ctx()
+                        for file in encrypt_files:
+                            remote_path = os.path.join(batch.mount_location, os.path.basename(file))
+                            await C1ftp.uploadStream(ftp, file, remote_path)
+                        await C1ftp.free_ctx(ftp)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]
                     dec_print = completed_print(completed)

@@ -14,7 +14,7 @@ from sys import argv
 from discord.ext import commands
 from enum import Enum
 from psnawp_api import PSNAWP
-from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds
+from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb
 
 VERSION = "v2.1.0"
 
@@ -188,9 +188,12 @@ KEYSTONE_SIZE = SEALED_KEY_ENC_SIZE = SAVEBLOCKS_MIN = 0x60
 KEYSTONE_NAME = "keystone"
 
 PARAM_NAME = "param.sfo"
+SCE_SYS_NAME = "sce_sys"
 
 SAVEBLOCKS_MAX = 32768 # SAVESIZE WILL BE SAVEBLOCKS * 2¹⁵
 SAVESIZE_MAX = saveblocks_to_bytes(SAVEBLOCKS_MAX)
+SAVESIZE_MB_MIN = bytes_to_mb(saveblocks_to_bytes(SAVEBLOCKS_MIN))
+SAVESIZE_MB_MAX = bytes_to_mb(SAVESIZE_MAX)
 
 MAX_PATH_LEN = 1024
 MAX_FILENAME_LEN = 255

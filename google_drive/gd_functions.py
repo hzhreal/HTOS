@@ -21,7 +21,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from utils.extras import generate_random_string
-from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, logger, Color, Embed_t, gd_upl_progress_emb
+from utils.constants import SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, SCE_SYS_NAME, logger, Color, Embed_t, gd_upl_progress_emb
 from utils.exceptions import OrbisError
 from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_up, minutes_to_seconds
 
@@ -391,7 +391,7 @@ class GDapi:
             file_size = int(file_info.get("size", 0))
 
             if mimetype == "application/vnd.google-apps.folder":
-                if file_name == "." or file_name == ".." or file_name == "sce_sys":
+                if file_name == "." or file_name == ".." or file_name == SCE_SYS_NAME:
                     continue
                 if rel_path is not None:
                     rel_path = os.path.join(rel_path, file_name)

@@ -4,7 +4,7 @@ from aiofiles.os import mkdir, listdir
 from aiofiles.ospath import exists, isfile, isdir, getsize
 
 from app_core.models import Logger, Settings
-from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
+from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
 from utils.extras import FileError
 from utils.extras import generate_random_string
@@ -173,3 +173,18 @@ async def prepare_single_save_folder(savepair: tuple[str, str], output_folder_pa
         shutil.copyfile(file, filepath_out)
         outpair.append(filepath_out)
     return tuple(outpair)
+
+def int_validation(s: str, min_: int, max_: int) -> bool:
+    assert min_ < max_
+    if s.lower().startswith("0x"):
+        s = s[2:]
+        try:
+            n = int(s, 16)
+        except ValueError:
+            return False
+    else:
+        try:
+            n = int(s)
+        except ValueError:
+            return False
+    return min_ <= n <= max_

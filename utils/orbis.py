@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from network import FTPps, SocketPS
 from utils.constants import (
     MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
-    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS,
+    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME,
     Color, Embed_t
 )
 from utils.extras import generate_random_string, obtain_savenames, completed_print
@@ -76,7 +76,7 @@ class SaveBatch:
 
         self.mount_location = MOUNT_LOCATION + "/" + self.rand_str
         self.mount_paths.append(self.mount_location)
-        self.location_to_scesys = self.mount_location + "/sce_sys"
+        self.location_to_scesys = self.mount_location + f"/{SCE_SYS_NAME}"
 
         self.savenames = await obtain_savenames(self.entry)
         self.savecount = len(self.savenames)
@@ -542,6 +542,7 @@ async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
         await sfo.write(sfo_data)
 
 def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: dict[str, int | str]) -> None:
+    # ignore parameters with no value
     filtered_patches = {key: value for key, value in patches.items() if value}
 
     for key in filtered_patches:

@@ -3,6 +3,8 @@ import aiofiles.os
 from Crypto.Cipher import AES, Blowfish
 from typing import Literal
 
+from utils.constants import SCE_SYS_NAME
+
 class CryptoError(Exception):
     """Exception raised for errors relating to decrypting or encrypting."""
     def __init__(self, message: str) -> None:
@@ -171,7 +173,7 @@ class CustomCrypto:
 
             if await aiofiles.os.path.isfile(entry_path) and entry not in exclude:
                 files.append(entry_path)
-            elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(folder, "sce_sys"):
+            elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(folder, SCE_SYS_NAME):
                 await CustomCrypto.obtainFiles(entry_path, exclude, files)
 
         return files

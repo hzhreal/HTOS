@@ -10,7 +10,7 @@ from network import FTPps, C1socket, SocketError, FTPError
 from google_drive import gdapi, GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, SAVESIZE_MAX, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, COMMAND_COOLDOWN, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, SCE_SYS_NAME,
     SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
     Color, Embed_t, logger
@@ -21,12 +21,9 @@ from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirna
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
-from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks, bytes_to_mb
+from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks
 
 SAVEBLOCKS_DESC = f"The value you put in will determine savesize (blocks * 32768)."
-
-SAVESIZE_MB_MIN = bytes_to_mb(saveblocks_to_bytes(SAVEBLOCKS_MIN))
-SAVESIZE_MB_MAX = bytes_to_mb(SAVESIZE_MAX)
 SAVESIZE_MB_DESC = "The value you put in will determine savesize (in MB)."
 
 class CreateSave(commands.Cog):
@@ -56,7 +53,7 @@ class CreateSave(commands.Cog):
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         mountPaths = []
-        scesys_local = os.path.join(newUPLOAD_DECRYPTED, "sce_sys")
+        scesys_local = os.path.join(newUPLOAD_DECRYPTED, SCE_SYS_NAME)
         rand_str = os.path.basename(newUPLOAD_DECRYPTED)
 
         # saveblocks takes priority
@@ -81,7 +78,7 @@ class CreateSave(commands.Cog):
         embgs = discord.Embed(
             title=f"Upload: Gamesaves\n{savename}",
             description=(
-                "Please attach the gamesaves files you want to upload.\n"
+                "Please attach the gamesave files you want to upload.\n"
                 "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
                 f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{self.DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{self.DISC_UPL_SPLITVALUE}savedata'.\n\n"
                 "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
@@ -174,7 +171,7 @@ class CreateSave(commands.Cog):
 
             temp_savename = savename + f"_{rand_str}"
             mount_location_new = MOUNT_LOCATION + "/" + rand_str
-            location_to_scesys = mount_location_new + "/" + "sce_sys"
+            location_to_scesys = mount_location_new + f"/{SCE_SYS_NAME}"
 
             task = [lambda: C1socket.socket_createsave(PS_UPLOADDIR, temp_savename, saveblocks)]
             await task_handler(d_ctx, task, [])
