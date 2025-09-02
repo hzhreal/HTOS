@@ -8,10 +8,10 @@ from aiofiles.ospath import isdir, getsize
 from aiofiles.os import makedirs
 
 from app_core.models import Profiles, Logger, Settings, TabBase
-from app_core.helpers import prepare_save_input_folder, calculate_foldersize
+from app_core.helpers import prepare_save_input_folder, calculate_foldersize, get_files_nonrecursive
 from data.crypto.helpers import extra_import
 from network import C1socket, FTPps, SocketError, FTPError
-from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS
+from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS, SCE_SYS_NAME
 from utils.workspace import initWorkspace, cleanup, cleanupSimple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError, FileError
@@ -134,6 +134,13 @@ class Encrypt(TabBase):
                     if self.settings.recursivity.value:
                         await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     else:
+                        sys_folder = os.path.join(self.encrypt_folder, SCE_SYS_NAME)
+                        if await isdir(sys_folder):
+                            sys_files = await get_files_nonrecursive(sys_folder)
+                            for sys_file in sys_files:
+                                remote_path = os.path.join(batch.location_to_scesys, os.path.basename(sys_file))
+                                await C1ftp.uploadStream(ftp, sys_file, remote_path)
+
                         ftp = await C1ftp.create_ctx()
                         for file in encrypt_files:
                             remote_path = os.path.join(batch.mount_location, os.path.basename(file))

@@ -174,9 +174,9 @@ async def prepare_single_save_folder(savepair: tuple[str, str], output_folder_pa
         outpair.append(filepath_out)
     return tuple(outpair)
 
-def int_validation(s: str, min_: int, max_: int) -> bool:
+def int_validation(s: str | int, min_: int, max_: int) -> bool:
     assert min_ < max_
-    if s.lower().startswith("0x"):
+    if type(s) == str and s.lower().startswith("0x"):
         s = s[2:]
         try:
             n = int(s, 16)

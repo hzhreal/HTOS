@@ -1,10 +1,11 @@
 import os
 
-from aiofiles.os import listdir, makedirs
 from nicegui import ui
+from aiofiles.os import makedirs
+from aiofiles.ospath import isdir
 
 from app_core.models import Profiles, Settings, TabBase, Logger
-from app_core.helpers import int_validation, calculate_foldersize
+from app_core.helpers import int_validation, calculate_foldersize, get_files_nonrecursive
 from data.crypto.helpers import extra_import
 from network import C1socket, FTPps, SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, RANDOMSTRING_LENGTH, MAX_FILENAME_LEN, MAX_PATH_LEN, SCE_SYS_NAME, PARAM_NAME, CREATESAVE_ENC_CHECK_LIMIT, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
@@ -45,11 +46,17 @@ class Createsave(TabBase):
     async def on_start(self) -> None:
         # saveblocks takes priority
         if int_validation(self.saveblocks.value, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX):
-            saveblocks = int(self.saveblocks.value)
+            if type(self.saveblocks.value) == str and self.saveblocks.value.lower().startswith("0x"):
+                saveblocks = int(self.saveblocks.value[2:], 16)
+            else:
+                saveblocks = int(self.saveblocks.value)
             savesize = saveblocks_to_bytes(saveblocks)
             self.savesize_mb.set_value(bytes_to_mb(savesize))
         elif int_validation(self.savesize_mb.value, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX):
-            saveblocks = mb_to_saveblocks(int(self.savesize_mb))
+            if type(self.savesize_mb.value) == str and self.savesize_mb.value.lower().startswith("0x"):
+                saveblocks = mb_to_saveblocks(int(self.savesize_mb.value[2:], 16))
+            else:
+                saveblocks = mb_to_saveblocks(int(self.savesize_mb.value))
             savesize = saveblocks_to_bytes(saveblocks)
             self.saveblocks.set_value(saveblocks)
         else:
@@ -98,11 +105,13 @@ class Createsave(TabBase):
             elif path_len > MAX_PATH_LEN:
                 raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
             
-            sys_files = await listdir(sys_files)
+            if not await isdir(sys_folder):
+                raise OrbisError("No sce_sys folder found!")
+            sys_files = await get_files_nonrecursive(sys_folder)
             sys_files_validator(sys_files)
             sfo_path = os.path.join(sys_folder, PARAM_NAME)
 
-            sfo_ctx = sfo_ctx_create(sfo_path)
+            sfo_ctx = await sfo_ctx_create(sfo_path)
             sfo_ctx_patch_parameters(sfo_ctx, ACCOUNT_ID=p.account_id, SAVEDATA_DIRECTORY=savename, SAVEDATA_BLOCKS=saveblocks)
             title_id = obtainCUSA(sfo_ctx)
             await sfo_ctx_write(sfo_ctx, sfo_path)
@@ -129,10 +138,14 @@ class Createsave(TabBase):
                 await C1ftp.upload_folder(mount_location_new, self.in_folder)
             else:
                 ftp = await C1ftp.create_ctx()
+                for sys_file in sys_files:
+                    remote_path = os.path.join(location_to_scesys, os.path.basename(sys_file))
+                    await C1ftp.uploadStream(ftp, sys_file, remote_path)
                 for file in files:
                     remote_path = os.path.join(mount_location_new, os.path.basename(file))
                     await C1ftp.uploadStream(ftp, file, remote_path)
                 await C1ftp.free_ctx(ftp)
+            await C1socket.socket_update(mount_location_new, temp_savename)
             
             # make paths for save
             out_folder = os.path.join(self.out_folder, rand_str)
