@@ -82,10 +82,7 @@ class Crypt_Xeno2:
 
     @staticmethod
     async def decryptFile(path: str) -> None:
-        if await aiofiles.ospath.isfile(path):
-            files = [path]
-        else:
-            files = await CC.obtainFiles(path)
+        files = await CC.obtainFiles(path)
 
         for filePath in files:
 

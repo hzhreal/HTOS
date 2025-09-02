@@ -160,20 +160,27 @@ class CustomCrypto:
         return cnt >= (len(data) / div)
      
     @staticmethod
-    async def obtainFiles(folder: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
-        if files is None:
-            files = []
+    async def obtainFiles(path: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
         if exclude is None:
             exclude = []
+        if files is None:
+            # first run so check if a file is given
+            if await aiofiles.os.path.isfile(path):
+                basename = os.path.basename(path)
+                if basename in exclude:
+                    return []
+                else:
+                    return [path]
+            files = []
 
-        filelist = await aiofiles.os.listdir(folder)
+        filelist = await aiofiles.os.listdir(path)
 
         for entry in filelist:
-            entry_path = os.path.join(folder, entry)
+            entry_path = os.path.join(path, entry)
 
             if await aiofiles.os.path.isfile(entry_path) and entry not in exclude:
                 files.append(entry_path)
-            elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(folder, SCE_SYS_NAME):
+            elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(path, SCE_SYS_NAME):
                 await CustomCrypto.obtainFiles(entry_path, exclude, files)
 
         return files

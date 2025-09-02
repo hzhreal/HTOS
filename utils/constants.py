@@ -61,8 +61,12 @@ def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
     logging.config.dictConfig(config=logging_config)
 
     return logger
-logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS", "ERROR")
-blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS", "INFO")
+if os.path.basename(argv[0]) == "bot.py" or os.path.basename(argv[0]) == "app.py":
+    logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS", "ERROR")
+    blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS", "INFO")
+else:
+    logger = None
+    blacklist_logger = None
 
 # CONFIG
 IP = str(os.getenv("IP"))

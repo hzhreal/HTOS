@@ -1,9 +1,26 @@
-from data.cheats import Cheats_GTAV, Cheats_RDR2
-from data.converter import Converter_Rstar, Converter_BL3
-from data.crypto import (
-    Crypt_Rstar, Crypt_Rev2, Crypt_RE7, Crypt_BL3, Crypt_DI2, Crypt_DL, Crypt_MGSV, Crypt_Ndog, Crypt_RGG, Crypt_Xeno2, Crypt_NMS,
-    Crypt_Terraria, Crypt_SMT5, Crypt_RCube, Crypt_DSR, Crypt_RE4R
-)
+from data.cheats.gtav_cheats import Cheats_GTAV
+from data.cheats.rdr2_cheats import Cheats_RDR2
+
+from data.converter.rstar_converter import Converter_Rstar
+from data.converter.bl3_converter import Converter_BL3
+
+from data.crypto.rstar_crypt import Crypt_Rstar
+from data.crypto.rev2_crypt import Crypt_Rev2
+from data.crypto.re4r_crypt import Crypt_RE4R
+from data.crypto.re7_crypt import Crypt_RE7
+from data.crypto.bl3_crypt import Crypt_BL3
+from data.crypto.di2_crypt import Crypt_DI2
+from data.crypto.dl_crypt import Crypt_DL
+from data.crypto.mgsv_crypt import Crypt_MGSV
+from data.crypto.ndog_crypt import Crypt_Ndog
+from data.crypto.rgg_crypt import Crypt_RGG
+from data.crypto.xeno2_crypt import Crypt_Xeno2
+from data.crypto.nms_crypt import Crypt_NMS
+from data.crypto.terraria_crypt import Crypt_Terraria
+from data.crypto.smt5_crypt import Crypt_SMT5
+from data.crypto.rcube_crypt import Crypt_RCube
+from data.crypto.dsr_crypt import Crypt_DSR
+
 from types import SimpleNamespace
 
 # NAMESPACES
