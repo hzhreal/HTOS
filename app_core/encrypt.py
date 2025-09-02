@@ -35,7 +35,7 @@ class Encrypt(TabBase):
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.encrypt_folder_list = Logger()
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
         with ui.row():
             self.encrypt_button = ui.button("Select folder you want to encrypt", on_click=self.on_encrypt_folder)
             self.encrypt_label = ui.input(on_change=self.on_encrypt_folder_in).props("clearable")
@@ -134,17 +134,19 @@ class Encrypt(TabBase):
                     if self.settings.recursivity.value:
                         await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     else:
+                        ftp = await C1ftp.create_ctx()
+
+                        for file in encrypt_files:
+                            remote_path = os.path.join(batch.mount_location, os.path.basename(file))
+                            await C1ftp.uploadStream(ftp, file, remote_path)
+
                         sys_folder = os.path.join(self.encrypt_folder, SCE_SYS_NAME)
                         if await isdir(sys_folder):
                             sys_files = await get_files_nonrecursive(sys_folder)
                             for sys_file in sys_files:
                                 remote_path = os.path.join(batch.location_to_scesys, os.path.basename(sys_file))
                                 await C1ftp.uploadStream(ftp, sys_file, remote_path)
-
-                        ftp = await C1ftp.create_ctx()
-                        for file in encrypt_files:
-                            remote_path = os.path.join(batch.mount_location, os.path.basename(file))
-                            await C1ftp.uploadStream(ftp, file, remote_path)
+                            encrypt_files.extend(sys_files)
                         await C1ftp.free_ctx(ftp)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]

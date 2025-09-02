@@ -27,7 +27,7 @@ class QuickCodes(TabBase):
             placeholder="80010008 EA372703\n00140000 00000000\n180000E8 0000270F"
         ).props("rows=15 outlined clearable").classes("w-1/2")
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_start(self) -> None:
         if not self.codes_obj.value:

@@ -41,7 +41,7 @@ class Createsave(TabBase):
         ).classes("w-64").props("clearable")
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_start(self) -> None:
         # saveblocks takes priority

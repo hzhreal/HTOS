@@ -28,7 +28,7 @@ class Decrypt(TabBase):
         self.include_sce_sys_checkbox = ui.checkbox("Include the sce_sys folder", value=True)
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
-        self.logger = Logger()
+        self.logger = Logger(self.settings)
 
     async def on_start(self) -> None:
         if not await self.validation():
