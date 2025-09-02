@@ -102,7 +102,7 @@ class Profiles:
                 return p
         return None
     
-    def select_profile(self, p: Profile) -> None:
+    def select_profile(self, p: Profile | None) -> None:
         self.selected_profile = p
         
     def is_selected(self) -> bool:

@@ -58,6 +58,10 @@ class ProfileSelector:
                         ui.item_label(p.account_id).props("caption")
                     with ui.item_section().props("side"):
                         ui.button("Delete", on_click=partial(self.on_delete, p))
+            if len(self.profiles.profiles) > 0:
+                self.on_select(self.profiles.profiles[0])
+            else:
+                self.profiles.select_profile(None)
 
     def check_accid(self, accid: str) -> bool:
         if accid.lower().startswith("0x"):
