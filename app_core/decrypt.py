@@ -61,7 +61,7 @@ class Decrypt(TabBase):
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
             await cleanupSimple(workspaceFolders)
-            self.logger.error(str(e) + " Stopping...")
+            self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         except OSError:
@@ -111,7 +111,7 @@ class Decrypt(TabBase):
                     self.logger.info(f"Decrypted **{savefile.basename}** {info}.")
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:
                     await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:

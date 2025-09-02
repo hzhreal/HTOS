@@ -159,7 +159,7 @@ class Createsave(TabBase):
             await C1ftp.free_ctx(ftp_ctx)
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, None, save, mount_paths)
-            self.logger.error(str(e) + " Stopping...")
+            self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         except Exception:

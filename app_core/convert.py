@@ -99,7 +99,7 @@ class Convert(TabBase):
                 
                 except ConverterError as e:
                     await cleanupSimple(workspaceFolders)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.event.clear()
                     self.enable_buttons()
                     return

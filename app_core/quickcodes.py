@@ -86,7 +86,7 @@ class QuickCodes(TabBase):
                     await qc.apply_code()
                 except QuickCodesError as e:
                     await cleanupSimple(workspaceFolders)
-                    self.logger.error(str(e) + " Stopping...")
+                    self.logger.error(f"`{str(e)}` Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:
