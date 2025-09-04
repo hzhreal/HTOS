@@ -435,9 +435,14 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         user_id = await fetch_accountid_db(ctx.author.id)
         if user_id is not None:
             # check blacklist while we are at it
-            if await blacklist_check_db(None, user_id):
+            search = await blacklist_check_db(None, user_id)
+            if search[0]:
                 blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a blacklisted account ID: {user_id}")
-                raise PSNIDError(BLACKLIST_MESSAGE)
+                msg = BLACKLIST_MESSAGE
+                reason = search[1]
+                if reason is not None:
+                    msg += f"\n{reason}"
+                raise PSNIDError(msg)
             return user_id
         else:
             raise PSNIDError("Could not find previously stored account ID.")
@@ -505,9 +510,14 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     await asyncio.sleep(0.5)
 
     # check blacklist while we are at it
-    if await blacklist_check_db(None, user_id):
+    search = await blacklist_check_db(None, user_id)
+    if search[0]:
         blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a blacklisted account ID: {user_id}")
-        raise PSNIDError(BLACKLIST_MESSAGE)
+        msg = BLACKLIST_MESSAGE
+        reason = search[1]
+        if reason is not None:
+            msg += f"\n{reason}"
+        raise PSNIDError(msg)
 
     await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()

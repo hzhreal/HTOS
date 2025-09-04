@@ -148,7 +148,7 @@ DSR_TITLEID = frozenset(["CUSA08692", "CUSA08495", "CUSA08526", "CUSA11771", "CU
 RE4R_TITLEID = frozenset(["CUSA33388", "CUSA33387", "CUSA35714"])
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
+FILE_LIMIT_DISCORD = mb_to_bytes(100) # discord file limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, for uploading files or google drive folder link

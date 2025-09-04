@@ -128,13 +128,15 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS PS_Users (
                     account_id BLOB UNIQUE,
-                    username TEXT UNIQUE
+                    username TEXT UNIQUE,
+                    reason TEXT
             )
         """)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Disc_Users (
                     user_id BLOB UNIQUE,
-                    username TEXT UNIQUE
+                    username TEXT UNIQUE,
+                    reason TEXT
             )
         """)
         conn.commit()
@@ -196,7 +198,7 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
 async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
     """Used for checking if a command is being run in a valid thread."""
     await ctx.defer()
-    
+
     threadId = uint64(thread_id, "big")
 
     try:
@@ -213,9 +215,14 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
         raise WorkspaceError("Please try again.")
     
     # check blacklist while we are at it
-    if await blacklist_check_db(ctx.author.id, None):
+    search = await blacklist_check_db(ctx.author.id, None)
+    if search[0]:
         blacklist_logger.info(f"{ctx.author.name} ({ctx.author.id}) used a command while blacklisted!")
-        await ctx.respond(embed=blacklist_emb)
+        reason = search[1]
+        emb = blacklist_emb.copy()
+        if reason is not None:
+            emb.description = reason
+        await ctx.respond(embed=emb)
         raise WorkspaceError(BLACKLIST_MESSAGE)
 
     # check if there are available instance slots
@@ -405,11 +412,11 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
         logger.error(f"Could not write account ID to database: {e}")
         raise WorkspaceError("Failed to write!")
 
-async def blacklist_write_db(disc_user: discord.User | None, account_id: str | None) -> None:
+async def blacklist_write_db(disc_user: discord.User | None, account_id: str | None, reason: str | None) -> None:
     """Add entry to the blacklist db."""
     if disc_user is None and account_id is None:
         return
-    
+
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
@@ -417,7 +424,7 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
             if disc_user is not None:
                 userId = uint64(disc_user.id, "big")
 
-                await cursor.execute("INSERT OR IGNORE INTO Disc_Users (user_id, username) VALUES (?, ?)", (userId.as_bytes, disc_user.name,))
+                await cursor.execute("INSERT OR IGNORE INTO Disc_Users (user_id, username, reason) VALUES (?, ?, ?)", (userId.as_bytes, disc_user.name, reason,))
 
             if account_id is not None:
                 accid = int(account_id, 16)
@@ -431,15 +438,15 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
                     except PSNAWPAuthenticationError:
                         NPSSO_global.val = ""
                 accid = uint64(accid, "big")
-                
-                await cursor.execute("INSERT OR IGNORE INTO PS_Users (account_id, username) VALUES (?, ?)", (accid.as_bytes, username,))
+
+                await cursor.execute("INSERT OR IGNORE INTO PS_Users (account_id, username, reason) VALUES (?, ?, ?)", (accid.as_bytes, username, reason,))
 
             await db.commit()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not write to blacklist database: {e}")
         raise WorkspaceError("DB FAIL!")
 
-async def blacklist_check_db(disc_userid: int | None, account_id: str | None) -> bool | None:
+async def blacklist_check_db(disc_userid: int | None, account_id: str | None) -> tuple[bool, str | None]:
     """Check if value is blacklisted, only use argument, leave other to None."""
     assert (disc_userid is None) != (account_id is None)
     
@@ -450,23 +457,25 @@ async def blacklist_check_db(disc_userid: int | None, account_id: str | None) ->
             if disc_userid is not None:
                 # userid provided
                 val = uint64(disc_userid, "big")
-                await cursor.execute("SELECT COUNT(*) FROM Disc_Users WHERE user_id = ?", (val.as_bytes,))
+                await cursor.execute("SELECT reason FROM Disc_Users WHERE user_id = ?", (val.as_bytes,))
                 res = await cursor.fetchone()
-                if res[0] > 0:
-                    return True
+                if res:
+                    reason = res[0]
+                    return True, reason
 
             else:
                 # account_id provided
                 val = int(account_id, 16)
                 val = uint64(val, "big")
-                await cursor.execute("SELECT COUNT(*) FROM PS_Users WHERE account_id = ?", (val.as_bytes,))
+                await cursor.execute("SELECT reason FROM PS_Users WHERE account_id = ?", (val.as_bytes,))
                 res = await cursor.fetchone()
-                if res[0] > 0:
-                    return True
+                if res:
+                    reason = res[0]
+                    return True, reason
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could check blacklist database: {e}")
 
-    return False
+    return False, None
 
 async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> None:
     """Delete entry in blacklist db."""
@@ -481,7 +490,7 @@ async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> N
                 val = uint64(disc_userid, "big")
                 await cursor.execute("DELETE FROM Disc_Users WHERE user_id = ?", (val.as_bytes,))
 
-            else:
+            if account_id is not None:
                 # account_id provided
                 val = int(account_id, 16)
                 val = uint64(val, "big")
@@ -516,25 +525,24 @@ async def blacklist_fetchall_db() -> dict[str, list[dict[str | None, str]] | lis
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
 
-            await cursor.execute("SELECT account_id, username FROM PS_Users")
+            await cursor.execute("SELECT account_id, username, reason FROM PS_Users")
             accids = await cursor.fetchall()
 
-            await cursor.execute("SELECT user_id, username FROM Disc_Users")
+            await cursor.execute("SELECT user_id, username, reason FROM Disc_Users")
             userids = await cursor.fetchall()
     except aiosqlite.Error as e:
         blacklist_logger.error(f"Could not fetch all blacklist database entries: {e}")
         raise WorkspaceError("DB FAIL!")
 
-    for accid, username in accids:
+    for accid, username, reason in accids:
         accid = uint64(accid, "big")
-
-        entry = {username: hex(accid.value)}
+        entry = {"0x" + hex(accid.value)[2:].zfill(16): [username, reason]}
         entries["PlayStation account IDs"].append(entry)
 
-    for userid, username in userids:
+    for userid, username, reason in userids:
         userid = uint64(userid, "big")
 
-        entry = {username: userid.value}
+        entry = {userid.value: [username, reason]}
         entries["Discord user IDs"].append(entry)
     return entries
 

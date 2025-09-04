@@ -3,7 +3,7 @@ import json
 from discord import Option
 from discord.ext import commands
 from io import BytesIO
-from utils.constants import COMMAND_COOLDOWN, logger
+from utils.constants import COMMAND_COOLDOWN, BOT_DISCORD_UPLOAD_LIMIT, logger
 from utils.orbis import checkid
 from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -21,7 +21,8 @@ class Extra(commands.Cog):
               self,
               ctx: discord.ApplicationContext,
               ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""), # type: ignore
-              user: Option(discord.User, default="") # type: ignore
+              user: Option(discord.User, default=""), # type: ignore
+              reason: Option(str, default=None) # type: ignore
             ) -> None:
 
             await ctx.defer(ephemeral=True)
@@ -42,7 +43,7 @@ class Extra(commands.Cog):
                     return
 
             try:
-                await blacklist_write_db(user if user != "" else None, ps_accountid if ps_accountid != "" else None)
+                await blacklist_write_db(user if user != "" else None, ps_accountid if ps_accountid != "" else None, reason)
                 await ctx.respond("Added!")
             except WorkspaceError as e:
                 await ctx.respond(e)
@@ -96,6 +97,9 @@ class Extra(commands.Cog):
         try:
             entries = await blacklist_fetchall_db()
             data = json.dumps(entries, indent=4).encode("utf-8")
+            if len(data) > BOT_DISCORD_UPLOAD_LIMIT:
+                await ctx.respond("File too big!")
+                return
             await ctx.respond(file=discord.File(BytesIO(data), filename="blacklist.json"))
         except WorkspaceError as e:
             await ctx.respond(e)
