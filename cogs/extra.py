@@ -22,7 +22,7 @@ class Extra(commands.Cog):
               ctx: discord.ApplicationContext,
               ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""), # type: ignore
               user: Option(discord.User, default=""), # type: ignore
-              reason: Option(str, default=None) # type: ignore
+              reason: Option(str, description="The user will see this reason when prompted.", default=None) # type: ignore
             ) -> None:
 
             await ctx.defer(ephemeral=True)
