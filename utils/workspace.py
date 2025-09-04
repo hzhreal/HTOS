@@ -16,9 +16,9 @@ from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
     DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, 
-    logger, blacklist_logger, psnawp, Embed_t, Color,
-    embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
+    logger, blacklist_logger, psnawp
 )
+from utils.embeds import emb_il, embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -222,13 +222,9 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
     try:
         await INSTANCE_LOCK_global.acquire(ctx.author.id)
     except InstanceError as e:
-        emb_il = discord.Embed(
-            title="Too many users at the moment!",
-            description=e,
-            colour=Color.YELLOW.value
-        )
-        emb_il.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await ctx.respond(embed=emb_il)
+        emb = emb_il.copy()
+        emb.description = emb.description.format(error=e)
+        await ctx.respond(embed=emb)
         raise WorkspaceError(e)
 
     # google drive check: are we currently deleting all files or do we need to delete all files

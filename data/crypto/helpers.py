@@ -5,26 +5,17 @@ from types import SimpleNamespace
 from data.crypto import CryptoError
 from utils.helpers import DiscordContext, TimeoutHelper
 from utils.constants import (
-    logger, Color, Embed_t, OTHER_TIMEOUT,
+    logger, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID, DI2_TITLEID, NMS_TITLEID,
     TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID
 )
+from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
 async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
-    embedTimeout = discord.Embed(
-        title="Timeout Error:", 
-        description="You took too long, sending the file with the format: 'Encrypted'",
-        colour=Color.DEFAULT.value)
-    embedTimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-    embedFormat = discord.Embed(
-        title=f"Format: {savePairName}", 
-        description="Choose if you want second layer removed ('Decrypted') or just Sony PFS layer ('Encrypted').", 
-        colour=Color.DEFAULT.value)
-    embedFormat.set_footer(text="If you want to use the file in a save editor, choose 'Decrypted'!")
-
-    helper = TimeoutHelper(embedTimeout)
+    helper = TimeoutHelper(embdecTimeout)
+    emb = embdecFormat.copy()
+    emb.title = emb.title.format(savename=savePairName)
 
     class CryptChoiceButton(discord.ui.View):
         def __init__(self, game: str | None = None, start_offset: int | None = None, title_id: str | None = None) -> None:
@@ -39,9 +30,9 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
 
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
-            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not decrypt: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            helper.embTimeout = embedErrb
+            emb = embErrdec.copy()
+            emb.description = emb.description.format(error=error)
+            helper.embTimeout = emb
             await helper.handle_timeout(d_ctx.msg)
             logger.exception(f"{error} - {d_ctx.ctx.user.name}")
             
@@ -97,7 +88,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Rstar.decryptFile(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
         await helper.await_done()
         
     elif title_id in RDR2_TITLEID:
@@ -105,7 +96,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Rstar.decryptFile(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
@@ -113,7 +104,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Xeno2.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("XENO2"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("XENO2"))
         await helper.await_done()
 
     elif title_id in BL3_TITLEID:
@@ -121,7 +112,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.BL3.decryptFile(destination_directory, "ps4", False)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("BL3"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("BL3"))
         await helper.await_done()
 
     elif title_id in WONDERLANDS_TITLEID:
@@ -129,7 +120,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.BL3.decryptFile(destination_directory, "ps4", True)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TTWL"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TTWL"))
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
@@ -137,7 +128,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
         await helper.await_done()
 
     elif title_id in NDOG_COL_TITLEID:
@@ -145,7 +136,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET_COL)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
         await helper.await_done()
 
     elif title_id in NDOG_TLOU2_TITLEID:
@@ -153,7 +144,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Ndog.decryptFile(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
@@ -161,7 +152,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.MGSV.decryptFile(destination_directory, title_id)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("MGSV", title_id=title_id))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV", title_id=title_id))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
@@ -169,7 +160,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.Rev2.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("REV2"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("REV2"))
         await helper.await_done()
 
     elif title_id in DL1_TITLEID:
@@ -177,7 +168,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.DL.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL1"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL1"))
         await helper.await_done()
 
     elif title_id in DL2_TITLEID:
@@ -185,7 +176,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.DL.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DL2"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL2"))
         await helper.await_done()
     
     elif title_id in RGG_TITLEID:
@@ -193,7 +184,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.RGG.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RGG"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RGG"))
         await helper.await_done()
 
     elif title_id in DI1_TITLEID:
@@ -201,7 +192,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.DL.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI1"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI1"))
         await helper.await_done()
 
     elif title_id in DI2_TITLEID:
@@ -209,7 +200,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.DI2.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DI2"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI2"))
         await helper.await_done()
 
     elif title_id in NMS_TITLEID:
@@ -217,7 +208,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.NMS.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("NMS"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NMS"))
         await helper.await_done()
     
     elif title_id in TERRARIA_TITLEID:
@@ -225,7 +216,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.TERRARIA.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("TERRARIA"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TERRARIA"))
         await helper.await_done()
     
     elif title_id in SMT5_TITLEID:
@@ -233,7 +224,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.SMT5.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("SMT5"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SMT5"))
         await helper.await_done()
     
     elif title_id in RCUBE_TITLEID:
@@ -241,7 +232,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.RCube.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RCUBE"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RCUBE"))
         await helper.await_done()
 
     elif title_id in DSR_TITLEID:
@@ -249,7 +240,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.DSR.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("DSR"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DSR"))
         await helper.await_done()
 
     elif title_id in RE4R_TITLEID:
@@ -257,7 +248,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             await Crypto.RE4R.decryptFile(destination_directory)
             return
 
-        await d_ctx.msg.edit(embed=embedFormat, view=CryptChoiceButton("RE4R"))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE4R"))
         await helper.await_done()
 
 async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:

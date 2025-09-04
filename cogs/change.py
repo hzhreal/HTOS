@@ -10,8 +10,11 @@ from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
     ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME, COMMAND_COOLDOWN,
-    logger, Color, Embed_t,
-    embpng, embTitleChange, embTitleErr
+    logger
+)
+from utils.embeds import (
+    embpng, embTitleChange, embTitleErr, embpng1, embpng2, embpngs, embPdone,
+    embTitleChange1, embTitleSuccess, embTdone
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import pngprocess
@@ -101,34 +104,22 @@ class Change(commands.Cog):
                 try:
                     await savefile.construct()
 
-                    embpng1 = discord.Embed(
-                        title="PNG process: Initializng",
-                        description=f"Your save (**{savefile.basename}**) is being mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embpng1.copy()
+                    emb.description = emb.description = emb.description = emb.description.format(savefile.basename, j, batch.savecount, i, batches)
                     task = [savefile.dump]
-                    await task_handler(d_ctx, task, [embpng1])
+                    await task_handler(d_ctx, task, [emb])
 
-                    embpng2 = discord.Embed(
-                        title="PNG process: Initializng",
-                        description=f"Your save (**{savefile.basename}**) has mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embpng2.copy()
+                    emb.description = emb.description = emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         lambda: C1ftp.swappng(batch.location_to_scesys),
                         savefile.resign
                     ]
-                    await task_handler(d_ctx, tasks, [embpng2])
+                    await task_handler(d_ctx, tasks, [emb])
 
-                    embpngs = discord.Embed(
-                        title="PNG process: Successful",
-                        description=f"Altered the save png and resigned **{savefile.basename}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    embpngs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embpngs)
+                    emb = embpngs.copy()
+                    emb.description = emb.description.format(savefile.basename, j, batch.savecount, i, batches)
+                    await msg.edit(embed=emb)
                     j += 1
 
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
@@ -148,16 +139,8 @@ class Change(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            embPdone = discord.Embed(
-                title="PNG process: Successful",
-                description=(
-                    f"Altered the save png of **{batch.printed}** and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embPdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embPdone.copy()
+            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:
                 await msg.edit(embed=embPdone)
             except discord.HTTPException as e:
@@ -257,30 +240,22 @@ class Change(commands.Cog):
                 try:
                     await savefile.construct()
 
-                    embTitleChange1 = discord.Embed(
-                        title="Title altering process: Initializng",
-                        description=f"Processing {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to attempt cancelling.",
-                        colour=Color.DEFAULT.value
-                    )
-                    embTitleChange1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embTitleChange1.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         savefile.dump,
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])    
                     ]
-                    await task_handler(d_ctx, tasks, [embTitleChange1])
+                    await task_handler(d_ctx, tasks, [emb])
 
                     sfo_ctx_patch_parameters(savefile.sfo_ctx, MAINTITLE=maintitle, SUBTITLE=subtitle)
 
                     task = [savefile.resign]
                     await task_handler(d_ctx, task, [])
 
-                    embTitleSuccess = discord.Embed(
-                        title="Title altering process: Successful",
-                        description=f"Altered the save titles of **{savefile.basename}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    embTitleSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embTitleSuccess)
+                    emb = embTitleSuccess.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    await msg.edit(embed=emb)
                     j += 1
 
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
@@ -300,18 +275,10 @@ class Change(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            embTdone = discord.Embed(
-                title="Title altering process: Successful",
-                description=(
-                    f"Altered the save titles of **{batch.printed}**, and resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embTdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embTdone.copy()
+            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:
-                await msg.edit(embed=embTdone)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

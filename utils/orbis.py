@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from network import FTPps, SocketPS
 from utils.constants import (
     MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
-    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME,
-    Color, Embed_t
+    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME
 )
+from utils.embeds import embfn, embFileLarge, embnvSys, embpn, embnvBin
 from utils.extras import generate_random_string, obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerateFiles
@@ -424,33 +424,21 @@ async def checkSaves(
 
     for attachment in attachments:
         if len(attachment.filename) > MAX_FILENAME_LEN and not ignore_filename_check:
-            embfn = discord.Embed(
-                title="Upload alert: Error",
-                description=f"Sorry, the file name of '{attachment.filename}' ({len(attachment.filename)}) exceeds {MAX_FILENAME_LEN}.",
-                colour=Color.DEFAULT.value
-            )
-            embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embfn)
+            emb = embfn.copy()
+            emb.description = emb.description.format(filename=attachment.filename, len=len(attachment.filename), max=MAX_FILENAME_LEN)
+            await ctx.edit(embed=emb)
             await asyncio.sleep(1)
 
         elif attachment.size > FILE_LIMIT_DISCORD:
-            embFileLarge = discord.Embed(
-                title="Upload alert: Error",
-                description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.",
-                colour=Color.DEFAULT.value
-            )
-            embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embFileLarge)
+            emb = embFileLarge.copy()
+            emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
+            await ctx.edit(embed=emb)
             await asyncio.sleep(1)
     
         elif sys_files and (attachment.filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
-            embnvSys = discord.Embed(
-                title="Upload alert: Error",
-                description=f"{attachment.filename} is not a valid sce_sys file!",
-                colour=Color.DEFAULT.value
-            )
-            embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embnvSys)
+            emb = embnvSys.copy()
+            emb.description = emb.description.format(filename=attachment.filename)
+            await ctx.edit(embed=emb)
             await asyncio.sleep(1)
 
         elif savesize is not None and total_count > savesize:
@@ -471,46 +459,30 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
         path_len = len(PS_UPLOADDIR + "/" + filename + "/")
 
         if filename_len > MAX_FILENAME_LEN:
-            embfn = discord.Embed(
-                title="Upload alert: Error",
-                description=f"Sorry, the file name of '{attachment.filename}' ({filename_len}) will exceed {MAX_FILENAME_LEN}.",
-                colour=Color.DEFAULT.value
-            )
-            embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embfn)
+            emb = embfn.copy()
+            emb.description = emb.description.format(filename=attachment.filename, len=filename_len, max=MAX_FILENAME_LEN)
+            await ctx.edit(embed=emb)
             await asyncio.sleep(1)
 
         elif path_len > MAX_PATH_LEN:
-            embpn = discord.Embed(
-                title="Upload alert: Error",
-                description=f"Sorry, the path '{attachment.filename}' ({path_len}) will create exceed ({MAX_PATH_LEN}).",
-                colour=Color.DEFAULT.value
-            )
-            embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await ctx.edit(embed=embpn)
+            emb = embpn.copy()
+            emb.description = emb.description.format(filename=attachment.filename, len=path_len, max=MAX_PATH_LEN)
+            await ctx.edit(embed=emb)
             await asyncio.sleep(1)
 
         elif attachment.filename.endswith(".bin"):
             if attachment.size != SEALED_KEY_ENC_SIZE:
-                embnvBin = discord.Embed(
-                    title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{attachment.filename}' is not {SEALED_KEY_ENC_SIZE} bytes.",
-                    colour=Color.DEFAULT.value
-                )
-                embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await ctx.edit(embed=embnvBin)
+                emb = embnvBin.copy()
+                emb.description = emb.description.format(filename=attachment.filename, size=SEALED_KEY_ENC_SIZE)
+                await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
             else:
                 valid_attachments_check1.append(attachment)
         else:
             if attachment.size > FILE_LIMIT_DISCORD:
-                embFileLarge = discord.Embed(
-                    title="Upload alert: Error",
-                    description=f"Sorry, the file size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.",
-                    colour=Color.DEFAULT.value
-                )
-                embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await ctx.edit(embed=embFileLarge)
+                emb = embFileLarge.copy()
+                emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
+                await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
             else:
                 valid_attachments_check1.append(attachment)

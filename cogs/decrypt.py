@@ -10,8 +10,10 @@ from google_drive import gdapi, GDapiError
 from data.crypto import extra_decrypt, CryptoError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    logger, Color, Embed_t,
-    embDecrypt1
+    logger
+)
+from utils.embeds import (
+    embDecrypt1, emb11, emb_dl, emb13, embDdone
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, upload2, errorHandling, send_final, task_handler
@@ -91,40 +93,27 @@ class Decrypt(commands.Cog):
                     destination_directory = os.path.join(destination_directory_outer, f"dec_{savefile.basename}")
                     await aiofiles.os.mkdir(destination_directory)
 
-                    emb11 = discord.Embed(
-                        title="Decryption process: Initializing",
-                        description=f"Mounting {savefile.basename} (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = emb11.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     task = [savefile.dump]
-                    await task_handler(d_ctx, task, [emb11])
+                    await task_handler(d_ctx, task, [emb])
 
-                    emb_dl = discord.Embed(
-                        title="Decryption process: Downloading",
-                        description=f"{savefile.basename} mounted (save {j}/{batch.savecount}, batch {i}/{batches}), downloading decrypted savefile...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    ) 
-                    emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = emb_dl.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         lambda: C1ftp.download_folder(batch.mount_location, destination_directory, not include_sce_sys),
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
                     ]
-                    await task_handler(d_ctx, tasks, [emb_dl])
+                    await task_handler(d_ctx, tasks, [emb])
 
                     await aiofiles.os.rename(destination_directory, destination_directory + f"_{savefile.title_id}")
                     destination_directory += f"_{savefile.title_id}"
                     await extra_decrypt(d_ctx, Crypto, savefile.title_id, destination_directory, savefile.basename)
 
-                    emb13 = discord.Embed(
-                        title="Decryption process: Successful",
-                        description=f"Downloaded the decrypted save of **{savefile.basename}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb13.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb13)
+                    emb = emb13.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    await msg.edit(embed=emb)
                     j += 1
-
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -142,18 +131,10 @@ class Decrypt(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            embDdone = discord.Embed(
-                title="Decryption process: Successful",
-                description=(
-                    f"**{batch.printed}** has been decrypted (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embDdone.copy()
+            emb.description = emb.description.format(printed=batch.printed, i=i, batches=batches)
             try:
-                await msg.edit(embed=embDdone)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

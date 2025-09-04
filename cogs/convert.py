@@ -8,8 +8,11 @@ from google_drive.gd_functions import gdapi, GDapiError, HTTPError
 from utils.namespaces import Converter
 from utils.constants import (
     BASE_ERROR_MSG, SHARED_GD_LINK_DESC, MAX_FILES, ZIPOUT_NAME, COMMAND_COOLDOWN,
-    logger, Color, Embed_t,
-    embTimedOut
+    logger
+)
+from utils.embeds import (
+    embTimedOut, emb_conv_upl, emb_conv_choice, 
+    embCDone1, embCDone2, embCDone3, embconvCompleted
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanupSimple
 from utils.helpers import errorHandling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
@@ -36,18 +39,14 @@ class Convert(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
 
-        emb_conv_upl = discord.Embed(
-            title=f"Conversion process: {game}",
-            description=f"Please attach atleast 1 savefile. Or type 'EXIT' to cancel command.",
-            colour=Color.DEFAULT.value
-        )
-        emb_conv_upl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb = emb_conv_upl.copy()
+        emb.title = emb.title.format(game)
 
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
 
         try:
-            await ctx.respond(embed=emb_conv_upl)
-            msg = await ctx.edit(embed=emb_conv_upl)
+            await ctx.respond(embed=emb)
+            msg = await ctx.edit(embed=emb)
             msg = await ctx.fetch_message(msg.id)
             d_ctx = DiscordContext(ctx, msg)
             shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
@@ -82,12 +81,9 @@ class Convert(commands.Cog):
             j = 1
             for savegame in entry:
                 basename = os.path.basename(savegame)
-                emb_conv_choice = discord.Embed(
-                    title=f"Converter: Choice ({basename})",
-                    description=f"Could not recognize the platform of the save, please choose what platform to convert the save to (file {j}/{count_entry}, batch {i}/{batches}).",
-                    colour=Color.DEFAULT.value
-                )
-                emb_conv_choice.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                emb = emb_conv_choice.copy()
+                emb.title = emb.title.format(basename)
+                emb.description = emb.description.format(j=j, count_entry=count_entry, i=i, batches=batches)
                 try:
                     match game:
                         case "GTA V":
@@ -98,11 +94,11 @@ class Convert(commands.Cog):
 
                         case "BL 3":
                             helper = TimeoutHelper(embTimedOut)
-                            result = await Converter.BL3.convertFile(ctx, helper, savegame, False, emb_conv_choice)
+                            result = await Converter.BL3.convertFile(ctx, helper, savegame, False, emb)
                         
                         case "TTWL":
                             helper = TimeoutHelper(embTimedOut)
-                            result = await Converter.BL3.convertFile(ctx, helper, savegame, True, emb_conv_choice)
+                            result = await Converter.BL3.convertFile(ctx, helper, savegame, True, emb)
                 
                 except ConverterError as e:
                     await errorHandling(ctx, e, workspaceFolders, None, None, None)
@@ -117,19 +113,15 @@ class Convert(commands.Cog):
 
                 ret = True
                 if result == "TIMED OUT":
-                    embCDone = discord.Embed(title="TIMED OUT!", colour=Color.DEFAULT.value)
+                    emb = embCDone1
                 elif result == "ERROR":
-                    embCDone = discord.Embed(title="ERROR!", description="Invalid save!", colour=Color.DEFAULT.value)
+                    emb = embCDone2
                 else:
-                    embCDone = discord.Embed(
-                        title="Success",
-                        description=f"{result}\n**{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
+                    emb = embCDone3.copy()
+                    emb.description = emb.description.format(result=result, basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
                     ret = False
-                embCDone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
                 try:
-                    await msg.edit(embed=embCDone)
+                    await msg.edit(embed=emb)
                 except discord.HTTPException as e:
                     logger.exception(f"Error while editing msg: {e}")
 
@@ -143,18 +135,10 @@ class Convert(commands.Cog):
 
             finished_files = completed_print(completed)
 
-            embCompleted = discord.Embed(
-                title="Success!",
-                description=(
-                    f"Converted **{finished_files}** (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embconvCompleted.copy()
+            emb.description = emb.description.format(finished_files=finished_files, i=i, batches=batches)
             try:
-                await msg.edit(embed=embCompleted)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

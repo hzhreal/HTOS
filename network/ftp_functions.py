@@ -7,7 +7,8 @@ import aiofiles.os
 import asyncio
 import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
-from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger, Color, Embed_t
+from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
+from utils.embeds import embuplSuccess
 from utils.conversions import mb_to_bytes
 
 FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
@@ -258,15 +259,11 @@ class FTPps:
                 await ftp.change_directory(sce_sysPath)
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
-                    embSuccess = discord.Embed(
-                        title="Upload alert: Successful", 
-                        description=f"File '{filename}' has been successfully uploaded and saved ({i}/{n}).", 
-                        colour=Color.DEFAULT.value
-                    )            
-                    embSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embuplSuccess.copy()
+                    emb.description = emb.description.format(filename=filename, i=i, filecount=n)
 
                     await self.uploadStream(ftp, filepath, filename)
-                    await ctx.edit(embed=embSuccess)
+                    await ctx.edit(embed=emb)
                     i += 1
 
         except AIOFTPException as e:

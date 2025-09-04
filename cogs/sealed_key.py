@@ -4,7 +4,8 @@ from io import BytesIO
 from network.socket_functions import C1socket, SocketError
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, Embed_t, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
+from utils.constants import logger, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
+from utils.embeds import embLoad, embdec
 from utils.orbis import PfsSKKey
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError
@@ -22,14 +23,10 @@ class Sealed_Key(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
-        embLoad = discord.Embed(
-            title="Loading",
-            description=f"Loading {sealed_key.filename}...",
-            colour=Color.DEFAULT.value
-        )
-        embLoad.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb = embLoad.copy()
+        emb.description = emb.description.format(filename=sealed_key.filename)
         try:
-            await ctx.respond(embed=embLoad)
+            await ctx.respond(embed=emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to interaction: {e}")
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -53,12 +50,8 @@ class Sealed_Key(commands.Cog):
         try:
             await C1socket.socket_decryptsdkey(sealedkey_t)
 
-            embdec = discord.Embed(
-                title="Finished",
-                description=f"Successfully decrypted {sealed_key.filename}.",
-                colour=Color.DEFAULT.value
-            )
-            embdec.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embdec.copy()
+            emb.description = emb.description.format(filename=sealed_key.filename)
             await ctx.edit(embed=embdec)
 
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))

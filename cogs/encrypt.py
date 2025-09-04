@@ -12,8 +12,10 @@ from data.crypto import CryptoError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     SCE_SYS_CONTENTS, PS_ID_DESC, IGNORE_SECONDLAYER_DESC, CON_FAIL, CON_FAIL_MSG, SHARED_GD_LINK_DESC,
-    logger, Color, Embed_t,
-    emb14, cancel_notify_emb
+    logger
+)
+from utils.embeds import (
+    emb14, cancel_notify_emb, embmo, embSceSys, embmidComplete, embencComplete
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import completed_print
@@ -98,17 +100,13 @@ class Encrypt(commands.Cog):
                     pfs_size = await aiofiles.os.path.getsize(savepath) # check has already been done
                     await savefile.construct()
 
-                    embmo = discord.Embed(
-                        title="Encryption process: Initializing",
-                        description=f"Mounting **{savefile.basename}**, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    embmo.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embmo.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, bathces=batches)
                     tasks = [
                         savefile.dump,
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
                     ]
-                    await task_handler(d_ctx, tasks, [embmo])
+                    await task_handler(d_ctx, tasks, [emb])
                 
                     files = await C1ftp.list_files(batch.mount_location)
                     if len(files) == 0: 
@@ -124,15 +122,19 @@ class Encrypt(commands.Cog):
                         shutil.rmtree(newUPLOAD_DECRYPTED)
                         await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
                             
-                        embSceSys = discord.Embed(
-                            title=f"Upload: sce_sys contents\n{savefile.basename}",
-                            description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
-                            colour=Color.DEFAULT.value
-                        )
-                        embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                        await msg.edit(embed=embSceSys)
+                        emb = embSceSys.copy()
+                        emb.title = emb.title.format(savename=savefile.basename)
+                        await msg.edit(embed=emb)
 
-                        uploaded_file_paths_sys = (await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False, savesize=pfs_size))[0]
+                        uploaded_file_paths_sys = (await upload2(
+                            d_ctx, 
+                            newUPLOAD_DECRYPTED, 
+                            max_files=len(SCE_SYS_CONTENTS), 
+                            sys_files=True, 
+                            ps_save_pair_upload=False, 
+                            ignore_filename_check=False, 
+                            savesize=pfs_size)
+                        )[0]
                         await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
 
                     tasks = [
@@ -143,13 +145,9 @@ class Encrypt(commands.Cog):
 
                     dec_print = completed_print(completed)
 
-                    embmidComplete = discord.Embed(
-                        title="Encryption Processs: Successful",
-                        description=f"Encrypted **{dec_print}** into **{savefile.basename}** for **{playstation_id or user_id}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    embmidComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embmidComplete)
+                    emb = embmidComplete.copy()
+                    emb.description = emb.description.format(dec_print=dec_print, savename=savefile.basename, id=playstation_id or user_id, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    await msg.edit(embed=emb)
                     j += 1
                 except HTTPError as e:
                     err = gdapi.getErrStr_HTTPERROR(e)
@@ -176,18 +174,10 @@ class Encrypt(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            embComplete = discord.Embed(
-                title="Encryption process: Successful",
-                description=(
-                    f"Encrypted files into **{batch.printed}** for **{playstation_id or user_id}** (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embencComplete.copy()
+            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:
-                await msg.edit(embed=embComplete)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

@@ -13,7 +13,10 @@ from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, COMMAND_COOLDOWN, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, SCE_SYS_NAME,
     SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
     IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
-    Color, Embed_t, logger
+    logger
+)
+from utils.embeds import (
+    embSceSys, embgs, embsl, embc, embCRdone
 )
 from utils.workspace import makeWorkspace, initWorkspace, cleanup
 from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special, task_handler
@@ -68,25 +71,12 @@ class CreateSave(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        embSceSys = discord.Embed(
-            title=f"Upload: sce_sys contents\n{savename}",
-            description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
-            colour=Color.DEFAULT.value
-        )
-        embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb1 = embSceSys.copy()
+        emb1.title = emb1.title.format(savename=savename)
 
-        embgs = discord.Embed(
-            title=f"Upload: Gamesaves\n{savename}",
-            description=(
-                "Please attach the gamesave files you want to upload.\n"
-                "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
-                f"For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{self.DISC_UPL_SPLITVALUE}'. For example the file 'savedata' inside the data directory would be called 'data{self.DISC_UPL_SPLITVALUE}savedata'.\n\n"
-                "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
-                "*Or type 'EXIT' to cancel command.*"
-            ),
-            colour=Color.DEFAULT.value
-        )
-        embgs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb2 = embgs.copy()
+        emb2.title = emb2.title.format(savename=savename)
+        emb2.description = emb2.description.format(splitvalue=self.DISC_UPL_SPLITVALUE)
 
         msg = ctx
 
@@ -109,7 +99,7 @@ class CreateSave(commands.Cog):
             elif path_len > MAX_PATH_LEN:
                 raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
 
-            msg = await ctx.edit(embed=embSceSys)
+            msg = await ctx.edit(embed=emb1)
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
 
@@ -120,7 +110,7 @@ class CreateSave(commands.Cog):
             sys_files_validator(uploaded_file_paths_sys)
 
             # next, other files (gamesaves)
-            await msg.edit(embed=embgs)
+            await msg.edit(embed=emb2)
             uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
@@ -151,23 +141,15 @@ class CreateSave(commands.Cog):
                 path_idx = len(newUPLOAD_DECRYPTED) + (newUPLOAD_DECRYPTED[-1] != os.path.sep)
                 for gamesave in uploaded_file_paths_special:
                     displaysave = gamesave[path_idx:]
-                    embsl = discord.Embed(
-                        title=f"Gamesaves: Second layer\n{displaysave}",
-                        description="Checking for supported second layer encryption/compression...",
-                        colour=Color.DEFAULT.value
-                    )
-                    embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=embsl)
+                    emb = embsl.copy()
+                    emb.title = emb.title.format(displaysave=displaysave)
+                    await msg.edit(embed=emb)
                     await asyncio.sleep(0.5)
                     await extra_import(Crypto, title_id, gamesave)
 
-            embc = discord.Embed(
-                title="Processing",
-                description=f"Creating {savename}...",
-                colour=Color.DEFAULT.value
-            )
-            embc.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embc)
+            emb = embc.copy()
+            emb.description = emb.description.format(savename=savename)
+            await msg.edit(embed=emb)
 
             temp_savename = savename + f"_{rand_str}"
             mount_location_new = MOUNT_LOCATION + "/" + rand_str
@@ -224,18 +206,10 @@ class CreateSave(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
-        embRdone = discord.Embed(
-            title="Creation process: Successful",
-            description=(
-                f"**{savename}** created & resigned to **{playstation_id or user_id}**.\n"
-                "Uploading file...\n"
-                "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-            ),
-            colour=Color.DEFAULT.value
-        )
-        embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb = embCRdone.copy()
+        emb.description = emb.description.format(savename=savename, id=playstation_id or user_id)
         try:
-            await msg.edit(embed=embRdone)
+            await msg.edit(embed=emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while editing msg: {e}")
 

@@ -7,8 +7,10 @@ from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
-    logger, Color, Embed_t,
-    embEncrypted1
+    logger
+)
+from utils.embeds import (
+    embEncrypted1, embres, embress, embRbdone
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
@@ -86,27 +88,18 @@ class Resign(commands.Cog):
                 try:
                     await savefile.construct()
 
-                    emb4 = discord.Embed(
-                        title="Resigning process: Encrypted",
-                        description=f"Your save (**{savefile.basename}**) is being resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embres.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         savefile.dump,
                         savefile.resign
                     ]
-                    await task_handler(d_ctx, tasks, [emb4])
+                    await task_handler(d_ctx, tasks, [emb])
 
-                    emb5 = discord.Embed(
-                        title="Resigning process (Encrypted): Successful",
-                        description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}** (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb5)
+                    emb = embress.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, id=playstation_id or user_id, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    await msg.edit(embed=emb)
                     j += 1
-
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
@@ -124,17 +117,10 @@ class Resign(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
             
-            embRdone = discord.Embed(
-                title="Resigning process (Encrypted): Successful",
-                description=(
-                    f"**{batch.printed}** resigned to **{playstation_id or user_id}** (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value)
-            embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embRbdone.copy()
+            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:
-                await msg.edit(embed=embRdone)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

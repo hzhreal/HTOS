@@ -15,10 +15,14 @@ from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthent
 from google_drive import gdapi, GDapiError
 from network import FTPps
 from utils.constants import (
-    logger, blacklist_logger, Color, Embed_t, bot, psnawp, 
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, WELCOME_MESSAGE, GENERAL_TIMEOUT,
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, QR_FOOTER1, QR_FOOTER2,
-    embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb
+    logger, blacklist_logger, bot, psnawp, 
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT,
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM
+)
+from utils.embeds import (
+    embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
+    embe, embuplSuccess, embuplSuccess1, embencupl,
+    embenc_out, embencinst, embgdout, embgames, embgame, embwlcom
 )
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
@@ -67,13 +71,15 @@ class threadButton(discord.ui.View):
             return
         await interaction.response.send_message("Creating thread...", ephemeral=True)
 
+        emb = embwlcom.copy()
+        emb.description = emb.description.format(user=interaction.user.name)
         ids_to_remove = []
-        
+
         try:
             thread = await interaction.channel.create_thread(name=interaction.user.name, auto_archive_duration=10080)
-            await thread.send(WELCOME_MESSAGE.format(interaction.user.mention))
+            await thread.send(interaction.user.mention)
+            await thread.send(embed=emb)
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
-            
         except (WorkspaceError, discord.Forbidden) as e:
             logger.error(f"Can not create thread: {e}")
         
@@ -118,14 +124,10 @@ async def errorHandling(
           mountPaths: list[str] | None, 
           C1ftp: FTPps | None
         ) -> None:
-    embe = discord.Embed(
-        title="Error",
-        description=error,
-        colour=Color.DEFAULT.value
-    )
-    embe.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+    emb = embe.copy()
+    emb.description = emb.description.format(error=error)
     try:
-        await ctx.edit(embed=embe)
+        await ctx.edit(embed=emb)
     except discord.HTTPException as e:
         logger.exception(f"Error while editing msg: {e}")
 
@@ -271,13 +273,9 @@ async def upload2(
             elif ps_save_pair_upload and attachment.filename.endswith(".bin"):
                 await orbis.parse_sealedkey(file_path)
 
-            emb1 = discord.Embed(
-                title="Upload alert: Successful", 
-                description=f"File '{attachment.filename}' has been successfully uploaded and saved ({i}/{filecount}).", 
-                colour=Color.DEFAULT.value
-            )
-            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await d_ctx.msg.edit(embed=emb1)
+            emb = embuplSuccess.copy()
+            emb.description = emb.description.format(filename=attachment.filename, i=i, filecount=filecount)
+            await d_ctx.msg.edit(embed=emb)
 
             download_cycle.append(file_path)
             i += 1
@@ -335,14 +333,10 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             except aiohttp.ClientError:
                 raise FileError("Failed to download file.")
             logger.info(f"Saved {attachment.filename} to {file_path}")
-            emb16 = discord.Embed(
-                title="Upload alert: Successful", 
-                description=f"File '{attachment.filename}' has been successfully uploaded and saved.", 
-                colour=Color.DEFAULT.value
-            )
-            emb16.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embuplSuccess1.copy()
+            emb.description = emb.description.format(filename=attachment.filename)
             await message.delete()
-            await d_ctx.msg.edit(embed=emb16)
+            await d_ctx.msg.edit(embed=emb)
 
     elif message.content == "EXIT":
         raise TimeoutError("EXITED!")
@@ -404,13 +398,9 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
                 raise FileError("Failed to download file.")
             logger.info(f"Saved {attachment.filename} to {full_path}")
             
-            emb1 = discord.Embed(
-                title="Upload alert: Successful", 
-                description=f"File '{rel_file_path}' has been successfully uploaded and saved ({i}/{filecount}).", 
-                colour=Color.DEFAULT.value
-            )
-            emb1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)  
-            await d_ctx.msg.edit(embed=emb1)
+            emb = embuplSuccess.copy()
+            emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  
+            await d_ctx.msg.edit(embed=emb)
 
             uploaded_file_paths.append(full_path)
             i += 1
@@ -546,14 +536,10 @@ async def replaceDecrypted(
             lastN = cwdHere.pop(len(cwdHere) - 1)
             cwdHere = "/".join(cwdHere)
 
-            emb18 = discord.Embed(
-                title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-                description=f"Please attach a decrypted savefile that you want to upload, MUST be equivalent to {file} (can be any name). Or type 'EXIT' to cancel command.",
-                colour=Color.DEFAULT.value
-            )
-            emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-            await d_ctx.msg.edit(embed=emb18)
+            emb = embencupl.copy()
+            emb.title = emb.title.format(savename=savePairName)
+            emb.description = emb.description.format(filename=file)
+            await d_ctx.msg.edit(embed=emb)
 
             attachmentPath = await upload1(d_ctx, local_download_path)
             newPath = os.path.join(local_download_path, lastN)
@@ -571,32 +557,19 @@ async def replaceDecrypted(
     
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
-            embenc_out = discord.Embed(
-                title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-                description=chunk,
-                colour=Color.DEFAULT.value
-            )
-            embenc_out.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            msg = await d_ctx.ctx.send(embed=embenc_out)
+            emb = embenc_out.copy()
+            emb.title = emb.title.format(savename=savePairName)
+            emb.description = emb.description = chunk
+            msg = await d_ctx.ctx.send(embed=emb)
             msg_container.append(msg)
             await asyncio.sleep(1)
 
         SPLITVALUE = "SLASH"
 
-        emb18 = discord.Embed(
-            title=f"Resigning Process (Decrypted): Upload\n{savePairName}",
-            description=(
-                "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
-                "FOR **DISCORD ATTACHMENT UPLOAD**:\n"
-                f"Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{SPLITVALUE}'.\n"
-                "\nFOR **GOOGLE DRIVE LINK UPLOAD**:\n"
-                "UPLOAD WITH ANY FOLDER STRUCTURE!\n\n"
-                "*Or type 'EXIT' to cancel command*."
-                "\n\nHere are the contents:"),
-            colour=Color.DEFAULT.value
-        )
-        emb18.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await d_ctx.msg.edit(embed=emb18)
+        emb = embencinst.copy()
+        emb.title = emb.title.format(savename=savePairName)
+        emb.description = emb.description.format(splitvalue=SPLITVALUE)
+        await d_ctx.msg.edit(embed=emb)
         await asyncio.sleep(2)
 
         msg_container: list[discord.Message] = []
@@ -673,13 +646,9 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
             raise FileError("Failed to upload file.")
     else:
         file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)], [])
-        embg = discord.Embed(
-            title="Google Drive: Upload complete",
-            description=f"[Download]({file_url[0]})\n{extra_msg}",
-            colour=Color.DEFAULT.value
-        )
-        embg.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        await d_ctx.ctx.send(embed=embg, reference=d_ctx.msg)
+        emb = embgdout.copy()
+        emb.description = emb.description.format(url=file_url[0], extra_msg=extra_msg)
+        await d_ctx.ctx.send(embed=emb, reference=d_ctx.msg)
 
 def qr_check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int, exit_val: str) -> str | bool:
     if message.author == ctx.author and message.channel == ctx.channel:
@@ -698,26 +667,23 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
     game_msgs = []
     selection = {}
     entries_added = 0
-    embmain = discord.Embed(
-        title="All available games",
-        colour=Color.DEFAULT.value
-    )
-    embmain.set_footer(text=QR_FOOTER1)
+    
+    emb = embgames.copy()
     
     for game, _ in stored_saves.items():
         game_info = f"\n{entries_added + 1}. {game}"
         if len(game_desc + game_info) <= EMBED_DESC_LIM:
             game_desc += game_info
         else:
-            embmain.description = game_desc
-            msg = await d_ctx.ctx.respond(embed=embmain)
+            emb.description = emb.description = game_desc
+            msg = await d_ctx.ctx.respond(embed=emb)
             game_msgs.append(msg)
             game_desc = game_info
         selection[entries_added] = game
         entries_added += 1
     if game_desc:
-        embmain.description = game_desc
-        msg = await d_ctx.ctx.respond(embed=embmain)
+        emb.description = emb.description = game_desc
+        msg = await d_ctx.ctx.respond(embed=emb)
         game_msgs.append(msg)
     
     if entries_added == 0:
@@ -751,13 +717,9 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         pages_list = []
         selection = {}
         entries_added = 0 # no limit
-
-        emb = discord.Embed(
-            title=game,
-            colour=Color.DEFAULT.value
-        )
-        emb.set_footer(text=QR_FOOTER2)
         fields_added = 0 # stays within limit
+        emb = embgame.copy()
+        emb.title = game
 
         for titleId, titleId_dict in game_dict.items():
             for savedesc, path in titleId_dict.items():

@@ -5,7 +5,8 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace
 from utils.helpers import errorHandling
-from utils.constants import logger, Color, Embed_t, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN, loadSFO_emb, finished_emb
+from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN
+from utils.embeds import loadSFO_emb, finished_emb, paramEmb
 from utils.orbis import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
@@ -27,19 +28,16 @@ class SFOEditor(SFOContext):
         embeds = []
         p_data = self.param_data.copy()
         for param in p_data:
-            paramEmb = discord.Embed(colour=Color.DEFAULT.value)
+            emb = paramEmb.copy()
             for key, val in param.items():
                 if key == "value":
                     continue
-                paramEmb.add_field(
+                emb.add_field(
                     name=key.upper(),
                     value=val,
                     inline=True
                 )
-            paramEmb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-            embeds.append(paramEmb)
-
+            embeds.append(emb)
         return embeds
 
 class SFO(commands.Cog):

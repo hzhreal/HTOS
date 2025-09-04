@@ -4,7 +4,8 @@ import aiofiles
 import os
 import struct
 from discord.ui.item import Item
-from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color, Embed_t
+from utils.constants import OTHER_TIMEOUT, logger
+from utils.embeds import embDone_G, embchErr, embchgtav
 from data.cheats.common import QuickCheatsError, QuickCheats
 from data.crypto import Crypt_Rstar as crypt
 from typing import Literal
@@ -86,9 +87,9 @@ class Cheats_GTAV:
         
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
-            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            self.helper.embTimeout = embedErrb
+            emb = embchErr.copy()
+            emb.description = emb.description.format(error=error)
+            self.helper.embTimeout = emb
             await self.helper.handle_timeout(self.ctx)
             logger.error(f"{error} - {self.ctx.user.name}")
 
@@ -173,15 +174,11 @@ class Cheats_GTAV:
     
     @staticmethod
     def loaded_embed(stats: dict[str, int | str]) -> discord.Embed:
-        embLoaded = discord.Embed(
-            title=f"Save loaded: GTA V",
-            description=(
-                f"Platform: **{stats['Platform']}**\n"
-                f"Franklin money: **{stats['Franklin_cash']: ,}**\n"
-                f"Michael money: **{stats['Michael_cash']: ,}**\n"
-                f"Trevor money: **{stats['Trevor_cash']: ,}**"
-            ),
-            colour=Color.DEFAULT.value
+        emb = embchgtav.copy()
+        emb.description = emb.description.format(
+            platform=stats["Platform"],
+            franklin_cash=stats["Franklin_cash"],
+            michael_cash=stats["Michael_cash"],
+            trevor_cash=stats["Trevor_cash"]
         )
-        embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        return embLoaded
+        return emb

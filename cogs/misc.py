@@ -3,9 +3,12 @@ from discord.ext import commands
 from network import FTPps, C1socket, SocketError
 from utils.constants import (
     IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    logger, Color, Embed_t, bot,
-    embinit, loadkeyset_emb,
+    logger, bot,
     BASE_ERROR_MSG
+)
+from utils.embeds import (
+    embinit, loadkeyset_emb,
+    keyset_emb, embpingsuccess, embpingfail
 )
 from utils.helpers import threadButton, errorHandling
 from utils.workspace import fetchall_threadid_db, delall_threadid_db, makeWorkspace
@@ -37,14 +40,9 @@ class Misc(commands.Cog):
             keyset = await C1socket.socket_keyset()
             fw = keyset_to_fw(keyset)
 
-            keyset_emb = discord.Embed(
-                title="Success",
-                description=f"Keyset: {keyset}\nFW: {fw}",
-                color=Color.DEFAULT.value
-            )
-            keyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)   
-            await ctx.edit(embed=keyset_emb)
-
+            emb = keyset_emb.copy()
+            emb.description = emb.description.format(keyset=keyset, fw=fw)
+            await ctx.edit(embed=emb)
         except (SocketError, OSError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -91,21 +89,19 @@ class Misc(commands.Cog):
             logger.exception(f"PING: SOCKET (Cecie) could not connect: {e}")
 
         if result == 2:
-            color = Color.GREEN.value
+            emb = embpingsuccess.copy()
         else:
-            color = Color.RED.value
-        
-        desc = (
-            f"FTP: **{ftp_result}**\n"
-            f"CECIE: **{socket_result}**\n"
-            f"Active instances: **{INSTANCE_LOCK_global.instances_len}**/**{INSTANCE_LOCK_global.maximum_instances}**\n"
-            f"Latency: **{latency: .2f}** ms"
+            emb = embpingfail.copy()
+        emb.description = emb.description.format(
+            ftp_result=ftp_result, 
+            socket_result=socket_result, 
+            instances_len=INSTANCE_LOCK_global.instances_len, 
+            maximum_instances=INSTANCE_LOCK_global.maximum_instances, 
+            latency=latency
         )
 
-        embResult = discord.Embed(title=desc, colour=color)
-        embResult.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
         try:
-            await ctx.respond(embed=embResult)
+            await ctx.respond(embed=emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to msg: {e}")
             return
@@ -128,7 +124,6 @@ class Misc(commands.Cog):
                 thread = bot.get_channel(thread_id)
                 if thread is not None:
                     await thread.delete()
-        
         except (discord.Forbidden, WorkspaceError) as e:
             logger.error(f"Error clearing all threads: {e}")
         

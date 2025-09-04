@@ -5,7 +5,8 @@ import struct
 import os
 from discord.ui.item import Item
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
-from utils.constants import OTHER_TIMEOUT, embDone_G, logger, Color, Embed_t
+from utils.constants import OTHER_TIMEOUT, logger
+from utils.embeds import embDone_G, embchErr, embchrdr2
 from data.cheats.common import QuickCheatsError, QuickCheats
 from typing import Literal
 from utils.helpers import TimeoutHelper
@@ -70,9 +71,9 @@ class Cheats_RDR2:
 
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
-            embedErrb = discord.Embed(title=f"ERROR!", description=f"Could not add cheat: {error}.", colour=Color.DEFAULT.value)
-            embedErrb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            self.helper.embTimeout = embedErrb
+            emb = embchErr.copy()
+            emb.description = emb.description.format(error=error)
+            self.helper.embTimeout = emb
             await self.helper.handle_timeout(self.ctx)
             logger.error(f"{error} - {self.ctx.user.name}")
 
@@ -167,13 +168,9 @@ class Cheats_RDR2:
     
     @staticmethod
     def loaded_embed(stats: dict[str, str]) -> discord.Embed:
-        embLoaded = discord.Embed(
-            title=f"Save loaded: RDR 2",
-            description=(
-                f"Platform: **{stats['Platform']}**\n"
-                f"Money: **{stats['Money']}**"
-            ),
-            colour=Color.DEFAULT.value
+        emb = embchrdr2.copy()
+        emb.description = emb.description.format(
+            platform=stats["Platform"],
+            money=stats["Money"]
         )
-        embLoaded.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-        return embLoaded
+        return emb

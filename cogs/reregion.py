@@ -10,8 +10,10 @@ from google_drive import gdapi, GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
-    logger, Color, Embed_t,
-    emb21, emb20
+    logger
+)
+from utils.embeds import (
+    emb21, emb20, embkstone1, embkstone2, embrrp, embrrps, embrrdone
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
@@ -75,33 +77,24 @@ class ReRegion(commands.Cog):
             savefile.path = uploaded_file_paths[0].removesuffix(".bin")
             await savefile.construct()
 
-            embkstone1 = discord.Embed(
-                title="Obtain process: Keystone",
-                description=f"Obtaining keystone from file: **{savefile.basename}**, please wait...\nSend 'EXIT' to cancel.",
-                colour=Color.DEFAULT.value
-            )
-            embkstone1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embkstone1.copy()
+            emb.description = emb.description.format(savename=savefile.basename)
             tasks = [
                 savefile.dump,
                 lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO, savefile.ElementChoice.KEYSTONE])
             ]
-            await task_handler(d_ctx, tasks, [embkstone1])
+            await task_handler(d_ctx, tasks, [emb])
 
             target_titleid = savefile.title_id
             
-            embkstone2 = discord.Embed(
-                title="Obtain process: Keystone",
-                description=f"Keystone from **{target_titleid}** obtained.",
-                colour=Color.DEFAULT.value
-            )
-            embkstone2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-            await msg.edit(embed=embkstone2)
+            emb = embkstone2.copy()
+            emb.description = emb.description.format(target_titleid=target_titleid)
+            await msg.edit(embed=emb)
 
             shutil.rmtree(newUPLOAD_ENCRYPTED)
             await aiofiles.os.mkdir(newUPLOAD_ENCRYPTED)
 
             await C1ftp.deleteList(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
-
         except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -166,27 +159,18 @@ class ReRegion(commands.Cog):
                     savefile.title_id = target_titleid
                     savefile.downloaded_sys_elements.add(savefile.ElementChoice.KEYSTONE)
 
-                    emb4 = discord.Embed(
-                        title="Re-regioning process: Encrypted",
-                        description=f"Your save (**{savefile.basename}**) is being re-regioned & resigned, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                    emb = embrrp.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         savefile.dump,
                         savefile.resign
                     ]
-                    await task_handler(d_ctx, tasks, [emb4])
+                    await task_handler(d_ctx, tasks, [emb])
 
-                    emb5 = discord.Embed(
-                        title="Re-regioning (Encrypted): Successful",
-                        description=f"**{savefile.basename}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (save {j}/{batch.savecount}, batch {i}/{batches}).",
-                        colour=Color.DEFAULT.value
-                    )
-                    emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                    await msg.edit(embed=emb5)
+                    emb = embrrps.copy()
+                    emb.description = emb.description.format(savename=savefile.basename, id=playstation_id or user_id, target_titleid=target_titleid, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    await msg.edit(embed=emb)
                     j += 1
-
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL: 
@@ -203,19 +187,11 @@ class ReRegion(commands.Cog):
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
-
-            embRgdone = discord.Embed(
-                title="Re-region: Successful",
-                description=(
-                    f"**{batch.printed}** re-regioned & resigned to **{playstation_id or user_id}** (**{target_titleid}**), (batch {i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."         
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embRgdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            
+            emb = embrrdone.copy()
+            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, target_titleid=target_titleid, i=i, batches=batches)
             try:
-                await msg.edit(embed=embRgdone)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 

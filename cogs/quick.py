@@ -10,8 +10,12 @@ from google_drive import gdapi, GDapiError
 from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    logger, Color, Embed_t,
-    emb_upl_savegame, embTimedOut, working_emb
+    logger
+)
+from utils.embeds import (
+    emb_upl_savegame, embTimedOut, working_emb, embExit, 
+    embresb, embresbs, embRdone, embLoading, embApplied,
+    embqcCompleted, embchLoading
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple, listStoredSaves
 from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler
@@ -68,8 +72,6 @@ class Quick(commands.Cog):
             return
 
         if res == ReturnTypes.EXIT:
-            embExit = discord.Embed(title="Exited.", colour=Color.DEFAULT.value)
-            embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
             try:
                 await msg.edit(embed=embExit, view=None)
             except discord.HTTPException as e:
@@ -97,27 +99,18 @@ class Quick(commands.Cog):
                 savefile.path = savepath
                 await savefile.construct()
 
-                emb4 = discord.Embed(
-                    title="Resigning process: Encrypted",
-                    description=f"Your save (**{savefile.basename}**) is being resigned ({i}/{batch.savecount}), please wait...\nSend 'EXIT' to cancel.",
-                    colour=Color.DEFAULT.value
-                )
-                emb4.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                emb = embresb.copy()
+                emb.description = emb.description.format(savename=savefile.basename, i=i, savecount=batch.savecount)
                 tasks = [
                     savefile.dump,
                     savefile.resign
                 ]
-                await task_handler(d_ctx, tasks, [emb4])
+                await task_handler(d_ctx, tasks, [emb])
 
-                emb5 = discord.Embed(
-                    title="Resigning process (Encrypted): Successful",
-                    description=f"**{savefile.basename}** resigned to **{playstation_id or user_id}** ({i}/{batch.savecount}).",
-                    colour=Color.DEFAULT.value
-                )
-                emb5.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                await msg.edit(embed=emb5)
+                emb = embresbs.copy()
+                emb.description = emb.description.format(savename=savefile.basename, id=playstation_id or user_id, i=i, savecount=batch.savecount)
+                await msg.edit(embed=emb)
                 i += 1
-
         except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -138,18 +131,10 @@ class Quick(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         
-        embRdone = discord.Embed(
-            title="Resigning process (Encrypted): Successful",
-            description=(
-                f"**{batch.printed}** resigned to **{playstation_id or user_id}**.\n"
-                "Uploading file...\n"
-                "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-            ),
-            colour=Color.DEFAULT.value
-        )
-        embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+        emb = embRdone.copy()
+        emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id)
         try:
-            await msg.edit(embed=embRdone)
+            await msg.edit(embed=emb)
         except discord.HTTPException as e:
             logger.exception(f"Error while editing msg: {e}")
 
@@ -228,24 +213,16 @@ class Quick(commands.Cog):
             for savegame in entry:
                 basename = os.path.basename(savegame)
                 
-                embLoading = discord.Embed(
-                    title="Loading",
-                    description=f"Loading **{basename}**... (file {j}/{count_entry}, batch {i}/{batches}).",
-                    colour=Color.DEFAULT.value
-                )
-                embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-                embApplied = discord.Embed(
-                    title="Success!",
-                    description=f"Quick codes applied to **{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
-                    colour=Color.DEFAULT.value
-                )
-                embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+                emb1 = embLoading.copy()
+                emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                emb2 = embApplied.copy()
+                emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
 
                 try:
-                    await msg.edit(embed=embLoading)
+                    await msg.edit(embed=emb1)
                     qc = QuickCodes(savegame, codes)
                     await qc.apply_code()
-                    await msg.edit(embed=embApplied)
+                    await msg.edit(embed=emb2)
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await errorHandling(msg, e, workspaceFolders, None, None, None)
@@ -263,18 +240,10 @@ class Quick(commands.Cog):
 
             finished_files = completed_print(completed)
 
-            embCompleted = discord.Embed(
-                title="Success!",
-                description=(
-                    f"Quick codes applied to **{finished_files}** ({i}/{batches}).\n"
-                    "Uploading file...\n"
-                    "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
-                ),
-                colour=Color.DEFAULT.value
-            )
-            embCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+            emb = embqcCompleted.copy()
+            emb.description = emb.description.format(finished_files=finished_files, i=i, batches=batches)
             try:
-                await msg.edit(embed=embCompleted)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.exception(f"Error while editing msg: {e}")
 
@@ -309,16 +278,11 @@ class Quick(commands.Cog):
         try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
-        embLoading = discord.Embed(
-            title="Loading",
-            description=f"Loading cheats process for **{game}**...",
-            colour=Color.DEFAULT.value
-        )
-        embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
+        emb = embchLoading.copy()
+        emb.description = emb.description.format(game=game)
         try:
-            await ctx.respond(embed=embLoading)
-            msg = await ctx.edit(embed=embLoading)
+            await ctx.respond(embed=emb)
+            msg = await ctx.edit(embed=emb)
             msg = await ctx.fetch_message(msg.id)
         except discord.HTTPException as e:
             logger.exception(e)
@@ -351,7 +315,6 @@ class Quick(commands.Cog):
             await helper.await_done()
 
             await ctx.send(file=discord.File(savegame), reference=msg)
-        
         except QuickCheatsError as e:
             await errorHandling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
