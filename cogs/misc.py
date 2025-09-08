@@ -92,7 +92,7 @@ class Misc(commands.Cog):
             emb = embpingsuccess.copy()
         else:
             emb = embpingfail.copy()
-        emb.description = emb.description.format(
+        emb.title = emb.title.format(
             ftp_result=ftp_result, 
             socket_result=socket_result, 
             instances_len=INSTANCE_LOCK_global.instances_len, 
