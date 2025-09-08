@@ -40,7 +40,7 @@ class Convert(commands.Cog):
         except (WorkspaceError, discord.HTTPException): return
 
         emb = emb_conv_upl.copy()
-        emb.title = emb.title.format(game)
+        emb.title = emb.title.format(game=game)
 
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
 
@@ -82,7 +82,7 @@ class Convert(commands.Cog):
             for savegame in entry:
                 basename = os.path.basename(savegame)
                 emb = emb_conv_choice.copy()
-                emb.title = emb.title.format(basename)
+                emb.title = emb.title.format(basename=basename)
                 emb.description = emb.description.format(j=j, count_entry=count_entry, i=i, batches=batches)
                 try:
                     match game:

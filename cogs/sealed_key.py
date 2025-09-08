@@ -52,7 +52,7 @@ class Sealed_Key(commands.Cog):
 
             emb = embdec.copy()
             emb.description = emb.description.format(filename=sealed_key.filename)
-            await ctx.edit(embed=embdec)
+            await ctx.edit(embed=emb)
 
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))
         except SocketError as e:
