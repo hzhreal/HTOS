@@ -725,12 +725,12 @@ embgames = discord.Embed(
     title="All available games",
     colour=Color.DEFAULT.value
 )
-embgames.set_footer(text=Embed_t.QR_FOOTER1)
+embgames.set_footer(text=Embed_t.QR_FOOTER1.value)
 
 embgame = discord.Embed(
     colour=Color.DEFAULT.value
 )
-embgame.set_footer(text=Embed_t.QR_FOOTER2)
+embgame.set_footer(text=Embed_t.QR_FOOTER2.value)
 
 emb_il = discord.Embed(
     title="Too many users at the moment!",
