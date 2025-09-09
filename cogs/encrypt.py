@@ -101,7 +101,7 @@ class Encrypt(commands.Cog):
                     await savefile.construct()
 
                     emb = embmo.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, bathces=batches)
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         savefile.dump,
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
