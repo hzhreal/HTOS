@@ -147,7 +147,7 @@ class Logger:
         self.write("[ERROR]", msg)
 
     def exception(self, msg: str) -> None:
-        msg = f"```{traceback.format_exc()}```\n\n{msg}"
+        msg = f"\n```\n{traceback.format_exc()}```\n\n{msg}"
         self.write("[EXCEPTION]", msg)
 
     def hide(self) -> None:
