@@ -92,7 +92,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
         await helper.await_done()
         
     elif title_id in RDR2_TITLEID:
-        if d_ctx:
+        if not d_ctx:
             await Crypto.Rstar.decryptFile(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
             return
 
