@@ -60,6 +60,14 @@ class GDapi:
 
     def __init__(self) -> None:
         assert self.UPLOAD_CHUNKSIZE % (256 * 1024) == 0
+
+        if self.MAX_FILES_IN_DIR < 1000:
+           self.pagesizes = [self.MAX_FILES_IN_DIR]
+        else:
+            q, r = divmod(self.MAX_FILES_IN_DIR, 1000)
+            self.pagesizes = [1000 for _ in range(q)]
+            self.pagesizes.append(r)
+
         self.authorize()
 
     def authorize(self) -> None:
@@ -340,11 +348,11 @@ class GDapi:
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
-            while next_page_token is not None:
+            for pagesize in self.pagesizes:
                 req = drive_v3.files.list(
                     q=f"'{folder_id}' in parents and trashed=false", 
                     fields="files(name, id, size, mimeType), nextPageToken",
-                    pageSize=1000,
+                    pageSize=pagesize,
                     pageToken=next_page_token
                 )
 
@@ -352,8 +360,11 @@ class GDapi:
 
                 entries.extend(res.get("files", []))
                 next_page_token = res.get("nextPageToken")
+                if not next_page_token:
+                    break
 
         count = len(entries)
+        # redundant check with pagesize handling; kept for defense
         if count > self.MAX_FILES_IN_DIR:
             await warn_filecount(rel_path)
             return files, total_filesize
