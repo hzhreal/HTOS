@@ -363,9 +363,7 @@ class GDapi:
                 if not next_page_token:
                     break
 
-        count = len(entries)
-        # redundant check with pagesize handling; kept for defense
-        if count > self.MAX_FILES_IN_DIR:
+        if next_page_token:
             await warn_filecount(rel_path)
             return files, total_filesize
 
