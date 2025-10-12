@@ -1,10 +1,5 @@
 import aiofiles
 
-class QuickCheatsError(Exception):
-    """Exception raised for errors relating to quickcheats."""
-    def __init__(self, message: str) -> None:
-        self.message = message
-
 class QuickCheats:
     @staticmethod
     async def findOffset_with_identifier32(savegame: aiofiles.threadpool.binary.AsyncFileIO, savegame_data: bytes | None, before_offset: bytes, after_offset: bytes | None, bytes_between: int) -> int:

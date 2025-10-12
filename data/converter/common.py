@@ -1,10 +1,5 @@
 import aiofiles
 
-class ConverterError(Exception):
-    """Exception raised for errors relating to the converter."""
-    def __init__(self, message: str) -> None:
-        self.message = message
-
 class Converter:
     # When converting we have to move PSIN or RSAV header to the start bytes
     # GTA V: 
