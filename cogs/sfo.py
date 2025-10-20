@@ -4,7 +4,7 @@ from io import BytesIO
 from discord import Option
 from discord.ext import commands
 from utils.workspace import makeWorkspace
-from utils.helpers import errorHandling
+from utils.helpers import error_handling
 from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN
 from utils.embeds import loadSFO_emb, finished_emb, paramEmb
 from utils.orbis import SFOContext
@@ -62,7 +62,7 @@ class SFO(commands.Cog):
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -77,12 +77,12 @@ class SFO(commands.Cog):
                 await ctx.send(embed=emb)
             await ctx.edit(embed=finished_emb)
         except OrbisError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -135,7 +135,7 @@ class SFO(commands.Cog):
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -153,7 +153,7 @@ class SFO(commands.Cog):
             await ctx.edit(embed=finished_emb)
             await ctx.respond(file=discord.File(BytesIO(sfo_ctx.sfo_data), filename=sfo.filename))
         except OrbisError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -162,7 +162,7 @@ class SFO(commands.Cog):
                 err = "Invalid value inputted!"
             else:
                 err = BASE_ERROR_MSG
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await error_handling(ctx, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return

@@ -116,7 +116,7 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
         except discord.Forbidden:
             pass
 
-async def errorHandling(
+async def error_handling(
           ctx: discord.ApplicationContext | discord.Message, 
           error: str, 
           workspaceFolders: list[str] | None, 
@@ -165,6 +165,15 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
             await asyncio.sleep(3)
         raise TimeoutError("TIMED OUT!")
     return response
+
+async def download_attachment(attachment: discord.Attachment, path: str) -> None:
+    try:
+        await attachment.save(path)
+    except asyncio.TimeoutError:
+        raise TimeoutError("TIMED OUT!")
+    except aiohttp.ClientError:
+        raise FileError("Failed to download file.")
+    logger.info(f"Saved {attachment.filename} to {path}")
 
 async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], Awaitable[Any]]], ordered_embeds: list[discord.Embed]) -> list[Any]:
     tasks_len = len(ordered_tasks)
@@ -259,13 +268,7 @@ async def upload2(
         i = 1
         for attachment in valid_attachments:
             file_path = os.path.join(saveLocation, attachment.filename)
-            try:
-                await attachment.save(file_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {file_path}")
+            await task_handler(d_ctx, [lambda: download_attachment(attachment, file_path)], [])
             
             # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
@@ -326,13 +329,8 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         else:
             save_path = saveLocation
             file_path = os.path.join(save_path, attachment.filename)
-            try:
-                await attachment.save(file_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {file_path}")
+            await task_handler(d_ctx, [lambda: download_attachment(attachment, file_path)], [])
+
             emb = embuplSuccess1.copy()
             emb.description = emb.description.format(filename=attachment.filename)
             await message.delete()
@@ -389,14 +387,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             full_path = os.path.join(dir_path, file_name)
-
-            try:
-                await attachment.save(full_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {full_path}")
+            await task_handler(d_ctx, [lambda: download_attachment(attachment, full_path)], [])
             
             emb = embuplSuccess.copy()
             emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  
@@ -522,7 +513,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()
 
-async def replaceDecrypted(
+async def replace_decrypted(
           d_ctx: DiscordContext, 
           fInstance: FTPps, 
           files: list[str], 

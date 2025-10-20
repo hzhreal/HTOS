@@ -18,7 +18,7 @@ from utils.embeds import (
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
 from utils.extras import pngprocess
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, send_final, task_handler
+from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler
 from utils.orbis import sfo_ctx_patch_parameters, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -68,17 +68,17 @@ class Change(commands.Cog):
                 raise FileError(f"Image turned out to be too big: {png_size}/{ICON0_MAXSIZE}!")
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -93,7 +93,7 @@ class Change(commands.Cog):
             try:
                 await batch.construct()
             except OSError as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -129,12 +129,12 @@ class Change(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -153,12 +153,12 @@ class Change(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -204,17 +204,17 @@ class Change(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -229,7 +229,7 @@ class Change(commands.Cog):
             try:
                 await batch.construct()
             except OSError as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -265,12 +265,12 @@ class Change(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -289,12 +289,12 @@ class Change(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return

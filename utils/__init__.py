@@ -202,7 +202,7 @@ from .orbis import checkid, obtainCUSA, check_titleid, resign, reregion_write, r
 from .workspace import WorkspaceOpt, startup, cleanup, cleanupSimple, initWorkspace, makeWorkspace, enumerateFiles, listStoredSaves, write_threadid_db, fetch_accountid_db, write_accountid_db, fetchall_threadid_db, delall_threadid_db, semver_to_num, check_version, get_savenames_from_bin_ext, blacklist_write_db, blacklist_check_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db
 from .exceptions import FileError, PSNIDError, InstanceError, OrbisError, WorkspaceError, TaskCancelledError
 from .namespaces import Cheats, Converter, Crypto
-from .helpers import DiscordContext, errorHandling, clean_msgs, upl_check, upl1_check, accid_input_check, exit_check, wait_for_msg, task_handler, upload2, upload1, upload2_special, psusername, replaceDecrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt, ReturnTypes
+from .helpers import DiscordContext, , clean_msgs, upl_check, upl1_check, accid_input_check, exit_check, wait_for_msg, task_handler, upload2, upload1, upload2_special, psusername, replace_decrypted, threadButton, TimeoutHelper, send_final, qr_check, qr_interface_main, run_qr_paginator, UploadMethod, UploadOpt, ReturnTypes
 from .type_helpers import Cint, uint8, uint16, uint32, uint64, int8, int16, int32, int64, utf_8, utf_8_s, TypeCategory, CIntSignednessState
 from .instance_lock import MAXIMUM_INSTANCES_AT_ONCE, InstanceLock, INSTANCE_LOCK_global
 from .conversions import mb_to_bytes, gb_to_bytes, saveblocks_to_bytes, bytes_to_mb, mb_to_saveblocks, round_half_up, hours_to_seconds, minutes_to_seconds

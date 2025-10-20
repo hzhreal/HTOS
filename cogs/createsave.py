@@ -19,7 +19,7 @@ from utils.embeds import (
     embSceSys, embgs, embsl, embc, embCRdone
 )
 from utils.workspace import makeWorkspace, initWorkspace, cleanup
-from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special, task_handler
+from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
 from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
@@ -67,7 +67,7 @@ class CreateSave(commands.Cog):
             savesize = saveblocks_to_bytes(saveblocks)
         else:
             e = "You need to add the `saveblocks` or `savesize_mb` argument!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -114,17 +114,17 @@ class CreateSave(commands.Cog):
             uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -196,12 +196,12 @@ class CreateSave(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -220,12 +220,12 @@ class CreateSave(commands.Cog):
         except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             if isinstance(e, discord.HTTPException):
                 e = BASE_ERROR_MSG
-            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return

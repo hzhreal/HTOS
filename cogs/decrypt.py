@@ -16,7 +16,7 @@ from utils.embeds import (
     embDecrypt1, emb11, emb_dl, emb13, embDdone
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
-from utils.helpers import DiscordContext, upload2, errorHandling, send_final, task_handler
+from utils.helpers import DiscordContext, upload2, error_handling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.namespaces import Crypto
 from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
@@ -53,17 +53,17 @@ class Decrypt(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -80,7 +80,7 @@ class Decrypt(commands.Cog):
                 destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str) 
                 await aiofiles.os.mkdir(destination_directory_outer)
             except OSError as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -121,12 +121,12 @@ class Decrypt(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -148,12 +148,12 @@ class Decrypt(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return

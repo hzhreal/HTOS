@@ -15,7 +15,7 @@ from utils.embeds import (
     embCDone1, embCDone2, embCDone3, embconvCompleted
 )
 from utils.workspace import initWorkspace, makeWorkspace, cleanupSimple
-from utils.helpers import errorHandling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
+from utils.helpers import error_handling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
 from utils.extras import completed_print
 from utils.exceptions import FileError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -53,17 +53,17 @@ class Convert(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -101,12 +101,12 @@ class Convert(commands.Cog):
                             result = await Converter.BL3.convertFile(ctx, helper, savegame, True, emb)
                 
                 except ConverterError as e:
-                    await errorHandling(ctx, e, workspaceFolders, None, None, None)
+                    await error_handling(ctx, e, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (expected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                    await error_handling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -149,12 +149,12 @@ class Convert(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, None, None, None)
+                await error_handling(msg, e, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return

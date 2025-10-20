@@ -10,7 +10,7 @@ from utils.embeds import (
     embinit, loadkeyset_emb,
     keyset_emb, embpingsuccess, embpingfail
 )
-from utils.helpers import threadButton, errorHandling
+from utils.helpers import threadButton, error_handling
 from utils.workspace import fetchall_threadid_db, delall_threadid_db, makeWorkspace
 from utils.orbis import keyset_to_fw
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -50,10 +50,10 @@ class Misc(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         finally:
             await INSTANCE_LOCK_global.release(ctx.author.id)
