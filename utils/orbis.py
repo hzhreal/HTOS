@@ -141,7 +141,7 @@ class SaveFile:
                     self.title_id = obtainCUSA(self.sfo_ctx)
                     self.downloaded_sys_elements.add(self.ElementChoice.SFO)
                 case self.ElementChoice.KEYSTONE:
-                    await self.batch.fInstance.retrievekeystone(self.batch.location_to_scesys)
+                    await self.batch.fInstance.retrieve_keystone(self.batch.location_to_scesys)
                     self.downloaded_sys_elements.add(self.ElementChoice.KEYSTONE)
 
     async def __reregion(self) -> None:

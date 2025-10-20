@@ -75,14 +75,14 @@ class Misc(commands.Cog):
         ftp_result = socket_result = "Unavailable"
 
         try:
-            await C1ftp.testConnection()
+            await C1ftp.test_connection()
             result += 1
             ftp_result = "Available"
         except OSError as e:
             logger.exception(f"PING: FTP could not connect: {e}")
 
         try:
-            await C1socket.testConnection()
+            await C1socket.test_connection()
             result += 1
             socket_result = "Available"
         except OSError as e:

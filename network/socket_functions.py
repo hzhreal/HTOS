@@ -44,7 +44,7 @@ class SocketPS:
         writer.close()
         await writer.wait_closed()
       
-  async def testConnection(self) -> None:
+  async def test_connection(self) -> None:
     writer = None
     try:
       async with self.semaphore_alt:

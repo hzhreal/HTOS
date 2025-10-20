@@ -12,7 +12,6 @@ from zipfile import (
 )
 from sys import argv
 from discord.ext import commands
-from enum import Enum
 from psnawp_api import PSNAWP
 from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb
 

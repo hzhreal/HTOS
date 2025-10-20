@@ -83,7 +83,7 @@ class Reregion(TabBase):
 
             shutil.rmtree(newUPLOAD_ENCRYPTED)
             await mkdir(newUPLOAD_ENCRYPTED)
-            await C1ftp.deleteList(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
+            await C1ftp.delete_list(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
             self.logger.error(f"`{str(e)}` Stopping...")

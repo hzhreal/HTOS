@@ -372,7 +372,7 @@ embDdone = discord.Embed(
     description=(
         "**{printed}** has been decrypted (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "Send 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )

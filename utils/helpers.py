@@ -649,7 +649,7 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         try:
-            await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
+            await task_handler(d_ctx, [lambda: d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)], [])
         except asyncio.TimeoutError:
             raise TimeoutError("TIMED OUT!")
         except aiohttp.ClientError:

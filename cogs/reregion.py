@@ -94,7 +94,7 @@ class ReRegion(commands.Cog):
             shutil.rmtree(newUPLOAD_ENCRYPTED)
             await aiofiles.os.mkdir(newUPLOAD_ENCRYPTED)
 
-            await C1ftp.deleteList(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
+            await C1ftp.delete_list(PS_UPLOADDIR, [savefile.realSave, savefile.realSave + ".bin"])
         except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:

@@ -159,7 +159,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
 
     if remote_saveList is not None and len(remote_saveList) > 0:
         try:
-            await fInstance.deleteList(PS_UPLOADDIR, remote_saveList)
+            await fInstance.delete_list(PS_UPLOADDIR, remote_saveList)
         except FTPError as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 

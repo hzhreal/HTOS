@@ -112,7 +112,7 @@ class Change(commands.Cog):
                     emb = embpng2.copy()
                     emb.description = emb.description = emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
-                        lambda: C1ftp.swappng(batch.location_to_scesys),
+                        lambda: C1ftp.swap_png(batch.location_to_scesys),
                         savefile.resign
                     ]
                     await task_handler(d_ctx, tasks, [emb])
