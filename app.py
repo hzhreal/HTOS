@@ -5,9 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import argparse
-import asyncio
 from nicegui import ui
-
 from app_core import models
 from app_core.profile_selector import ProfileSelector
 from app_core.setting_selector import SettingSelector
@@ -23,13 +21,14 @@ from utils.constants import APP_PROFILES_PATH, APP_SETTINGS_PATH, VERSION
 from utils.workspace import WorkspaceOpt, startup, check_version
 
 workspace_opt = WorkspaceOpt()
-profiles = models.Profiles(APP_PROFILES_PATH)
-settings = models.Settings(APP_SETTINGS_PATH)
 
 def initialize_tabs() -> None:
-    status = asyncio.run(check_version())
+    profiles = models.Profiles(APP_PROFILES_PATH)
+    settings = models.Settings(APP_SETTINGS_PATH)
+    ui.dark_mode().enable()
+
     with ui.header().classes("h-12 justify-center"):
-        ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;")
+        ui.label(f"HTOS {VERSION}").style("font-size: 15px; font-weight: bold;")
 
     with ui.tabs().classes("w-full") as tabs:
         tab_container = [
@@ -52,11 +51,9 @@ def initialize_tabs() -> None:
 if __name__ in {"__main__", "__mp_main__"}:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ignore-startup", action="store_true")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     if args.ignore_startup:
         workspace_opt.ignore_startup = True
     startup(workspace_opt, lite=True)
 
-    ui.dark_mode().enable()
-    initialize_tabs()
-    ui.run(native=True, window_size=(1400, 800))
+    ui.run(root=initialize_tabs, reload=False, native=True, window_size=(1400, 800))
