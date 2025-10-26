@@ -26,7 +26,7 @@ async def initialize_tabs() -> None:
     status = await check_version()
     profiles = models.Profiles(APP_PROFILES_PATH)
     settings = models.Settings(APP_SETTINGS_PATH)
-    
+
     with ui.header().classes("h-12 justify-center"):
         ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;")
 
@@ -51,7 +51,7 @@ async def initialize_tabs() -> None:
 if __name__ in {"__main__", "__mp_main__"}:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ignore-startup", action="store_true")
-    parser.add_argument("--reload", action="store_false")
+    parser.add_argument("--reload", action="store_true")
     args, _ = parser.parse_known_args()
     if args.ignore_startup:
         workspace_opt.ignore_startup = True
