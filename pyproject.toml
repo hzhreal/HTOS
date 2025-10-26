@@ -23,11 +23,9 @@ dependencies = [
     "psnawp>=3.0.0",
     "py-cord>=2.6.1",
     "pycryptodome>=3.23.0",
-    "pyqt6>=6.9.1",
-    "pyqtwebengine>=5.15.7",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.1.1",
-    "pywebview>=6.0",
-    "qtpy>=2.4.3",
+    "pywebview>=6.1 ; sys_platform != 'linux'",
+    "pywebview[qt]>=6.1 ; sys_platform == 'linux'",
     "zstandard>=0.24.0",
 ]

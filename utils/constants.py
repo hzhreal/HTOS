@@ -5,9 +5,9 @@ import re
 import errno
 import time
 from zipfile import (
-    #ZIP_BZIP2, 
-    #ZIP_DEFLATED, 
-    #ZIP_LZMA, 
+    #ZIP_BZIP2,
+    #ZIP_DEFLATED,
+    #ZIP_LZMA,
     ZIP_STORED
 )
 from sys import argv
@@ -61,12 +61,16 @@ def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
     logging.config.dictConfig(config=logging_config)
 
     return logger
-if os.path.basename(argv[0]) == "bot.py" or os.path.basename(argv[0]) == "app.py":
+
+script_name = os.path.splitext(os.path.basename(argv[0]))[0]
+
+if script_name == "bot" or script_name == "app":
     logger = setup_logger(os.path.join("logs", "HTOS.log"), "HTOS_LOGS", "ERROR")
     blacklist_logger = setup_logger(os.path.join("logs", "BLACKLIST.log"), "BLACKLIST_LOGS", "INFO")
 else:
-    logger = None
-    blacklist_logger = None
+    logger = logging.getLogger("null")
+    logger.addHandler(logging.NullHandler())
+    blacklist_logger = logger
 
 # CONFIG
 IP = str(os.getenv("IP"))
@@ -110,7 +114,7 @@ if os.path.basename(argv[0]) == "bot.py":
 else:
     psnawp = None
 
-# BOT INITIALIZATION 
+# BOT INITIALIZATION
 activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
 intents = discord.Intents.default()
 intents.message_content = True
@@ -153,7 +157,7 @@ SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep thi
 MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, for button click, responding to quickresign command, and responding with account id
-GENERAL_TIMEOUT = None # seconds, for general processes like google drive uploads, 
+GENERAL_TIMEOUT = None # seconds, for general processes like google drive uploads,
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(8) # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
