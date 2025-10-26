@@ -22,13 +22,13 @@ from utils.workspace import WorkspaceOpt, startup, check_version
 
 workspace_opt = WorkspaceOpt()
 
-def initialize_tabs() -> None:
+async def initialize_tabs() -> None:
+    status = await check_version()
     profiles = models.Profiles(APP_PROFILES_PATH)
     settings = models.Settings(APP_SETTINGS_PATH)
-    ui.dark_mode().enable()
-
+    
     with ui.header().classes("h-12 justify-center"):
-        ui.label(f"HTOS {VERSION}").style("font-size: 15px; font-weight: bold;")
+        ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;")
 
     with ui.tabs().classes("w-full") as tabs:
         tab_container = [
@@ -51,9 +51,10 @@ def initialize_tabs() -> None:
 if __name__ in {"__main__", "__mp_main__"}:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ignore-startup", action="store_true")
-    args, unknown = parser.parse_known_args()
+    parser.add_argument("--reload", action="store_false")
+    args, _ = parser.parse_known_args()
     if args.ignore_startup:
         workspace_opt.ignore_startup = True
     startup(workspace_opt, lite=True)
 
-    ui.run(root=initialize_tabs, reload=False, native=True, window_size=(1400, 800))
+    ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))
