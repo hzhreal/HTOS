@@ -122,7 +122,7 @@ class Crypt_BL3:
 
     @staticmethod
     async def decryptFile(folderPath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
-        files = await CC.obtainFiles(folderPath)
+        files = await CC.obtain_files(folderPath)
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]

@@ -91,7 +91,7 @@ class Crypt_Ndog:
 
     @staticmethod
     async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        files = await CC.obtainFiles(folderPath, Crypt_Ndog.EXCLUDE)
+        files = await CC.obtain_files(folderPath, Crypt_Ndog.EXCLUDE)
 
         for filePath in files:
 

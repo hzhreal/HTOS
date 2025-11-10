@@ -318,8 +318,5 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -
 
         elif title_id in RE4R_TITLEID:
             await Crypto.RE4R.checkEnc_ps(file_name)
-
-    except CryptoError as e:
-        raise CryptoError(e)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")

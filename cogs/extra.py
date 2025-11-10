@@ -5,7 +5,7 @@ from discord.ext import commands
 from io import BytesIO
 from utils.constants import COMMAND_COOLDOWN, BOT_DISCORD_UPLOAD_LIMIT, logger
 from utils.orbis import checkid
-from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, makeWorkspace
+from utils.workspace import write_accountid_db, blacklist_write_db, blacklist_del_db, blacklist_delall_db, blacklist_fetchall_db, make_workspace
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError
 
@@ -111,8 +111,8 @@ class Extra(commands.Cog):
               ctx: discord.ApplicationContext,
               account_id: Option(str, description="In hexadecimal format, '0x' prefix is fine and optional.", max_length=18) # type: ignore
             ) -> None:
-        workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        workspace_folders = []
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         msg = ctx

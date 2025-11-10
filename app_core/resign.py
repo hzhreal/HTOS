@@ -5,7 +5,7 @@ from app_core.models import Profiles, Settings, TabBase
 from app_core.helpers import prepare_save_input_folder
 from network import C1socket, FTPps, SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR
-from utils.workspace import initWorkspace, cleanup, cleanupSimple
+from utils.workspace import init_workspace, cleanup, cleanup_simple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError
 
@@ -27,10 +27,10 @@ class Resign(TabBase):
         self.logger.clear()
         self.logger.info("Starting resign...")
 
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        for folder in workspaceFolders:
+        for folder in workspace_folders:
             try:
                 await makedirs(folder, exist_ok=True)
             except OSError:
@@ -45,12 +45,12 @@ class Resign(TabBase):
         try:
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
-            await cleanupSimple(workspaceFolders)
+            await cleanup_simple(workspace_folders)
             self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
         except OSError:
-            await cleanupSimple(workspaceFolders)
+            await cleanup_simple(workspace_folders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
@@ -65,7 +65,7 @@ class Resign(TabBase):
             try:
                 await batch.construct()
             except OSError:
-               await cleanup(C1ftp, workspaceFolders, None, mount_paths)
+               await cleanup(C1ftp, workspace_folders, None, mount_paths)
                self.logger.exception("Unexpected error. Stopping...")
                self.enable_buttons()
                return
@@ -83,17 +83,17 @@ class Resign(TabBase):
                     self.logger.info(f"Resigned **{savefile.basename}** to {p}, {info}.")
 
                 except (SocketError, FTPError, OrbisError, OSError) as e:
-                    await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
+                    await cleanup(C1ftp, workspace_folders, batch.entry, mount_paths)
                     self.logger.error(f"`{str(e)}` Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:
-                    await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
+                    await cleanup(C1ftp, workspace_folders, batch.entry, mount_paths)
                     self.logger.exception("Unexpected error. Stopping...")
                     self.enable_buttons()
                     return
                 j += 1
-            await cleanup(C1ftp, workspaceFolders, batch.entry, mount_paths)
+            await cleanup(C1ftp, workspace_folders, batch.entry, mount_paths)
             self.logger.info(f"**{batch.printed}** resigned to {p} (batch {i}/{batches}).")
             self.logger.info(f"Batch can be found at ```{batch.fInstance.download_encrypted_path}```.")
             i += 1

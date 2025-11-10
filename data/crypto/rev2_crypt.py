@@ -9,7 +9,7 @@ class Crypt_Rev2:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+        files = await CC.obtain_files(folderPath)
 
         for filePath in files:
 

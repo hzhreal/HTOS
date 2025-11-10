@@ -165,7 +165,7 @@ class Crypt_Rstar:
 
     @staticmethod
     async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        files = await CC.obtainFiles(upload_decrypted)
+        files = await CC.obtain_files(upload_decrypted)
         files = Crypt_Rstar.namecheck(files)
         key = Crypt_Rstar.TYPES[start_offset]["key"]
 

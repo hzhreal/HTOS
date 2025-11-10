@@ -11,7 +11,7 @@ from utils.embeds import (
     keyset_emb, embpingsuccess, embpingfail
 )
 from utils.helpers import threadButton, error_handling
-from utils.workspace import fetchall_threadid_db, delall_threadid_db, makeWorkspace
+from utils.workspace import fetchall_threadid_db, delall_threadid_db, make_workspace
 from utils.orbis import keyset_to_fw
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError
@@ -25,8 +25,8 @@ class Misc(commands.Cog):
     @info_group.command(description="Display the maximum firmware/keyset the hoster's console can mount/unmount a save from.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def keyset(self, ctx: discord.ApplicationContext) -> None:
-        workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        workspace_folders = []
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:
@@ -50,10 +50,10 @@ class Misc(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await error_handling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
         except Exception as e:
-            await error_handling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(ctx, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         finally:
             await INSTANCE_LOCK_global.release(ctx.author.id)

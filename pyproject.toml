@@ -27,5 +27,5 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "pywebview>=6.1 ; sys_platform != 'linux'",
     "pywebview[qt]>=6.1 ; sys_platform == 'linux'",
-    "zstandard>=0.24.0",
+    "pyzstd>=0.18.0",
 ]

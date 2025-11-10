@@ -18,7 +18,7 @@ class Crypt_RCube:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+        files = await CC.obtain_files(folderPath)
         files = Crypt_RCube.namecheck(files)
 
         for filePath in files:

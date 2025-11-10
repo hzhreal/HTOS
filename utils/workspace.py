@@ -171,7 +171,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
             except FTPError as e:
                 logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
-async def cleanupSimple(clean_list: list[str] | None) -> None:
+async def cleanup_simple(clean_list: list[str] | None) -> None:
     """Used to cleanup after a command that does not utilize the ps4 (local only)."""
     if not clean_list:
         return
@@ -182,7 +182,7 @@ async def cleanupSimple(clean_list: list[str] | None) -> None:
         except OSError as e:
             logger.error(f"Error accessing {folderpath} when cleaning up (simple): {e}")
 
-def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
+def init_workspace() -> tuple[str, str, str, str, str, str, str]:
     """Obtains the local paths for an user, used when initializing a command that needs the local filesystem."""
     randomString = generate_random_string(RANDOMSTRING_LENGTH)
     newUPLOAD_ENCRYPTED = os.path.join(UPLOAD_ENCRYPTED, randomString)
@@ -195,7 +195,7 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
 
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
     
-async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
+async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
     """Used for checking if a command is being run in a valid thread."""
     await ctx.defer()
 

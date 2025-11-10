@@ -15,7 +15,7 @@ from utils.constants import (
 from utils.embeds import (
     emb21, emb20, embkstone1, embkstone2, embrrp, embrrps, embrrdone
 )
-from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
+from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, OrbisError, TaskCancelledError
@@ -34,14 +34,14 @@ class ReRegion(commands.Cog):
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
 
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        mountPaths = []
+        mount_paths = []
 
         msg = ctx
 
@@ -55,22 +55,22 @@ class ReRegion(commands.Cog):
             uploaded_file_paths = (await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=2, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False))[0]
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await error_handling(msg, err, workspaceFolders, None, None, None)
+            await error_handling(msg, err, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await error_handling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        batch = SaveBatch(C1ftp, C1socket, user_id, uploaded_file_paths, mountPaths, newDOWNLOAD_ENCRYPTED)
+        batch = SaveBatch(C1ftp, C1socket, user_id, uploaded_file_paths, mount_paths, newDOWNLOAD_ENCRYPTED)
         savefile = SaveFile("", batch, True)
         try:
             await batch.construct()
@@ -102,12 +102,12 @@ class ReRegion(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -117,17 +117,17 @@ class ReRegion(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await error_handling(msg, err, workspaceFolders, None, mountPaths, C1ftp)
+            await error_handling(msg, err, workspace_folders, None, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await error_handling(msg, e, workspaceFolders, None, mountPaths, C1ftp)
+            await error_handling(msg, e, workspace_folders, None, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (expected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -145,7 +145,7 @@ class ReRegion(commands.Cog):
             try:
                 await batch.construct()
             except OSError as e:
-                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, mount_paths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -178,12 +178,12 @@ class ReRegion(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await error_handling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -205,20 +205,20 @@ class ReRegion(commands.Cog):
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await error_handling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+                await error_handling(msg, e, workspace_folders, uploaded_file_paths, mount_paths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (expected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await error_handling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 
             await asyncio.sleep(1)
-            await cleanup(C1ftp, None, batch.entry, mountPaths)
+            await cleanup(C1ftp, None, batch.entry, mount_paths)
             i += 1
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:

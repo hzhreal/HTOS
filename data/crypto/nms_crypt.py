@@ -162,7 +162,7 @@ class Crypt_NMS:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        unfiltered_files = await CC.obtainFiles(folderPath)
+        unfiltered_files = await CC.obtain_files(folderPath)
         filtered_files = Crypt_NMS.pathChecks(unfiltered_files)
 
         for filePath in filtered_files:

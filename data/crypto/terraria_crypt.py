@@ -23,7 +23,7 @@ class Crypt_Terraria:
 
     @staticmethod
     async def decryptFile(folderPath: str) -> None:
-        unfiltered_files = await CC.obtainFiles(folderPath)
+        unfiltered_files = await CC.obtain_files(folderPath)
         filtered_files = Crypt_Terraria.filter_paths(unfiltered_files)
 
         for filePath in filtered_files:

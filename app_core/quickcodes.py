@@ -8,7 +8,7 @@ from app_core.models import Logger, Settings, TabBase
 from app_core.helpers import prepare_files_input_folder
 from data.cheats.quickcodes import QuickCodes as QC
 from data.cheats.quickcodes import QuickCodesError
-from utils.workspace import initWorkspace, cleanupSimple
+from utils.workspace import init_workspace, cleanup_simple
 from utils.extras import completed_print
 
 class QuickCodes(TabBase):
@@ -46,10 +46,10 @@ class QuickCodes(TabBase):
         self.logger.clear()
         self.logger.info("Applying codes...")
 
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        for folder in workspaceFolders:
+        for folder in workspace_folders:
             try:
                 await makedirs(folder, exist_ok=True)
             except OSError:
@@ -60,7 +60,7 @@ class QuickCodes(TabBase):
         try:
             files = await prepare_files_input_folder(self.settings, self.in_folder, newUPLOAD_DECRYPTED)
         except OSError:
-            await cleanupSimple(workspaceFolders)
+            await cleanup_simple(workspace_folders)
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
@@ -85,12 +85,12 @@ class QuickCodes(TabBase):
                 try:
                     await qc.apply_code()
                 except QuickCodesError as e:
-                    await cleanupSimple(workspaceFolders)
+                    await cleanup_simple(workspace_folders)
                     self.logger.error(f"`{str(e)}` Stopping...")
                     self.enable_buttons()
                     return
                 except Exception:
-                    await cleanupSimple(workspaceFolders)
+                    await cleanup_simple(workspace_folders)
                     self.logger.exception("Unexpected error. Stopping...")
                     self.enable_buttons()
                     return
@@ -105,7 +105,7 @@ class QuickCodes(TabBase):
             self.logger.info(f"Applied codes to **{finished_files}** (batch {i}/{batches}).")
             self.logger.info(f"Batch can be found at ```{out}```.")
             i += 1
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
         self.logger.info("Done!")
         self.enable_buttons()
 

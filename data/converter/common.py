@@ -1,6 +1,6 @@
-import aiofiles
+from data.crypto.common import CustomCrypto
 
-class Converter:
+class Converter(CustomCrypto):
     # When converting we have to move PSIN or RSAV header to the start bytes
     # GTA V: 
         # PS4 is 0x114
@@ -8,21 +8,29 @@ class Converter:
     # RDR 2:
         # PS4 is 0x120
         # PC is 0x110
-    @staticmethod
-    async def pushBytes(src_offset: int, dest_offset: int, filePath: str) -> None:
-        async with aiofiles.open(filePath, "rb") as file:
-            await file.seek(0)
-            data = await file.read()
-            data += b"\x00" * max(src_offset - dest_offset, 0)
+    async def push_bytes(self, src_off: int, dst_off: int) -> None:
+        assert not self.in_place
+        if self.size is None:
+            await self.get_size()
 
-            await file.seek(src_offset)
-            data_to_move = await file.read()
+        pad = b"\x00" * max(src_off - dst_off, 0)
+        await self.r_stream.seek(0, 2)
+        await self.r_stream.write(pad) # temp write
 
-            new_data = data[:src_offset]
-            
-        async with aiofiles.open(filePath, "wb") as file:
-            await file.seek(0)
-            await file.write(new_data)
-            
-            await file.seek(dest_offset)
-            await file.write(data_to_move)
+        await self.r_stream.seek(0)
+        for _ in range(int(src_off / self.CHUNKSIZE)):
+            chunk = await self.r_stream.read(self.CHUNKSIZE)
+            await self.w_stream.write(chunk)
+        last_chunk = await self.r_stream.read(src_off % self.CHUNKSIZE)
+        await self.w_stream.write(last_chunk)
+
+        await self.r_stream.seek(src_off)
+        await self.w_stream.seek(dst_off)
+        while True:
+            chunk = await self.r_stream.read(self.CHUNKSIZE)
+            if not chunk:
+                break
+            await self.w_stream.write(chunk)
+
+        await self.r_stream.truncate(self.size)
+

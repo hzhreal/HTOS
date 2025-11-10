@@ -25,7 +25,7 @@ from utils.embeds import (
     embenc_out, embencinst, embgdout, embgames, embgame, embwlcom
 )
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -119,9 +119,9 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
 async def error_handling(
           ctx: discord.ApplicationContext | discord.Message, 
           error: str, 
-          workspaceFolders: list[str] | None, 
+          workspace_folders: list[str] | None, 
           uploaded_file_paths: list[str] | None, 
-          mountPaths: list[str] | None, 
+          mount_paths: list[str] | None, 
           C1ftp: FTPps | None
         ) -> None:
     emb = embe.copy()
@@ -132,9 +132,9 @@ async def error_handling(
         logger.exception(f"Error while editing msg: {e}")
 
     if C1ftp is not None and error != CON_FAIL_MSG:
-        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
     else:
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
 
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
@@ -265,11 +265,15 @@ async def upload2(
         if filecount == 0:
             raise FileError("Invalid files uploaded, or no files found!")
 
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
+
         i = 1
         for attachment in valid_attachments:
             file_path = os.path.join(saveLocation, attachment.filename)
-            await task_handler(d_ctx, [lambda: download_attachment(attachment, file_path)], [])
-            
+            task = [lambda: download_attachment(attachment, file_path)]
+            await task_handler(d_ctx, task, [])
+         
             # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
                 await orbis.parse_pfs_header(file_path)
@@ -329,7 +333,8 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         else:
             save_path = saveLocation
             file_path = os.path.join(save_path, attachment.filename)
-            await task_handler(d_ctx, [lambda: download_attachment(attachment, file_path)], [])
+            task = [lambda: download_attachment(attachment, file_path)]
+            await task_handler(d_ctx, task, [])
 
             emb = embuplSuccess1.copy()
             emb.description = emb.description.format(filename=attachment.filename)
@@ -346,7 +351,8 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            files = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)]
+            files = await task_handler(d_ctx, task, [])
             file_path = files[0][0]
 
         except asyncio.TimeoutError:
@@ -370,6 +376,9 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
 
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
+
         i = 1
         for attachment in valid_attachments:
             rel_file_path = attachment.filename.split(splitvalue)
@@ -387,7 +396,8 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             full_path = os.path.join(dir_path, file_name)
-            await task_handler(d_ctx, [lambda: download_attachment(attachment, full_path)], [])
+            task = [lambda: download_attachment(attachment, full_path)]
+            await task_handler(d_ctx, task, [])
             
             emb = embuplSuccess.copy()
             emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  
@@ -415,7 +425,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-        
+
     return uploaded_file_paths
 
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
@@ -640,13 +650,15 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         try:
-            await task_handler(d_ctx, [lambda: d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)], [])
+            task = [lambda: d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)]
+            await task_handler(d_ctx, task, [])
         except asyncio.TimeoutError:
             raise TimeoutError("TIMED OUT!")
         except aiohttp.ClientError:
             raise FileError("Failed to upload file.")
     else:
-        file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)], [])
+        task = [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)]
+        file_url = await task_handler(d_ctx, task, [])
         emb = embgdout.copy()
         emb.description = emb.description.format(url=file_url[0], extra_msg=extra_msg)
         await d_ctx.ctx.send(embed=emb, reference=d_ctx.msg)

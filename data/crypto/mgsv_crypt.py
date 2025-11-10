@@ -43,7 +43,7 @@ class Crypt_MGSV:
 
     @staticmethod
     async def decryptFile(folderPath: str, title_id: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+        files = await CC.obtain_files(folderPath)
 
         for filePath in files:
 
@@ -88,7 +88,7 @@ class Crypt_MGSV:
 
     @staticmethod
     async def reregion_changeCrypt(folderPath: str, target_titleid: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+        files = await CC.obtain_files(folderPath)
 
         for filePath in files:
         
