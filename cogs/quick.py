@@ -7,7 +7,8 @@ from discord import Option
 from aiogoogle import HTTPError
 from network import FTPps, C1socket, FTPError, SocketError
 from google_drive import gdapi, GDapiError
-from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
+from data.cheats.quickcodes import QuickCodes
+from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger
@@ -17,7 +18,7 @@ from utils.embeds import (
     embresb, embresbs, embRdone, embLoading, embApplied,
     embqcCompleted, embchLoading
 )
-from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple, listStoredSaves
+from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple, list_stored_saves
 from utils.helpers import DiscordContext, psusername, upload2, error_handling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
@@ -50,7 +51,7 @@ class Quick(commands.Cog):
         mount_paths = []
 
         msg = ctx
-        
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
@@ -58,7 +59,7 @@ class Quick(commands.Cog):
             msg = await ctx.edit(embed=working_emb)
             msg = await ctx.fetch_message(msg.id) # fetch for paginator.edit()
             d_ctx = DiscordContext(ctx, msg)
-            stored_saves = await listStoredSaves()
+            stored_saves = await list_stored_saves()
             res, savepaths = await run_qr_paginator(d_ctx, stored_saves)
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
             await error_handling(msg, e, workspace_folders, None, None, None)
@@ -130,7 +131,7 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         emb = embRdone.copy()
         emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id)
         try:
@@ -166,7 +167,7 @@ class Quick(commands.Cog):
               codes: str,
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
-        
+
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
         workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -198,7 +199,7 @@ class Quick(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         batches = len(uploaded_file_paths)
 
         i = 1
@@ -212,7 +213,7 @@ class Quick(commands.Cog):
             j = 1
             for savegame in entry:
                 basename = os.path.basename(savegame)
-                
+
                 emb1 = embLoading.copy()
                 emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
                 emb2 = embApplied.copy()
@@ -268,7 +269,7 @@ class Quick(commands.Cog):
             i += 1
         await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
-    
+
     @quick_group.command(description="Add cheats to your save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
@@ -303,13 +304,13 @@ class Quick(commands.Cog):
 
             match game:
                 case "GTA V":
-                    platform = await Cheats.GTAV.initSavefile(savegame)
-                    stats = await Cheats.GTAV.fetchStats(savegame, platform)
+                    platform = await Cheats.GTAV.init_savefile(savegame)
+                    stats = await Cheats.GTAV.fetch_stats(savegame, platform)
                     embLoaded = Cheats.GTAV.loaded_embed(stats)
                     await msg.edit(embed=embLoaded, view=Cheats.GTAV.CheatsButton(ctx, helper, savegame, platform))
                 case "RDR 2":
-                    platform = await Cheats.RDR2.initSavefile(savegame)
-                    stats = await Cheats.RDR2.fetchStats(savegame, platform)
+                    platform = await Cheats.RDR2.init_savefile(savegame)
+                    stats = await Cheats.RDR2.fetch_stats(savegame, platform)
                     embLoaded = Cheats.RDR2.loaded_embed(stats)
                     await msg.edit(embed=embLoaded, view=Cheats.RDR2.CheatsButton(ctx, helper, savegame, platform))
             await helper.await_done()
@@ -328,6 +329,6 @@ class Quick(commands.Cog):
 
         await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
-    
+
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Quick(bot))

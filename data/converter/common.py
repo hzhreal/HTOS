@@ -10,8 +10,6 @@ class Converter(CustomCrypto):
         # PC is 0x110
     async def push_bytes(self, src_off: int, dst_off: int) -> None:
         assert not self.in_place
-        if self.size is None:
-            await self.get_size()
 
         pad = b"\x00" * max(src_off - dst_off, 0)
         await self.r_stream.seek(0, 2)

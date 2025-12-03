@@ -220,7 +220,7 @@ class FTPps:
                 await self.downloadStream(ftp, savename_bin, fulldl_process1)
             
             if reregion: 
-                await orbis.reregionCheck(title_id, savefilespath, fulldl_process, fulldl_process1)
+                await orbis.reregion_check(title_id, savefilespath, fulldl_process, fulldl_process1)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")

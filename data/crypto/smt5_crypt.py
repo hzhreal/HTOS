@@ -1,57 +1,43 @@
 import aiofiles
-import hashlib
 from data.crypto.common import CustomCrypto as CC
 
 class Crypt_SMT5:
     SECRET_KEY = bytes([
-		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
-		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
-	])
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+    ])
 
     MAGIC = b"GVAS"
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtain_files(folderPath)
+    async def decrypt_file(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
 
-        for filePath in files:
-            
-            async with aiofiles.open(filePath, "rb") as savegame:
-                encrypted_data = await savegame.read()
-
-            p_encrypted_data, p_len = CC.pad_to_blocksize(encrypted_data, CC.AES_BLOCKSIZE)
-
-            decrypted_data = CC.decrypt_aes_ecb(p_encrypted_data, Crypt_SMT5.SECRET_KEY)
-            if p_len > 0:
-                decrypted_data = decrypted_data[:-p_len]
-
-            async with aiofiles.open(filePath, "wb") as savegame:
-                await savegame.write(decrypted_data)
-    
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            decrypted_data = bytearray(await savegame.read())
-
-        # patch sha1 checksum
-        msg = hashlib.sha1(decrypted_data[0x40:0x40 + (len(decrypted_data) - 0x40) * 8])
-        chks = msg.digest()
-        decrypted_data[:len(chks)] = chks
-
-        p_decrypted_data, p_len = CC.pad_to_blocksize(decrypted_data, CC.AES_BLOCKSIZE)
-
-        encrypted_data = CC.encrypt_aes_ecb(p_decrypted_data, Crypt_SMT5.SECRET_KEY)
-        if p_len > 0:
-            encrypted_data = encrypted_data[:-p_len]
-
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(encrypted_data)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
+                while await cc.read():
+                    cc.decrypt()
+                    await cc.write()
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles.open(fileName, "rb") as savegame:
+    async def encrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
+            sha1 = cc.create_ctx_sha1()
+
+            await cc.checksum(sha1, 0x40)
+            await cc.write_checksum(sha1, 0)
+
+            while await cc.read():
+                cc.encrypt()
+                await cc.write()
+
+    @staticmethod
+    async def check_enc_ps(filepath: str) -> None:
+        async with aiofiles.open(filepath, "rb") as savegame:
             await savegame.seek(0x40)
             magic = await savegame.read(len(Crypt_SMT5.MAGIC))
-        
+
         if magic == Crypt_SMT5.MAGIC:
-            await Crypt_SMT5.encryptFile(fileName)
+            await Crypt_SMT5.encrypt_file(filepath)

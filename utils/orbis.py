@@ -16,7 +16,7 @@ from utils.constants import (
 from utils.embeds import embfn, embFileLarge, embnvSys, embpn, embnvBin
 from utils.extras import generate_random_string, obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
-from utils.workspace import enumerateFiles
+from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
 from utils.conversions import bytes_to_mb
 from data.crypto.mgsv_crypt import Crypt_MGSV
@@ -81,7 +81,7 @@ class SaveBatch:
         self.savenames = await obtain_savenames(self.entry)
         self.savecount = len(self.savenames)
 
-        self.entry = enumerateFiles(self.entry, self.rand_str)
+        self.entry = enumerate_files(self.entry, self.rand_str)
 
         self.printed = completed_print(self.savenames)
 
@@ -131,7 +131,7 @@ class SaveFile:
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
         await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
         await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
-    
+
     async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
         for element in elements:
             match element:
@@ -168,7 +168,7 @@ class SFOHeader:
     key_table_offset: int
     data_table_offset: int
     num_entries: int
-    
+
 @dataclass
 class SFOIndexTable:
     key_offset: int
@@ -189,7 +189,7 @@ class SFOContextParam:
     def as_dict(self) -> dict[str, str | int | bytearray]:
         info = vars(self)
         value = 0
-        
+
         match self.key:
             case "ACCOUNT_ID":
                 try: 
@@ -228,7 +228,7 @@ class SFOContext:
 
         if header.magic != SFO_MAGIC:
             raise OrbisError("Invalid param.sfo header magic!")
-        
+
         try:
             for i in range(header.num_entries):
                 index_offset = 20 + i * 16
@@ -287,7 +287,7 @@ class SFOContext:
             index_table = SFOIndexTable(*struct.unpack("<HHIII", sfo[20 + i * 16: 20 + i * 16 + 16]))
             key_offset = index_table.key_offset
             data_offset = index_table.data_offset
-            
+
             try:
                 struct.pack_into(f"{len(param.key)+1}s", sfo, header.key_table_offset + key_offset, param.key.encode("utf-8"))
                 struct.pack_into(f"{param.actual_length}s", sfo, header.data_table_offset + data_offset, param.value)
@@ -295,16 +295,16 @@ class SFOContext:
                 raise OrbisError("Failed to generate a param.sfo!")
 
         return sfo
-             
+
     def sfo_patch_parameter(self, parameter: str, new_data: str | int) -> None:
         param: SFOContextParam = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Invalid parameter: {parameter}!")
-        
+
         param_type: uint32 | uint64 | utf_8 | utf_8_s = SFO_TYPES.get(parameter)
         if not param_type:
             raise OrbisError(f"Unsupported parameter: {parameter}!")
-        
+
         match param_type:
             case uint32():
                 ctx = uint32(new_data, "little")
@@ -333,7 +333,7 @@ class SFOContext:
             return param.value
         else:
             raise OrbisError(f"Invalid parameter: {parameter}!")
-        
+
     def sfo_get_param_data(self) -> list[dict[str, str | int | bytearray]]:
         param_data = []
         for param in self.params:
@@ -343,7 +343,7 @@ class SFOContext:
             except (struct.error, UnicodeDecodeError):
                 raise OrbisError("Failed to get param data!")
         return param_data
-    
+
 class PfsSKKey:
     def __init__(self, data: bytearray) -> None:
         assert len(data) == self.SIZE
@@ -364,10 +364,10 @@ class PfsSKKey:
         if self.MAGIC != self.MAGIC_VALUE:
             return False
         return True
-    
+
     def as_array(self) -> list[int]:
         return list(self.data)
-    
+
 def keyset_to_fw(keyset: int) -> str:
     match keyset:
         case 1:
@@ -398,14 +398,14 @@ def checkid(accid: str) -> bool:
         return False
     else:
         return True
-    
+
 def handle_accid(user_id: str) -> str:
     user_id = hex(int(user_id)) # convert decimal to hex
     user_id = user_id[2:] # remove 0x
     user_id = user_id.zfill(16) # pad to 16 length with zeros
 
     return user_id
-    
+
 async def checkSaves(
           ctx: discord.ApplicationContext | discord.Message, 
           attachments: list[discord.message.Attachment], 
@@ -434,7 +434,7 @@ async def checkSaves(
             emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
             await ctx.edit(embed=emb)
             await asyncio.sleep(1)
-    
+
         elif sys_files and (attachment.filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
             emb = embnvSys.copy()
             emb.description = emb.description.format(filename=attachment.filename)
@@ -443,11 +443,11 @@ async def checkSaves(
 
         elif savesize is not None and total_count > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-        
+
         else: 
             total_count += attachment.size
             valid_files.append(attachment)
-    
+
     return valid_files
 
 async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
@@ -486,7 +486,7 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
                 await asyncio.sleep(1)
             else:
                 valid_attachments_check1.append(attachment)
-    
+
     valid_attachments_final = []
     for attachment in valid_attachments_check1:
         if attachment.filename.endswith(".bin"): # look for corresponding file
@@ -498,7 +498,7 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
                     valid_attachments_final.append(attachment)
                     valid_attachments_final.append(attachment_nested)
                     break
-    
+
     return valid_attachments_final
 
 async def sfo_ctx_create(sfo_path: str) -> SFOContext:
@@ -529,10 +529,10 @@ def obtainCUSA(ctx: SFOContext) -> str:
         title_id = data_title_id.decode("utf-8")
     except UnicodeDecodeError: 
         raise OrbisError("Invalid title ID in param.sfo!")
-    
+
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
-        
+
     return title_id
 
 def check_titleid(titleid: str) -> bool:
@@ -542,24 +542,24 @@ def resign(ctx: SFOContext, account_id: str) -> None:
     """Traditional resigning."""
     ctx.sfo_patch_parameter("ACCOUNT_ID", account_id)
 
-async def reregion_write(ctx: SFOContext, title_id: str, decFilesPath: str) -> None:
+async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
     ctx.sfo_patch_parameter("TITLE_ID", title_id)
 
     if title_id in XENO2_TITLEID:
         newname = title_id + "01"
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
-    
+
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
         try: 
-            await Crypt_MGSV.reregion_changeCrypt(decFilesPath, title_id)
+            await Crypt_MGSV.reregion_change_crypt(dec_files_folder, title_id)
         except (ValueError, IOError, IndexError):
             raise OrbisError("Error changing MGSV crypt!")
-        
+
         newname = Crypt_MGSV.KEYS[title_id]["name"]
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
-async def reregionCheck(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
+async def reregion_check(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
     """Renames the save after Re-regioning for the games that need it, random string is appended at the end for no overwriting."""
     if title_id in XENO2_TITLEID:
         newnameFile = os.path.join(savePath, title_id + "01")
@@ -611,7 +611,7 @@ async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> No
 async def parse_sealedkey(keypath: str, key: PfsSKKey | None = None) -> None | PfsSKKey:
     async with aiofiles.open(keypath, "rb") as sealed_key:
         data = bytearray(await sealed_key.read())
-    
+
     if key is None:
         key = PfsSKKey(data)
         retkey = True

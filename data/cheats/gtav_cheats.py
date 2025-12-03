@@ -131,8 +131,10 @@ class Cheats_GTAV:
 
         if encrypted:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET  
-            try: await crypt.decrypt_file(os.path.dirname(filepath), start_offset)
-            except (ValueError, IOError, IndexError): raise QuickCheatsError("File not supported!")
+            try:
+                await crypt.decrypt_file(os.path.dirname(filepath), start_offset)
+            except (ValueError, IOError, IndexError):
+                raise QuickCheatsError("File not supported!")
         return platform 
 
     @staticmethod

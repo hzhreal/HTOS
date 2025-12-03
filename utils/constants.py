@@ -104,6 +104,7 @@ if os.path.basename(argv[0]) == "bot.py":
         psnawp = PSNAWP(NPSSO_global)
         print("psnawp initialized")
     else:
+        psnawp = None
         print("It is recommended that you register a NPSSO token.")
         time.sleep(3)
 else:

@@ -1,189 +1,112 @@
 import aiofiles 
-import struct
-import hashlib
-import hmac
-import zlib
-import crc32c
 import os
+
 from data.crypto.common import CustomCrypto as CC
-from typing import Literal
+from utils.type_helpers import uint32
 
 # notes: start 0x08 (0xC for the nathan drake collection & 0x10 for tlou part 2), last 4 bytes is size (4 bytes from 0x08 for tlou part 2), 
 # endian swap every 4 bytes before and after crypt for the nathan drake collection
 
 class Crypt_Ndog:
     SECRET_KEY = b"(SH[@2>r62%5+QKpy|g6"
-    SHA1_HMAC_KEY = b"xM;6X%/p^L/:}-5QoA+K8:F*M!~sb(WK<E%6sW_un0a[7Gm6,()kHoXY+yI/s;Ba"
+    HMAC_SHA1_KEY = b"xM;6X%/p^L/:}-5QoA+K8:F*M!~sb(WK<E%6sW_un0a[7Gm6,()kHoXY+yI/s;Ba"
 
     HEADER_TLOU = b"The Last of Us"
     HEADER_UNCHARTED = b"Uncharted"
 
-    START_OFFSET = 0x08 # tlou, uncharted 4 & the lost legacy
-    START_OFFSET_TLOU2 = 0x10 # tlou part 2
-    START_OFFSET_COL = 0xC # the nathan drake collection
+    START_OFF = 0x08 # tlou, uncharted 4 & the lost legacy
+    START_OFF_TLOU2 = 0x10 # tlou part 2
+    START_OFF_COL = 0xC # the nathan drake collection
 
     EXCLUDE = ["ICN-ID"]
 
-    @staticmethod
-    def calc_size(data: bytearray | bytes, start_offset: Literal[0x08, 0x10, 0xC]) -> tuple[int, bytes]:
-        if start_offset == Crypt_Ndog.START_OFFSET_TLOU2: # 0x10
-            size_bytes = data[0x08:0x08 + 4]
-            size = struct.unpack("<I", size_bytes)[0]
-        else: # 0x08, 0xC
-            size_bytes = data[-4:]
-            size = struct.unpack("<I", size_bytes)[0]
-        return size, size_bytes
-    
-    @staticmethod
-    def input_size(data: bytearray, start_offset: Literal[0x08, 0x10, 0xC], size: bytes) -> bytearray:
-        if start_offset == Crypt_Ndog.START_OFFSET or start_offset == Crypt_Ndog.START_OFFSET_COL:
-            data[-4:] = size
-        return data
+    class Ndog(CC):
+        def __init__(self, filepath: str, start_off: int) -> None:
+            super().__init__(filepath)
+            self.start_off = start_off
+            self.dsize = None
+
+        async def get_dsize(self) -> None:
+            if self.start_off == Crypt_Ndog.START_OFF_TLOU2:
+                await self.r_stream.seek(0x08)
+                self.dsize = uint32(await self.r_stream.read(4), "little").value
+            else:
+                await self.r_stream.seek(self.size - 4)
+                self.dsize = uint32(await self.r_stream.read(4), "little").value
+
+        async def chks_fix(self) -> None:
+            # crc32
+            crc32 = self.create_ctx_crc32()
+            if self.start_off == Crypt_Ndog.START_OFF:
+                crc_bl_off = 0x58C
+                crc_off = 0x588
+                hash_sub = 0xC
+            elif self.start_off == Crypt_Ndog.START_OFF_TLOU2:
+                crc_bl_off = 0x594
+                crc_off = 0x590
+                hash_sub = 0x4
+            else:
+                crc_bl_off = 0x590
+                crc_off = 0x58C
+                hash_sub = 0x8
+            await self.r_stream.seek(crc_bl_off)
+            crc_bl = uint32(await self.r_stream.read(4), "little").value
+            await self.checksum(crc32, crc_bl_off, crc_bl_off + (crc_bl - 4))
+            await self.write_checksum(crc32, crc_off)
+
+            # hmac sha1
+            hmac_sha1 = self.create_ctx_hmac(Crypt_Ndog.HMAC_SHA1_KEY, self.hashlib.sha1)
+            await self.checksum(hmac_sha1, self.start_off, self.dsize - 20)
+            await self.write_checksum(sha1, self.dsize - hash_sub)
 
     @staticmethod
-    def fill_zero(data: bytearray, size: int, start_offset: Literal[0x08, 0x10, 0xC]) -> bytearray:
-        # make bytes after hmac sha1 checksum zero
-        if start_offset == Crypt_Ndog.START_OFFSET: # 0x08
-            for i in range((size - 0xC) + 20, len(data)):
-                data[i] = 0
-        elif start_offset == Crypt_Ndog.START_OFFSET_TLOU2: #0x10
-            for i in range((size - 0x04) + 20, len(data)):
-                data[i] = 0
-        else: # 0xC
-            for i in range((size - 0x08) + 20, len(data)):
-                data[i] = 0
-        return data
+    async def decrypt_file(foldepath: str, start_off: int) -> None:
+        files = await CC.obtain_files(foldepath, Crypt_Ndog.EXCLUDE)
+
+        for filepath in files:
+            async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
+                blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.block_size)
+                await cc.get_dsize()
+                cc.set_ptr(cc.start_off)
+
+                while await cc.read(stop_off=cc.dsize):
+                    if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                        cc.ES32()
+                    await cc.decrypt(blowfish)
+                    if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                        cc.ES32()
 
     @staticmethod
-    def chks_fix(data: bytearray, size: int, start_offset: Literal[0x08, 0x10, 0xC]) -> bytearray:
-        # crc32 checksum
-        if start_offset == Crypt_Ndog.START_OFFSET: # 0x08
-            crc_bl = struct.unpack("<I", data[0x58C:0x58C + 4])[0]
-            crc_data = data[0x58C:0x58C + (crc_bl - 4)]
-            crc = zlib.crc32(crc_data)
-
-            crc_offset = 0x588
-            hash_sub = 0xC
-        elif start_offset == Crypt_Ndog.START_OFFSET_TLOU2: # 0x10
-            crc_bl = struct.unpack("<I", data[0x594:0x594 + 4])[0]
-            crc_data = data[0x594:0x594 + (crc_bl - 4)]
-            crc = crc32c.crc32c(crc_data)
-
-            crc_offset = 0x590
-            hash_sub = 0x04
-        else: # 0xC
-            crc_bl = struct.unpack("<I", data[0x590:0x590 + 4])[0]
-            crc_data = data[0x590:0x590 + (crc_bl - 4)]
-            crc = zlib.crc32(crc_data)
-
-            crc_offset = 0x58C
-            hash_sub = 0x08
-
-        crc_final = struct.pack("<I", crc)
-        data[crc_offset:crc_offset + len(crc_final)] = crc_final
-
-        # sha1 hmac checksum
-        chks_msg = data[start_offset:start_offset + (size - 0x14)]
-        hmac_sha1_hash = hmac.new(Crypt_Ndog.SHA1_HMAC_KEY, chks_msg, hashlib.sha1).digest()
-        data[size - hash_sub:(size - hash_sub) + len(hmac_sha1_hash)] = hmac_sha1_hash
-        
-        return data
-
-    @staticmethod
-    async def decryptFile(folderPath: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        files = await CC.obtain_files(folderPath, Crypt_Ndog.EXCLUDE)
-
-        for filePath in files:
-
-            async with aiofiles.open(filePath, "rb") as savegame:
-                encrypted_data = bytearray(await savegame.read())
-            
-            first_bytes = encrypted_data[:start_offset]
-
-            size, size_bytes = Crypt_Ndog.calc_size(encrypted_data, start_offset)
-            # remove first static bytes
-            encrypted_data = encrypted_data[start_offset:]
-
-            if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-                encrypted_data = CC.ES32(encrypted_data)
-
-            # Pad the data to be a multiple of the block size
-            p_encrypted_data, p_len = CC.pad_to_blocksize(encrypted_data, CC.BLOWFISH_BLOCKSIZE)
-
-            decrypted_data = CC.decrypt_blowfish_ecb(p_encrypted_data, Crypt_Ndog.SECRET_KEY)
-            if p_len > 0:
-                decrypted_data = decrypted_data[:-p_len] # remove padding that we added to avoid exception
-
-            if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-                decrypted_data = CC.ES32(decrypted_data)
-
-            # temp data to nullify bytes after hmac sha1 hash  
-            tmp_decrypted_data = bytearray(first_bytes + decrypted_data)
-            tmp_decrypted_data = Crypt_Ndog.fill_zero(tmp_decrypted_data, size, start_offset)
-
-            # remove first static bytes
-            decrypted_data = tmp_decrypted_data[start_offset:]
-
-            decrypted_data = Crypt_Ndog.input_size(decrypted_data, start_offset, size_bytes) # keep the size
-            
-            async with aiofiles.open(filePath, "r+b") as savegame:
-                await savegame.seek(start_offset)
-                await savegame.write(decrypted_data)
-    
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        if os.path.basename(fileToEncrypt) in Crypt_Ndog.EXCLUDE:
+    async def encrypt_file(filepath: str, start_off: int) -> None:
+        if os.path.basename(filepath) in Crypt_Ndog.EXCLUDE:
             return
 
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            decrypted_data = bytearray(await savegame.read())
+        async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
+            blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.block_size)
+            await cc.get_dsize()
+            cc.set_ptr(cc.start_off)
 
-        first_bytes = decrypted_data[:start_offset]
-
-        size, size_bytes = Crypt_Ndog.calc_size(decrypted_data, start_offset)
-        decrypted_data = Crypt_Ndog.chks_fix(decrypted_data, size, start_offset)
-
-        # remove first static bytes
-        decrypted_data = decrypted_data[start_offset:]
-        if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-            decrypted_data = CC.ES32(decrypted_data)
-
-        # Pad the data to be a multiple of the block size
-        p_decrypted_data, p_len = CC.pad_to_blocksize(decrypted_data, CC.AES_BLOCKSIZE)
-        
-        encrypted_data = CC.encrypt_blowfish_ecb(p_decrypted_data, Crypt_Ndog.SECRET_KEY)
-        if p_len > 0:
-            encrypted_data = encrypted_data[:-p_len] # remove padding that we added to avoid exception
-        
-        if start_offset == Crypt_Ndog.START_OFFSET_COL: # 0xC
-            encrypted_data = CC.ES32(encrypted_data)
-
-        # temp data to nullify bytes after hmac sha1 hash
-        tmp_encrypted_data = bytearray(first_bytes + encrypted_data)
-        tmp_encrypted_data = Crypt_Ndog.fill_zero(tmp_encrypted_data, size, start_offset)
-
-        # remove first static bytes
-        encrypted_data = tmp_encrypted_data[start_offset:]
-
-        encrypted_data = Crypt_Ndog.input_size(encrypted_data, start_offset, size_bytes) # keep the size
-
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(first_bytes + encrypted_data)               
+            await cc.chks_fix()
+            while await cc.read(stop_off=cc.dsize):
+                if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                    cc.ES32() 
+                cc.encrypt(blowfish)
+                if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                    cc.ES32()
 
     @staticmethod
-    async def checkEnc_ps(fileName: str, start_offset: Literal[0x08, 0x10, 0xC]) -> None:
-        if os.path.basename(fileName) in Crypt_Ndog.EXCLUDE:
+    async def check_enc_ps(filepath: str, start_off: int) -> None:
+        if os.path.basename(filepath) in Crypt_Ndog.EXCLUDE:
             return
 
-        async with aiofiles.open(fileName, "rb") as savegame:
-            await savegame.seek(start_offset)
+        async with aiofiles.open(filepath, "rb") as savegame:
+            await savegame.seek(start_off)
             header = await savegame.read(len(Crypt_Ndog.HEADER_TLOU))
 
-            await savegame.seek(start_offset)
+            await savegame.seek(start_off)
             header1 = await savegame.read(len(Crypt_Ndog.HEADER_UNCHARTED))
-        
-        if header == Crypt_Ndog.HEADER_TLOU or header == Crypt_Ndog.HEADER_UNCHARTED:
-            await Crypt_Ndog.encryptFile(fileName, start_offset)
 
+        if header == Crypt_Ndog.HEADER_TLOU or header == Crypt_Ndog.HEADER_UNCHARTED:
+            await Crypt_Ndog.encrypt_file(filepath, start_off)
         elif header1 == Crypt_Ndog.HEADER_TLOU or header1 == Crypt_Ndog.HEADER_UNCHARTED:
-            await Crypt_Ndog.encryptFile(fileName, start_offset)
+            await Crypt_Ndog.encrypt_file(filepath, start_off)

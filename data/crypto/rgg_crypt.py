@@ -1,52 +1,44 @@
-import zlib
-import aiofiles
-import struct
 from data.crypto.common import CustomCrypto as CC
 
 class Crypt_RGG:
     KEY = b"fuEw5rWN8MBS"
 
-    @staticmethod
-    def xor_data(data: bytearray, size: int) -> bytearray:
-        keyLen = len(Crypt_RGG.KEY)
-        for i in range(size):
-            data[i] ^= Crypt_RGG.KEY[i % keyLen]
-        return data
-    
-    @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtain_files(folderPath)
+    class RGG(CC):
+        def __init__(self, filepath: str) -> None:
+            super().__init__(filepath)
+            self.i = 0
 
-        for filePath in files:
-
-            async with aiofiles.open(filePath, "rb") as savegame:
-                encrypted_data = bytearray(await savegame.read())
-            size = len(encrypted_data)
-            
-            decrypted_data = Crypt_RGG.xor_data(encrypted_data, size - 0x10)
-
-            async with aiofiles.open(filePath, "wb") as savegame:
-                await savegame.write(decrypted_data)
-    
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            decrypted_data = bytearray(await savegame.read())
-        size = len(decrypted_data)
-        
-        chks_data = decrypted_data[:-0x10]
-        chks = zlib.crc32(chks_data)
-        chks_final = struct.pack("<I", chks)
-
-        decrypted_data[size - 8:(size - 8) + len(chks_final)] = chks_final
-        encrypted_data = Crypt_RGG.xor_data(decrypted_data, size - 0x10)
-        
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(encrypted_data)
+        def xor(self) -> None:
+            self._prepare_write()
+            for j in range(len(chunk)):
+                self.chunk[j] ^= Crypt_RGG.KEY[self.i % len(Crypt_RGG.KEY)]
+                self.i += 1
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles.open(fileName, "rb") as savegame:
-            data = await savegame.read()
-        if CC.fraction_byte(data):
-            await Crypt_RGG.encryptFile(fileName)
+    async def decrypt_file(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+
+        for filepath in files:
+            async with Crypt_RGG.RGG(filepath) as cc:
+                while await cc.read(stop_off=cc.size - 0x10):
+                    cc.xor()
+                    await cc.write()
+
+    @staticmethod
+    async def encrypt_file(filepath: str) -> None:
+        async with Crypt_RGG.RGG(filepath) as cc:
+            crc32 = cc.create_ctx_crc32()
+            await cc.checksum(crc32, end_off=cc.size - 0x10)
+            await cc.write_checksum(crc32, cc.size - 8)
+
+            while await cc.read(stop_off=cc.size - 0x10):
+                cc.xor()
+                await cc.write()
+
+    @staticmethod
+    async def check_enc_ps(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            is_dec = await cc.fraction_byte()
+        if is_dec:
+            await Crypt_RGG.encrypt_file(filepath)
+

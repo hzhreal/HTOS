@@ -1,6 +1,5 @@
-import aiofiles
-import hashlib
 from data.crypto.common import CustomCrypto as CC
+from data.crypto.exceptions import CryptoError
 
 class Crypt_DSR:
     KEY = bytes([
@@ -9,51 +8,39 @@ class Crypt_DSR:
         0xE7, 0x0C, 0x1E, 0xE4,
         0xB2, 0x04, 0xB8, 0xCB
     ])
-    IV = b"\x00" * CC.AES_BLOCKSIZE
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtain_files(folderPath)
+    async def decrypt_file(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
 
-        for filePath in files:
-
-            async with aiofiles.open(filePath, "rb") as savegame:
-                await savegame.seek(0, 2)
-                size = await savegame.tell()
-                await savegame.seek(0)
-                iv = await savegame.read(16)
-                ciphertext = await savegame.read(size - 32) # strip checksum
-            
-            p_ciphertext, p_len = CC.pad_to_blocksize(ciphertext, CC.AES_BLOCKSIZE)
-            # Pad the data to be a multiple of the block size
-            plaintext = CC.decrypt_aes_cbc(p_ciphertext, Crypt_DSR.KEY, iv)
-            if p_len > 0:
-                plaintext = plaintext[:-p_len] # remove padding that we added to avoid exception
-
-            async with aiofiles.open(filePath, "wb") as savegame:
-                await savegame.write(plaintext)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                iv = await cc.r_stream.read(16)
+                aes = cc.create_ctx_aes(Crypt_DSR.KEY, cc.AES.MODE_CBC, iv=iv)
+                stop_off = cc.size - 32
+                if stop_off < 0:
+                    raise CryptoError("Invalid save!")
+                while await cc.read(stop_off=stop_off):
+                    await cc.decrypt(aes)
 
     @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            plaintext = await savegame.read()
-        
-        p_plaintext, p_len = CC.pad_to_blocksize(plaintext, CC.AES_BLOCKSIZE)
-        # remove padding that we added to avoid exception
-        ciphertext = CC.encrypt_aes_cbc(p_plaintext, Crypt_DSR.KEY, Crypt_DSR.IV)
-        if p_len > 0:
-            ciphertext = ciphertext[:-p_len] # remove padding that we added to avoid exception
-
-        out = Crypt_DSR.IV + ciphertext
-        chks = hashlib.md5(out).digest()
-
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(out)
-            await savegame.write(chks)
+    async def encrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            iv = cc.gen_bytes(16)
+            await cc.w_stream.write(iv)
+            aes = cc.create_ctx_aes(Crypt_DSR.KEY, cc.AES.MODE_CBC, iv=iv)
+            md5 = cc.create_ctx_md5()
+            stop_off = cc.size - 32
+            if stop_off < 0:
+                raise CryptoError("Invalid save!")
+            while await cc.read(stop_off=stop_off):
+                await cc.encrypt(aes)
+            await cc.checksum(md5, stop_off)
+            await cc.write_checksum(md5, stop_off)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles.open(fileName, "rb") as savegame:
-            data = await savegame.read()
-        if CC.fraction_byte(data):
-            await Crypt_DSR.encryptFile(fileName)
+    async def check_enc_ps(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            decrypted = await cc.fraction_byte(data)
+        if decrypted:
+            await Crypt_DSR.encrypt_file(filepath)

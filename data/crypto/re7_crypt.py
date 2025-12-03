@@ -1,28 +1,16 @@
-import aiofiles
-import mmh3
-from os.path import basename
-from data.crypto.common import CryptoError
+from data.crypto.common import CustomCrypto as CC
 from utils.type_helpers import uint32
 
 class Crypt_RE7:
-    SEED = 0xFF_FF_FF_FF
+    SEED = uint32(0xFF_FF_FF_FF, "little")
 
     @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            await savegame.seek(0, 2)
-            size = await savegame.tell()
-            size -= 4
-            if size <= 0:
-                raise CryptoError(f"File is to small ({basename(fileToEncrypt)})!")
-
-            await savegame.seek(0)
-            buf = await savegame.read(size)
-            csum = uint32(mmh3.hash(buf, Crypt_RE7.SEED, False), "little")
-
-            await savegame.seek(size)
-            await savegame.write(csum.as_bytes)
+    async def encrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            mmh3 = cc.create_ctx_mmh3_u32(Crypt_RE7.SEED)
+            await cc.checksum(mmh3, end_off=cc.size - 4)
+            await cc.write_checksum(mmh3, cc.size - 4)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        await Crypt_RE7.encryptFile(fileName)
+    async def check_enc_ps(filepath: str) -> None:
+        await Crypt_RE7.encrypt_file(filepath)

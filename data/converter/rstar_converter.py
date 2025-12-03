@@ -118,7 +118,7 @@ class Converter_Rstar:
                     await cv.push_bytes(crypt.RDR2_PC_HEADER_OFFSET, crypt.RDR2_PS_HEADER_OFFSET)
                     await Converter_Rstar.handle_title(cv, clear_rdr2_pc_chks=True)
 
-            else: 
+            else:
                 raise ConverterError("File not supported!")
 
             if platform == "ps4": 

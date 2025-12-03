@@ -21,7 +21,7 @@ from utils.instance_lock import INSTANCE_LOCK_global
 class Resign(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-    
+
     @discord.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
@@ -39,7 +39,7 @@ class Resign(commands.Cog):
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         mount_paths = []
-        
+
         msg = ctx
 
         try:
@@ -81,7 +81,7 @@ class Resign(commands.Cog):
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
-            
+
             j = 1
             for savepath in batch.savenames:
                 savefile.path = savepath
@@ -116,7 +116,7 @@ class Resign(commands.Cog):
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
-            
+
             emb = embRbdone.copy()
             emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:

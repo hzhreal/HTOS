@@ -1,5 +1,3 @@
-import aiofiles
-import hashlib
 from data.crypto.common import CustomCrypto as CC
 
 # notes: start at 0x20
@@ -8,69 +6,44 @@ class Crypt_Rev2:
     SECRET_KEY = b"zW$2eWaHNdT~6j86T_&j"
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtain_files(folderPath)
+    async def decrypt_file(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
 
-        for filePath in files:
-
-            async with aiofiles.open(filePath, "rb") as savegame:
-                await savegame.seek(0x20)
-                encrypted_data = await savegame.read()
-
-            # endian swap before
-            encrypted_data = CC.ES32(encrypted_data)
-            
-            # Pad the data to be a multiple of the block size
-            p_encrypted_data, p_len = CC.pad_to_blocksize(encrypted_data, CC.BLOWFISH_BLOCKSIZE)
-
-            decrypted_data = CC.decrypt_blowfish_ecb(p_encrypted_data, Crypt_Rev2.SECRET_KEY)
-            if p_len > 0:
-                decrypted_data = decrypted_data[:-p_len] # remove padding that we added to avoid exception
-
-            # endian swap after
-            decrypted_data = CC.ES32(decrypted_data)
-
-            async with aiofiles.open(filePath, "r+b") as savegame:
-                await savegame.seek(0x20)
-                await savegame.write(decrypted_data)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                blowfish_ecb = cc.create_ctx_blowfish(Crypt_Rev2.SECRET_KEY, cc.Blowfish.MODE_ECB)
+                cc.set_ptr(0x20)
+                while await cc.read():
+                    cc.ES32()
+                    cc.decrypt(blowfish_ecb)
+                    cc.ES32()
+                    await cc.write()
 
     @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            await savegame.seek(0x20)
-            decrypted_data = bytearray(await savegame.read())
+    async def encrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            blowfish_ecb = cc.create_ctx_blowfish(Crypt_Rev2.SECRET_KEY, cc.Blowfish.MODE_ECB)
+            sha1 = cc.create_ctx_sha1()
+            cc.set_ptr(0x20)
 
-        length = len(decrypted_data)
-        chks_msg = decrypted_data[:length - 0x20]
-        sha1 = hashlib.sha1()
-        sha1.update(chks_msg)
-        chks = sha1.digest()
-        
-        # endian swap the checksum
-        chks = CC.ES32(chks)
-
-        decrypted_data[length - 0x20:(length - 0x20) + len(chks)] = chks
-
-        # endian swap before
-        decrypted_data = CC.ES32(decrypted_data)
-
-        # Pad the data to be a multiple of the block size
-        p_decrypted_data, p_len = CC.pad_to_blocksize(decrypted_data, CC.BLOWFISH_BLOCKSIZE)
-
-        encrypted_data = CC.encrypt_blowfish_ecb(p_decrypted_data, Crypt_Rev2.SECRET_KEY)
-        if p_len > 0:
-            encrypted_data = encrypted_data[:-p_len] # remove padding that we added to avoid exception
-
-        # endian swap after
-        encrypted_data = CC.ES32(encrypted_data)
-
-        async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            await savegame.seek(0x20)
-            await savegame.write(encrypted_data)
+            await cc.checksum(sha1, 0x20, cc.size - 0x40)
+            await cc.write_checksum(sha1, cc.size - 0x20)
+            # endian swap the checksum
+            await cc.r_stream.seek(cc.size - 0x20)
+            chks = bytearray(cc.r_stream.read(20))
+            cc.ES32(chks)
+            await cc.w_stream.seek(cc.size - 0x20)
+            await cc.w_stream.write(chks)
+            # now run encryption routine
+            while await cc.read():
+                cc.ES32()
+                cc.encrypt(blowfish_ecb)
+                cc.ES32()
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles.open(fileName, "rb") as savegame:
-            data = await savegame.read()
-        if CC.fraction_byte(data):
-            await Crypt_Rev2.encryptFile(fileName)
+    async def check_enc_ps(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            is_dec = await cc.fraction_byte()
+        if is_dec:
+            await Crypt_Rev2.encrypt_file(filepath)
+

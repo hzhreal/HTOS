@@ -26,7 +26,7 @@ class Cint:
         blen_expected = ceil(bits / 8)
         if struct.calcsize(self.fmt) != blen_expected:
             raise ValueError(f"Format string {self.fmt} does not match expected byte length {blen_expected}!")
-        
+
         if signed:
             self.max =  (1 << (bits - 1)) - 1
             self.min = -(1 << (bits - 1))
@@ -53,7 +53,7 @@ class Cint:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
-            
+
     CATEGORY = TypeCategory.INTEGER
 
     ENDIANNESS_TABLE = {
@@ -76,7 +76,7 @@ class Cint:
     @property
     def value(self) -> int:
         return self._value
-    
+
     @value.setter
     def value(self, value: int | str | bytes | bytearray) -> None:
         match value:
@@ -91,23 +91,23 @@ class Cint:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
-    
+
     def to_bytes(self) -> bytes:
         return struct.pack(self.fmt, self._value)
-    
+
     def from_bytes(self) -> int:
         return struct.unpack(self.fmt, self.as_bytes)[0]
-    
+
     def change_endianness(self, endianness: Literal["little", "big", "None"]) -> None:
         self.fmt[0] = self.FMT_TABLE[endianness]
-    
+
     def __cast_signed(self, n: int) -> int:
         # same as ((n + 2^(b - 1)) mod 2^b) - 2^(b - 1)
         return ((n - self.min) % (-self.min << 1)) + self.min
-    
+
     def __cast_unsigned(self, n: int) -> int:
         return n & self.max
-    
+
 class uint8(Cint):
     def __init__(self, value: int | str | bytes | bytearray = 0) -> None:
         super().__init__(8, False, "B", value)
@@ -115,7 +115,7 @@ class uint8(Cint):
 class uint16(Cint):
     def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
         super().__init__(16, False, "H", value, endianness)
-    
+
 class uint32(Cint):
     def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
         super().__init__(32, False, "I", value, endianness)
@@ -131,7 +131,7 @@ class int8(Cint):
 class int16(Cint):
     def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
         super().__init__(16, True, "h", value, endianness)
-    
+
 class int32(Cint):
     def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
         super().__init__(32, True, "i", value, endianness)
@@ -153,7 +153,7 @@ class utf_8:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
-    
+
     CATEGORY = TypeCategory.CHARACTER
 
     @property
@@ -173,10 +173,10 @@ class utf_8:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
-    
+
     def to_bytes(self) -> bytes:
         return self._value.encode("utf-8")
-    
+
     def from_bytes(self) -> str:
         return self.as_bytes.decode("utf-8")
 
@@ -185,9 +185,9 @@ class utf_8_s(utf_8):
         super().__init__(value)
 
     CATEGORY = TypeCategory.CHARACTER_SPECIAL
-    
+
     def to_bytes(self) -> bytes:
         return self._value.encode("utf-8", errors="ignore")
-    
+
     def from_bytes(self) -> str:
         return self.as_bytes.decode("utf-8", errors="ignore")
