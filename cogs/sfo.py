@@ -16,11 +16,11 @@ class SFOEditor(SFOContext):
     def __init__(self, sfo_data: bytearray) -> None:
         super().__init__()
         self.sfo_data = sfo_data
-    
+
     def read(self) -> None:
         self.sfo_read(self.sfo_data)
         self.param_data = self.sfo_get_param_data()
-    
+
     def write(self) -> None:
         self.sfo_data = self.sfo_write()
 
@@ -107,7 +107,7 @@ class SFO(commands.Cog):
               subtitle: Option(str, description="utf-8", default=""), # type: ignore
               title_id: Option(str, description="utf-8", default="") # type: ignore
             ) -> None:
-        
+
         parameters = {
             "ACCOUNT_ID": account_id,
             "ATTRIBUTE": attribute,

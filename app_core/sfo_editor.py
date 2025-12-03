@@ -96,7 +96,7 @@ class SFOEditor(SFOContext):
         if not await isfile(self.sfopath):
             ui.notify("Invalid path!")
             return
-        
+
         try:
             async with aiofiles.open(self.sfopath, "rb") as sfo:
                 self.sfo_data = bytearray(await sfo.read())
@@ -107,12 +107,12 @@ class SFOEditor(SFOContext):
         except Exception:
             ui.notify("Unexpected error!")
             return
-        
+
         self.p_data = self.param_data.copy()
         for param in self.p_data:
             self.map[param["key"]].value = param["converted_value"].rstrip("\x00")
         self.print_info()
-        
+
         self.enable_buttons()
 
     async def on_save(self) -> None:
@@ -152,7 +152,7 @@ class SFOEditor(SFOContext):
             return
 
         ui.notify("Saved!")
-    
+
     async def on_click(self) -> None:
         f = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.OPEN)
         if f:
@@ -164,20 +164,20 @@ class SFOEditor(SFOContext):
     def disable_buttons(self) -> None:
         self.info_btn.disable()
         self.save_btn.disable()
-    
+
     def enable_buttons(self) -> None:
         self.info_btn.enable()
         self.save_btn.enable()
-    
+
     def read(self) -> None:
         self.sfo_read(self.sfo_data)
         self.param_data = self.sfo_get_param_data()
-    
+
     async def write(self) -> None:
         self.sfo_data = self.sfo_write()
         async with aiofiles.open(self.sfopath, "wb") as sfo:
             await sfo.write(self.sfo_data)
-    
+
     def print_info(self) -> None:
         s = "```\n"
         for param in self.p_data:
@@ -186,7 +186,7 @@ class SFOEditor(SFOContext):
             s += "\n"
         s += "\n```"
         self.info.write(None, s)
-    
+
     @staticmethod
     def accid_0x_check(s: str) -> bool:
         if s.lower().startswith("0x"):

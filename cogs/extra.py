@@ -29,7 +29,7 @@ class Extra(commands.Cog):
             if ps_accountid == "" and user == "":
                 await ctx.respond("No values inputted!")
                 return
-            
+
             if ps_accountid != "":
                 if len(ps_accountid) == 18:
                     if ps_accountid[:2].lower() == "0x":
@@ -47,7 +47,7 @@ class Extra(commands.Cog):
                 await ctx.respond("Added!")
             except WorkspaceError as e:
                 await ctx.respond(e)
-    
+
     @blacklist_group.command(description="Remove entry from blacklist.")
     @commands.is_owner()
     async def remove(
@@ -61,7 +61,7 @@ class Extra(commands.Cog):
         if ps_accountid == "" and user == "":
             await ctx.respond("No values inputted!")
             return
-        
+
         if ps_accountid != "":
             if len(ps_accountid) == 18:
                 if ps_accountid[:2].lower() == "0x":
@@ -73,7 +73,7 @@ class Extra(commands.Cog):
             if not checkid(ps_accountid):
                 await ctx.respond("PS account ID in invalid format!")
                 return
-        
+
         try:
             await blacklist_del_db(user.id if user != "" else None, ps_accountid if ps_accountid != "" else None)
             await ctx.respond("Removed!")
@@ -116,19 +116,19 @@ class Extra(commands.Cog):
         except (WorkspaceError, discord.HTTPException): return
 
         msg = ctx
-        
+
         try:
             msg = await ctx.edit(content="Adding...")
             msg = await ctx.fetch_message(msg.id)
-            
+
             if len(account_id) == 18:
                 if account_id[:2].lower() != "0x":
                     raise ValueError()
                 account_id = account_id[2:]
-            
+
             if not checkid(account_id):
                 raise ValueError()
-            
+
             await write_accountid_db(ctx.author.id, account_id.lower())
             await msg.edit(content="Stored!")
         except ValueError:

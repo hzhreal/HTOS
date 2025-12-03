@@ -56,7 +56,7 @@ class QuickCodes(TabBase):
                 self.logger.exception("Failed to create workspace. Stopped.")
                 self.enable_buttons()
                 return
-            
+
         try:
             files = await prepare_files_input_folder(self.settings, self.in_folder, newUPLOAD_DECRYPTED)
         except OSError:
@@ -64,9 +64,9 @@ class QuickCodes(TabBase):
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
-        
+
         batches = len(files)
-        
+
         i = 1
         for entry in files:
             count_entry = len(entry)

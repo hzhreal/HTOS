@@ -47,7 +47,7 @@ class CreateSave(commands.Cog):
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
               ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
             ) -> None:
-        
+
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
         workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -128,7 +128,7 @@ class CreateSave(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         uploaded_file_paths = []
         sfo_path = os.path.join(scesys_local, PARAM_NAME)
         try:
@@ -176,7 +176,7 @@ class CreateSave(commands.Cog):
                 lambda: C1socket.socket_update(mount_location_new, temp_savename)
             ]
             await task_handler(d_ctx, tasks, [])
-            
+
             # make paths for save
             save_dirs = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4", "SAVEDATA", user_id, title_id)
             await aiofiles.os.makedirs(save_dirs)
@@ -205,7 +205,7 @@ class CreateSave(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         emb = embCRdone.copy()
         emb.description = emb.description.format(savename=savename, id=playstation_id or user_id)
         try:

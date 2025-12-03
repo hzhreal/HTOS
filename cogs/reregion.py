@@ -24,7 +24,7 @@ from utils.instance_lock import INSTANCE_LOCK_global
 class ReRegion(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-    
+
     @discord.slash_command(description="Change the region of a save (Must be from the same game).")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def reregion(
@@ -86,7 +86,7 @@ class ReRegion(commands.Cog):
             await task_handler(d_ctx, tasks, [emb])
 
             target_titleid = savefile.title_id
-            
+
             emb = embkstone2.copy()
             emb.description = emb.description.format(target_titleid=target_titleid)
             await msg.edit(embed=emb)
@@ -131,7 +131,7 @@ class ReRegion(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-   
+
         if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)):
             special_reregion = True
         else:
@@ -187,7 +187,7 @@ class ReRegion(commands.Cog):
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
-            
+
             emb = embrrdone.copy()
             emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, target_titleid=target_titleid, i=i, batches=batches)
             try:

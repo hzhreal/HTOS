@@ -28,7 +28,7 @@ class Change(commands.Cog):
         self.bot = bot
 
     change_group = discord.SlashCommandGroup("change")
-    
+
     @change_group.command(description="Changes the picture of your save, this is just cosmetic.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def picture(
@@ -38,7 +38,7 @@ class Change(commands.Cog):
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
-        
+
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
         workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
@@ -82,7 +82,7 @@ class Change(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-                
+
         batches = len(uploaded_file_paths)
         batch = SaveBatch(C1ftp, C1socket, user_id, [], mount_paths, newDOWNLOAD_ENCRYPTED)
         savefile = SaveFile("", batch)
@@ -97,7 +97,7 @@ class Change(commands.Cog):
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
-            
+
             j = 1
             for savepath in batch.savenames:
                 savefile.path = savepath
@@ -162,7 +162,7 @@ class Change(commands.Cog):
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
-            
+
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, batch.entry, mount_paths)
             i += 1
@@ -179,7 +179,7 @@ class Change(commands.Cog):
               playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
             ) -> None:
-        
+
         if maintitle == "" and subtitle == "":
             await ctx.respond(embed=embTitleErr)
             return
@@ -218,7 +218,7 @@ class Change(commands.Cog):
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-                
+
         batches = len(uploaded_file_paths)
         batch = SaveBatch(C1ftp, C1socket, user_id, [], mount_paths, newDOWNLOAD_ENCRYPTED)
         savefile = SaveFile("", batch)

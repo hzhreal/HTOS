@@ -105,13 +105,13 @@ class Misc(commands.Cog):
         except discord.HTTPException as e:
             logger.exception(f"Error while responding to msg: {e}")
             return
-    
+
     @discord.slash_command(description="Send the panel to create threads.")
     @commands.is_owner()
     async def init(self, ctx: discord.ApplicationContext) -> None:
         await ctx.respond("Sending panel...", ephemeral=True)
         await ctx.send(embed=embinit, view=threadButton())
-       
+
     @discord.slash_command(description="Remove all threads created by the bot.")
     @commands.is_owner()
     async def clear_threads(self, ctx: discord.ApplicationContext) -> None:
@@ -119,14 +119,14 @@ class Misc(commands.Cog):
         try:
             db_dict = await fetchall_threadid_db()
             await delall_threadid_db(db_dict)
-            
+
             for _, thread_id in db_dict.items():
                 thread = bot.get_channel(thread_id)
                 if thread is not None:
                     await thread.delete()
         except (discord.Forbidden, WorkspaceError) as e:
             logger.error(f"Error clearing all threads: {e}")
-        
+
         await ctx.respond(f"Cleared {len(db_dict)} thread(s)!", ephemeral=True)
 
 def setup(bot: commands.Bot) -> None:

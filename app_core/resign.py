@@ -58,7 +58,7 @@ class Resign(TabBase):
         batches = len(saves)
         batch = SaveBatch(C1ftp, C1socket, p.account_id, [], mount_paths, self.out_folder)
         savefile = SaveFile("", batch)
-        
+
         i = 1
         for entry in saves:
             batch.entry = entry
@@ -69,7 +69,7 @@ class Resign(TabBase):
                self.logger.exception("Unexpected error. Stopping...")
                self.enable_buttons()
                return
-            
+
             j = 1
             for savepath in batch.savenames:
                 savefile.path = savepath

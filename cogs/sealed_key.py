@@ -13,7 +13,7 @@ from utils.exceptions import WorkspaceError
 class Sealed_Key(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-    
+
     sealed_key_group = discord.SlashCommandGroup("sealed_key")
 
     @sealed_key_group.command(description="Decrypt a sealed key (.bin file).")
@@ -40,7 +40,7 @@ class Sealed_Key(commands.Cog):
 
         enc_key = bytearray(await sealed_key.read())
         sealedkey_t = PfsSKKey(enc_key)
-    
+
         if not sealedkey_t.validate():
             e = "Invalid sealed key!"
             await error_handling(ctx, e, workspace_folders, None, None, None)

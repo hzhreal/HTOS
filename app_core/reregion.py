@@ -89,7 +89,7 @@ class Reregion(TabBase):
             self.logger.error(f"`{str(e)}` Stopping...")
             self.enable_buttons()
             return
-        
+
         try:
             saves = await prepare_save_input_folder(self.settings, self.logger, self.in_folder, newUPLOAD_ENCRYPTED)
         except OrbisError as e:
@@ -102,14 +102,14 @@ class Reregion(TabBase):
             self.logger.exception("Unexpected error. Stopping...")
             self.enable_buttons()
             return
-        
+
         if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)):
             special_reregion = True
         else:
             special_reregion = False
-        
+
         batches = len(saves)
-        
+
         i = 1
         for entry in saves:
             batch.entry = entry
@@ -120,7 +120,7 @@ class Reregion(TabBase):
                self.logger.exception("Unexpected error. Stopping...")
                self.enable_buttons()
                return
-            
+
             extra_msg = ""
             j = 1
             for savepath in batch.savenames:
@@ -163,7 +163,7 @@ class Reregion(TabBase):
         if f:
             self.in_sample_file = f[0]
             self.sample_save_label.set_value(self.in_sample_file)
-        
+
     def on_sample_save_in(self, event: ValueChangeEventArguments) -> None:
         self.in_sample_file = event.value
 
@@ -181,7 +181,7 @@ class Reregion(TabBase):
         super().disable_buttons()
         self.sample_save_button.disable()
         self.sample_save_label.disable()
-    
+
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.sample_save_button.enable()

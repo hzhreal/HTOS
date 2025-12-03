@@ -87,7 +87,7 @@ class GDapi:
             self.creds = {"service_account_creds": serviceacc_creds}
             self.account_type = self.AccountType.SERVICE_ACCOUNT
             return
-        
+
         CACHED_CREDENTIALS_PATH = os.path.join(os.path.dirname(CREDENTIALS_PATH), "token.json")
 
         # try to get cached oauth credentials
@@ -151,35 +151,35 @@ class GDapi:
     @staticmethod
     def is_google_drive_link(text: str) -> bool:
         return bool(GD_LINK_RE.match(text))
-    
+
     @staticmethod
-    def getErrStr_HTTPERROR(e: HTTPError) -> str:
+    def get_err_str_HTPERROR(e: HTTPError) -> str:
         if e.res is None:
             return "HTTPError!"
-        
+
         err = e.res.content.get("error")
         if isinstance(err, dict):
-            errCode = err.get("code")
+            err_code = err.get("code")
         else:
             logger.error(f"Unexpected GD error (1): {err}")
             return "UNEXPECTED GD ERROR."
 
-        errMsg = []
+        err_msg = []
 
-        err_list = err.get("errors")  
-        if isinstance(err_list, list):     
+        err_list = err.get("errors")
+        if isinstance(err_list, list):
             for error in err_list:
-                errMsg.append(error.get("reason"))
+                err_msg.append(error.get("reason"))
         else:
             logger.error(f"Unexpected GD error (2): {err_list}")
 
-        if len(errMsg) == 1:
-            errMsg = errMsg[0]
+        if len(err_msg) == 1:
+            err_msg = err_msg[0]
         else:
-            errMsg = ", ".join(errMsg)
+            err_msg = ", ".join(err_msg)
 
-        return f"Google Drive: HTTPERROR ({errCode}): {errMsg}."
-    
+        return f"Google Drive: HTTPERROR ({err_code}): {err_msg}."
+
     @staticmethod
     def parse_HTTPERROR_simple(e: HTTPError) -> tuple[int, str]:
         if e.res is None:
@@ -189,18 +189,18 @@ class GDapi:
         if not isinstance(err, dict):
             logger.error(f"Unexpected GD error (1): {err}")
             raise GDapiError("Unexpected GD error!")
-        errCode = err.get("code")
+        err_code = err.get("code")
 
         err_list = err.get("errors")
         if not isinstance(err_list, list):
             logger.error(f"Unexpected GD error (2): {err_list}")
             raise GDapiError("Unexpected GD error!")
-        errReason = err_list[0].get("reason")
+        err_reason = err_list[0].get("reason")
 
-        return errCode, errReason
-    
+        return err_code, err_reason
+
     @staticmethod
-    async def fileCheck(
+    async def file_check(
               ctx: discord.ApplicationContext | discord.Message, 
               file_data: list[dict[str, str | int]], 
               sys_files: frozenset[str] | None, 
@@ -208,14 +208,14 @@ class GDapi:
               ignore_filename_check: bool, 
               savesize: int | None = None
             ) -> list[dict[str, str]]:
-        
+
         valid_files_data = []
         total_size = 0
 
         if ps_save_pair_upload:
             valid_files_data = await GDapi.save_pair_check(ctx, file_data)
             return valid_files_data
-        
+
         for file_info in file_data:
             file_name = file_info["filename"]
             file_id = file_info["fileid"]
@@ -241,7 +241,7 @@ class GDapi:
 
             elif savesize is not None and total_size > savesize:
                 raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-            
+
             else:
                 total_size += file_size
                 file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
@@ -271,7 +271,7 @@ class GDapi:
                 emb.description = emb.description.format(filename=file_name, len=path_len, max=MAX_PATH_LEN)
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
-            
+
             elif file_name.endswith(".bin"):
                 if file_size != SEALED_KEY_ENC_SIZE:
                     emb = embnvBin.copy()
@@ -291,7 +291,7 @@ class GDapi:
                 else:
                     file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
                     valid_saves_check1.append(file_data)
-        
+
         valid_saves_final = []
         for file_info in valid_saves_check1:
             file_name = file_info["filename"]
@@ -313,7 +313,7 @@ class GDapi:
                         valid_saves_final.append(file_data_nested)
                         break             
         return valid_saves_final
-    
+
     async def list_dir(
               self, 
               ctx: discord.ApplicationContext | discord.Message, 
@@ -393,7 +393,7 @@ class GDapi:
             else:
                 if file_size == 0 or (file_name in SCE_SYS_CONTENTS and sys_files is None):
                     continue
-                
+
                 if rel_path is not None:
                     file_path = os.path.join(rel_path, file_name)
                     file_path = os.path.normpath(file_path)
@@ -405,11 +405,11 @@ class GDapi:
                             raise GDapiError(f"Path: {file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
                 else:
                     file_path = file_name
-            
+
                 file_data = {"filename": file_path, "fileid": file_id, "filesize": file_size}
                 file_data_storage.append(file_data)
 
-        valid_file_data = await GDapi.fileCheck(ctx, file_data_storage, sys_files, ps_save_pair_upload, ignore_filename_check)
+        valid_file_data = await GDapi.file_check(ctx, file_data_storage, sys_files, ps_save_pair_upload, ignore_filename_check)
         for data in valid_file_data:
             file_path = data["filename"]
             file_id = data["fileid"]
@@ -435,11 +435,11 @@ class GDapi:
                     fields="nextPageToken, files(id, createdTime)",
                     pageToken=next_page_token
                 )
-                
+
                 res = await self.send_req(aiogoogle, req)
                 files.extend(res.get("files", []))
                 next_page_token = res.get("nextPageToken")
-            
+
             return files
 
     async def clear_drive(self, files: list[dict[str, str]] | None = None) -> None:
@@ -482,7 +482,7 @@ class GDapi:
 
             req = drive_v3.files.get(fileId=fileid, fields="capabilities")
             res = await self.send_req(aiogoogle, req)
-           
+
             can_delete = res.get("capabilities", {}).get("canDelete", False)
 
             if can_delete:
@@ -500,7 +500,7 @@ class GDapi:
                 code, reason = self.parse_HTTPERROR_simple(e)
                 if code == 403 and reason == "insufficientFilePermissions":
                     return False
-                raise GDapiError(self.getErrStr_HTTPERROR(e))
+                raise GDapiError(self.get_err_str_HTPERROR(e))
 
         if res["permissions"][0]["role"] != "writer":
             return False
@@ -542,7 +542,7 @@ class GDapi:
                 res_init = await self.send_req(aiogoogle, req_init, full_res=True)
                 location = res_init.headers["Location"]
             except HTTPError as e:
-                raise GDapiError(self.getErrStr_HTTPERROR(e))
+                raise GDapiError(self.get_err_str_HTPERROR(e))
 
         # Upload in chunks
         file_id = None
@@ -579,7 +579,7 @@ class GDapi:
                                 f"Response body: {body}"
                             )
                             raise GDapiError(f"Upload failed with status code {upload_res.status}!")
-                        
+
                         if upload_res.status == 308:
                             range_header = upload_res.headers.get("Range", "")
                             range_pos = self.RANGE_PATTERN.fullmatch(range_header)
@@ -624,7 +624,7 @@ class GDapi:
                 )
                 await self.send_req(aiogoogle, perm_req)
             except HTTPError as e:
-                raise GDapiError(self.getErrStr_HTTPERROR(e))
+                raise GDapiError(self.get_err_str_HTPERROR(e))
 
         file_url = f"https://drive.google.com/file/d/{file_id}"
         return file_url
@@ -670,7 +670,7 @@ class GDapi:
             for file in files:
                 file_name = os.path.basename(file["filepath"])
                 file_id = file["fileid"]
-                
+
                 download_path = os.path.join(cur_download_dir, file_name)
                 if await aiofiles.os.path.exists(download_path):
                     if allow_duplicates:
@@ -681,14 +681,14 @@ class GDapi:
                         download_cycle = []
                     else:
                         continue
-                        
+
                 async with aiofiles.open(download_path, "wb") as file:
                     req = drive_v3.files.get(
                         fileId=file_id, pipe_to=file, alt="media"
                     )
                     await self.send_req(aiogoogle, req)
                 logger.info(f"Saved {file_name} to {download_path}")
-            
+
                 # run a quick check
                 if ps_save_pair_upload and not file_name.endswith(".bin"):
                     await orbis.parse_pfs_header(download_path)
@@ -703,7 +703,7 @@ class GDapi:
                 i += 1
         uploaded_file_paths.append(download_cycle)      
         return uploaded_file_paths
-    
+
     async def downloadfiles_recursive(
               self, 
               ctx: discord.ApplicationContext | discord.Message, 
@@ -744,7 +744,7 @@ class GDapi:
                         alt="media"
                     )
                     await self.send_req(aiogoogle, req)
-            
+
                 uploaded_file_paths.append(download_path)
 
                 logger.info(f"Saved {file_path} to {download_path}")
@@ -752,7 +752,7 @@ class GDapi:
                 emb.description = emb.description.format(filename=file_path, i=i, filecount=filecount)
                 await ctx.edit(embed=emb)
                 i += 1
-     
+
         return [uploaded_file_paths]
 
 if os.path.basename(argv[0]) == "bot.py":

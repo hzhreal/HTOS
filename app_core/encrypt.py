@@ -185,13 +185,13 @@ class Encrypt(TabBase):
         if folder:
             self.encrypt_folder = folder[0]
             self.encrypt_label.set_value(self.encrypt_folder)
-    
+
     def on_encrypt_folder_in(self, event: ValueChangeEventArguments) -> None:
         self.encrypt_folder = event.value
 
     async def validate_encrypt_folder(self) -> bool:
         return await isdir(self.encrypt_folder)
-    
+
     async def on_continue(self) -> None:
         if not await self.validate_encrypt_folder():
             ui.notify("Invalid paths!")
@@ -215,7 +215,7 @@ class Encrypt(TabBase):
     def disable_buttons(self) -> None:
         super().disable_buttons()
         self.ignore_secondlayer_checks_checkbox.disable()
-    
+
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.ignore_secondlayer_checks_checkbox.enable()
