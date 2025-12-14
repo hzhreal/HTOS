@@ -14,9 +14,9 @@ class Crypt_Ndog:
     HEADER_TLOU = b"The Last of Us"
     HEADER_UNCHARTED = b"Uncharted"
 
-    START_OFF = 0x08 # tlou, uncharted 4 & the lost legacy
-    START_OFF_TLOU2 = 0x10 # tlou part 2
-    START_OFF_COL = 0xC # the nathan drake collection
+    START_OFFSET = 0x08 # tlou, uncharted 4 & the lost legacy
+    START_OFFSET_TLOU2 = 0x10 # tlou part 2
+    START_OFFSET_COL = 0xC # the nathan drake collection
 
     EXCLUDE = ["ICN-ID"]
 
@@ -27,7 +27,7 @@ class Crypt_Ndog:
             self.dsize = None
 
         async def get_dsize(self) -> None:
-            if self.start_off == Crypt_Ndog.START_OFF_TLOU2:
+            if self.start_off == Crypt_Ndog.START_OFFSET_TLOU2:
                 await self.r_stream.seek(0x08)
                 self.dsize = uint32(await self.r_stream.read(4), "little").value
             else:
@@ -35,29 +35,30 @@ class Crypt_Ndog:
                 self.dsize = uint32(await self.r_stream.read(4), "little").value
 
         async def chks_fix(self) -> None:
-            # crc32
-            crc32 = self.create_ctx_crc32()
-            if self.start_off == Crypt_Ndog.START_OFF:
+            if self.start_off == Crypt_Ndog.START_OFFSET:
+                crc = self.create_ctx_crc32()
                 crc_bl_off = 0x58C
                 crc_off = 0x588
                 hash_sub = 0xC
-            elif self.start_off == Crypt_Ndog.START_OFF_TLOU2:
+            elif self.start_off == Crypt_Ndog.START_OFFSET_TLOU2:
+                crc = self.create_ctx_crc32c()
                 crc_bl_off = 0x594
                 crc_off = 0x590
                 hash_sub = 0x4
             else:
+                crc = self.create_ctx_crc32()
                 crc_bl_off = 0x590
                 crc_off = 0x58C
                 hash_sub = 0x8
+
             await self.r_stream.seek(crc_bl_off)
             crc_bl = uint32(await self.r_stream.read(4), "little").value
-            await self.checksum(crc32, crc_bl_off, crc_bl_off + (crc_bl - 4))
-            await self.write_checksum(crc32, crc_off)
+            await self.checksum(crc, crc_bl_off, crc_bl_off + (crc_bl - 4))
+            await self.write_checksum(crc, crc_off)
 
-            # hmac sha1
             hmac_sha1 = self.create_ctx_hmac(Crypt_Ndog.HMAC_SHA1_KEY, self.hashlib.sha1)
-            await self.checksum(hmac_sha1, self.start_off, self.dsize - 20)
-            await self.write_checksum(sha1, self.dsize - hash_sub)
+            await self.checksum(hmac_sha1, self.start_off, self.start_off + self.dsize - 0x14)
+            await self.write_checksum(hmac_sha1, self.dsize - hash_sub)
 
     @staticmethod
     async def decrypt_file(foldepath: str, start_off: int) -> None:
@@ -65,16 +66,17 @@ class Crypt_Ndog:
 
         for filepath in files:
             async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
-                blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.block_size)
+                blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.MODE_ECB)
                 await cc.get_dsize()
                 cc.set_ptr(cc.start_off)
 
-                while await cc.read(stop_off=cc.dsize):
-                    if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                while await cc.read(stop_off=cc.start_off + cc.dsize):
+                    if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
                         cc.ES32()
-                    await cc.decrypt(blowfish)
-                    if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                    cc.decrypt(blowfish)
+                    if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
                         cc.ES32()
+                    await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str, start_off: int) -> None:
@@ -82,17 +84,18 @@ class Crypt_Ndog:
             return
 
         async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
-            blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.block_size)
+            blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.MODE_ECB)
             await cc.get_dsize()
             cc.set_ptr(cc.start_off)
 
             await cc.chks_fix()
-            while await cc.read(stop_off=cc.dsize):
-                if cc.start_off == Crypt_Ndog.START_OFF_COL:
+            while await cc.read(stop_off=cc.start_off + cc.dsize):
+                if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
                     cc.ES32() 
                 cc.encrypt(blowfish)
-                if cc.start_off == Crypt_Ndog.START_OFF_COL:
+                if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
                     cc.ES32()
+                await cc.write()
 
     @staticmethod
     async def check_enc_ps(filepath: str, start_off: int) -> None:

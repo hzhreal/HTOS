@@ -7,7 +7,7 @@ import aiofiles.os
 import re
 import datetime
 import aiohttp
-import utils.orbis as orbis
+
 from sys import argv
 from discord.ext import tasks
 from aiogoogle import Aiogoogle, auth, HTTPError, models
@@ -20,6 +20,7 @@ from google.auth.exceptions import RefreshError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from utils.orbis import parse_pfs_header, parse_sealedkey
 from utils.extras import generate_random_string
 from utils.constants import (
     SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, 
@@ -35,11 +36,6 @@ from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
-
-class GDapiError(Exception):
-    """Exception raised for errors related to the GDapi class."""
-    def __init__(self, message: str) -> None:
-        self.message = message
 
 class GDapi:
     class AccountType(Enum):
@@ -691,9 +687,9 @@ class GDapi:
 
                 # run a quick check
                 if ps_save_pair_upload and not file_name.endswith(".bin"):
-                    await orbis.parse_pfs_header(download_path)
+                    await parse_pfs_header(download_path)
                 elif ps_save_pair_upload and file_name.endswith(".bin"):
-                    await orbis.parse_sealedkey(download_path)
+                    await parse_sealedkey(download_path)
 
                 emb = embgddone.copy()
                 emb.description = emb.description.format(filename=file_name, i=i, filecount=filecount)

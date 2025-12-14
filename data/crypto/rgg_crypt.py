@@ -6,13 +6,13 @@ class Crypt_RGG:
     class RGG(CC):
         def __init__(self, filepath: str) -> None:
             super().__init__(filepath)
-            self.i = 0
+            self.idx = 0
 
         def xor(self) -> None:
             self._prepare_write()
-            for j in range(len(chunk)):
-                self.chunk[j] ^= Crypt_RGG.KEY[self.i % len(Crypt_RGG.KEY)]
-                self.i += 1
+            for i in range(len(self.chunk)):
+                self.chunk[i] ^= Crypt_RGG.KEY[self.idx % len(Crypt_RGG.KEY)]
+                self.idx += 1
 
     @staticmethod
     async def decrypt_file(folderpath: str) -> None:
@@ -28,7 +28,7 @@ class Crypt_RGG:
     async def encrypt_file(filepath: str) -> None:
         async with Crypt_RGG.RGG(filepath) as cc:
             crc32 = cc.create_ctx_crc32()
-            await cc.checksum(crc32, end_off=cc.size - 0x10)
+            await cc.checksum(crc32, 0, cc.size - 0x10)
             await cc.write_checksum(crc32, cc.size - 8)
 
             while await cc.read(stop_off=cc.size - 0x10):

@@ -1,9 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.helpers import DiscordContext
+
 import discord
 from discord.ui.item import Item
 from types import SimpleNamespace
 
-from data.crypto import CryptoError
-from utils.helpers import DiscordContext, TimeoutHelper
+from data.crypto.exceptions import CryptoError
 from utils.constants import (
     logger, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID, 
@@ -13,6 +17,8 @@ from utils.constants import (
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
 async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
+    from utils.helpers import TimeoutHelper
+
     helper = TimeoutHelper(embdecTimeout)
     emb = embdecFormat.copy()
     emb.title = emb.title.format(savename=savePairName)

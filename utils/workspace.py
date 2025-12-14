@@ -10,8 +10,10 @@ import aiohttp
 from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
-from network import FTPps, FTPError
-from google_drive import gdapi, clean_GDrive, GDapiError
+
+from network.ftp_functions import FTPps
+from network.exceptions import FTPError
+from google_drive.exceptions import GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
@@ -236,6 +238,8 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
 
     # google drive check: are we currently deleting all files or do we need to delete all files
     if not skip_gd_check:
+        from google_drive.gd_functions import gdapi, clean_GDrive
+
         if clean_GDrive.is_running():
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=gd_maintenance_emb)

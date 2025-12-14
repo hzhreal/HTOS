@@ -13,7 +13,7 @@ workspace_opt = WorkspaceOpt()
 
 @bot.event
 async def on_ready() -> None:
-    from google_drive import check_GDrive
+    from google_drive.gd_functions import check_GDrive
     startup(workspace_opt)
     await check_version()
     bot.add_view(threadButton()) # make view persistent

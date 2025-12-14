@@ -5,8 +5,11 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, FTPError, SocketError
-from google_drive import gdapi, GDapiError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
 from data.cheats.quickcodes import QuickCodes
 from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
@@ -221,8 +224,8 @@ class Quick(commands.Cog):
 
                 try:
                     await msg.edit(embed=emb1)
-                    qc = QuickCodes(savegame, codes)
-                    await qc.apply_code()
+                    async with QuickCodes(savegame, codes) as qc:
+                        await qc.apply_code()
                     await msg.edit(embed=emb2)
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"

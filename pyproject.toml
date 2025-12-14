@@ -28,4 +28,5 @@ dependencies = [
     "pywebview>=6.1 ; sys_platform != 'linux'",
     "pywebview[qt]>=6.1 ; sys_platform == 'linux'",
     "pyzstd>=0.18.0",
+    "zstandard>=0.25.0",
 ]

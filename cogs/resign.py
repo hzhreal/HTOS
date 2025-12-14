@@ -3,8 +3,11 @@ import asyncio
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, FTPError, SocketError
-from google_drive import gdapi, GDapiError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, ZIPOUT_NAME, COMMAND_COOLDOWN,
     logger

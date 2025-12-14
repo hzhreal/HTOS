@@ -9,13 +9,13 @@ import crc32c
 import mmh3
 import zlib
 import pyzstd
+from types import TracebackType
 
 from data.crypto.exceptions import CryptoError
 
 from aiofiles.threadpool.binary import AsyncBufferedReader
 from Crypto.Cipher import AES, Blowfish
 from typing import Literal, Any, Self
-from functools import partial
 
 from utils.constants import SCE_SYS_NAME, RANDOMSTRING_LENGTH, SAVESIZE_MAX
 from utils.conversions import mb_to_bytes
@@ -32,7 +32,7 @@ class CustomCryptoCtx:
         self.attr = attr
 
 class CustomCrypto:
-    CHUNKSIZE = mb_to_bytes(1)
+    CHUNKSIZE = mb_to_bytes(1) # setting this too low will break stuff
     SAVESIZE_MAX = SAVESIZE_MAX
     AES = AES
     Blowfish = Blowfish
@@ -72,17 +72,20 @@ class CustomCrypto:
             self.temp_filepath = os.path.join(os.path.dirname(self.filepath), rand_str)
             self.w_stream = await aiofiles.open(self.temp_filepath, "w+b")
         await self.get_size()
+        await self.r_stream.seek(0)
         return self
 
-    async def __aexit__(self) -> None:
+    async def __aexit__(self, _: type[BaseException] | None, __: BaseException | None, ___: TracebackType | None) -> None:
         await self.r_stream.close()
         if self.r_stream is not self.w_stream:
             await self.w_stream.close()
             await aiofiles.os.replace(self.temp_filepath, self.filepath)
 
     def set_ptr(self, p: int) -> None:
+        if not (0 <= p <= self.size):
+            raise CryptoError("Invalid")
         self.chunk_end = p
-        self.chunk_start = -1
+        self.chunk_start = p
 
     async def get_size(self) -> None:
         self.size = await self.r_stream.seek(0, 2)
@@ -93,7 +96,8 @@ class CustomCrypto:
             if stop_off < 0:
                 self.chunk = bytearray(await self.r_stream.read(self.CHUNKSIZE))
             else:
-                assert stop_off >= self.chunk_start
+                if stop_off < self.chunk_start or stop_off > self.size:
+                    raise CryptoError("Invalid")
                 r_len = min(self.CHUNKSIZE, stop_off - self.chunk_start)
                 self.chunk = bytearray(await self.r_stream.read(r_len))
             self.chunk_end = await self.r_stream.tell()
@@ -101,6 +105,8 @@ class CustomCrypto:
             if stop_off < 0:
                 s = max(self.chunk_start - self.CHUNKSIZE, 0)
             else:
+                if stop_off > self.chunk_start:
+                    raise CryptoError("Invalid!")
                 s = max(self.chunk_start - self.CHUNKSIZE, stop_off)
             self.chunk_end = self.chunk_start
             self.chunk_start = await self.r_stream.seek(s)
@@ -123,20 +129,21 @@ class CustomCrypto:
     def _prepare_write(self) -> None:
         assert type(self.chunk) == bytearray
 
-    def __prepare_list_write(self) -> None:
+    def _prepare_list_write(self) -> None:
         assert type(self.chunk) == list
 
     def _prepare_compression(self) -> None:
         assert not self.in_place
 
-    async def trim_trailing_bytes(self, off: int = -1, byte: uint8 = uint8(0), min_required: int = 1) -> None:
+    async def trim_trailing_bytes(self, off: int = -1, byte: uint8 = uint8(0, const=True), min_required: int = 1) -> None:
         """
         Start from off and move backward, stop when a byte that differs from the given has been reached. 
         Truncate data from the occurence offset if the minimum required amount of bytes moved backward has been reached.
         """
         if off < 0:
             off = self.size - 1
-        assert 0 <= off < self.size
+        if not (0 <= off < self.size):
+            raise CryptoError("Invalid!")
 
         pos = off + 1
         stop_off = -1
@@ -164,8 +171,8 @@ class CustomCrypto:
     async def find(self, d: bytes | bytearray, start_off: int = 0, end_off: int = -1) -> int:
         if end_off < 0:
             end_off = self.size
-        if not start_off < end_off:
-            raise CryptoError("Invalid!")
+        if not (start_off < end_off <= self.size):
+            return -1
 
         d_len = len(d)
         assert d_len <= self.CHUNKSIZE # bound growth
@@ -182,7 +189,7 @@ class CustomCrypto:
             chunk_len = len(chunk)
 
             if (pos := chunk.find(d)) != -1:
-                target_off = off - chunk_len + pos
+                target_off = off - len(buf) + pos
                 break
             if d_len <= chunk_len:
                 buf = chunk[-(d_len - 1):]
@@ -193,8 +200,8 @@ class CustomCrypto:
     async def rfind(self, d: bytes | bytearray, start_off: int = -1, end_off: int = 0) -> int:
         if start_off < 0:
             start_off = self.size
-        if not end_off < start_off:
-            raise CryptoError("Invalid!")
+        if not end_off < start_off <= self.size:
+            return -1
 
         d_len = len(d)
         assert d_len <= self.CHUNKSIZE # bound growth
@@ -212,10 +219,10 @@ class CustomCrypto:
             chunk_len = len(chunk)
 
             if (pos := chunk.rfind(d)) != -1:
-                target_off = r_start + pos
+                target_off = r_start - len(buf) + pos
                 break
             if d_len <= chunk_len:
-                buf = chunk[-(d_len - 1):]
+                buf = chunk[:d_len - 1]
             else:
                 buf = chunk
         return target_off
@@ -224,7 +231,7 @@ class CustomCrypto:
         assert not self.in_place
         if end_off < 0:
             end_off = self.size
-        if not start_off < end_off:
+        if not start_off < end_off <= self.size:
             raise CryptoError("Invalid!")
 
         await self.r_stream.seek(start_off)
@@ -245,7 +252,7 @@ class CustomCrypto:
         self.chunk = u32_array
 
     def array_to_bytearray(self) -> None:
-        self.__prepare_list_write()
+        self._prepare_list_write()
         new_array = bytearray()
         for u in self.chunk:
             u: uint32
@@ -263,7 +270,7 @@ class CustomCrypto:
         for i in range(0, len(c), 4):
             c[i:i + 4] = c[i:i + 4][::-1]
 
-    async def fraction_byte(self, byte: uint8 = uint8(0), div: int = 2) -> bool:
+    async def fraction_byte(self, byte: uint8 = uint8(0, const=True), div: int = 2) -> bool:
         assert div != 0
 
         await self.r_stream.seek(0)
@@ -282,7 +289,7 @@ class CustomCrypto:
         assert 1 <= length <= self.CHUNKSIZE
 
         arr = bytearray()
-        for i in range(length):
+        for _ in range(length):
             b = id(object()) & 0xFF
             arr.append(b)
         return bytes(arr)
@@ -299,8 +306,10 @@ class CustomCrypto:
         remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
         if self.chunk == remainder:
             return
-        del self.chunk[-len(remainder):]
-        self.chunk_end -= len(remainder)
+        r = len(remainder)
+        if r > 0:
+            del self.chunk[-r:]
+            self.chunk_end -= r 
 
         ctx.obj.encrypt(self.chunk, self.chunk)
 
@@ -316,8 +325,10 @@ class CustomCrypto:
         remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
         if self.chunk == remainder:
             return
-        del self.chunk[-len(remainder):]
-        self.chunk_end -= len(remainder)
+        r = len(remainder)
+        if r > 0:
+            del self.chunk[-r:]
+            self.chunk_end -= r
 
         ctx.obj.decrypt(self.chunk, self.chunk)
 
@@ -327,7 +338,7 @@ class CustomCrypto:
         self._prepare_compression()
         ctx = self._get_ctx(ctx)
 
-        if isinstance(ctx.obj, zlib._Compress):
+        if type(ctx.obj) is type(zlib.compressobj()):
             await self._zlib_compress(ctx.obj)
         elif isinstance(ctx.obj, pyzstd.ZstdCompressor):
             assert type(ctx.attr) == bool
@@ -341,7 +352,7 @@ class CustomCrypto:
         self._prepare_compression()
         ctx = self._get_ctx(ctx)
 
-        if isinstance(ctx.obj, zlib._Decompress):
+        if type(ctx.obj) is type(zlib.decompressobj()):
             try:
                 return await self._zlib_decompress(ctx.obj)
             except zlib.error as e:
@@ -349,25 +360,25 @@ class CustomCrypto:
         elif isinstance(ctx.obj, (pyzstd.ZstdDecompressor, pyzstd.EndlessZstdDecompressor)):
             try:
                 return await self._zstd_decompress(ctx.obj)
-            except pyzstd.ZstdError as e:
+            except (pyzstd.ZstdError, EOFError) as e:
                 raise CryptoError("Invalid save!") from e
         else:
             assert 0
 
     async def checksum(self, ctx: int, start_off: int = -1, end_off: int = -1) -> None:
-        self._prepare_write()
         ctx = self._get_ctx(ctx)
 
         if start_off < 0 or end_off < 0:
+            self._prepare_write()
             if hasattr(ctx.obj, "update"):
                 ctx.obj.update(self.chunk)
             elif isinstance(ctx.attr, Cint) and callable(ctx.obj):
-                self.attr.value = ctx.obj(self.chunk)
+                ctx.attr.value = ctx.obj(bytes(self.chunk), ctx.attr.value)
             else:
                 assert 0
             return
 
-        if not start_off < end_off:
+        if not start_off < end_off <= self.size:
             raise CryptoError("Invalid!")
         await self.r_stream.seek(start_off)
 
@@ -380,12 +391,11 @@ class CustomCrypto:
             if hasattr(ctx.obj, "update"):
                 ctx.obj.update(chunk)
             elif isinstance(ctx.attr, Cint) and callable(ctx.obj):
-                self.attr.value = ctx.obj(chunk)
+                ctx.attr.value = ctx.obj(bytes(chunk), ctx.attr.value)
             else:
                 assert 0
 
     async def write_checksum(self, ctx: int, off: int) -> int:
-        self._prepare_write()
         ctx = self._get_ctx(ctx)
         if hasattr(ctx.obj, "digest"):
             chks = ctx.obj.digest()
@@ -393,6 +403,13 @@ class CustomCrypto:
             chks = ctx.attr.as_bytes
         else:
             assert 0
+
+        if self.in_place:
+            max_size = self.size
+        else:
+            max_size = self.SAVESIZE_MAX
+        if not 0 <= off + len(chks) <= max_size:
+            raise CryptoError("Invalid!")
 
         await self.w_stream.seek(off)
         return await self.w_stream.write(chks)
@@ -416,12 +433,12 @@ class CustomCrypto:
 
     def create_ctx_zlib_compress(self) -> int:
         self._prepare_compression()
-        obj = zlib.decompressobj()
+        obj = zlib.compressobj()
         return self._create_ctx(obj)
 
     def create_ctx_gzip_compress(self) -> int:
         self._prepare_compression()
-        obj = zlib.compressobj(zlib.MAX_WBITS | 16)
+        obj = zlib.compressobj(wbits=zlib.MAX_WBITS | 16)
         return self._create_ctx(obj)
 
     def create_ctx_zstd_compress(self, per_chunk_frame: bool = False) -> int:
@@ -448,17 +465,20 @@ class CustomCrypto:
             obj = pyzstd.ZstdDecompressor()
         return self._create_ctx(obj)
 
-    def create_ctx_crc32(self, seed: uint32 = uint32(0)) -> int:
+    def create_ctx_crc32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
+        seed = uint32(seed.value, seed.ENDIANNESS)
         call = zlib.crc32
         return self._create_ctx(call, seed)
 
-    def create_ctx_crc32c(self, seed: uint32 = uint32(0)) -> int:
+    def create_ctx_crc32c(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
+        seed = uint32(seed.value, seed.ENDIANNESS)
         call = crc32c.crc32c
         return self._create_ctx(call, seed)
 
-    def create_ctx_mmh3_u32(self, seed: uint32 = uint32(0)) -> int:
-        call = partial(mmh3.hash, signed=False)
-        return self._create_ctx(call, seed)
+    def create_ctx_mmh3_u32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
+        seed = uint32(seed.value, seed.ENDIANNESS)
+        update_obj = mmh3.mmh3_32(seed=seed.value)
+        return self._create_ctx(update_obj)
 
     def create_ctx_md5(self) -> int:
         update_obj = hashlib.md5()
@@ -498,6 +518,8 @@ class CustomCrypto:
 
     async def _zlib_decompress(self, obj: zlib._Decompress) -> None | int:
         size = await self.w_stream.seek(0, 2)
+        if obj.unused_data:
+            raise CryptoError("Invalid!")
         if obj.unconsumed_tail:
             while True:
                 comp = obj.unconsumed_tail
@@ -523,9 +545,14 @@ class CustomCrypto:
 
     async def _zstd_decompress(self, obj: pyzstd.ZstdDecompressor | pyzstd.EndlessZstdDecompressor) -> None | int:
         size = await self.w_stream.seek(0, 2)
-        if obj.needs_input:
+        if obj.unused_data:
+            raise CryptoError("Invalid!")
+        if not obj.needs_input:
             while True:
-                decomp = obj.decompress(bytes(), self.CHUNKSIZE)
+                try:
+                    decomp = obj.decompress(bytes(), self.CHUNKSIZE)
+                except pyzstd.ZstdError:
+                    break
                 if not decomp:
                     break
                 self._decomp_max_size_calc(size, len(decomp))

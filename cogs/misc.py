@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
-from network import FTPps, C1socket, SocketError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError
 from utils.constants import (
     IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, bot,

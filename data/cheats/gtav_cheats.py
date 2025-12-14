@@ -1,15 +1,20 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.helpers import TimeoutHelper
+
 import discord
 import asyncio
 import aiofiles
-import os
+
 from discord.ui.item import Item
-from utils.constants import OTHER_TIMEOUT, logger
-from utils.embeds import embDone_G, embchErr, embchgtav
+from typing import Literal
+
+from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
-from data.crypto import Crypt_Rstar as crypt
-from typing import Literal
-from utils.helpers import TimeoutHelper
+from utils.constants import OTHER_TIMEOUT, logger
+from utils.embeds import embDone_G, embchErr, embchgtav
 from utils.type_helpers import uint32
 
 class Cheats_GTAV:
@@ -123,16 +128,12 @@ class Cheats_GTAV:
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 
-        if header == crypt.GTAV_HEADER:
-            encrypted = False
-
-        elif header != crypt.GTAV_HEADER:
-            encrypted = True
+        encrypted == header != crypt.GTAV_HEADER
 
         if encrypted:
-            start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET  
+            start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
             try:
-                await crypt.decrypt_file(os.path.dirname(filepath), start_offset)
+                await crypt.decrypt_file(filepath, start_offset)
             except (ValueError, IOError, IndexError):
                 raise QuickCheatsError("File not supported!")
         return platform 
@@ -154,7 +155,7 @@ class Cheats_GTAV:
 
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
             await crypt.encrypt_file(filepath, start_offset)
-            await crypt.decrypt_file(os.path.dirname(filepath), start_offset) 
+            await crypt.decrypt_file(filepath, start_offset) 
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 

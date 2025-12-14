@@ -17,7 +17,7 @@ class Crypt_SMT5:
             async with CC(filepath) as cc:
                 aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
                 while await cc.read():
-                    cc.decrypt()
+                    cc.decrypt(aes)
                     await cc.write()
 
     @staticmethod
@@ -26,11 +26,11 @@ class Crypt_SMT5:
             aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
             sha1 = cc.create_ctx_sha1()
 
-            await cc.checksum(sha1, 0x40)
+            await cc.checksum(sha1, 0x40, cc.size)
             await cc.write_checksum(sha1, 0)
 
             while await cc.read():
-                cc.encrypt()
+                cc.encrypt(aes)
                 await cc.write()
 
     @staticmethod

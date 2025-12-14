@@ -5,7 +5,6 @@ import shutil
 import aiofiles
 import aiofiles.os
 import asyncio
-import utils.orbis as orbis
 from aioftp.errors import AIOFTPException
 from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
@@ -214,12 +213,13 @@ class FTPps:
                 fulldl_process1 = os.path.join(savefilespath, newsavenames_bin)
                 await self.downloadStream(ftp, savename_bin, fulldl_process1)
 
-            if reregion: 
-                await orbis.reregion_check(title_id, savefilespath, fulldl_process, fulldl_process1)
+            if reregion:
+                from utils.orbis import reregion_check
+                await reregion_check(title_id, savefilespath, fulldl_process, fulldl_process1)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
-            raise FTPError("FTP ERROR!")   
+            raise FTPError("FTP ERROR!")
 
     async def uploadencrypted_bulk(self, savename: str) -> None:
         savefiles = [os.path.join(self.upload_encrypted_path, savename), os.path.join(self.upload_encrypted_path, savename + ".bin")]

@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
 from io import BytesIO
-from network.socket_functions import C1socket, SocketError
+from network.socket_functions import C1socket
+from network.exceptions import SocketError
 from utils.workspace import make_workspace
 from utils.helpers import error_handling
 from utils.constants import logger, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN

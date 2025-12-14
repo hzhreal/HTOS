@@ -4,7 +4,7 @@ from enum import Enum
 
 from data.crypto.common import CustomCrypto as CC
 from utils.constants import GTAV_TITLEID
-from utils.type_helpers import uint32, uint64, int8
+from utils.type_helpers import uint32, int8
 
 class Crypt_Rstar:
     class TitleHashTypes(Enum):
@@ -49,26 +49,26 @@ class Crypt_Rstar:
             super().__init__(filepath)
 
         class jooat:
-            def __init__(self, seed: uint32 = uint32(0x3FAC7125, "big")) -> None:
-                self.jooat = seed
+            def __init__(self, seed: uint32 = uint32(0x3FAC7125, "big", const=True)) -> None:
+                self.jooat = uint32(seed.value, seed.ENDIANNESS)
 
             def update(self, chunk: bytes | bytearray) -> None:
                 assert len(chunk) <= CC.CHUNKSIZE
 
-                for byte in data:
+                for byte in chunk:
                     char = int8(byte).value
                     self.jooat.value += char
                     self.jooat.value += (self.jooat.value << 10)
                     self.jooat.value ^= (self.jooat.value >> 6)
 
             def digest(self) -> bytes:
-                self.jooat.value += (self.joaat.value << 3)
+                self.jooat.value += (self.jooat.value << 3)
                 self.jooat.value ^= (self.jooat.value >> 11)
                 self.jooat.value += (self.jooat.value << 15)
                 return self.jooat.as_bytes
 
         def create_ctx_jooat(self, seed: uint32 = uint32(0x3FAC7125, "big")) -> int:
-            update_obj = Crypt_Rstar.jooat(seed)
+            update_obj = Crypt_Rstar.Rstar.jooat(seed)
             return self._create_ctx(update_obj)
 
         async def fix_title_chks(self) -> None:
@@ -113,7 +113,7 @@ class Crypt_Rstar:
     async def decrypt_file(folderpath: str, start_off: int) -> None:
         files = await CC.obtain_files(folderpath)
         files = Crypt_Rstar.files_check(files)
-        key = Crypt_Rstar.TYPES[start_offset]["key"]
+        key = Crypt_Rstar.TYPES[start_off]["key"]
 
         for filepath in files:
             async with CC(filepath) as cc:
@@ -134,7 +134,6 @@ class Crypt_Rstar:
 
         async with Crypt_Rstar.Rstar(filepath) as cc:
             aes = cc.create_ctx_aes(key, cc.AES.MODE_ECB)
-            jooat = cc.create_ctx_jooat()
             await cc.trim_trailing_bytes(min_required=16 + 1) # remove empty space that autosaves have towards EOF
             match type_:
                 case Crypt_Rstar.TitleHashTypes.STANDARD:
@@ -144,23 +143,25 @@ class Crypt_Rstar:
 
             ptr = start_off
             while True:
+                jooat = cc.create_ctx_jooat()
                 chks_off = await cc.find(b"CHKS", ptr)
                 if chks_off == -1:
                     break
 
                 await cc.r_stream.seek(chks_off + 4)
-                header_size = uint32(await r_stream.read(4), "big")
+                header_size = uint32(await cc.r_stream.read(4), "big")
+                if header_size.value != 0x14 or chks_off + 0x14 > cc.size:
+                    raise CryptoError("Invalid!")
                 data_size = uint32(await cc.r_stream.read(4), "big")
-
-                await cc.r_stream.seek(header_size.value - 4 - 4 - 4, 1)
-                chks_start_off = await cc.r_stream.seek(-data_size.value, 1)
 
                 # nullify data size and checksum
                 await cc.w_stream.seek(chks_off + 8)
                 await cc.w_stream.write(bytes([0] * (4 + 4)))
 
+                chks_start_off = chks_off - data_size.value + header_size.value
                 await cc.checksum(jooat, chks_start_off, chks_start_off + data_size.value)
                 await cc.write_checksum(jooat, chks_off + (4 + 4 + 4))
+                cc.delete_ctx(jooat)
 
                 await cc.w_stream.seek(chks_off + 8)
                 await cc.w_stream.write(data_size.as_bytes)

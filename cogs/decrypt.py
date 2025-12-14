@@ -5,8 +5,11 @@ import aiofiles.os
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, FTPError, SocketError
-from google_drive import gdapi, GDapiError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
 from data.crypto.exceptions import CryptoError
 from data.crypto.helpers import extra_decrypt
 from utils.constants import (

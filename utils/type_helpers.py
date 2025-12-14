@@ -13,7 +13,7 @@ class CIntSignednessState(Enum):
     UNSIGNED = False
 
 class Cint:
-    def __init__(self, bits: int, signed: bool, fmt: str, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
+    def __init__(self, bits: int, signed: bool, fmt: str, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
         if fmt == "":
             fmt_set = (bits, signed)
             fmt_search = self.FMT_TABLE.get(fmt_set)
@@ -26,6 +26,7 @@ class Cint:
         blen_expected = ceil(bits / 8)
         if struct.calcsize(self.fmt) != blen_expected:
             raise ValueError(f"Format string {self.fmt} does not match expected byte length {blen_expected}!")
+        self.ENDIANNESS = endianness
 
         if signed:
             self.max =  (1 << (bits - 1)) - 1
@@ -53,6 +54,7 @@ class Cint:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
+        self.const = const
 
     CATEGORY = TypeCategory.INTEGER
 
@@ -79,6 +81,7 @@ class Cint:
 
     @value.setter
     def value(self, value: int | str | bytes | bytearray) -> None:
+        assert not self.const
         match value:
             case int():
                 self._value = self.cast(value)
@@ -98,9 +101,6 @@ class Cint:
     def from_bytes(self) -> int:
         return struct.unpack(self.fmt, self.as_bytes)[0]
 
-    def change_endianness(self, endianness: Literal["little", "big", "None"]) -> None:
-        self.fmt[0] = self.FMT_TABLE[endianness]
-
     def __cast_signed(self, n: int) -> int:
         # same as ((n + 2^(b - 1)) mod 2^b) - 2^(b - 1)
         return ((n - self.min) % (-self.min << 1)) + self.min
@@ -109,39 +109,39 @@ class Cint:
         return n & self.max
 
 class uint8(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0) -> None:
-        super().__init__(8, False, "B", value)
+    def __init__(self, value: int | str | bytes | bytearray = 0, const: bool = False) -> None:
+        super().__init__(8, False, "B", value, const=const)
 
 class uint16(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(16, False, "H", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(16, False, "H", value, endianness, const)
 
 class uint32(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(32, False, "I", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(32, False, "I", value, endianness, const)
 
 class uint64(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(64, False, "Q", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(64, False, "Q", value, endianness, const)
 
 class int8(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0) -> None:
-        super().__init__(8, True, "b", value)
+    def __init__(self, value: int | str | bytes | bytearray = 0, const: bool = False) -> None:
+        super().__init__(8, True, "b", value, const=const)
 
 class int16(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(16, True, "h", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(16, True, "h", value, endianness, const)
 
 class int32(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(32, True, "i", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(32, True, "i", value, endianness, const)
 
 class int64(Cint):
-    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None") -> None:
-        super().__init__(64, True, "q", value, endianness)
+    def __init__(self, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+        super().__init__(64, True, "q", value, endianness, const)
 
 class utf_8:
-    def __init__(self, value: str | bytes | bytearray = "") -> None:
+    def __init__(self, value: str | bytes | bytearray = "", const: bool = False) -> None:
         match value:
             case str():
                 self._value = value
@@ -153,6 +153,7 @@ class utf_8:
                 self._value = self.from_bytes()
             case _:
                 raise ValueError("Invalid type!")
+        self.const = const
 
     CATEGORY = TypeCategory.CHARACTER
 
@@ -162,6 +163,7 @@ class utf_8:
 
     @value.setter
     def value(self, value: str | bytes | bytearray) -> None:
+        assert not self.const
         match value:
             case str():
                 self._value = value
@@ -181,8 +183,8 @@ class utf_8:
         return self.as_bytes.decode("utf-8")
 
 class utf_8_s(utf_8):
-    def __init__(self, value: str | bytes | bytearray = "") -> None:
-        super().__init__(value)
+    def __init__(self, value: str | bytes | bytearray = "", const: bool = False) -> None:
+        super().__init__(value, const)
 
     CATEGORY = TypeCategory.CHARACTER_SPECIAL
 

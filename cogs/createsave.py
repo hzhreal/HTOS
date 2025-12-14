@@ -6,8 +6,11 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, SocketError, FTPError
-from google_drive import gdapi, GDapiError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, COMMAND_COOLDOWN, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, SCE_SYS_NAME,

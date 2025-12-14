@@ -20,7 +20,7 @@ class Crypt_Terraria:
             async with CC(filepath, in_place=ext == ".plr") as cc:
                 match ext:
                     case ".plr":
-                        aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_ECB)
+                        aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_CBC, iv=Crypt_Terraria.SECRET_KEY)
                         while await cc.read():
                             cc.decrypt(aes)
                             await cc.write()
@@ -40,9 +40,9 @@ class Crypt_Terraria:
         async with CC(filepath, in_place=ext == ".plr") as cc:
             match ext:
                 case ".plr":
-                    aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_ECB)
+                    aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_CBC, iv=Crypt_Terraria.SECRET_KEY)
                     while await cc.read():
-                        cc.encrypt()
+                        cc.encrypt(aes)
                         await cc.write()
                 case ".wld":
                     zlib = cc.create_ctx_zlib_compress()

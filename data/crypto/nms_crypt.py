@@ -55,13 +55,14 @@ class Crypt_NMS:
                 decompsize = uint32(await self.r_stream.read(4), "little").value
                 ptr += 12 # compsize + decompsize + 00 00 00 00
                 await self.r_stream.seek(ptr)
-
                 if compsize > self.CHUNKSIZE:
                     raise CryptoError("Unsupported save!")
                 if size + decompsize > self.SAVESIZE_MAX:
                     raise CryptoError("Unsupported save!")
 
                 comp = await self.r_stream.read(compsize)
+                if not comp:
+                    break
                 ptr += compsize
                 try:
                     decomp = lz4.block.decompress(comp, uncompressed_size=decompsize)

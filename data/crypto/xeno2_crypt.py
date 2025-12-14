@@ -1,3 +1,4 @@
+import aiofiles
 from data.crypto.common import CustomCrypto as CC
 from utils.type_helpers import uint8
 
@@ -5,8 +6,7 @@ class Crypt_Xeno2:
     SAVE_HEADER_KEY = b"PR]-<Q9*WxHsV8rcW!JuH7k_ug:T5ApX"
     SAVE_HEADER_INITIAL_VALUE = b"_Y7]mD1ziyH#Ar=0"
     SAVE_HEADER_SIZE = 0x80
-    SAVE_MAGIC_HEADER = b"H\x89\x01L"
-    HEADER = b"#SAV"
+    DEC_MAGIC = b"#SAV"
 
     @staticmethod
     async def decrypt_file(folderpath: str) -> None:
@@ -39,13 +39,13 @@ class Crypt_Xeno2:
             md5 = cc.create_ctx_md5()
 
             await cc.r_stream.seek(0x20)
-            header = bytearray(await cc.stream.read(Crypt_Xeno2.SAVE_HEADER_SIZE))
+            header = bytearray(await cc.r_stream.read(Crypt_Xeno2.SAVE_HEADER_SIZE))
 
             # checksum 8
             chks = uint8(0)
             for i in range(5, cc.size // 0x20):
                 await cc.r_stream.seek(i * 0x20)
-                b = await cc.r_stream.read(1)[0]
+                b = (await cc.r_stream.read(1))[0]
                 chks.value += b
             header[0x1A] = chks.value
 
@@ -69,15 +69,16 @@ class Crypt_Xeno2:
             await cc.w_stream.write(header)
 
             # md5 over encrypted data
-            await cc.checksum(md5, 0x20)
+            await cc.checksum(md5, 0x20, cc.size)
             await cc.write_checksum(md5, 0x10)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         async with aiofiles.open(filepath, "rb") as savegame:
-            header = await savegame.read(len(Crypt_Xeno2.HEADER))
+            await savegame.seek(0x20)
+            magic = await savegame.read(len(Crypt_Xeno2.DEC_MAGIC))
 
-        if header == Crypt_Xeno2.HEADER:
+        if magic == Crypt_Xeno2.DEC_MAGIC:
             await Crypt_Xeno2.encrypt_file(filepath)
 
     @staticmethod
@@ -117,10 +118,10 @@ class Crypt_Xeno2:
         # checksum 2
         for i in range(5, cc.size // 0x20):
             await cc.r_stream.seek(i * 0x20)
-            b = await cc.r_stream.read(1)[0]
+            b = (await cc.r_stream.read(1))[0]
             chks.value += b
         header[0x1B] = chks.value
-        chks.value = 0
+        chks.value = header[0x5]
 
         # checksum 1
         for i in range(7):

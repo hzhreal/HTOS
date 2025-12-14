@@ -3,8 +3,11 @@ import os
 import asyncio
 from discord.ext import commands
 from discord import Option
+from aiogoogle import HTTPError
+
 from data.converter.exceptions import ConverterError
-from google_drive.gd_functions import gdapi, GDapiError, HTTPError
+from google_drive.gd_functions import gdapi 
+from google_drive.exceptions import GDapiError
 from utils.namespaces import Converter
 from utils.constants import (
     BASE_ERROR_MSG, SHARED_GD_LINK_DESC, MAX_FILES, ZIPOUT_NAME, COMMAND_COOLDOWN,
@@ -14,7 +17,7 @@ from utils.embeds import (
     embTimedOut, emb_conv_upl, emb_conv_choice, 
     embCDone1, embCDone2, embCDone3, embconvCompleted
 )
-from utils.workspace import init_workspace, makeWorkspace, cleanup_simple
+from utils.workspace import init_workspace, make_workspace, cleanup_simple
 from utils.helpers import error_handling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
 from utils.extras import completed_print
 from utils.exceptions import FileError, WorkspaceError, TaskCancelledError
@@ -36,7 +39,7 @@ class Convert(commands.Cog):
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
         workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspace_folders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
 
         emb = emb_conv_upl.copy()

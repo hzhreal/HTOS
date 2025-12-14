@@ -1,11 +1,15 @@
-import os
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.helpers import TimeoutHelper
+
 import discord
 from discord.ui.item import Item
+
 from data.converter.exceptions import ConverterError
-from data.crypto import Crypt_BL3 as crypt
+from data.crypto.bl3_crypt import Crypt_BL3 as crypt
 from data.crypto.common import CustomCrypto
 from data.crypto.exceptions import CryptoError
-from utils.helpers import TimeoutHelper
 from utils.constants import OTHER_TIMEOUT, logger
 from utils.embeds import embErrconv
 
@@ -76,7 +80,7 @@ class Converter_BL3:
  
         # try decrypting it with ps4 keys
         try: 
-            await crypt.decrypt_file(os.path.dirname(filepath), "ps4", ttwl)
+            await crypt.decrypt_file(filepath, "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError, IndexError):
@@ -98,7 +102,7 @@ class Converter_BL3:
 
         # not decrypted, rewrite to orignal data
         try: 
-            await crypt.encrypt_file(os.path.dirname(filepath), "ps4", ttwl)
+            await crypt.encrypt_file(filepath, "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError, IndexError):
@@ -106,7 +110,7 @@ class Converter_BL3:
 
         # try decrypting with pc keys instead 
         try:
-            await crypt.decrypt_file(os.path.dirname(filepath), "pc", ttwl)
+            await crypt.decrypt_file(filepath, "pc", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
         except (ValueError, IOError, IndexError):

@@ -26,11 +26,11 @@ class Crypt_Rev2:
             sha1 = cc.create_ctx_sha1()
             cc.set_ptr(0x20)
 
-            await cc.checksum(sha1, 0x20, cc.size - 0x40)
+            await cc.checksum(sha1, 0x20, cc.size - 0x20)
             await cc.write_checksum(sha1, cc.size - 0x20)
             # endian swap the checksum
             await cc.r_stream.seek(cc.size - 0x20)
-            chks = bytearray(cc.r_stream.read(20))
+            chks = bytearray(await cc.r_stream.read(20))
             cc.ES32(chks)
             await cc.w_stream.seek(cc.size - 0x20)
             await cc.w_stream.write(chks)
@@ -39,6 +39,7 @@ class Crypt_Rev2:
                 cc.ES32()
                 cc.encrypt(blowfish_ecb)
                 cc.ES32()
+                await cc.write()
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:

@@ -8,7 +8,9 @@ import struct
 import shutil
 from enum import Enum
 from dataclasses import dataclass
-from network import FTPps, SocketPS
+
+from network.ftp_functions import FTPps
+from network.socket_functions import SocketPS
 from utils.constants import (
     MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
     SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME
@@ -19,7 +21,6 @@ from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
 from utils.conversions import bytes_to_mb
-from data.crypto.mgsv_crypt import Crypt_MGSV
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -106,7 +107,7 @@ class SaveFile:
 
         await aiofiles.os.rename(self.path, os.path.join(self.dirname, self.realSave))
         await aiofiles.os.rename(self.path + ".bin", os.path.join(self.dirname, self.realSave + ".bin"))
-    
+
     async def dump(self) -> None:
         await self.batch.fInstance.uploadencrypted_bulk(self.realSave)
         await self.batch.fInstance.make1(self.batch.mount_location)
@@ -114,7 +115,7 @@ class SaveFile:
         if self.validity_check:
             sys_files = await self.batch.fInstance.list_files(self.batch.location_to_scesys, recursive=False)
             sys_files_validator(sys_files)
-    
+
     async def resign(self) -> None:
         if not self.ElementChoice.SFO in self.downloaded_sys_elements:
             await self.batch.fInstance.download_sfo(self.batch.location_to_scesys)
@@ -406,7 +407,7 @@ def handle_accid(user_id: str) -> str:
 
     return user_id
 
-async def checkSaves(
+async def check_saves(
           ctx: discord.ApplicationContext | discord.Message, 
           attachments: list[discord.message.Attachment], 
           ps_save_pair_upload: bool, 
@@ -513,7 +514,7 @@ async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
     async with aiofiles.open(sfo_path, "wb") as sfo:
         await sfo.write(sfo_data)
 
-def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: dict[str, int | str]) -> None:
+def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: int | str) -> None:
     # ignore parameters with no value
     filtered_patches = {key: value for key, value in patches.items() if value}
 
@@ -544,6 +545,8 @@ def resign(ctx: SFOContext, account_id: str) -> None:
 
 async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
+    from utils.namespaces import Crypto
+
     ctx.sfo_patch_parameter("TITLE_ID", title_id)
 
     if title_id in XENO2_TITLEID:
@@ -552,15 +555,17 @@ async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) 
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
         try: 
-            await Crypt_MGSV.reregion_change_crypt(dec_files_folder, title_id)
+            await Crypto.MGSV.reregion_change_crypt(dec_files_folder, title_id)
         except (ValueError, IOError, IndexError):
             raise OrbisError("Error changing MGSV crypt!")
 
-        newname = Crypt_MGSV.KEYS[title_id]["name"]
+        newname = Crypto.MGSV.KEYS[title_id]["name"]
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
 async def reregion_check(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
     """Renames the save after Re-regioning for the games that need it, random string is appended at the end for no overwriting."""
+    from utils.namespaces import Crypto
+
     if title_id in XENO2_TITLEID:
         newnameFile = os.path.join(savePath, title_id + "01")
         newnameBin = os.path.join(savePath, title_id + "01.bin")
@@ -573,7 +578,7 @@ async def reregion_check(title_id: str, savePath: str, original_savePath: str, o
             await aiofiles.os.rename(original_savePath_bin, newnameBin)
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_TPP_TITLEID:
-        new_regionName = Crypt_MGSV.KEYS[title_id]["name"]
+        new_regionName = Crypto.MGSV.KEYS[title_id]["name"]
         newnameFile = os.path.join(savePath, new_regionName)
         newnameBin = os.path.join(savePath, new_regionName + ".bin")
         if await aiofiles.os.path.exists(newnameFile) and await aiofiles.os.path.exists(newnameBin):

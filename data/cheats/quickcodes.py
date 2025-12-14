@@ -18,7 +18,7 @@ class QuickCodes(CustomCrypto):
         self.codes = codes
 
         parts = self.codes.split()
-        try: 
+        try:
             self.lines = [f"{parts[i]} {parts[i + 1]}" for i in range(0, len(parts), 2)]
         except IndexError: 
             raise QuickCodesError("Invalid code!")

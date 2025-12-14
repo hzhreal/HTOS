@@ -1,6 +1,5 @@
 import time
 import aiofiles
-import os
 from data.converter.common import Converter
 from data.converter.exceptions import ConverterError
 from data.crypto.common import CustomCrypto
@@ -18,7 +17,7 @@ class Converter_Rstar:
             TITLE = f"~b~HTOS CONVERTER ~p~∑ ~g~‹ - {date}".encode("utf-16le") # buffersize 0x100
         NULL_BYTES = bytes([0] * (0x104 - 0x4))
 
-        await cc.w_stream_stream.seek(0x4) # title start
+        await cc.w_stream.seek(0x4) # title start
         await cc.w_stream.write(NULL_BYTES)
         await cc.w_stream.seek(0x4)
         await cc.w_stream.write(TITLE)
@@ -53,7 +52,7 @@ class Converter_Rstar:
                 await crypt.encrypt_file(filepath, crypt.GTAV_PC_HEADER_OFFSET)
 
             elif header != crypt.GTAV_HEADER and platform == "ps4":
-                await crypt.decrypt_file(os.path.dirname(filepath), crypt.GTAV_PS_HEADER_OFFSET)
+                await crypt.decrypt_file(filepath, crypt.GTAV_PS_HEADER_OFFSET)
                 async with Converter(filepath, False) as cv:
                     await cv.push_bytes(crypt.GTAV_PS_HEADER_OFFSET, crypt.GTAV_PC_HEADER_OFFSET)
                     await Converter_Rstar.handle_title(cv)
@@ -65,17 +64,17 @@ class Converter_Rstar:
                     await Converter_Rstar.handle_title(cv)
 
             elif header != crypt.GTAV_HEADER and platform == "pc":
-                await crypt.decrypt_file(os.path.dirname(filepath), crypt.GTAV_PC_HEADER_OFFSET)
+                await crypt.decrypt_file(filepath, crypt.GTAV_PC_HEADER_OFFSET)
                 async with Converter(filepath, False) as cv:
                     await cv.push_bytes(crypt.GTAV_PC_HEADER_OFFSET, crypt.GTAV_PS_HEADER_OFFSET)
                     await Converter_Rstar.handle_title(cv)
 
-            else: 
+            else:
                 raise ConverterError("File not supported!")
 
             if platform == "ps4": 
                 return "CONVERTED: PS4 -> PC"
-            else: 
+            else:
                 return "CONVERTED: PC -> PS4"
         except (ValueError, IOError, IndexError):
             raise ConverterError("File not supported!")
@@ -101,7 +100,7 @@ class Converter_Rstar:
                 await crypt.encrypt_file(filepath, crypt.RDR2_PC_HEADER_OFFSET)
 
             elif header != crypt.RDR2_HEADER and platform == "ps4":
-                await crypt.decrypt_file(os.path.dirname(filepath), crypt.RDR2_PS_HEADER_OFFSET)
+                await crypt.decrypt_file(filepath, crypt.RDR2_PS_HEADER_OFFSET)
                 async with Converter(filepath, False) as cv:
                     await cv.push_bytes(crypt.RDR2_PS_HEADER_OFFSET, crypt.RDR2_PC_HEADER_OFFSET)
                     await Converter_Rstar.handle_title(cv, write_date_rdr2=True)
@@ -113,7 +112,7 @@ class Converter_Rstar:
                     await Converter_Rstar.handle_title(cv, clear_rdr2_pc_chks=True)
 
             elif header != crypt.RDR2_HEADER and platform == "pc":
-                await crypt.decrypt_file(os.path.dirname(filepath), crypt.RDR2_PC_HEADER_OFFSET)
+                await crypt.decrypt_file(filepath, crypt.RDR2_PC_HEADER_OFFSET)
                 async with Converter(filepath, False) as cv:
                     await cv.push_bytes(crypt.RDR2_PC_HEADER_OFFSET, crypt.RDR2_PS_HEADER_OFFSET)
                     await Converter_Rstar.handle_title(cv, clear_rdr2_pc_chks=True)

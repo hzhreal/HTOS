@@ -97,41 +97,54 @@ class Crypt_BL3:
     class BL3(CC):
         def __init__(self, filepath: str) -> None:
             super().__init__(filepath)
-            self.state = bytes()
+            self.state = bytearray()
+            self.off = -1
+            self.length_idx = -1
             self.i = -1
 
-        def prepare_encrypt(self) -> None:
+        def prepare_down(self, off: int, length: int) -> None:
+            if off >= self.size or length < 1:
+                raise CryptoError("Invalid save!")
+            self.set_ptr(off + length)
+            self.off = off
+            self.length_idx = length - 1
+            self.state = bytearray()
+
+        def prepare_up(self, off: int) -> None:
+            self.set_ptr(off)
+            self.off = off
             self.i = 0
+            self.state = bytearray()
 
-        def prepare_decrypt(self) -> None:
-            self.i = self.size - 1
+        async def xor_down(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
+            s = max(self.chunk_start - 32, self.off)
+            await self.r_stream.seek(s)
+            self.state = bytearray(await self.r_stream.read(self.chunk_start - s))
 
-        def encrypt(self, prefix_magic: bytes | bytearray, xor_magic: bytes | bytearray) -> None:
-            self._prepare_write()
-            for i in range(len(self.chunk)):
-                if not self.state and i < 32:
-                    b = prefix_magic[i]
-                elif i < 32:
-                    b = self.state[i]
+            for i in range(len(self.chunk) - 1, -1, -1):
+                if self.length_idx < 32:
+                    b = pre[self.length_idx]
                 else:
-                    b = self.chunk[i]
-                b ^= xor_magic[self.i % 32]
+                    if i < 32:
+                        b = self.state.pop()
+                    else:
+                        b = self.chunk[i - 32]
+                b ^= xor[self.length_idx % 32]
+                self.chunk[i] ^= b
+                self.length_idx -= 1
+
+        def xor_up(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
+            for i in range(len(self.chunk)):
+                if self.i < 32:
+                    b = pre[self.i]
+                elif self.state and i < 32:
+                    b = self.state.pop(0)
+                else:
+                    b = self.chunk[i - 32]
+                b ^= xor[self.i % 32]
                 self.chunk[i] ^= b
                 self.i += 1
-            self.state = self.chunk[-32:]
-
-        def decrypt(self, prefix_magic: bytes | bytearray, xor_magic: bytes | bytearray) -> None:
-            self._prepare_write()
-            for i in range(len(self.chunk) - 1, -1, -1):
-                if not self.state and i < 32:
-                    b = prefix_magic[i]
-                elif i < 32:
-                    b = self.state[i]
-                else:
-                    b = self.chunk[i]
-                b ^= xor_magic[self.i % 32]
-                self.chunk[i] ^= b
-                self.i -= 1
+            self.state = bytearray(self.chunk[-32:])
 
     @staticmethod
     async def decrypt_file(folderpath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
@@ -151,57 +164,53 @@ class Crypt_BL3:
                 else:
                     raise CryptoError("Invalid save!")
 
-                inc = await cc.find(b"\x00", offset)
-                if offset + inc == offset - 1:
+                next_null = await cc.find(b"\x00", offset)
+                if next_null == -1:
                     raise CryptoError("Invalid save!")
-                inc += 1
-                offset += inc
+                offset = next_null + 1
 
                 await cc.r_stream.seek(offset)
-                size = uint32(await self.r_stream.read(4), "little")
+                size = uint32(await cc.r_stream.read(4), "little").value
                 offset += 4
+                cc.prepare_down(offset, size)
 
-                cc.prepare_decrypt()
-                cc.set_ptr(size.value)
                 while await cc.read(stop_off=offset, backwards=True):
-                    cc.decrypt(pre, xor)
+                    await cc.xor_down(pre, xor)
                     await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
         game = "TTWL" if ttwl else "BL3"
-        profile_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["profile"]
-        savegame_string = Crypt_BL3.IDENTIFIER_STRIGNS[game]["savegame"]
+        profile_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["profile"]
+        savegame_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["savegame"]
 
         async with Crypt_BL3.BL3(filepath) as cc:
-            if (offset := cc.find(profile_string)) != -1:
+            if (offset := await cc.find(profile_string)) != -1:
                 pre = Crypt_BL3.KEYS_PROFILE[platform]["pre"]
                 xor = Crypt_BL3.KEYS_PROFILE[platform]["xor"]
-            elif (offset := cc.find(savegame_string)) != -1:
+            elif (offset := await cc.find(savegame_string)) != -1:
                 pre = Crypt_BL3.KEYS_SAVEGAME[platform]["pre"]
                 xor = Crypt_BL3.KEYS_SAVEGAME[platform]["xor"]
             else:
                 raise CryptoError("Invalid save!")
 
-            inc = await cc.find(b"\x00", offset)
-            if offset + inc == offset - 1:
+            next_null = await cc.find(b"\x00", offset)
+            if next_null == -1:
                 raise CryptoError("Invalid save!")
-            inc += 1
-            offset += inc
+            offset = next_null + 1
 
             await cc.r_stream.seek(offset)
-            size = uint32(await self.r_stream.read(4), "little")
+            size = uint32(await cc.r_stream.read(4), "little").value
             offset += 4
+            cc.prepare_up(offset)
 
-            cc.prepare_encrypt()
-            cc.set_ptr(offset)
-            while await cc.read(stop_off=size.value):
-                cc.encrypt(pre, xor)
+            while await cc.read(stop_off=offset + size):
+                cc.xor_up(pre, xor)
                 await cc.write()
 
     @staticmethod
     async def check_enc_ps(filename: str, ttwl: bool) -> None:
-        async with CustomCrypto(filename) as cc:
+        async with CC(filename) as cc:
             s = await cc.find(Crypt_BL3.COMMON)
         if s != -1:
             await Crypt_BL3.encrypt_file(filename, "ps4", ttwl)

@@ -1,15 +1,20 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.helpers import TimeoutHelper
+
 import discord
 import asyncio
 import aiofiles
-import os
+
 from discord.ui.item import Item
+from typing import Literal
+
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
-from utils.constants import OTHER_TIMEOUT, logger
-from utils.embeds import embDone_G, embchErr, embchrdr2
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
-from typing import Literal
-from utils.helpers import TimeoutHelper
+from utils.constants import OTHER_TIMEOUT, logger
+from utils.embeds import embDone_G, embchErr, embchrdr2
 from utils.type_helpers import uint32
 
 class Cheats_RDR2:
@@ -107,16 +112,12 @@ class Cheats_RDR2:
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 
-        if header == crypt.RDR2_HEADER:
-            encrypted = False
-
-        elif header != crypt.RDR2_HEADER:
-            encrypted = True
+        encrypted = header != crypt.RDR2_HEADER
 
         if encrypted:
-            start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET  
+            start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             try:
-                await crypt.decrypt_file(os.path.dirname(filepath), start_offset)
+                await crypt.decrypt_file(filepath, start_offset)
             except (ValueError, IOError, IndexError): 
                 raise QuickCheatsError("File not supported!")
         return platform 
@@ -138,7 +139,7 @@ class Cheats_RDR2:
 
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             await crypt.encrypt_file(filepath, start_offset)
-            await crypt.decrypt_file(os.path.dirname(filepath), start_offset) # for better compatability 
+            await crypt.decrypt_file(filepath, start_offset) # for better compatability 
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 
@@ -152,7 +153,7 @@ class Cheats_RDR2:
                     raise QuickCheatsError("File not supported!")
 
                 await qc.r_stream.seek(money_offset)
-                money = uint32(await qc.r_stream.read(4), "big") 
+                money = uint32(await qc.r_stream.read(4), "big").value
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 

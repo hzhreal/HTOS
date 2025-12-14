@@ -11,7 +11,9 @@ from app_core.models import Profiles, Logger, Settings, TabBase
 from app_core.helpers import prepare_save_input_folder, calculate_foldersize, get_files_nonrecursive
 from data.crypto.exceptions import CryptoError
 from data.crypto.helpers import extra_import
-from network import C1socket, FTPps, SocketError, FTPError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SCE_SYS_CONTENTS, SCE_SYS_NAME
 from utils.workspace import init_workspace, cleanup, cleanup_simple
 from utils.orbis import SaveBatch, SaveFile

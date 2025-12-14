@@ -7,7 +7,9 @@ from aiofiles.os import makedirs, mkdir
 
 from app_core.models import Profiles, Settings, Logger, TabBase
 from app_core.helpers import prepare_save_input_folder, check_save, prepare_single_save_folder
-from network import C1socket, FTPps, SocketError, FTPError
+from network.socket_functions import C1socket 
+from network.ftp_functions import FTPps 
+from network.exceptions import SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID
 from utils.workspace import init_workspace, cleanup, cleanup_simple
 from utils.orbis import SaveBatch, SaveFile

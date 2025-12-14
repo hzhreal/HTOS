@@ -27,11 +27,11 @@ class Crypt_MGSV:
     class MGSV(CC):
         def __init__(self, filepath: str, title_id: str) -> None:
             super().__init__(filepath)
-            self.key = uint32(Crypt_MGSV.KEYS[title_id][key])
+            self.key = uint32(Crypt_MGSV.KEYS[title_id]["key"])
 
         def crypt(self) -> None:
-            self.__prepare_list_write()
-            for i in range(len(chunk)):
+            self._prepare_list_write()
+            for i in range(len(self.chunk)):
                 self.key.value ^= (self.key.value << 13)
                 self.key.value ^= (self.key.value >> 7)
                 self.key.value ^= (self.key.value << 5)
@@ -39,12 +39,13 @@ class Crypt_MGSV:
                 self.chunk[i].value ^= self.key.value
 
     @staticmethod
-    def crypt_word(data: uint32, title_id: str) -> None:
+    def mix_key(length: int, title_id: str) -> int: 
         key = uint32(Crypt_MGSV.KEYS[title_id]["key"])
-        key.value ^= (key.value << 13)
-        key.value ^= (key.value >> 7)
-        key.value ^= (key.value << 5)
-        data.value ^= key.value
+        for _ in range(length):
+            key.value ^= (key.value << 13)
+            key.value ^= (key.value >> 7)
+            key.value ^= (key.value << 5)
+        return key.value
 
     @staticmethod
     async def decrypt_file(folderpath: str, title_id: str) -> None:
@@ -62,8 +63,8 @@ class Crypt_MGSV:
     async def encrypt_file(filepath: str, title_id: str) -> None:
         async with Crypt_MGSV.MGSV(filepath, title_id) as cc:
             md5 = cc.create_ctx_md5()
-            await cc.checksum(md5, 0x10)
-            await cc.write_checksum(md5, cc.size - 16)
+            await cc.checksum(md5, 0x10, cc.size)
+            await cc.write_checksum(md5, 0)
             while await cc.read():
                 cc.bytes_to_u32array("little")
                 cc.crypt()
@@ -93,14 +94,17 @@ class Crypt_MGSV:
             async with aiofiles.open(filepath, "rb") as savegame:
                 await savegame.seek(0x10)
                 header_word = await savegame.read(4)
+                off = await savegame.tell()
+                assert off % 4 == 0
 
             if await Crypt_MGSV.header_check(None, header_word[:2]):
                 await Crypt_MGSV.encrypt_file(filepath, target_titleid)
                 continue
 
             for title_id, _ in Crypt_MGSV.KEYS.items():
+                key = Crypt_MGSV.mix_key(off // 4, title_id)
                 h = uint32(header_word, "little")
-                Crypt_MGSV.crypt_word(h, title_id)
+                h.value ^= key
                 if await Crypt_MGSV.header_check(None, h.as_bytes[:2]):
                     await Crypt_MGSV.decrypt_file(filepath, title_id)
                     await Crypt_MGSV.encrypt_file(filepath, target_titleid)
