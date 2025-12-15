@@ -287,12 +287,8 @@ class CustomCrypto:
 
     def gen_bytes(self, length: int) -> bytes:
         assert 1 <= length <= self.CHUNKSIZE
-
-        arr = bytearray()
-        for _ in range(length):
-            b = id(object()) & 0xFF
-            arr.append(b)
-        return bytes(arr)
+        b = id(object()) & 0xFF
+        return bytes([b] * length)
 
     def encrypt(self, ctx: int) -> None:
         self._prepare_write()
