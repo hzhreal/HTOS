@@ -218,9 +218,9 @@ class Quick(commands.Cog):
                 basename = os.path.basename(savegame)
 
                 emb1 = embLoading.copy()
-                emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                emb1.description = emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
                 emb2 = embApplied.copy()
-                emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                emb2.description = emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
 
                 try:
                     await msg.edit(embed=emb1)
@@ -253,7 +253,7 @@ class Quick(commands.Cog):
 
             zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
