@@ -41,8 +41,7 @@ def main() -> None:
         sys.exit()
 
     # write backup
-    shutil.copyfile(filepath, filepath + ".out")
-    filepath += ".out"
+    shutil.copyfile(filepath, filepath + ".bak")
 
     match opt:
         case Option.DECRYPT:
