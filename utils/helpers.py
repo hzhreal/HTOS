@@ -1,7 +1,6 @@
 import discord
 import asyncio
 import os
-import json
 import aiohttp
 import aiofiles.os
 
@@ -451,8 +450,6 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         else:
             raise PSNIDError("Could not find previously stored account ID.")
 
-    limit = 0
-
     if len(username) < 3 or len(username) > 16:
         await asyncio.sleep(1)
         raise PSNIDError("Invalid PS username!")
@@ -462,8 +459,8 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
 
     if NPSSO_global.val:
         try:
-            userSearch = psnawp.user(online_id=username)
-            user_id = userSearch.account_id
+            user = psnawp.user(online_id=username)
+            user_id = user.account_id
             user_id = handle_accid(user_id)
             delmsg = False
 
@@ -479,31 +476,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
             NPSSO_global.val = ""
 
     if not user_id:
-        while True:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://psn.flipscreen.games/search.php?username={username}") as response:
-                    response.text = await response.text()
-
-            if response.status == 200 and limit != 20:
-                data = json.loads(response.text)
-                obtainedUsername = data["online_id"]
-
-                if obtainedUsername.lower() == username.lower():
-                    user_id = data["user_id"]
-                    user_id = handle_accid(user_id)
-                    delmsg = False
-                    break
-                else:
-                    limit += 1
-            else:
-                await ctx.respond(embed=emb8)
-                delmsg = True
-
-                response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
-                if response.content == "EXIT":
-                    raise PSNIDError("EXITED!")
-                user_id = response.content
-                break
+        raise PSNIDError("Account ID fetcher is unavailable. Use the `store_accountid` command.")
 
     if delmsg:
         await asyncio.sleep(0.5)
