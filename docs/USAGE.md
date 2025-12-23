@@ -35,9 +35,9 @@ When a thread is created, the thread ID is stored locally. Most commands you can
 There is also a local database for blacklisted Discord user IDs and Playstation account IDs. Using the bot with these values is impossible.  
 
 ## Commands
-[Common arguments](common-arguments)
-[User commands](user-commands)
-[Bot owner commands](bot-owner-commands)
+* [Common arguments](#common-arguments)
+* [User commands](#user-commands)
+* [Bot owner commands](#bot-owner-commands)
 
 ### Common arguments
 `playstation_id`: YOUR PLAYSTATION NETWORK USERNAME  
@@ -190,7 +190,7 @@ The rest of the arguments are keys in the param.sfo file that you can choose to 
 
 `/blacklist add`: Add someone to the blacklist.  
 
-**Arguments**:
+**Arguments**:  
 `ps_accountid`: PlayStation account ID in hexadecimal format.  
 `user`: Discord user.  
 Minimum 1 argument must be specified. 
@@ -199,7 +199,7 @@ Minimum 1 argument must be specified.
 
 `/blacklist remove`: Remove someone from the blacklist.  
 
-**Arguments**:
+**Arguments**:  
 `ps_accountid`: PlayStation account ID in hexadecimal format.  
 `user`: Discord user.  
 Minimum 1 argument must be specified.  

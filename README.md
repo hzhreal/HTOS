@@ -31,7 +31,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Like a Dragon: Ishin                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Metal Gear Solid V: Ground Zeroes        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| No Man's Sky (savedata.hg)               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| No Man's Sky                             | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Red Dead Redemption 2                    | :white_check_mark:      | :white_check_mark:                  | :white_check_mark:       | :white_circle:                     |
 | Resident Evil 4 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -39,7 +39,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil: Resistance                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Revelations 2             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shin Megami Tensei 5                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Terraria (.plr & some .wld)              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Terraria                                 | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | The Last of Us                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | The Last of Us Part II                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Tiny Tina's Wonderlands                  | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
@@ -67,6 +67,9 @@ That is, if you want to make modifications to the savegame without corrupting it
 Dead Island 1: There may be unimplemented checksums.  
 Dead Island 2: Unimplemented checksums.  
 Dying Light 2: Unimplemented checksums.  
+No Man's Sky: Only `savedata.hg` is implemented.  
+Terraria: Only `.plr` and some `.wld` are implemented.  
+
 
 :white_circle:: Assumed to not need an implementation, may or may not work.  
 
