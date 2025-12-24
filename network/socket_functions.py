@@ -4,7 +4,9 @@ if TYPE_CHECKING:
   from utils.orbis import PfsSKKey
 
 import asyncio
-import json
+import orjson
+
+from network.exceptions import SocketError
 from utils.constants import IP, PORT_CECIE, logger
 
 class SocketPS:
@@ -27,7 +29,7 @@ class SocketPS:
 
                 logger.info(response)
                 if deserialize:
-                    response = json.loads(response)
+                    response = orjson.loads(response)
                 return response
 
         except OSError as e:
@@ -50,7 +52,7 @@ class SocketPS:
                 await writer.wait_closed()
 
     async def socket_dump(self, folder: str, savename: str) -> None: 
-        request = json.dumps({
+        request = orjson.dumps({
             "RequestType": "rtDumpSave", 
             "dump": {
                 "saveName": savename, 
@@ -65,7 +67,7 @@ class SocketPS:
             raise SocketError(response.get("code", "Failed to dump save!"))
 
     async def socket_update(self, folder: str, savename: str) -> None: 
-        message = json.dumps({
+        message = orjson.dumps({
             "RequestType": "rtUpdateSave", 
             "update": {
                 "saveName": savename, 
@@ -80,7 +82,7 @@ class SocketPS:
             raise SocketError(response.get("code", "Failed to update save!"))
 
     async def socket_keyset(self) -> int:
-        message = json.dumps({
+        message = orjson.dumps({
             "RequestType": "rtKeySet"
         }) + "\r\n"
 
@@ -89,7 +91,7 @@ class SocketPS:
         return response.get("keyset", "FAIL!")
 
     async def socket_createsave(self, folder: str, savename: str, blocks: int) -> None:
-        message = json.dumps({
+        message = orjson.dumps({
             "RequestType": "rtCreateSave",
             "create": {
                 "saveName": savename,
@@ -104,7 +106,7 @@ class SocketPS:
             raise SocketError(response.get("code", "Failed to create a save!"))
 
     async def socket_decryptsdkey(self, sealed_key: PfsSKKey) -> None:
-        message = json.dumps({
+        message = orjson.dumps({
             "RequestType": "rtDecryptSealedKey",
             "decsdkey": {
                 "sealedKey": sealed_key.as_array()
@@ -116,6 +118,6 @@ class SocketPS:
         if response.get("ResponseType") == "srInvalid":
             raise SocketError("Failed to decrypt sealed key!")
 
-        sealed_key.dec_key.extend(json.loads(response["json"]))
+        sealed_key.dec_key.extend(orjson.loads(response["json"]))
 
 C1socket = SocketPS(IP, PORT_CECIE)

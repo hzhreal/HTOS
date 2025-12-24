@@ -6,6 +6,8 @@ import aiofiles
 import aiofiles.os
 import asyncio
 from aioftp.errors import AIOFTPException
+
+from network.exceptions import FTPError
 from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
 from utils.conversions import mb_to_bytes

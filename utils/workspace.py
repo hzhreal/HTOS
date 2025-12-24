@@ -17,8 +17,8 @@ from google_drive.exceptions import GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, 
-    logger, blacklist_logger, psnawp
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH,
+    logger, blacklist_logger, psnawp, verify_titleids
 )
 from utils.embeds import emb_il, embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
 from utils.extras import generate_random_string
@@ -93,6 +93,8 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
             ftp.quit()
         except:
             pass
+
+    verify_titleids()
 
     if lite:
         return

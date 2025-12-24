@@ -20,6 +20,7 @@ from google.auth.exceptions import RefreshError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from google_drive.exceptions import GDapiError
 from utils.orbis import parse_pfs_header, parse_sealedkey
 from utils.extras import generate_random_string
 from utils.constants import (
@@ -103,7 +104,7 @@ class GDapi:
                 except RefreshError:
                     creds = None
             else:
-                creds = None     
+                creds = None
             if not creds:
                 flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPE)
                 creds = flow.run_local_server(port=0)

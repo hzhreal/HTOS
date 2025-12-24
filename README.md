@@ -43,6 +43,8 @@ Certain games need to have an extra implementation for it to work out of the box
 | The Last of Us                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | The Last of Us Part II                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Tiny Tina's Wonderlands                  | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Uncharted 2: Remastered                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Uncharted 3: Remastered                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 4                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Lost Legacy               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Nathan Drake Collection   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
