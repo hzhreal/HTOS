@@ -31,10 +31,10 @@ class ReRegion(commands.Cog):
     @discord.slash_command(description="Change the region of a save (Must be from the same game).")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def reregion(
-              self, 
-              ctx: discord.ApplicationContext, 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -203,7 +203,7 @@ class ReRegion(commands.Cog):
             if special_reregion and not extra_msg and j > 2:
                 extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid, extra_msg)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

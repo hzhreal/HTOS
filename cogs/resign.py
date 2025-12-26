@@ -28,10 +28,10 @@ class Resign(commands.Cog):
     @discord.slash_command(description="Resign encrypted savefiles (the usable ones you put in the console).")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
-              self, 
-              ctx: discord.ApplicationContext, 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -129,7 +129,7 @@ class Resign(commands.Cog):
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

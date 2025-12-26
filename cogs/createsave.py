@@ -41,14 +41,14 @@ class CreateSave(commands.Cog):
     @discord.slash_command(description="Create savedata from scratch.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def createsave(
-              self, 
-              ctx: discord.ApplicationContext, 
-              savename: Option(str, description="The name of the save."), # type: ignore
-              saveblocks: Option(int, description=SAVEBLOCKS_DESC, min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX, default=0), # type: ignore
-              savesize_mb: Option(int, description=SAVESIZE_MB_DESC, min_value=SAVESIZE_MB_MIN, max_value=SAVESIZE_MB_MAX, default=0), # type: ignore 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
-              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              savename: Option(str, description="The name of the save."),
+              saveblocks: Option(int, description=SAVEBLOCKS_DESC, min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX, default=0),
+              savesize_mb: Option(int, description=SAVESIZE_MB_DESC, min_value=SAVESIZE_MB_MIN, max_value=SAVESIZE_MB_MAX, default=0),
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""),
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False)
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()

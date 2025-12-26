@@ -30,10 +30,10 @@ class Convert(commands.Cog):
     @discord.slash_command(description="Convert a ps4 savefile to pc or vice versa on supported games that needs converting.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def convert(
-              self, 
-              ctx: discord.ApplicationContext, 
-              game: Option(str, choices=["GTA V", "RDR 2", "BL 3", "TTWL"], description="Choose what game the savefile belongs to."), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              game: Option(str, choices=["GTA V", "RDR 2", "BL 3", "TTWL"], description="Choose what game the savefile belongs to."),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -147,7 +147,7 @@ class Convert(commands.Cog):
 
             zipname = "savegame_Converted" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

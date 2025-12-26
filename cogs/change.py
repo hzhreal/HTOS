@@ -35,11 +35,11 @@ class Change(commands.Cog):
     @change_group.command(description="Changes the picture of your save, this is just cosmetic.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def picture(
-              self, 
-              ctx: discord.ApplicationContext, 
-              picture: discord.Attachment, 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              picture: discord.Attachment,
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -175,12 +175,12 @@ class Change(commands.Cog):
     @change_group.command(description="Change the titles of your save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def title(
-              self, 
+              self,
               ctx: discord.ApplicationContext, 
-              maintitle: Option(str, description="For example Grand Theft Auto V.", default=""), # type: ignore
-              subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=""), # type: ignore
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              maintitle: Option(str, description="For example Grand Theft Auto V.", default=""),
+              subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=""),
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         if maintitle == "" and subtitle == "":

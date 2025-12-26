@@ -39,10 +39,10 @@ class Quick(commands.Cog):
     @quick_group.command(description="Resign pre stored saves.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
-              self, 
-              ctx: discord.ApplicationContext, 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
         workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
@@ -144,7 +144,7 @@ class Quick(commands.Cog):
 
         zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
 
-        try: 
+        try:
             await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
         except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             if isinstance(e, discord.HTTPException):
@@ -165,10 +165,10 @@ class Quick(commands.Cog):
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def codes(
-              self, 
-              ctx: discord.ApplicationContext, 
+              self,
+              ctx: discord.ApplicationContext,
               codes: str,
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()

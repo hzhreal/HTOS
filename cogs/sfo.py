@@ -91,21 +91,21 @@ class SFO(commands.Cog):
     @sfo_group.command(description="Patch parameters in a param.sfo file to modify the save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def write(
-              self, 
-              ctx: discord.ApplicationContext, 
+              self,
+              ctx: discord.ApplicationContext,
               sfo: discord.Attachment,
-              account_id: Option(str, description="uint64 (hexadecimal)", default="", max_length=2 + 16), # type: ignore
-              attribute: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
-              category: Option(str, description="utf-8", default=""), # type: ignore
-              detail: Option(str, description="utf-8", default=""), # type: ignore
-              format: Option(str, description="utf-8", default=""), # type: ignore
-              maintitle: Option(str, description="utf-8", default=""), # type: ignore
-              params: Option(str, description="utf-8-special", default=""), # type: ignore
-              savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX), # type: ignore
-              savedata_directory: Option(str, description="utf-8", default=""), # type: ignore
-              savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
-              subtitle: Option(str, description="utf-8", default=""), # type: ignore
-              title_id: Option(str, description="utf-8", default="") # type: ignore
+              account_id: Option(str, description="uint64 (hexadecimal)", default="", max_length=2 + 16),
+              attribute: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF),
+              category: Option(str, description="utf-8", default=""),
+              detail: Option(str, description="utf-8", default=""),
+              format: Option(str, description="utf-8", default=""),
+              maintitle: Option(str, description="utf-8", default=""),
+              params: Option(str, description="utf-8-special", default=""),
+              savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX),
+              savedata_directory: Option(str, description="utf-8", default=""),
+              savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF),
+              subtitle: Option(str, description="utf-8", default=""),
+              title_id: Option(str, description="utf-8", default="")
             ) -> None:
 
         parameters = {

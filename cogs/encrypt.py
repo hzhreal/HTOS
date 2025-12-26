@@ -34,13 +34,13 @@ class Encrypt(commands.Cog):
     @discord.slash_command(description="Swap the decrypted savefile from the encrypted ones you upload.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def encrypt(
-              self, 
-              ctx: discord.ApplicationContext, 
-              upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."), # type: ignore
-              include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."), # type: ignore
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
-              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."),
+              include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."),
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""),
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False)
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -115,8 +115,8 @@ class Encrypt(commands.Cog):
                         raise FileError("Could not list any decrypted saves!")
 
                     completed = await replace_decrypted(
-                        d_ctx, C1ftp, files, savefile.title_id, 
-                        batch.mount_location, upload_individually, 
+                        d_ctx, C1ftp, files, savefile.title_id,
+                        batch.mount_location, upload_individually,
                         newUPLOAD_DECRYPTED, savefile.basename, pfs_size, ignore_secondlayer_checks
                     )
 
@@ -129,12 +129,12 @@ class Encrypt(commands.Cog):
                         await msg.edit(embed=emb)
 
                         uploaded_file_paths_sys = (await upload2(
-                            d_ctx, 
-                            newUPLOAD_DECRYPTED, 
-                            max_files=len(SCE_SYS_CONTENTS), 
-                            sys_files=True, 
-                            ps_save_pair_upload=False, 
-                            ignore_filename_check=False, 
+                            d_ctx,
+                            newUPLOAD_DECRYPTED,
+                            max_files=len(SCE_SYS_CONTENTS),
+                            sys_files=True,
+                            ps_save_pair_upload=False,
+                            ignore_filename_check=False,
                             savesize=pfs_size)
                         )[0]
                         await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
@@ -185,7 +185,7 @@ class Encrypt(commands.Cog):
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

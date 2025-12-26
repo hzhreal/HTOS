@@ -33,10 +33,10 @@ class Decrypt(commands.Cog):
     @discord.slash_command(description="Decrypt a savefile and download the contents.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def decrypt(
-              self, 
-              ctx: discord.ApplicationContext, 
-              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -147,7 +147,7 @@ class Decrypt(commands.Cog):
             else:
                 zipname = "Decrypted-Saves" + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, destination_directory_outer, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

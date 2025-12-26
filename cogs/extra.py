@@ -20,9 +20,9 @@ class Extra(commands.Cog):
     async def add(
               self,
               ctx: discord.ApplicationContext,
-              ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""), # type: ignore
-              user: Option(discord.User, default=""), # type: ignore
-              reason: Option(str, description="The user will see this reason when prompted.", default=None) # type: ignore
+              ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""),
+              user: Option(discord.User, default=""),
+              reason: Option(str, description="The user will see this reason when prompted.", default=None)
             ) -> None:
 
             await ctx.defer(ephemeral=True)
@@ -53,8 +53,8 @@ class Extra(commands.Cog):
     async def remove(
               self,
               ctx: discord.ApplicationContext,
-              ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""), # type: ignore
-              user: Option(discord.User, default="") # type: ignore
+              ps_accountid: Option(str, description="In hexadecimal format, '0x prefix is fine and optional.", max_length=18, default=""),
+              user: Option(discord.User, default="")
             ) -> None:
 
         await ctx.defer(ephemeral=True)
@@ -107,9 +107,9 @@ class Extra(commands.Cog):
     @discord.slash_command(description="Store your account ID in hexadecimal format.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def store_accountid(
-              self, 
+              self,
               ctx: discord.ApplicationContext,
-              account_id: Option(str, description="In hexadecimal format, '0x' prefix is fine and optional.", max_length=18) # type: ignore
+              account_id: Option(str, description="In hexadecimal format, '0x' prefix is fine and optional.", max_length=18)
             ) -> None:
         workspace_folders = []
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
