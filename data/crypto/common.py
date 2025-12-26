@@ -297,7 +297,9 @@ class CustomCrypto:
         assert isinstance(ctx.attr, uint8)
 
         blocksize = ctx.attr.value
-        assert blocksize != 0
+        if blocksize == 0:
+            ctx.obj.encrypt(self.chunk, self.chunk)
+            return
 
         remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
         if self.chunk == remainder:
@@ -316,7 +318,9 @@ class CustomCrypto:
         assert isinstance(ctx.attr, uint8)
 
         blocksize = ctx.attr.value
-        assert blocksize != 0
+        if blocksize == 0:
+            ctx.obj.decrypt(self.chunk, self.chunk)
+            return
 
         remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
         if self.chunk == remainder:
@@ -561,6 +565,20 @@ class CustomCrypto:
         if isinstance(obj, pyzstd.ZstdDecompressor) and obj.eof:
             eof_off = self.chunk_start + (len(self.chunk) - len(obj.unused_data))
             return eof_off # in r_stream
+
+    @staticmethod
+    def is_valid_zlib_header(header: bytes) -> bool:
+        ZLIB_HEADERS = frozenset({
+            b"\x08\x1D", b"\x08\x5B", b"\x08\x99", b"\x08\xD7",
+            b"\x18\x19", b"\x18\x57", b"\x18\x95", b"\x18\xD3",
+            b"\x28\x15", b"\x28\x53", b"\x28\x91", b"\x28\xCF",
+            b"\x38\x11", b"\x38\x4F", b"\x38\x8D", b"\x38\xCB",
+            b"\x48\x0D", b"\x48\x4B", b"\x48\x89", b"\x48\xC7",
+            b"\x58\x09", b"\x58\x47", b"\x58\x85", b"\x58\xC3",
+            b"\x68\x05", b"\x68\x43", b"\x68\x81", b"\x68\xDE",
+            b"\x78\x01", b"\x78\x5E", b"\x78\x9C", b"\x78\xDA",
+        })
+        return header in ZLIB_HEADERS
 
     @staticmethod
     async def obtain_files(path: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:
