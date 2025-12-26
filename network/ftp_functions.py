@@ -8,9 +8,8 @@ import asyncio
 from aioftp.errors import AIOFTPException
 
 from network.exceptions import FTPError
-from utils.constants import SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
+from utils.constants import GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
-from utils.conversions import mb_to_bytes
 
 FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
 
@@ -37,7 +36,7 @@ class FTPps:
         self.keystone_file_path = os.path.join(self.keystone_path, KEYSTONE_NAME)
         self.png_file_path = os.path.join(self.png_path, ICON0_NAME)
 
-    CHUNKSIZE = mb_to_bytes(15)
+    CHUNKSIZE = GENERAL_CHUNKSIZE
 
     @staticmethod
     async def check_sys_filesize(ftp: aioftp.Client, file: str, keystone: bool) -> bool:

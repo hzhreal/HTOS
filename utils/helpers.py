@@ -2,6 +2,7 @@ import discord
 import asyncio
 import os
 import aiohttp
+import aiofiles
 import aiofiles.os
 
 from discord.ext import pages
@@ -17,8 +18,8 @@ from data.crypto.helpers import extra_import
 from network.ftp_functions import FTPps
 from utils.orbis import check_saves, parse_pfs_header, parse_sealedkey, checkid, handle_accid
 from utils.constants import (
-    logger, blacklist_logger, bot, psnawp, 
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT,
+    logger, blacklist_logger, bot, psnawp,
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM
 )
 from utils.embeds import (
@@ -119,11 +120,11 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
             pass
 
 async def error_handling(
-          ctx: discord.ApplicationContext | discord.Message, 
+          ctx: discord.ApplicationContext | discord.Message,
           error: str, 
-          workspace_folders: list[str] | None, 
-          uploaded_file_paths: list[str] | None, 
-          mount_paths: list[str] | None, 
+          workspace_folders: list[str] | None,
+          uploaded_file_paths: list[str] | None,
+          mount_paths: list[str] | None,
           C1ftp: FTPps | None
         ) -> None:
     emb = embe.copy()
@@ -170,7 +171,9 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
 
 async def download_attachment(attachment: discord.Attachment, path: str) -> None:
     try:
-        await attachment.save(path)
+        async with aiofiles.open(path, "wb") as out:
+            async for chunk in attachment.read_chunked(chunksize=GENERAL_CHUNKSIZE):
+                await out.write(chunk)
     except asyncio.TimeoutError:
         raise TimeoutError("TIMED OUT!")
     except aiohttp.ClientError:

@@ -182,6 +182,7 @@ MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, for button click, responding to quickresign command, and responding with account id
 GENERAL_TIMEOUT = None # seconds, for general processes like google drive uploads,
+GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(8) # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes

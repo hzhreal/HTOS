@@ -24,8 +24,8 @@ from google_drive.exceptions import GDapiError
 from utils.orbis import parse_pfs_header, parse_sealedkey
 from utils.extras import generate_random_string
 from utils.constants import (
-    SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, 
-    MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, SCE_SYS_NAME, 
+    SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, GENERAL_CHUNKSIZE,
+    MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, SCE_SYS_NAME,
     logger
 )
 from utils.embeds import (
@@ -33,7 +33,7 @@ from utils.embeds import (
     embffn, embgddone
 )
 from utils.exceptions import OrbisError
-from utils.conversions import gb_to_bytes, bytes_to_mb, mb_to_bytes, round_half_up, minutes_to_seconds
+from utils.conversions import gb_to_bytes, bytes_to_mb, round_half_up, minutes_to_seconds
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
@@ -48,9 +48,9 @@ class GDapi:
     TOTAL_SIZE_LIMIT = gb_to_bytes(2)
     MAX_USER_NESTING = 100 # how deep a user can go when uploading files to create a save with
     MAX_FILES_IN_DIR = MAX_FILES
-    UPLOAD_CHUNKSIZE = mb_to_bytes(32)
+    UPLOAD_CHUNKSIZE = GENERAL_CHUNKSIZE
     UPLOAD_CHUNK_TIMEOUT = aiohttp.ClientTimeout(
-        total=minutes_to_seconds(10), 
+        total=minutes_to_seconds(10),
         sock_connect=30
     )
     RANGE_PATTERN = re.compile(r"bytes=(\d+)-(\d+)")
