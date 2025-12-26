@@ -169,9 +169,11 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
         raise TimeoutError("TIMED OUT!")
     return response
 
-async def download_attachment(attachment: discord.Attachment, path: str) -> None:
+async def download_attachment(attachment: discord.Attachment, folderpath: str) -> None:
+    _, ext = os.path.splitext(attachment.filename)
+    filepath = os.path.join(folderpath, attachment.title + ext)
     try:
-        async with aiofiles.open(path, "wb") as out:
+        async with aiofiles.open(filepath, "wb") as out:
             async for chunk in attachment.read_chunked(chunksize=GENERAL_CHUNKSIZE):
                 await out.write(chunk)
     except asyncio.TimeoutError:
@@ -275,8 +277,7 @@ async def upload2(
 
         i = 1
         for attachment in valid_attachments:
-            file_path = os.path.join(save_location, attachment.filename)
-            task = [lambda: download_attachment(attachment, file_path)]
+            task = [lambda: download_attachment(attachment, save_location)]
             await task_handler(d_ctx, task, [])
 
             # run a quick check
@@ -321,7 +322,7 @@ async def upload2(
 
     return uploaded_file_paths
 
-async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:  
+async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
 
     if len(message.attachments) == 1:
@@ -336,9 +337,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             raise FileError(f"DISCORD UPLOAD ERROR: File size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.")
 
         else:
-            save_path = saveLocation
-            file_path = os.path.join(save_path, attachment.filename)
-            task = [lambda: download_attachment(attachment, file_path)]
+            task = [lambda: download_attachment(attachment, save_location)]
             await task_handler(d_ctx, task, [])
 
             emb = embuplSuccess1.copy()
@@ -356,7 +355,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             folder_id = gdapi.grabfolderid(google_drive_link)
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)]
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
             files = await task_handler(d_ctx, task, [])
             file_path = files[0][0]
 
@@ -400,8 +399,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
 
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
-            full_path = os.path.join(dir_path, file_name)
-            task = [lambda: download_attachment(attachment, full_path)]
+            task = [lambda: download_attachment(attachment, dir_path)]
             await task_handler(d_ctx, task, [])
 
             emb = embuplSuccess.copy()
