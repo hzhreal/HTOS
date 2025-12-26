@@ -121,7 +121,7 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
 
 async def error_handling(
           ctx: discord.ApplicationContext | discord.Message,
-          error: str, 
+          error: str,
           workspace_folders: list[str] | None,
           uploaded_file_paths: list[str] | None,
           mount_paths: list[str] | None,
@@ -242,11 +242,11 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
     return result
 
 async def upload2(
-          d_ctx: DiscordContext, 
-          saveLocation: str, 
-          max_files: int, 
-          sys_files: bool, 
-          ps_save_pair_upload: bool, 
+          d_ctx: DiscordContext,
+          save_location: str,
+          max_files: int,
+          sys_files: bool,
+          ps_save_pair_upload: bool,
           ignore_filename_check: bool,
           savesize: int | None = None,
           opt: UploadOpt | None = None
@@ -275,7 +275,7 @@ async def upload2(
 
         i = 1
         for attachment in valid_attachments:
-            file_path = os.path.join(saveLocation, attachment.filename)
+            file_path = os.path.join(save_location, attachment.filename)
             task = [lambda: download_attachment(attachment, file_path)]
             await task_handler(d_ctx, task, [])
 
@@ -306,9 +306,9 @@ async def upload2(
             if not folder_id: 
                 raise GDapiError("Could not find the folder id!")
             if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
+                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, save_location, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
             else:
-                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)]
+                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
             await d_ctx.msg.edit(embed=cancel_notify_emb)
             await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0]
