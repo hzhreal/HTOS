@@ -29,5 +29,5 @@ class Crypt_Sdew:
             return
         async with aiofiles.open(filepath, "rb") as savegame:
             header = await savegame.read(2)
-        if await CC.is_valid_zlib_header(header):
+        if not await CC.is_valid_zlib_header(header):
             await Crypt_Sdew.encrypt_file(filepath)
