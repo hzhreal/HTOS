@@ -118,6 +118,13 @@ class CustomCrypto:
         await self.w_stream.seek(self.chunk_start)
         return await self.w_stream.write(self.chunk)
 
+    async def ext_write(self, off: int, w: bytes | bytearray) -> None:
+        assert self.in_place
+        if off + len(w) > self.size:
+            raise CryptoError("Invalid")
+        await self.w_stream.seek(off)
+        await self.w_stream.write(w)
+
     def _get_ctx(self, ctx: int) -> CustomCryptoCtx:
         assert ctx in self.ctx_container
         return self.ctx_container[ctx]
