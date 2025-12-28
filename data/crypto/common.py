@@ -121,7 +121,7 @@ class CustomCrypto:
     async def ext_write(self, off: int, w: bytes | bytearray) -> None:
         assert self.in_place
         if off + len(w) > self.size:
-            raise CryptoError("Invalid")
+            raise CryptoError("Invalid!")
         await self.w_stream.seek(off)
         await self.w_stream.write(w)
 
