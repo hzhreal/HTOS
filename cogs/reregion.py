@@ -12,7 +12,7 @@ from google_drive.gd_functions import gdapi
 from google_drive.exceptions import GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID,
+    SPECIAL_REREGION_TITLEIDS,
     logger
 )
 from utils.embeds import (
@@ -135,10 +135,7 @@ class ReRegion(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)):
-            special_reregion = True
-        else:
-            special_reregion = False
+        special_reregion = target_titleid in SPECIAL_REREGION_TITLEIDS
 
         batches = len(uploaded_file_paths)
 
@@ -201,7 +198,10 @@ class ReRegion(commands.Cog):
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
             if special_reregion and not extra_msg and j > 2:
-                extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
+                extra_msg = (
+                    "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. "
+                    "May be required if you re-regioned more than 1 save at once."
+                )
 
             try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid, extra_msg)

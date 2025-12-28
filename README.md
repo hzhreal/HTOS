@@ -32,7 +32,8 @@ Certain games need to have an extra implementation for it to work out of the box
 | Like a Dragon: Ishin                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Metal Gear Solid V: Ground Zeroes        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| Nioh 2                                   | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Minecraft: Legacy Edition                | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Nioh 2                                   | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                             | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Red Dead Redemption 2                    | :white_check_mark:      | :white_check_mark:                  | :white_check_mark:       | :white_circle:                     |

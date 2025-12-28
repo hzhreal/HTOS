@@ -48,7 +48,7 @@ class FTPps:
 
         size_unsure = file_data["size"]
 
-        if size_unsure is None: 
+        if size_unsure is None:
             return False
 
         size = int(size_unsure)
@@ -103,7 +103,7 @@ class FTPps:
                 if not await FTPps.check_sys_filesize(ftp, KEYSTONE_NAME, keystone=True):
                     raise FTPError("Invalid keystone size!")
 
-                await self.downloadStream(ftp, KEYSTONE_NAME, self.keystone_file_path)
+                await self.download_stream(ftp, KEYSTONE_NAME, self.keystone_file_path)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -126,7 +126,7 @@ class FTPps:
                 if not await FTPps.check_sys_filesize(ftp, PARAM_NAME, keystone=False):
                     raise FTPError("Invalid param.sfo size!")
 
-                await self.downloadStream(ftp, PARAM_NAME, self.sfo_file_path)
+                await self.download_stream(ftp, PARAM_NAME, self.sfo_file_path)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
@@ -205,18 +205,18 @@ class FTPps:
         try:
             async with aioftp.Client.context(self.ip, self.port) as ftp:
                 await ftp.change_directory(self.savepair_remote_path)
-                newsavename = savename.rsplit("_", 1)[0]
-                fulldl_process = os.path.join(savefilespath, newsavename)
-                await self.downloadStream(ftp, savename, fulldl_process)
+                new_savename = savename.rsplit("_", 1)[0]
+                new_savepath = os.path.join(savefilespath, new_savename)
+                await self.download_stream(ftp, savename, new_savepath)
 
                 savename_bin = savename + ".bin"
-                newsavenames_bin = newsavename + ".bin"
-                fulldl_process1 = os.path.join(savefilespath, newsavenames_bin)
-                await self.downloadStream(ftp, savename_bin, fulldl_process1)
+                new_savenames_bin = new_savename + ".bin"
+                new_savepath_bin = os.path.join(savefilespath, new_savenames_bin)
+                await self.download_stream(ftp, savename_bin, new_savepath_bin)
 
             if reregion:
                 from utils.orbis import reregion_check
-                await reregion_check(title_id, savefilespath, fulldl_process, fulldl_process1)
+                await reregion_check(title_id, new_savepath)
 
         except AIOFTPException as e:
             logger.error(f"[FTP ERROR]: {e}")
