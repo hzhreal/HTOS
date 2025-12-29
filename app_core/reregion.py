@@ -7,10 +7,10 @@ from aiofiles.os import makedirs, mkdir
 
 from app_core.models import Profiles, Settings, Logger, TabBase
 from app_core.helpers import prepare_save_input_folder, check_save, prepare_single_save_folder
-from network.socket_functions import C1socket 
-from network.ftp_functions import FTPps 
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
 from network.exceptions import SocketError, FTPError
-from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID
+from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SPECIAL_REREGION_TITLEIDS
 from utils.workspace import init_workspace, cleanup, cleanup_simple
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError
@@ -105,10 +105,7 @@ class Reregion(TabBase):
             self.enable_buttons()
             return
 
-        if ((target_titleid in XENO2_TITLEID) or (target_titleid in MGSV_TPP_TITLEID) or (target_titleid in MGSV_GZ_TITLEID)):
-            special_reregion = True
-        else:
-            special_reregion = False
+        special_reregion = target_titleid in SPECIAL_REREGION_TITLEIDS
 
         batches = len(saves)
 
@@ -154,7 +151,10 @@ class Reregion(TabBase):
             self.logger.info(f"**{batch.printed}** re-regioned to {p} (batch {i}/{batches}).")
             self.logger.info(f"Batch can be found at ```{batch.fInstance.download_encrypted_path}```.")
             if special_reregion and not extra_msg and j > 2:
-                extra_msg = "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. Only required if you re-regioned more than 1 save at once."
+                extra_msg = (
+                    "Make sure to remove the random string after and including '_' when you are going to copy that file to the console. "
+                    "May be required if you re-regioned more than 1 save at once."
+                )
             self.logger.info(extra_msg)
             i += 1
         self.logger.info("Done!")
