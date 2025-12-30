@@ -177,7 +177,7 @@ class Crypt_Nioh2:
                 if off >= cc.size:
                     raise CryptoError("Unsupported save!")
                 await cc.r_stream.seek(off)
-                if await cc.r_stream.read(1):
+                if await cc.r_stream.read(1) != b"\x01":
                     break
             else:
                 for off in offs:
