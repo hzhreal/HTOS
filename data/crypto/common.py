@@ -32,7 +32,7 @@ class CustomCryptoCtx:
         self.attr = attr
 
 class CustomCrypto:
-    CHUNKSIZE = mb_to_bytes(1) # setting this too low will break stuff
+    CHUNKSIZE = mb_to_bytes(1) # minimum: 16 (without assert)
     SAVESIZE_MAX = SAVESIZE_MAX
     AES = AES
     Blowfish = Blowfish
