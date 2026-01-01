@@ -7,11 +7,11 @@ import os
 from data.crypto.common import CustomCrypto as CC
 from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32
-from utils.conversions import mb_to_bytes 
+from utils.conversions import mb_to_bytes
 
 from typing import Literal, Any
 
-# header: 
+# header:
 # magic value, compressed size, decompressed size, null bytes
 # all 4 bytes long (little endian unsigned)
 # json keys are obfuscated

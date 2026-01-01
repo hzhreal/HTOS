@@ -314,7 +314,7 @@ class CustomCrypto:
         r = len(remainder)
         if r > 0:
             del self.chunk[-r:]
-            self.chunk_end -= r 
+            self.chunk_end -= r
 
         ctx.obj.encrypt(self.chunk, self.chunk)
 
@@ -430,12 +430,12 @@ class CustomCrypto:
 
     def create_ctx_aes(self, key: bytes | bytearray, mode: int, **kwargs) -> int:
         cipher = AES.new(key, mode, **kwargs)
-        blocksize = uint8(AES.block_size)
+        blocksize = uint8(AES.block_size, const=True)
         return self._create_ctx(cipher, blocksize)
 
     def create_ctx_blowfish(self, key: bytes | bytearray, mode: int, **kwargs) -> int:
         cipher = Blowfish.new(key, mode, **kwargs)
-        blocksize = uint8(Blowfish.block_size)
+        blocksize = uint8(Blowfish.block_size, const=True)
         return self._create_ctx(cipher, blocksize)
 
     def create_ctx_zlib_compress(self) -> int:
