@@ -100,7 +100,7 @@ class Crypt_BL3:
             self.state = bytearray()
             self.off = -1
             self.length_idx = -1
-            self.i = -1
+            self.idx = -1
 
         def prepare_down(self, off: int, length: int) -> None:
             if off >= self.size or length < 1:
@@ -112,39 +112,40 @@ class Crypt_BL3:
 
         def prepare_up(self, off: int) -> None:
             self.set_ptr(off)
-            self.off = off
-            self.i = 0
+            self.idx = 0
             self.state = bytearray()
 
         async def xor_down(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
-            s = max(self.chunk_start - 32, self.off)
-            await self.r_stream.seek(s)
-            self.state = bytearray(await self.r_stream.read(self.chunk_start - s))
-
             for i in range(len(self.chunk) - 1, -1, -1):
                 if self.length_idx < 32:
                     b = pre[self.length_idx]
                 else:
                     if i < 32:
-                        b = self.state.pop()
+                        await self.r_stream.seek(self.off + self.length_idx - 32)
+                        b = (await self.r_stream.read(1))[0]
                     else:
                         b = self.chunk[i - 32]
+
                 b ^= xor[self.length_idx % 32]
                 self.chunk[i] ^= b
+
                 self.length_idx -= 1
 
         def xor_up(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
             for i in range(len(self.chunk)):
-                if self.i < 32:
-                    b = pre[self.i]
-                elif self.state and i < 32:
-                    b = self.state.pop(0)
+                if self.idx < 32:
+                    b = pre[self.idx]
                 else:
-                    b = self.chunk[i - 32]
-                b ^= xor[self.i % 32]
+                    b = self.state[0]
+
+                b ^= xor[self.idx % 32]
                 self.chunk[i] ^= b
-                self.i += 1
-            self.state = bytearray(self.chunk[-32:])
+
+                self.state.append(self.chunk[i])
+                if len(self.state) > 32:
+                    del self.state[:-32]
+
+                self.idx += 1
 
     @staticmethod
     async def decrypt_file(folderpath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
