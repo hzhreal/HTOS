@@ -169,9 +169,12 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
         raise TimeoutError("TIMED OUT!")
     return response
 
-async def download_attachment(attachment: discord.Attachment, folderpath: str) -> None:
-    _, ext = os.path.splitext(attachment.filename)
-    filepath = os.path.join(folderpath, attachment.title + ext)
+async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> None:
+    if filename is None:
+        _, ext = os.path.splitext(attachment.filename)
+        filepath = os.path.join(folderpath, attachment.title + ext)
+    else:
+        filepath = os.path.join(folderpath, filename)
     try:
         async with aiofiles.open(filepath, "wb") as out:
             async for chunk in attachment.read_chunked(chunksize=GENERAL_CHUNKSIZE):
@@ -181,6 +184,7 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str) -
     except aiohttp.ClientError:
         raise FileError("Failed to download file.")
     logger.info(f"Saved {attachment.filename} to {path}")
+    return filepath
 
 async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], Awaitable[Any]]], ordered_embeds: list[discord.Embed]) -> list[Any]:
     tasks_len = len(ordered_tasks)

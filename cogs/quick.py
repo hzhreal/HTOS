@@ -13,7 +13,8 @@ from google_drive.exceptions import GDapiError
 from data.cheats.quickcodes import QuickCodes
 from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG,
+    ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger
 )
 from utils.embeds import (
@@ -22,7 +23,11 @@ from utils.embeds import (
     embqcCompleted, embchLoading
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple, list_stored_saves
-from utils.helpers import DiscordContext, psusername, upload2, error_handling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler
+from utils.helpers import (
+    DiscordContext, psusername, upload2, error_handling, TimeoutHelper, send_final,
+    run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler,
+    download_attachment
+)
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
@@ -299,11 +304,10 @@ class Quick(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
         helper = TimeoutHelper(embTimedOut)
 
         try:
-            await savefile.save(savegame)
+            savegame = await download_attachment(savefile, newUPLOAD_DECRYPTED)
 
             match game:
                 case "GTA V":

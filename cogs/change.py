@@ -12,7 +12,7 @@ from google_drive.gd_functions import gdapi
 from google_drive.exceptions import GDapiError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, PS_ID_DESC, CON_FAIL, CON_FAIL_MSG,
-    ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME, COMMAND_COOLDOWN,
+    ICON0_FORMAT, ICON0_MAXSIZE, ICON0_NAME, COMMAND_COOLDOWN, SYS_FILE_MAX,
     logger
 )
 from utils.embeds import (
@@ -21,10 +21,11 @@ from utils.embeds import (
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.extras import pngprocess
-from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler
+from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler, download_attachment
 from utils.orbis import sfo_ctx_patch_parameters, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.conversions import bytes_to_mb
 
 class Change(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -64,7 +65,9 @@ class Change(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
 
             # png handling
-            await picture.save(pngfile)
+            if picture.size > SYS_FILE_MAX:
+                raise FileError(f"Image is too big! Maximum for upload is ~{bytes_to_mb(SYS_FILE_MAX)} MB ({SYS_FILE_MAX} bytes).")
+            await download_attachment(picture, newPNG_PATH, ICON0_NAME)
             pngprocess(pngfile, ICON0_FORMAT)
             png_size = await aiofiles.ospath.getsize(pngfile)
             if png_size > ICON0_MAXSIZE:
