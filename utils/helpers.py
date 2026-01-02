@@ -203,7 +203,10 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
             cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=GENERAL_TIMEOUT))
 
         if embed is not None:
-            await d_ctx.msg.edit(embed=embed)
+            try:
+                await d_ctx.msg.edit(embed=embed)
+            except discord.HTTPException as e:
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
         done, _ = await asyncio.wait(
             {main_task, cancel_task},
