@@ -71,7 +71,7 @@ class Quick(commands.Cog):
             res, savepaths = await run_qr_paginator(d_ctx, stored_saves)
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
             await error_handling(msg, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -84,7 +84,7 @@ class Quick(commands.Cog):
             try:
                 await msg.edit(embed=embExit, view=None)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
             await cleanup_simple(workspace_folders)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -128,10 +128,13 @@ class Quick(commands.Cog):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
             elif isinstance(e, OrbisError): 
-                logger.error(f"There is invalid save(s) in {savepaths}") # If OrbisError is raised you have stored an invalid save
+                logger.error(f"There are invalid save(s) in {savepaths}") # If OrbisError is raised you have stored an invalid save
 
             await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            if status == "expected":
+                logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+            else:
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -145,7 +148,7 @@ class Quick(commands.Cog):
         try:
             await msg.edit(embed=emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while editing msg: {e}")
+            logger.info(f"Error while editing msg: {e}", exc_info=True)
 
         zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
 
@@ -155,7 +158,7 @@ class Quick(commands.Cog):
             if isinstance(e, discord.HTTPException):
                 e = BASE_ERROR_MSG
             await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -194,12 +197,12 @@ class Quick(commands.Cog):
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
             await error_handling(msg, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -235,7 +238,7 @@ class Quick(commands.Cog):
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await error_handling(msg, e, workspace_folders, None, None, None)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
@@ -254,7 +257,7 @@ class Quick(commands.Cog):
             try:
                 await msg.edit(embed=emb)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
             zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
@@ -264,7 +267,7 @@ class Quick(commands.Cog):
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
                 await error_handling(msg, e, workspace_folders, None, None, None)
-                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
@@ -294,7 +297,7 @@ class Quick(commands.Cog):
             msg = await ctx.edit(embed=emb)
             msg = await ctx.fetch_message(msg.id)
         except discord.HTTPException as e:
-            logger.exception(e)
+            logger.info(e, exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -325,7 +328,7 @@ class Quick(commands.Cog):
             await ctx.send(file=discord.File(savegame), reference=msg)
         except QuickCheatsError as e:
             await error_handling(msg, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:

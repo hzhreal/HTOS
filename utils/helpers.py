@@ -64,7 +64,7 @@ class threadButton(discord.ui.View):
         super().__init__(timeout=None)
 
     async def on_error(self, e: Exception, _: Item, __: discord.Interaction) -> None:
-        logger.error(f"Unexpected error while creating thread: {e}")
+        logger.info(f"Unexpected error while creating thread: {e}", exc_info=True)
 
     @discord.ui.button(label="Create thread", style=discord.ButtonStyle.primary, custom_id="CreateThread")
     async def callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
@@ -84,7 +84,7 @@ class threadButton(discord.ui.View):
             await thread.send(embed=emb)
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
         except (WorkspaceError, discord.Forbidden) as e:
-            logger.error(f"Can not create thread: {e}")
+            logger.error(f"Cannot create thread: {e}")
 
         try:
             for thread_id in ids_to_remove:
@@ -92,7 +92,7 @@ class threadButton(discord.ui.View):
                 if old_thread is not None:
                     await old_thread.delete() 
         except discord.Forbidden as e:
-            logger.error(f"Can not clear old thread: {e}")
+            logger.error(f"Cannot clear old thread: {e}")
 
 class UploadMethod(Enum):
     DISCORD = 0
@@ -132,7 +132,7 @@ async def error_handling(
     try:
         await ctx.edit(embed=emb)
     except discord.HTTPException as e:
-        logger.exception(f"Error while editing msg: {e}")
+        logger.info(f"Error while editing msg: {e}", exc_info=True)
 
     if C1ftp is not None and error != CON_FAIL_MSG:
         await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
@@ -183,7 +183,7 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
         raise TimeoutError("TIMED OUT!")
     except aiohttp.ClientError:
         raise FileError("Failed to download file.")
-    logger.info(f"Saved {attachment.filename} to {path}")
+    logger.info(f"Saved {attachment.filename} to {filepath}")
     return filepath
 
 async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], Awaitable[Any]]], ordered_embeds: list[discord.Embed]) -> list[Any]:
@@ -282,7 +282,7 @@ async def upload2(
         i = 1
         for attachment in valid_attachments:
             task = [lambda: download_attachment(attachment, save_location)]
-            await task_handler(d_ctx, task, [])
+            file_path = (await task_handler(d_ctx, task, []))[0]
 
             # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
@@ -404,7 +404,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             task = [lambda: download_attachment(attachment, dir_path)]
-            await task_handler(d_ctx, task, [])
+            full_path = (await task_handler(d_ctx, task, []))[0]
 
             emb = embuplSuccess.copy()
             emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  

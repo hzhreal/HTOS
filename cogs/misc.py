@@ -34,7 +34,7 @@ class Misc(commands.Cog):
         try:
             await ctx.respond(embed=loadkeyset_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to msg: {e}")
+            logger.info(f"Error while responding to msg: {e}", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -53,7 +53,10 @@ class Misc(commands.Cog):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
             await error_handling(ctx, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            if status == "expected":
+                logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+            else:
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
         except Exception as e:
             await error_handling(ctx, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
@@ -66,7 +69,7 @@ class Misc(commands.Cog):
         try:
             await ctx.defer()
         except discord.HTTPException as e:
-            logger.exception(f"Error while deferring: {e}")
+            logger.info(f"Error while deferring: {e}", exc_info=True)
             return
 
         latency = self.bot.latency * 1000
@@ -105,7 +108,7 @@ class Misc(commands.Cog):
         try:
             await ctx.respond(embed=emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to msg: {e}")
+            logger.info(f"Error while responding to msg: {e}", exc_info=True)
             return
 
     @discord.slash_command(description="Send the panel to create threads.")

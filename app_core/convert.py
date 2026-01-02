@@ -54,7 +54,7 @@ class Convert(TabBase):
                 self.logger.exception("Failed to create workspace. Stopped.")
                 self.enable_buttons()
                 return
- 
+
         try:
             files = await prepare_files_input_folder(self.settings, self.in_folder, newUPLOAD_DECRYPTED)
         except OSError:

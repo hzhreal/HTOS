@@ -54,7 +54,7 @@ class Cheats_GTAV:
             if isinstance(err, QuickCheatsError):
                 await self.ctx.respond(err, ephemeral=True)
             else:
-                logger.error(f"Error with modal: {err}")
+                logger.info(f"Error with modal: {err}")
 
         async def callback(self, interaction: discord.Interaction) -> None:
             await interaction.response.defer()
@@ -97,7 +97,7 @@ class Cheats_GTAV:
             emb.description = emb.description.format(error=error)
             self.helper.embTimeout = emb
             await self.helper.handle_timeout(self.ctx)
-            logger.error(f"{error} - {self.ctx.user.name}")
+            logger.info(f"{error} - {self.ctx.user.name}")
 
         @discord.ui.button(label="Change money", style=discord.ButtonStyle.primary, custom_id="ChangeMoney_GTAV")
         async def change_money_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:

@@ -563,7 +563,7 @@ async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) 
         newname = Crypto.MGSV.KEYS[title_id]["name"]
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
-    elif title_in in MINECRAFT_TITLEID:
+    elif title_id in MINECRAFT_TITLEID:
         savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).value
         savename = savename.split("-")
         # legacy edition only

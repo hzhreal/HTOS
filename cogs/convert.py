@@ -57,12 +57,12 @@ class Convert(commands.Cog):
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
             await error_handling(msg, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -105,7 +105,7 @@ class Convert(commands.Cog):
 
                 except ConverterError as e:
                     await error_handling(ctx, e, workspace_folders, None, None, None)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
@@ -126,7 +126,7 @@ class Convert(commands.Cog):
                 try:
                     await msg.edit(embed=emb)
                 except discord.HTTPException as e:
-                    logger.exception(f"Error while editing msg: {e}")
+                    logger.info(f"Error while editing msg: {e}", exc_info=True)
 
                 await asyncio.sleep(1)
                 if ret:
@@ -143,7 +143,7 @@ class Convert(commands.Cog):
             try:
                 await msg.edit(embed=emb)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
             zipname = "savegame_Converted" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
@@ -153,7 +153,7 @@ class Convert(commands.Cog):
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
                 await error_handling(msg, e, workspace_folders, None, None, None)
-                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:

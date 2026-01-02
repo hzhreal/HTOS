@@ -56,7 +56,7 @@ class SFO(commands.Cog):
         try:
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to interaction: {e}")
+            logger.info(f"Error while responding to interaction: {e}", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -78,7 +78,7 @@ class SFO(commands.Cog):
             await ctx.edit(embed=finished_emb)
         except OrbisError as e:
             await error_handling(ctx, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -129,7 +129,7 @@ class SFO(commands.Cog):
         try:
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to interaction: {e}")
+            logger.info(f"Error while responding to interaction: {e}", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -154,7 +154,7 @@ class SFO(commands.Cog):
             await ctx.respond(file=discord.File(BytesIO(sfo_ctx.sfo_data), filename=sfo.filename))
         except OrbisError as e:
             await error_handling(ctx, e, workspace_folders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:

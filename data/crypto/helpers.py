@@ -41,7 +41,7 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             emb.description = emb.description.format(error=error)
             helper.embTimeout = emb
             await helper.handle_timeout(d_ctx.msg)
-            logger.exception(f"{error} - {d_ctx.ctx.user.name}")
+            logger.info(f"{error} - {d_ctx.ctx.user.name}")
 
         @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
         async def decryption_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:

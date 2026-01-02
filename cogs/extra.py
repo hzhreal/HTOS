@@ -135,14 +135,14 @@ class Extra(commands.Cog):
             try:
                 await msg.edit(content="Invalid format!")
             except discord.HTTPException as e:
-                logger.exception(f"Error responding to msg: {e}")
+                logger.info(f"Error responding to msg: {e}", exc_info=True)
         except WorkspaceError as e:
             try:
                 await msg.edit(content=e)
             except discord.HTTPException as e:
-                logger.exception(f"Error responding to msg: {e}")
+                logger.info(f"Error responding to msg: {e}", exc_info=True)
         except discord.HTTPException as e:
-            logger.exception(e)
+            logger.info(e, exc_info=True)
         finally:
             await INSTANCE_LOCK_global.release(ctx.author.id)
 

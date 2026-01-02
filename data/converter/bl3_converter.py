@@ -34,7 +34,7 @@ class BL3_conv_button(discord.ui.View):
         emb.description = emb.description.format(error=error)
         self.helper.embTimeout = emb
         await self.helper.handle_timeout(self.ctx)
-        logger.error(f"{error} - {self.ctx.user.name}")
+        logger.info(f"{error} - {self.ctx.user.name}")
         self.result = "ERROR"
 
     @discord.ui.button(label="PS4 -> PC", style=discord.ButtonStyle.blurple, custom_id="BL3_PS4_TO_PC_CONV")

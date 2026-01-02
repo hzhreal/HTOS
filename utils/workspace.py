@@ -148,7 +148,7 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
         conn.close()
     except sqlite3.Error as e:
         print(f"Error creating databases: {e}\nExiting...")
-        logger.exception(f"Error creating databases: {e}")
+        logger.error(f"Error creating databases: {e}")
         sys.exit()
 
 async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_saveList: list[str] | None, remote_mount_paths: list[str] | None) -> None:
