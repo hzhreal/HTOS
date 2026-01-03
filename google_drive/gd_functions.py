@@ -687,7 +687,7 @@ class GDapi:
                         await self.send_req(aiogoogle, req)
                 except OSError as e:
                     if e.errno == errno.EINVAL:
-                        raise FileError(f"The filename {os.path.basename(file_name)} is unsupported!")
+                        raise FileError(f"The filename {file_name} is unsupported!")
                     raise
                 logger.info(f"Saved {file_name} to {download_path}")
 
