@@ -105,7 +105,7 @@ class Resign(commands.Cog):
                     j += 1
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
-                    if isinstance(e, OSError) and e.errno in CON_FAIL: 
+                    if isinstance(e, OSError) and e.errno in CON_FAIL:
                         e = CON_FAIL_MSG
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG

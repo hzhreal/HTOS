@@ -7,6 +7,7 @@ import aiofiles.os
 import re
 import datetime
 import aiohttp
+import errno
 
 from sys import argv
 from discord.ext import tasks
@@ -198,11 +199,11 @@ class GDapi:
 
     @staticmethod
     async def file_check(
-              ctx: discord.ApplicationContext | discord.Message, 
-              file_data: list[dict[str, str | int]], 
-              sys_files: frozenset[str] | None, 
-              ps_save_pair_upload: bool, 
-              ignore_filename_check: bool, 
+              ctx: discord.ApplicationContext | discord.Message,
+              file_data: list[dict[str, str | int]],
+              sys_files: frozenset[str] | None,
+              ps_save_pair_upload: bool,
+              ignore_filename_check: bool,
               savesize: int | None = None
             ) -> list[dict[str, str]]:
 
@@ -243,7 +244,7 @@ class GDapi:
                 total_size += file_size
                 file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
                 valid_files_data.append(file_data)
-        return valid_files_data     
+        return valid_files_data
 
     @staticmethod
     async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, file_data: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
@@ -308,20 +309,20 @@ class GDapi:
                         valid_saves_final.append(file_data)
                         file_data_nested = {"filename": file_name_nested, "fileid": file_id_nested, "filesize": file_size_nested}
                         valid_saves_final.append(file_data_nested)
-                        break             
+                        break
         return valid_saves_final
 
     async def list_dir(
-              self, 
-              ctx: discord.ApplicationContext | discord.Message, 
+              self,
+              ctx: discord.ApplicationContext | discord.Message,
               folder_id: str,
               sys_files: frozenset[str] | None,
               ps_save_pair_upload: bool,
               ignore_filename_check: bool,
               mounted_len_checks: bool = False,
-              cur_nesting: int = 0, 
+              cur_nesting: int = 0,
               total_filesize: int = 0,
-              rel_path: str | None = None, 
+              rel_path: str | None = None,
               files: list[dict[str, str]] | None = None
             ) -> tuple[list[dict[str, str | int]], int]:
 
@@ -616,7 +617,7 @@ class GDapi:
                 drive_v3 = await aiogoogle.discover("drive", "v3")
 
                 perm_req = drive_v3.permissions.create(
-                    fileId=file_id, 
+                    fileId=file_id,
                     json={"role": "reader", "type": "anyone", "allowFileDiscovery": False}
                 )
                 await self.send_req(aiogoogle, perm_req)
@@ -627,13 +628,13 @@ class GDapi:
         return file_url
 
     async def downloadsaves_recursive(
-              self, 
-              ctx: discord.ApplicationContext | discord.Message, 
-              folder_id: str, 
-              download_dir: str, 
+              self,
+              ctx: discord.ApplicationContext | discord.Message,
+              folder_id: str,
+              download_dir: str,
               max_files: int,
-              sys_files: frozenset[str] | None, 
-              ps_save_pair_upload: bool, 
+              sys_files: frozenset[str] | None,
+              ps_save_pair_upload: bool,
               ignore_filename_check: bool,
               allow_duplicates: bool = False
             ) -> list[list[str]]:
@@ -678,12 +679,16 @@ class GDapi:
                         download_cycle = []
                     else:
                         continue
-
-                async with aiofiles.open(download_path, "wb") as file:
-                    req = drive_v3.files.get(
-                        fileId=file_id, pipe_to=file, alt="media"
-                    )
-                    await self.send_req(aiogoogle, req)
+                try:
+                    async with aiofiles.open(download_path, "wb") as file:
+                        req = drive_v3.files.get(
+                            fileId=file_id, pipe_to=file, alt="media"
+                        )
+                        await self.send_req(aiogoogle, req)
+                except OSError as e:
+                    if e.errno == errno.EINVAL:
+                        raise FileError(f"The filename {os.path.basename(file_name)} is unsupported!")
+                    raise
                 logger.info(f"Saved {file_name} to {download_path}")
 
                 # run a quick check
@@ -698,15 +703,15 @@ class GDapi:
 
                 download_cycle.append(download_path)
                 i += 1
-        uploaded_file_paths.append(download_cycle)      
+        uploaded_file_paths.append(download_cycle)
         return uploaded_file_paths
 
     async def downloadfiles_recursive(
-              self, 
-              ctx: discord.ApplicationContext | discord.Message, 
-              dst_local_dir: str, 
-              folder_id: str, 
-              max_files: int, 
+              self,
+              ctx: discord.ApplicationContext | discord.Message,
+              dst_local_dir: str,
+              folder_id: str,
+              max_files: int,
               savesize: int | None = None
             ) -> list[list[str]]:
 
@@ -732,19 +737,29 @@ class GDapi:
                 file_id = file["fileid"]
 
                 download_path = os.path.join(dst_local_dir, file_path)
-                await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
+                try:
+                    await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
+                except OSError as e:
+                    if hasattr(e, "winerror") and e.winerror == 123:
+                        raise FileError(f"The folderpath {os.path.dirname(file_path)} is unsupported!")
+                    raise
 
-                async with aiofiles.open(download_path, "wb") as file:
-                    req = drive_v3.files.get(
-                        fileId=file_id, 
-                        pipe_to=file, 
-                        alt="media"
-                    )
-                    await self.send_req(aiogoogle, req)
+                try:
+                    async with aiofiles.open(download_path, "wb") as file:
+                        req = drive_v3.files.get(
+                            fileId=file_id,
+                            pipe_to=file,
+                            alt="media"
+                        )
+                        await self.send_req(aiogoogle, req)
+                except OSError as e:
+                    if e.errno == errno.EINVAL:
+                        raise FileError(f"The filename {os.path.basename(file_path)} is unsupported!")
+                    raise
 
                 uploaded_file_paths.append(download_path)
-
                 logger.info(f"Saved {file_path} to {download_path}")
+
                 emb = embgddone.copy()
                 emb.description = emb.description.format(filename=file_path, i=i, filecount=filecount)
                 await ctx.edit(embed=emb)

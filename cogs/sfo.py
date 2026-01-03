@@ -7,7 +7,7 @@ from utils.workspace import make_workspace
 from utils.helpers import error_handling
 from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN
 from utils.embeds import loadSFO_emb, finished_emb, paramEmb
-from utils.orbis import SFOContext
+from utils.orbis import SFOContext, validate_savedirname, check_titleid, checkid
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
 
@@ -130,6 +130,27 @@ class SFO(commands.Cog):
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
             logger.info(f"Error while responding to interaction: {e}", exc_info=True)
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            return
+
+        e = []
+        if account_id:
+            if account_id.lower().startswith("0x"):
+                accid = account_id[2:]
+            else:
+                accid = account_id
+            if not checkid(accid):
+                e.append("account ID")
+        if savedata_directory:
+            if not validate_savedirname(savedata_directory):
+                e.append("savedata directory")
+        if title_id:
+            if not check_titleid(title_id):
+                e.append("title ID")
+        if e:
+            e = ", ".join(e)
+            e = f"Invalid {e}!"
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 

@@ -4,6 +4,7 @@ import os
 import aiohttp
 import aiofiles
 import aiofiles.os
+import errno
 
 from discord.ext import pages
 from dataclasses import dataclass
@@ -183,6 +184,10 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
         raise TimeoutError("TIMED OUT!")
     except aiohttp.ClientError:
         raise FileError("Failed to download file.")
+    except OSError as e:
+        if e.errno == errno.EINVAL:
+            raise FileError(f"The filename {os.path.basename(filepath)} is unsupported!")
+        raise
     logger.info(f"Saved {attachment.filename} to {filepath}")
     return filepath
 
@@ -508,13 +513,13 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     return user_id.lower()
 
 async def replace_decrypted(
-          d_ctx: DiscordContext, 
-          fInstance: FTPps, 
-          files: list[str], 
-          titleid: str, 
-          mount_location: str, 
-          upload_individually: bool, 
-          local_download_path: str, 
+          d_ctx: DiscordContext,
+          fInstance: FTPps,
+          files: list[str],
+          titleid: str,
+          mount_location: str,
+          upload_individually: bool,
+          local_download_path: str,
           savepair_name: str,
           savesize: int,
           ignore_secondlayer_checks: bool
