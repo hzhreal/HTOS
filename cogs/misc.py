@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
-from network import FTPps, C1socket, SocketError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError
 from utils.constants import (
     IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger, bot,
@@ -10,8 +12,8 @@ from utils.embeds import (
     embinit, loadkeyset_emb,
     keyset_emb, embpingsuccess, embpingfail
 )
-from utils.helpers import threadButton, errorHandling
-from utils.workspace import fetchall_threadid_db, delall_threadid_db, makeWorkspace
+from utils.helpers import threadButton, error_handling
+from utils.workspace import fetchall_threadid_db, delall_threadid_db, make_workspace
 from utils.orbis import keyset_to_fw
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError
@@ -25,14 +27,14 @@ class Misc(commands.Cog):
     @info_group.command(description="Display the maximum firmware/keyset the hoster's console can mount/unmount a save from.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def keyset(self, ctx: discord.ApplicationContext) -> None:
-        workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        workspace_folders = []
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadkeyset_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to msg: {e}")
+            logger.info(f"Error while responding to msg: {e}", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -50,10 +52,13 @@ class Misc(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await error_handling(ctx, e, workspace_folders, None, None, None)
+            if status == "expected":
+                logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+            else:
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(ctx, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
         finally:
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -64,7 +69,7 @@ class Misc(commands.Cog):
         try:
             await ctx.defer()
         except discord.HTTPException as e:
-            logger.exception(f"Error while deferring: {e}")
+            logger.info(f"Error while deferring: {e}", exc_info=True)
             return
 
         latency = self.bot.latency * 1000
@@ -75,14 +80,14 @@ class Misc(commands.Cog):
         ftp_result = socket_result = "Unavailable"
 
         try:
-            await C1ftp.testConnection()
+            await C1ftp.test_connection()
             result += 1
             ftp_result = "Available"
         except OSError as e:
             logger.exception(f"PING: FTP could not connect: {e}")
 
         try:
-            await C1socket.testConnection()
+            await C1socket.test_connection()
             result += 1
             socket_result = "Available"
         except OSError as e:
@@ -93,25 +98,25 @@ class Misc(commands.Cog):
         else:
             emb = embpingfail.copy()
         emb.title = emb.title.format(
-            ftp_result=ftp_result, 
-            socket_result=socket_result, 
-            instances_len=INSTANCE_LOCK_global.instances_len, 
-            maximum_instances=INSTANCE_LOCK_global.maximum_instances, 
+            ftp_result=ftp_result,
+            socket_result=socket_result,
+            instances_len=INSTANCE_LOCK_global.instances_len,
+            maximum_instances=INSTANCE_LOCK_global.maximum_instances,
             latency=latency
         )
 
         try:
             await ctx.respond(embed=emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to msg: {e}")
+            logger.info(f"Error while responding to msg: {e}", exc_info=True)
             return
-    
+
     @discord.slash_command(description="Send the panel to create threads.")
     @commands.is_owner()
     async def init(self, ctx: discord.ApplicationContext) -> None:
         await ctx.respond("Sending panel...", ephemeral=True)
         await ctx.send(embed=embinit, view=threadButton())
-       
+
     @discord.slash_command(description="Remove all threads created by the bot.")
     @commands.is_owner()
     async def clear_threads(self, ctx: discord.ApplicationContext) -> None:
@@ -119,14 +124,14 @@ class Misc(commands.Cog):
         try:
             db_dict = await fetchall_threadid_db()
             await delall_threadid_db(db_dict)
-            
+
             for _, thread_id in db_dict.items():
                 thread = bot.get_channel(thread_id)
                 if thread is not None:
                     await thread.delete()
         except (discord.Forbidden, WorkspaceError) as e:
             logger.error(f"Error clearing all threads: {e}")
-        
+
         await ctx.respond(f"Cleared {len(db_dict)} thread(s)!", ephemeral=True)
 
 def setup(bot: commands.Bot) -> None:

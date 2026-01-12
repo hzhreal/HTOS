@@ -13,7 +13,7 @@ workspace_opt = WorkspaceOpt()
 
 @bot.event
 async def on_ready() -> None:
-    from google_drive import check_GDrive
+    from google_drive.gd_functions import check_GDrive
     startup(workspace_opt)
     await check_version()
     bot.add_view(threadButton()) # make view persistent
@@ -66,6 +66,6 @@ if __name__ == "__main__":
         print(f"Loading cog: {cog}...")
         bot.load_extension(f"cogs.{cog}")
         print(f"Loaded cog: {cog}.")
-    
+
     print("Starting bot...\n\n")
     bot.run(TOKEN)

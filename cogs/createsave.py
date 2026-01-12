@@ -6,8 +6,11 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, SocketError, FTPError
-from google_drive import gdapi, GDapiError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
 from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, COMMAND_COOLDOWN, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, SCE_SYS_NAME,
@@ -18,8 +21,8 @@ from utils.constants import (
 from utils.embeds import (
     embSceSys, embgs, embsl, embc, embCRdone
 )
-from utils.workspace import makeWorkspace, initWorkspace, cleanup
-from utils.helpers import DiscordContext, errorHandling, upload2, send_final, psusername, upload2_special, task_handler
+from utils.workspace import make_workspace, init_workspace, cleanup
+from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
 from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.namespaces import Crypto
@@ -38,24 +41,24 @@ class CreateSave(commands.Cog):
     @discord.slash_command(description="Create savedata from scratch.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def createsave(
-              self, 
-              ctx: discord.ApplicationContext, 
-              savename: Option(str, description="The name of the save."), # type: ignore
-              saveblocks: Option(int, description=SAVEBLOCKS_DESC, min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX, default=0), # type: ignore
-              savesize_mb: Option(int, description=SAVESIZE_MB_DESC, min_value=SAVESIZE_MB_MIN, max_value=SAVESIZE_MB_MAX, default=0), # type: ignore 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""), # type: ignore
-              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False) # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              savename: Option(str, description="The name of the save."),
+              saveblocks: Option(int, description=SAVEBLOCKS_DESC, min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX, default=0),
+              savesize_mb: Option(int, description=SAVESIZE_MB_DESC, min_value=SAVESIZE_MB_MIN, max_value=SAVESIZE_MB_MAX, default=0),
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""),
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False)
             ) -> None:
-        
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        mountPaths = []
+        mount_paths = []
         scesys_local = os.path.join(newUPLOAD_DECRYPTED, SCE_SYS_NAME)
         rand_str = os.path.basename(newUPLOAD_DECRYPTED)
 
@@ -67,7 +70,7 @@ class CreateSave(commands.Cog):
             savesize = saveblocks_to_bytes(saveblocks)
         else:
             e = "You need to add the `saveblocks` or `savesize_mb` argument!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -114,21 +117,21 @@ class CreateSave(commands.Cog):
             uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, err, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (PSNIDError, TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         uploaded_file_paths = []
         sfo_path = os.path.join(scesys_local, PARAM_NAME)
         try:
@@ -159,10 +162,10 @@ class CreateSave(commands.Cog):
             await task_handler(d_ctx, task, [])
             uploaded_file_paths.extend([temp_savename, f"{savename}_{rand_str}.bin"])
 
-            mountPaths.append(mount_location_new)
+            mount_paths.append(mount_location_new)
             tasks = [
                 # now mount save and get ready to upload files to it
-                lambda: C1ftp.make1(mount_location_new), 
+                lambda: C1ftp.make1(mount_location_new),
                 lambda: C1ftp.make1(location_to_scesys),
                 # dump, and begin uploading
                 lambda: C1socket.socket_dump(mount_location_new, temp_savename),
@@ -176,7 +179,7 @@ class CreateSave(commands.Cog):
                 lambda: C1socket.socket_update(mount_location_new, temp_savename)
             ]
             await task_handler(d_ctx, tasks, [])
-            
+
             # make paths for save
             save_dirs = os.path.join(newDOWNLOAD_ENCRYPTED, "PS4", "SAVEDATA", user_id, title_id)
             await aiofiles.os.makedirs(save_dirs)
@@ -184,8 +187,8 @@ class CreateSave(commands.Cog):
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
             tasks = [
-                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
-                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
             ]
             await task_handler(d_ctx, tasks, [])
             await C1ftp.free_ctx(ftp_ctx)
@@ -196,41 +199,44 @@ class CreateSave(commands.Cog):
             elif isinstance(e, OSError):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
-            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await error_handling(msg, e, workspace_folders, uploaded_file_paths, mount_paths, C1ftp)
+            if status == "expected":
+                logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+            else:
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, uploaded_file_paths, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         emb = embCRdone.copy()
         emb.description = emb.description.format(savename=savename, id=playstation_id or user_id)
         try:
             await msg.edit(embed=emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while editing msg: {e}")
+            logger.info(f"Error while editing msg: {e}", exc_info=True)
 
         zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
 
-        try: 
+        try:
             await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
         except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             if isinstance(e, discord.HTTPException):
                 e = BASE_ERROR_MSG
-            await errorHandling(msg, e, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, uploaded_file_paths, mount_paths, C1ftp)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, uploaded_file_paths, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, uploaded_file_paths, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)   
+        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:

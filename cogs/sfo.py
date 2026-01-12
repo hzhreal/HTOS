@@ -3,11 +3,11 @@ import asyncio
 from io import BytesIO
 from discord import Option
 from discord.ext import commands
-from utils.workspace import makeWorkspace
-from utils.helpers import errorHandling
+from utils.workspace import make_workspace
+from utils.helpers import error_handling
 from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN
 from utils.embeds import loadSFO_emb, finished_emb, paramEmb
-from utils.orbis import SFOContext
+from utils.orbis import SFOContext, validate_savedirname, check_titleid, checkid
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
 
@@ -16,11 +16,11 @@ class SFOEditor(SFOContext):
     def __init__(self, sfo_data: bytearray) -> None:
         super().__init__()
         self.sfo_data = sfo_data
-    
+
     def read(self) -> None:
         self.sfo_read(self.sfo_data)
         self.param_data = self.sfo_get_param_data()
-    
+
     def write(self) -> None:
         self.sfo_data = self.sfo_write()
 
@@ -49,20 +49,20 @@ class SFO(commands.Cog):
     @sfo_group.command(description="Parse a param.sfo file to obtain information about the save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def read(self, ctx: discord.ApplicationContext, sfo: discord.Attachment) -> None:
-        workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        workspace_folders = []
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to interaction: {e}")
+            logger.info(f"Error while responding to interaction: {e}", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -77,12 +77,12 @@ class SFO(commands.Cog):
                 await ctx.send(embed=emb)
             await ctx.edit(embed=finished_emb)
         except OrbisError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(ctx, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(ctx, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(ctx, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -91,23 +91,23 @@ class SFO(commands.Cog):
     @sfo_group.command(description="Patch parameters in a param.sfo file to modify the save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def write(
-              self, 
-              ctx: discord.ApplicationContext, 
+              self,
+              ctx: discord.ApplicationContext,
               sfo: discord.Attachment,
-              account_id: Option(str, description="uint64 (hexadecimal)", default="", max_length=2 + 16), # type: ignore
-              attribute: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
-              category: Option(str, description="utf-8", default=""), # type: ignore
-              detail: Option(str, description="utf-8", default=""), # type: ignore
-              format: Option(str, description="utf-8", default=""), # type: ignore
-              maintitle: Option(str, description="utf-8", default=""), # type: ignore
-              params: Option(str, description="utf-8-special", default=""), # type: ignore
-              savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX), # type: ignore
-              savedata_directory: Option(str, description="utf-8", default=""), # type: ignore
-              savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF), # type: ignore
-              subtitle: Option(str, description="utf-8", default=""), # type: ignore
-              title_id: Option(str, description="utf-8", default="") # type: ignore
+              account_id: Option(str, description="uint64 (hexadecimal)", default="", max_length=2 + 16),
+              attribute: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF),
+              category: Option(str, description="utf-8", default=""),
+              detail: Option(str, description="utf-8", default=""),
+              format: Option(str, description="utf-8", default=""),
+              maintitle: Option(str, description="utf-8", default=""),
+              params: Option(str, description="utf-8-special", default=""),
+              savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX),
+              savedata_directory: Option(str, description="utf-8", default=""),
+              savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF),
+              subtitle: Option(str, description="utf-8", default=""),
+              title_id: Option(str, description="utf-8", default="")
             ) -> None:
-        
+
         parameters = {
             "ACCOUNT_ID": account_id,
             "ATTRIBUTE": attribute,
@@ -122,20 +122,41 @@ class SFO(commands.Cog):
             "SUBTITLE": subtitle,
             "TITLE_ID": title_id
         }
-        workspaceFolders = []
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        workspace_folders = []
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         try:
             await ctx.respond(embed=loadSFO_emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while responding to interaction: {e}")
+            logger.info(f"Error while responding to interaction: {e}", exc_info=True)
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            return
+
+        e = []
+        if account_id:
+            if account_id.lower().startswith("0x"):
+                accid = account_id[2:]
+            else:
+                accid = account_id
+            if not checkid(accid):
+                e.append("account ID")
+        if savedata_directory:
+            if not validate_savedirname(savedata_directory):
+                e.append("savedata directory")
+        if title_id:
+            if not check_titleid(title_id):
+                e.append("title ID")
+        if e:
+            e = ", ".join(e)
+            e = f"Invalid {e}!"
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if sfo.size > SYS_FILE_MAX:
             e = "File size is too large!"
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
+            await error_handling(ctx, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
@@ -153,8 +174,8 @@ class SFO(commands.Cog):
             await ctx.edit(embed=finished_emb)
             await ctx.respond(file=discord.File(BytesIO(sfo_ctx.sfo_data), filename=sfo.filename))
         except OrbisError as e:
-            await errorHandling(ctx, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(ctx, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
@@ -162,7 +183,7 @@ class SFO(commands.Cog):
                 err = "Invalid value inputted!"
             else:
                 err = BASE_ERROR_MSG
-            await errorHandling(ctx, err, workspaceFolders, None, None, None)
+            await error_handling(ctx, err, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return

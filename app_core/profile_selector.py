@@ -70,7 +70,7 @@ class ProfileSelector:
             self.p.account_id = ""
             return False
         return True
-    
+
     def check_name(self, name: str) -> bool:
         return len(name) <= Profile.MAX_NAME_LENGTH
 
@@ -93,7 +93,7 @@ class ProfileSelector:
         if not silent:
             ui.notify(f"Deleted {p}!")
         self.update_column()
-    
+
     def on_delete_all(self) -> None:
         if self.profiles.is_empty():
             return

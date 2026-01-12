@@ -5,20 +5,29 @@ import shutil
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, FTPError, SocketError
-from google_drive import gdapi, GDapiError
-from data.cheats import QuickCodes, QuickCodesError, QuickCheatsError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
+from data.cheats.quickcodes import QuickCodes
+from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG,
+    ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger
 )
 from utils.embeds import (
-    emb_upl_savegame, embTimedOut, working_emb, embExit, 
+    emb_upl_savegame, embTimedOut, working_emb, embExit,
     embresb, embresbs, embRdone, embLoading, embApplied,
     embqcCompleted, embchLoading
 )
-from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple, listStoredSaves
-from utils.helpers import DiscordContext, psusername, upload2, errorHandling, TimeoutHelper, send_final, run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler
+from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple, list_stored_saves
+from utils.helpers import (
+    DiscordContext, psusername, upload2, error_handling, TimeoutHelper, send_final,
+    run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler,
+    download_attachment
+)
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError
 from utils.namespaces import Cheats
@@ -35,22 +44,22 @@ class Quick(commands.Cog):
     @quick_group.command(description="Resign pre stored saves.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def resign(
-              self, 
-              ctx: discord.ApplicationContext, 
-              playstation_id: Option(str, description=PS_ID_DESC, default=""), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              playstation_id: Option(str, description=PS_ID_DESC, default=""),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        mountPaths = []
+        mount_paths = []
 
         msg = ctx
-        
+
         try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
@@ -58,15 +67,15 @@ class Quick(commands.Cog):
             msg = await ctx.edit(embed=working_emb)
             msg = await ctx.fetch_message(msg.id) # fetch for paginator.edit()
             d_ctx = DiscordContext(ctx, msg)
-            stored_saves = await listStoredSaves()
+            stored_saves = await list_stored_saves()
             res, savepaths = await run_qr_paginator(d_ctx, stored_saves)
         except (PSNIDError, WorkspaceError, TimeoutError, GDapiError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -75,13 +84,13 @@ class Quick(commands.Cog):
             try:
                 await msg.edit(embed=embExit, view=None)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
-            await cleanupSimple(workspaceFolders)
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await cleanup_simple(workspace_folders)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         entry = []
-        batch = SaveBatch(C1ftp, C1socket, user_id, entry, mountPaths, newDOWNLOAD_ENCRYPTED)
+        batch = SaveBatch(C1ftp, C1socket, user_id, entry, mount_paths, newDOWNLOAD_ENCRYPTED)
         savefile = SaveFile("", batch)
 
         try:
@@ -119,58 +128,61 @@ class Quick(commands.Cog):
                 e = BASE_ERROR_MSG
                 status = "unexpected"
             elif isinstance(e, OrbisError): 
-                logger.error(f"There is invalid save(s) in {savepaths}") # If OrbisError is raised you have stored an invalid save
+                logger.error(f"There are invalid save(s) in {savepaths}") # If OrbisError is raised you have stored an invalid save
 
-            await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - ({status})")
+            await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
+            if status == "expected":
+                logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+            else:
+                logger.exception(f"{e} - {ctx.user.name} - ({status})")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         emb = embRdone.copy()
         emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id)
         try:
             await msg.edit(embed=emb)
         except discord.HTTPException as e:
-            logger.exception(f"Error while editing msg: {e}")
+            logger.info(f"Error while editing msg: {e}", exc_info=True)
 
         zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
 
-        try: 
+        try:
             await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
         except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             if isinstance(e, discord.HTTPException):
                 e = BASE_ERROR_MSG
-            await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        await cleanup(C1ftp, workspaceFolders, batch.entry, mountPaths)
+        await cleanup(C1ftp, workspace_folders, batch.entry, mount_paths)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
     @quick_group.command(description="Apply save wizard quick codes to your save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def codes(
-              self, 
-              ctx: discord.ApplicationContext, 
+              self,
+              ctx: discord.ApplicationContext,
               codes: str,
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
-        
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
 
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, True)
@@ -184,21 +196,21 @@ class Quick(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, err, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-        
+
         batches = len(uploaded_file_paths)
 
         i = 1
@@ -212,25 +224,25 @@ class Quick(commands.Cog):
             j = 1
             for savegame in entry:
                 basename = os.path.basename(savegame)
-                
+
                 emb1 = embLoading.copy()
-                emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                emb1.description = emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
                 emb2 = embApplied.copy()
-                emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                emb2.description = emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
 
                 try:
                     await msg.edit(embed=emb1)
-                    qc = QuickCodes(savegame, codes)
-                    await qc.apply_code()
+                    async with QuickCodes(savegame, codes) as qc:
+                        await qc.apply_code()
                     await msg.edit(embed=emb2)
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
-                    await errorHandling(msg, e, workspaceFolders, None, None, None)
-                    logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                    await error_handling(msg, e, workspace_folders, None, None, None)
+                    logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                    await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -245,37 +257,37 @@ class Quick(commands.Cog):
             try:
                 await msg.edit(embed=emb)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
             zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, out_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, None, None, None)
-                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await error_handling(msg, e, workspace_folders, None, None, None)
+                logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+                await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 
             await asyncio.sleep(1)
             i += 1
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
-    
+
     @quick_group.command(description="Add cheats to your save.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id, skip_gd_check=True)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
         emb = embchLoading.copy()
@@ -285,49 +297,48 @@ class Quick(commands.Cog):
             msg = await ctx.edit(embed=emb)
             msg = await ctx.fetch_message(msg.id)
         except discord.HTTPException as e:
-            logger.exception(e)
+            logger.info(e, exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
         if savefile.size > BOT_DISCORD_UPLOAD_LIMIT:
             e = "File size is too large!" # may change in the future when a game with larger savefile sizes are implemented
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
+            await error_handling(msg, e, workspace_folders, None, None, None)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        savegame = os.path.join(newUPLOAD_DECRYPTED, savefile.filename)
         helper = TimeoutHelper(embTimedOut)
 
         try:
-            await savefile.save(savegame)
+            savegame = await download_attachment(savefile, newUPLOAD_DECRYPTED)
 
             match game:
                 case "GTA V":
-                    platform = await Cheats.GTAV.initSavefile(savegame)
-                    stats = await Cheats.GTAV.fetchStats(savegame, platform)
+                    platform = await Cheats.GTAV.init_savefile(savegame)
+                    stats = await Cheats.GTAV.fetch_stats(savegame, platform)
                     embLoaded = Cheats.GTAV.loaded_embed(stats)
                     await msg.edit(embed=embLoaded, view=Cheats.GTAV.CheatsButton(ctx, helper, savegame, platform))
                 case "RDR 2":
-                    platform = await Cheats.RDR2.initSavefile(savegame)
-                    stats = await Cheats.RDR2.fetchStats(savegame, platform)
+                    platform = await Cheats.RDR2.init_savefile(savegame)
+                    stats = await Cheats.RDR2.fetch_stats(savegame, platform)
                     embLoaded = Cheats.RDR2.loaded_embed(stats)
                     await msg.edit(embed=embLoaded, view=Cheats.RDR2.CheatsButton(ctx, helper, savegame, platform))
             await helper.await_done()
 
             await ctx.send(file=discord.File(savegame), reference=msg)
         except QuickCheatsError as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
-    
+
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Quick(bot))

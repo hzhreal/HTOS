@@ -26,7 +26,7 @@ def round_half_up(c: float) -> int:
         n = math.floor(c)
     else:
         n = math.ceil(c)
-    
+
     if negative:
         return -n
     return n

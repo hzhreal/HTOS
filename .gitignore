@@ -3,6 +3,7 @@ UserSaves
 STORAGE
 __pycache__
 .venv
+.vscode
 *.db
 *.json
 *.sh

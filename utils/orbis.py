@@ -8,18 +8,20 @@ import struct
 import shutil
 from enum import Enum
 from dataclasses import dataclass
-from network import FTPps, SocketPS
+
+from network.ftp_functions import FTPps
+from network.socket_functions import SocketPS
 from utils.constants import (
-    MOUNT_LOCATION, XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, 
-    SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN, PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME
+    MOUNT_LOCATION, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN,
+    PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME,
+    XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MINECRAFT_TITLEID
 )
 from utils.embeds import embfn, embFileLarge, embnvSys, embpn, embnvBin
 from utils.extras import generate_random_string, obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
-from utils.workspace import enumerateFiles
+from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
 from utils.conversions import bytes_to_mb
-from data.crypto.mgsv_crypt import Crypt_MGSV
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -81,7 +83,7 @@ class SaveBatch:
         self.savenames = await obtain_savenames(self.entry)
         self.savecount = len(self.savenames)
 
-        self.entry = enumerateFiles(self.entry, self.rand_str)
+        self.entry = enumerate_files(self.entry, self.rand_str)
 
         self.printed = completed_print(self.savenames)
 
@@ -106,7 +108,7 @@ class SaveFile:
 
         await aiofiles.os.rename(self.path, os.path.join(self.dirname, self.realSave))
         await aiofiles.os.rename(self.path + ".bin", os.path.join(self.dirname, self.realSave + ".bin"))
-    
+
     async def dump(self) -> None:
         await self.batch.fInstance.uploadencrypted_bulk(self.realSave)
         await self.batch.fInstance.make1(self.batch.mount_location)
@@ -114,7 +116,7 @@ class SaveFile:
         if self.validity_check:
             sys_files = await self.batch.fInstance.list_files(self.batch.location_to_scesys, recursive=False)
             sys_files_validator(sys_files)
-    
+
     async def resign(self) -> None:
         if not self.ElementChoice.SFO in self.downloaded_sys_elements:
             await self.batch.fInstance.download_sfo(self.batch.location_to_scesys)
@@ -131,7 +133,7 @@ class SaveFile:
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
         await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
         await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
-    
+
     async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
         for element in elements:
             match element:
@@ -141,7 +143,7 @@ class SaveFile:
                     self.title_id = obtainCUSA(self.sfo_ctx)
                     self.downloaded_sys_elements.add(self.ElementChoice.SFO)
                 case self.ElementChoice.KEYSTONE:
-                    await self.batch.fInstance.retrievekeystone(self.batch.location_to_scesys)
+                    await self.batch.fInstance.retrieve_keystone(self.batch.location_to_scesys)
                     self.downloaded_sys_elements.add(self.ElementChoice.KEYSTONE)
 
     async def __reregion(self) -> None:
@@ -168,7 +170,7 @@ class SFOHeader:
     key_table_offset: int
     data_table_offset: int
     num_entries: int
-    
+
 @dataclass
 class SFOIndexTable:
     key_offset: int
@@ -189,10 +191,10 @@ class SFOContextParam:
     def as_dict(self) -> dict[str, str | int | bytearray]:
         info = vars(self)
         value = 0
-        
+
         match self.key:
             case "ACCOUNT_ID":
-                try: 
+                try:
                     accid = utf_8(self.value)
                     value = accid.value
                 except UnicodeDecodeError:
@@ -228,7 +230,7 @@ class SFOContext:
 
         if header.magic != SFO_MAGIC:
             raise OrbisError("Invalid param.sfo header magic!")
-        
+
         try:
             for i in range(header.num_entries):
                 index_offset = 20 + i * 16
@@ -275,7 +277,7 @@ class SFOContext:
             index_offset = 20 + i * 16
             index_table = SFOIndexTable(key_offset, param.format, param.length, param.max_length, data_offset)
 
-            try: 
+            try:
                 struct.pack_into("<HHIII", sfo, index_offset, index_table.key_offset, index_table.param_format, index_table.param_length, index_table.param_max_length, index_table.data_offset)
             except struct.error:
                 raise OrbisError("Failed to generate a param.sfo!")
@@ -287,7 +289,7 @@ class SFOContext:
             index_table = SFOIndexTable(*struct.unpack("<HHIII", sfo[20 + i * 16: 20 + i * 16 + 16]))
             key_offset = index_table.key_offset
             data_offset = index_table.data_offset
-            
+
             try:
                 struct.pack_into(f"{len(param.key)+1}s", sfo, header.key_table_offset + key_offset, param.key.encode("utf-8"))
                 struct.pack_into(f"{param.actual_length}s", sfo, header.data_table_offset + data_offset, param.value)
@@ -295,16 +297,16 @@ class SFOContext:
                 raise OrbisError("Failed to generate a param.sfo!")
 
         return sfo
-             
+
     def sfo_patch_parameter(self, parameter: str, new_data: str | int) -> None:
         param: SFOContextParam = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Invalid parameter: {parameter}!")
-        
+
         param_type: uint32 | uint64 | utf_8 | utf_8_s = SFO_TYPES.get(parameter)
         if not param_type:
             raise OrbisError(f"Unsupported parameter: {parameter}!")
-        
+
         match param_type:
             case uint32():
                 ctx = uint32(new_data, "little")
@@ -333,7 +335,7 @@ class SFOContext:
             return param.value
         else:
             raise OrbisError(f"Invalid parameter: {parameter}!")
-        
+
     def sfo_get_param_data(self) -> list[dict[str, str | int | bytearray]]:
         param_data = []
         for param in self.params:
@@ -343,7 +345,7 @@ class SFOContext:
             except (struct.error, UnicodeDecodeError):
                 raise OrbisError("Failed to get param data!")
         return param_data
-    
+
 class PfsSKKey:
     def __init__(self, data: bytearray) -> None:
         assert len(data) == self.SIZE
@@ -364,10 +366,10 @@ class PfsSKKey:
         if self.MAGIC != self.MAGIC_VALUE:
             return False
         return True
-    
+
     def as_array(self) -> list[int]:
         return list(self.data)
-    
+
 def keyset_to_fw(keyset: int) -> str:
     match keyset:
         case 1:
@@ -398,20 +400,20 @@ def checkid(accid: str) -> bool:
         return False
     else:
         return True
-    
+
 def handle_accid(user_id: str) -> str:
     user_id = hex(int(user_id)) # convert decimal to hex
     user_id = user_id[2:] # remove 0x
     user_id = user_id.zfill(16) # pad to 16 length with zeros
 
     return user_id
-    
-async def checkSaves(
-          ctx: discord.ApplicationContext | discord.Message, 
-          attachments: list[discord.message.Attachment], 
-          ps_save_pair_upload: bool, 
-          sys_files: bool, 
-          ignore_filename_check: bool, 
+
+async def check_saves(
+          ctx: discord.ApplicationContext | discord.Message,
+          attachments: list[discord.message.Attachment],
+          ps_save_pair_upload: bool,
+          sys_files: bool,
+          ignore_filename_check: bool,
           savesize: int | None = None
         ) -> list[discord.message.Attachment]:
 
@@ -434,7 +436,7 @@ async def checkSaves(
             emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
             await ctx.edit(embed=emb)
             await asyncio.sleep(1)
-    
+
         elif sys_files and (attachment.filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
             emb = embnvSys.copy()
             emb.description = emb.description.format(filename=attachment.filename)
@@ -443,11 +445,11 @@ async def checkSaves(
 
         elif savesize is not None and total_count > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-        
+
         else: 
             total_count += attachment.size
             valid_files.append(attachment)
-    
+
     return valid_files
 
 async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
@@ -486,7 +488,7 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
                 await asyncio.sleep(1)
             else:
                 valid_attachments_check1.append(attachment)
-    
+
     valid_attachments_final = []
     for attachment in valid_attachments_check1:
         if attachment.filename.endswith(".bin"): # look for corresponding file
@@ -498,7 +500,7 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
                     valid_attachments_final.append(attachment)
                     valid_attachments_final.append(attachment_nested)
                     break
-    
+
     return valid_attachments_final
 
 async def sfo_ctx_create(sfo_path: str) -> SFOContext:
@@ -513,7 +515,7 @@ async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
     async with aiofiles.open(sfo_path, "wb") as sfo:
         await sfo.write(sfo_data)
 
-def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: dict[str, int | str]) -> None:
+def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: int | str) -> None:
     # ignore parameters with no value
     filtered_patches = {key: value for key, value in patches.items() if value}
 
@@ -525,14 +527,14 @@ def obtainCUSA(ctx: SFOContext) -> str:
     data_title_id = ctx.sfo_get_param_value("TITLE_ID")
     data_title_id = bytearray(filter(lambda x: x != 0x00, data_title_id))
 
-    try: 
+    try:
         title_id = data_title_id.decode("utf-8")
-    except UnicodeDecodeError: 
+    except UnicodeDecodeError:
         raise OrbisError("Invalid title ID in param.sfo!")
-    
+
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
-        
+
     return title_id
 
 def check_titleid(titleid: str) -> bool:
@@ -542,47 +544,72 @@ def resign(ctx: SFOContext, account_id: str) -> None:
     """Traditional resigning."""
     ctx.sfo_patch_parameter("ACCOUNT_ID", account_id)
 
-async def reregion_write(ctx: SFOContext, title_id: str, decFilesPath: str) -> None:
+async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
+    from utils.namespaces import Crypto
+
     ctx.sfo_patch_parameter("TITLE_ID", title_id)
 
     if title_id in XENO2_TITLEID:
         newname = title_id + "01"
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
-    
+
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-        try: 
-            await Crypt_MGSV.reregion_changeCrypt(decFilesPath, title_id)
+        try:
+            await Crypto.MGSV.reregion_change_crypt(dec_files_folder, title_id)
         except (ValueError, IOError, IndexError):
             raise OrbisError("Error changing MGSV crypt!")
-        
-        newname = Crypt_MGSV.KEYS[title_id]["name"]
+
+        newname = Crypto.MGSV.KEYS[title_id]["name"]
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
-async def reregionCheck(title_id: str, savePath: str, original_savePath: str, original_savePath_bin: str) -> None:
+    elif title_id in MINECRAFT_TITLEID:
+        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).value.rstrip("\x00")
+        savename = savename.split("-")
+        # legacy edition only
+        if not savename[0] in MINECRAFT_TITLEID:
+            return
+        savename[0] = title_id
+        savename = "-".join(savename)
+        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", savename)
+
+async def reregion_check(title_id: str, savepath: str) -> None:
     """Renames the save after Re-regioning for the games that need it, random string is appended at the end for no overwriting."""
+    from utils.namespaces import Crypto
+
+    savefolder = os.path.dirname(savepath)
+
     if title_id in XENO2_TITLEID:
-        newnameFile = os.path.join(savePath, title_id + "01")
-        newnameBin = os.path.join(savePath, title_id + "01.bin")
-        if await aiofiles.os.path.exists(newnameFile) and await aiofiles.os.path.exists(newnameBin):
-            randomString = generate_random_string(RANDOMSTRING_LENGTH)
-            newnameFile = os.path.join(savePath, title_id + f"01_{randomString}")
-            newnameBin = os.path.join(savePath, title_id + f"01_{randomString}.bin")
-        if await aiofiles.os.path.exists(original_savePath) and await aiofiles.os.path.exists(original_savePath_bin):
-            await aiofiles.os.rename(original_savePath, newnameFile)
-            await aiofiles.os.rename(original_savePath_bin, newnameBin)
+        new_file = os.path.join(savefolder, title_id + "01")
+        if await aiofiles.os.path.exists(new_file):
+            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
+            new_file = os.path.join(savepath, title_id + f"01_{rand_str}")
+        await aiofiles.os.rename(savepath, new_file)
+        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_TPP_TITLEID:
-        new_regionName = Crypt_MGSV.KEYS[title_id]["name"]
-        newnameFile = os.path.join(savePath, new_regionName)
-        newnameBin = os.path.join(savePath, new_regionName + ".bin")
-        if await aiofiles.os.path.exists(newnameFile) and await aiofiles.os.path.exists(newnameBin):
-            randomString = generate_random_string(RANDOMSTRING_LENGTH)
-            newnameFile = os.path.join(savePath, new_regionName + f"_{randomString}")
-            newnameBin = os.path.join(savePath, new_regionName + f"_{randomString}.bin")
-        if await aiofiles.os.path.exists(original_savePath) and await aiofiles.os.path.exists(original_savePath_bin):
-            await aiofiles.os.rename(original_savePath, newnameFile)
-            await aiofiles.os.rename(original_savePath_bin, newnameBin)
+        new_name = Crypto.MGSV.KEYS[title_id]["name"]
+        new_file = os.path.join(savefolder, new_name)
+        if await aiofiles.os.path.exists(new_file):
+            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
+            new_file = os.path.join(savefolder, new_name + f"_{rand_str}")
+        await aiofiles.os.rename(savepath, new_file)
+        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
+
+    elif title_id in MINECRAFT_TITLEID:
+        savename = os.path.basename(savepath)
+        savename = savename.split("-")
+        # legacy edition only
+        if savename[0] not in MINECRAFT_TITLEID:
+            return
+        savename[0] = title_id
+        savename = "-".join(savename)
+        new_file = os.path.join(savefolder, savename)
+        if await aiofiles.os.path.exists(new_file):
+            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
+            new_file = os.path.join(savefolder, savename + f"_{rand_str}")
+        await aiofiles.os.rename(savepath, new_file)
+        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
 
 def validate_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))
@@ -611,7 +638,7 @@ async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> No
 async def parse_sealedkey(keypath: str, key: PfsSKKey | None = None) -> None | PfsSKKey:
     async with aiofiles.open(keypath, "rb") as sealed_key:
         data = bytearray(await sealed_key.read())
-    
+
     if key is None:
         key = PfsSKKey(data)
         retkey = True

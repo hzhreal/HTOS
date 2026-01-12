@@ -10,13 +10,15 @@ import aiohttp
 from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
-from network import FTPps, FTPError
-from google_drive import gdapi, clean_GDrive, GDapiError
+
+from network.ftp_functions import FTPps
+from network.exceptions import FTPError
+from google_drive.exceptions import GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, 
-    logger, blacklist_logger, psnawp
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH,
+    logger, blacklist_logger, psnawp, verify_titleids
 )
 from utils.embeds import emb_il, embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
 from utils.extras import generate_random_string
@@ -60,7 +62,7 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
     FOLDERS = [UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, 
                 DOWNLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED,
                 PNG_PATH, PARAM_PATH, KEYSTONE_PATH, STORED_SAVES_FOLDER]
-    
+
     for path in FOLDERS:
         if not os.path.exists(path):
             try: os.makedirs(path)
@@ -87,11 +89,13 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
             delete_folder_contents_ftp_BLOCKING(ftp, MOUNT_LOCATION)
             delete_folder_contents_ftp_BLOCKING(ftp, PS_UPLOADDIR)
             ftp.mkd(MOUNT_LOCATION)
-            ftp.mkd(PS_UPLOADDIR) 
+            ftp.mkd(PS_UPLOADDIR)
             ftp.quit()
         except:
             pass
-    
+
+    verify_titleids()
+
     if lite:
         return
 
@@ -144,7 +148,7 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
         conn.close()
     except sqlite3.Error as e:
         print(f"Error creating databases: {e}\nExiting...")
-        logger.exception(f"Error creating databases: {e}")
+        logger.error(f"Error creating databases: {e}")
         sys.exit()
 
 async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_saveList: list[str] | None, remote_mount_paths: list[str] | None) -> None:
@@ -159,7 +163,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
 
     if remote_saveList is not None and len(remote_saveList) > 0:
         try:
-            await fInstance.deleteList(PS_UPLOADDIR, remote_saveList)
+            await fInstance.delete_list(PS_UPLOADDIR, remote_saveList)
         except FTPError as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
@@ -171,7 +175,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
             except FTPError as e:
                 logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
-async def cleanupSimple(clean_list: list[str] | None) -> None:
+async def cleanup_simple(clean_list: list[str] | None) -> None:
     """Used to cleanup after a command that does not utilize the ps4 (local only)."""
     if not clean_list:
         return
@@ -182,7 +186,7 @@ async def cleanupSimple(clean_list: list[str] | None) -> None:
         except OSError as e:
             logger.error(f"Error accessing {folderpath} when cleaning up (simple): {e}")
 
-def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
+def init_workspace() -> tuple[str, str, str, str, str, str, str]:
     """Obtains the local paths for an user, used when initializing a command that needs the local filesystem."""
     randomString = generate_random_string(RANDOMSTRING_LENGTH)
     newUPLOAD_ENCRYPTED = os.path.join(UPLOAD_ENCRYPTED, randomString)
@@ -194,8 +198,8 @@ def initWorkspace() -> tuple[str, str, str, str, str, str, str]:
     newKEYSTONE_PATH = os.path.join(KEYSTONE_PATH, randomString)
 
     return newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH
-    
-async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
+
+async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[str], thread_id: int, skip_gd_check: bool = False) -> None:
     """Used for checking if a command is being run in a valid thread."""
     await ctx.defer()
 
@@ -213,7 +217,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
     except aiosqlite.Error:
         await ctx.respond(embed=retry_emb)
         raise WorkspaceError("Please try again.")
-    
+
     # check blacklist while we are at it
     search = await blacklist_check_db(ctx.author.id, None)
     if search[0]:
@@ -236,6 +240,8 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
 
     # google drive check: are we currently deleting all files or do we need to delete all files
     if not skip_gd_check:
+        from google_drive.gd_functions import gdapi, clean_GDrive
+
         if clean_GDrive.is_running():
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=gd_maintenance_emb)
@@ -264,7 +270,7 @@ async def makeWorkspace(ctx: discord.ApplicationContext, workspaceList: list[str
             await ctx.respond(embed=retry_emb)
             raise WorkspaceError("Please try again.")
 
-def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
+def enumerate_files(files: list[str], rand_str: str) -> list[str]:
     """Adds a random string at the end of the filename for save pairs, used to make sure there is no overwriting remotely."""
     out = []
     for i in range(0, len(files), 2):
@@ -278,7 +284,7 @@ def enumerateFiles(files: list[str], rand_str: str) -> list[str]:
 async def get_savenames_from_bin_ext(path: str) -> list[str]:
     savenames = []
     saves = await aiofiles.os.listdir(path)
-    
+
     for save in saves:
         base, ext = os.path.splitext(save)
         if ext != ".bin":
@@ -287,36 +293,36 @@ async def get_savenames_from_bin_ext(path: str) -> list[str]:
             savenames.append(base)
     return savenames
 
-async def listStoredSaves() -> dict[str, dict[str, dict[str, str]]]:
+async def list_stored_saves() -> dict[str, dict[str, dict[str, str]]]:
     """Lists the saves in the stored folder, used in the quick resign command."""
-    gameList = await aiofiles.os.listdir(STORED_SAVES_FOLDER) 
+    game_list = await aiofiles.os.listdir(STORED_SAVES_FOLDER)
     stored_saves = {}
-       
-    if len(gameList) == 0:
+
+    if len(game_list) == 0:
         raise WorkspaceError("NO STORED SAVES!")
 
-    for game in gameList:
-        gamePath = os.path.join(STORED_SAVES_FOLDER, game)
+    for game in game_list:
+        gamepath = os.path.join(STORED_SAVES_FOLDER, game)
 
-        if await aiofiles.os.path.isdir(gamePath):
+        if await aiofiles.os.path.isdir(gamepath):
             stored_saves[game] = {}
 
-            gameRegions = await aiofiles.os.listdir(gamePath)
+            game_regions = await aiofiles.os.listdir(gamepath)
 
-            for region in gameRegions:
-                regionPath = os.path.join(STORED_SAVES_FOLDER, game, region)
-                if await aiofiles.os.path.isdir(regionPath):
+            for region in game_regions:
+                regionpath = os.path.join(STORED_SAVES_FOLDER, game, region)
+                if await aiofiles.os.path.isdir(regionpath):
                     stored_saves[game][region] = {}
-                    
-                    gameSaves = await aiofiles.os.listdir(regionPath)
-                    for save in gameSaves:
-                        savePath = os.path.join(STORED_SAVES_FOLDER, game, region, save)
-                        if await aiofiles.os.path.isdir(savePath):
-                            if len(await get_savenames_from_bin_ext(savePath)) > 0:
-                                stored_saves[game][region][save] = savePath
-    
+
+                    gamesaves = await aiofiles.os.listdir(regionpath)
+                    for save in gamesaves:
+                        savepath = os.path.join(STORED_SAVES_FOLDER, game, region, save)
+                        if await aiofiles.os.path.isdir(savepath):
+                            if len(await get_savenames_from_bin_ext(savepath)) > 0:
+                                stored_saves[game][region][save] = savepath
+
     return stored_saves
-    
+
 async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int]:
     """Used to write thread IDs into the db on behalf of a user, if an entry exists it will be overwritten."""
     delete_these = []
@@ -329,13 +335,13 @@ async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int]:
 
             await cursor.execute("SELECT disc_threadid from Threads WHERE disc_userid = ?", (userId.as_bytes,)) # obtain thread id to delete from disc server, fetchall incase of any errors when deleting
             rows = await cursor.fetchall()
-        
+
             await cursor.execute("DELETE FROM Threads WHERE disc_userid = ?", (userId.as_bytes,)) # delete all thread ids from a user in the database, limit to 1 thread per user
             await cursor.execute("INSERT INTO Threads (disc_userid, disc_threadid) VALUES (?, ?)", (userId.as_bytes, threadId.as_bytes,)) # finally, write
             await db.commit()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
-    
+
     for thread_id in rows:
         threadId = uint64(thread_id[0], "big")
         delete_these.append(threadId.value)
@@ -367,12 +373,12 @@ async def delall_threadid_db(db_dict: dict[int, int]) -> None:
             for user_id, thread_id in db_dict.items():
                 userId = uint64(user_id, "big")
                 threadId = uint64(thread_id, "big")
-                
+
                 await cursor.execute("DELETE FROM Threads WHERE disc_userid = ? AND disc_threadid = ?", (userId.as_bytes, threadId.as_bytes,))
             await db.commit()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
-    
+
 async def fetch_accountid_db(disc_userid: int) -> str | None:
     """Used to obtain an account ID stored in the db to user."""
 
@@ -386,16 +392,16 @@ async def fetch_accountid_db(disc_userid: int) -> str | None:
             row = await cursor.fetchone()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
-    
+
     if row:
         accid = uint64(row[0], "big")
         return accid.as_bytes.hex()
     else:
         return None
-    
+
 async def write_accountid_db(disc_userid: int, account_id: str) -> None:
     """Used to store the user's account ID in the db, removing the previously stored one."""
-    
+
     accid = int(account_id, 16)
     accid = uint64(accid, "big")
 
@@ -449,7 +455,7 @@ async def blacklist_write_db(disc_user: discord.User | None, account_id: str | N
 async def blacklist_check_db(disc_userid: int | None, account_id: str | None) -> tuple[bool, str | None]:
     """Check if value is blacklisted, only use argument, leave other to None."""
     assert (disc_userid is None) != (account_id is None)
-    
+
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
@@ -480,7 +486,7 @@ async def blacklist_check_db(disc_userid: int | None, account_id: str | None) ->
 async def blacklist_del_db(disc_userid: int | None, account_id: str | None) -> None:
     """Delete entry in blacklist db."""
     assert disc_userid is not None or account_id is not None
-    
+
     try:
         async with aiosqlite.connect(DATABASENAME_BLACKLIST) as db:
             cursor = await db.cursor()
@@ -564,7 +570,7 @@ async def check_version() -> str:
 
     latest_ver_num = semver_to_num(latest_ver)
     cur_ver_num = semver_to_num(VERSION)
-    
+
     if cur_ver_num < latest_ver_num:
         print("Attention: You are running an outdated version of HTOS. Please update to the latest version to ensure security, performance, and access to new features.")
         print(f"Your version: {VERSION}")

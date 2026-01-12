@@ -1,22 +1,26 @@
 import discord
 import asyncio
 import os
-import json
 import aiohttp
-import data.crypto.helpers as crypthelp
-import utils.orbis as orbis
+import aiofiles
 import aiofiles.os
+import errno
+
 from discord.ext import pages
 from dataclasses import dataclass
 from typing import Literal, Callable, Awaitable, Any
 from enum import Enum
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
-from google_drive import gdapi, GDapiError
-from network import FTPps
+
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
+from data.crypto.helpers import extra_import
+from network.ftp_functions import FTPps
+from utils.orbis import check_saves, parse_pfs_header, parse_sealedkey, checkid, handle_accid
 from utils.constants import (
-    logger, blacklist_logger, bot, psnawp, 
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT,
+    logger, blacklist_logger, bot, psnawp,
+    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM
 )
 from utils.embeds import (
@@ -24,8 +28,8 @@ from utils.embeds import (
     embe, embuplSuccess, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame, embwlcom
 )
-from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanupSimple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError, OrbisError
+from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
 from utils.extras import zipfiles
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -47,7 +51,7 @@ class TimeoutHelper:
                 await asyncio.sleep(1)  # Sleep for 1 second to avoid busy-waiting
         except asyncio.CancelledError:
             pass  # Handle cancellation if needed
-    
+
     async def handle_timeout(self, ctx: discord.ApplicationContext | discord.Message) -> None:
         await asyncio.sleep(2)
         if not self.done:
@@ -61,8 +65,8 @@ class threadButton(discord.ui.View):
         super().__init__(timeout=None)
 
     async def on_error(self, e: Exception, _: Item, __: discord.Interaction) -> None:
-        logger.error(f"Unexpected error while creating thread: {e}")
-    
+        logger.info(f"Unexpected error while creating thread: {e}", exc_info=True)
+
     @discord.ui.button(label="Create thread", style=discord.ButtonStyle.primary, custom_id="CreateThread")
     async def callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
         current_instance = INSTANCE_LOCK_global.instances.get(interaction.user.id)
@@ -81,15 +85,15 @@ class threadButton(discord.ui.View):
             await thread.send(embed=emb)
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
         except (WorkspaceError, discord.Forbidden) as e:
-            logger.error(f"Can not create thread: {e}")
-        
+            logger.error(f"Cannot create thread: {e}")
+
         try:
             for thread_id in ids_to_remove:
                 old_thread = bot.get_channel(thread_id)
                 if old_thread is not None:
-                    await old_thread.delete() 
+                    await old_thread.delete()
         except discord.Forbidden as e:
-            logger.error(f"Can not clear old thread: {e}")
+            logger.error(f"Cannot clear old thread: {e}")
 
 class UploadMethod(Enum):
     DISCORD = 0
@@ -116,12 +120,12 @@ async def clean_msgs(messages: list[discord.Message]) -> None:
         except discord.Forbidden:
             pass
 
-async def errorHandling(
-          ctx: discord.ApplicationContext | discord.Message, 
-          error: str, 
-          workspaceFolders: list[str] | None, 
-          uploaded_file_paths: list[str] | None, 
-          mountPaths: list[str] | None, 
+async def error_handling(
+          ctx: discord.ApplicationContext | discord.Message,
+          error: str,
+          workspace_folders: list[str] | None,
+          uploaded_file_paths: list[str] | None,
+          mount_paths: list[str] | None,
           C1ftp: FTPps | None
         ) -> None:
     emb = embe.copy()
@@ -129,18 +133,18 @@ async def errorHandling(
     try:
         await ctx.edit(embed=emb)
     except discord.HTTPException as e:
-        logger.exception(f"Error while editing msg: {e}")
+        logger.info(f"Error while editing msg: {e}", exc_info=True)
 
     if C1ftp is not None and error != CON_FAIL_MSG:
-        await cleanup(C1ftp, workspaceFolders, uploaded_file_paths, mountPaths)
+        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
     else:
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
 
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
         return (len(message.attachments) >= 1) or (message.content and gdapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
-    
+
 """Makes the bot expect a single file through discord or google drive."""
 def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
@@ -148,7 +152,7 @@ def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> boo
 
 def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (message.content and orbis.checkid(message.content)) or (message.content and message.content == "EXIT")
+        return (message.content and checkid(message.content)) or (message.content and message.content == "EXIT")
 
 def exit_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
@@ -165,6 +169,28 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
             await asyncio.sleep(3)
         raise TimeoutError("TIMED OUT!")
     return response
+
+async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> str:
+    if filename is None:
+        _, ext = os.path.splitext(attachment.filename)
+        basename = attachment.title + ext if attachment.title is not None else attachment.filename
+        filepath = os.path.join(folderpath, basename)
+    else:
+        filepath = os.path.join(folderpath, filename)
+    try:
+        async with aiofiles.open(filepath, "wb") as out:
+            async for chunk in attachment.read_chunked(chunksize=GENERAL_CHUNKSIZE):
+                await out.write(chunk)
+    except asyncio.TimeoutError:
+        raise TimeoutError("TIMED OUT!")
+    except aiohttp.ClientError:
+        raise FileError("Failed to download file.")
+    except OSError as e:
+        if e.errno == errno.EINVAL:
+            raise FileError(f"The filename {os.path.basename(filepath)} is unsupported!")
+        raise
+    logger.info(f"Saved {attachment.filename} to {filepath}")
+    return filepath
 
 async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], Awaitable[Any]]], ordered_embeds: list[discord.Embed]) -> list[Any]:
     tasks_len = len(ordered_tasks)
@@ -183,7 +209,10 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
             cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=GENERAL_TIMEOUT))
 
         if embed is not None:
-            await d_ctx.msg.edit(embed=embed)
+            try:
+                await d_ctx.msg.edit(embed=embed)
+            except discord.HTTPException as e:
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
         done, _ = await asyncio.wait(
             {main_task, cancel_task},
@@ -228,21 +257,21 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
     return result
 
 async def upload2(
-          d_ctx: DiscordContext, 
-          saveLocation: str, 
-          max_files: int, 
-          sys_files: bool, 
-          ps_save_pair_upload: bool, 
+          d_ctx: DiscordContext,
+          save_location: str,
+          max_files: int,
+          sys_files: bool,
+          ps_save_pair_upload: bool,
           ignore_filename_check: bool,
           savesize: int | None = None,
           opt: UploadOpt | None = None
         ) -> list[list[str]]:
-    
+
     if opt is None:
         opt = UploadOpt(UploadGoogleDriveChoice.STANDARD, False)
 
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
-    
+
     if len(message.attachments) > max_files:
         raise FileError(f"Attachments uploaded cannot exceed {max_files}!")
 
@@ -251,27 +280,24 @@ async def upload2(
         uploaded_file_paths = []
         download_cycle = []
 
-        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        valid_attachments = await check_saves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded, or no files found!")
 
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
+
         i = 1
         for attachment in valid_attachments:
-            file_path = os.path.join(saveLocation, attachment.filename)
-            try:
-                await attachment.save(file_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {file_path}")
-            
+            task = [lambda: download_attachment(attachment, save_location)]
+            file_path = (await task_handler(d_ctx, task, []))[0]
+
             # run a quick check
             if ps_save_pair_upload and not attachment.filename.endswith(".bin"):
-                await orbis.parse_pfs_header(file_path)
+                await parse_pfs_header(file_path)
             elif ps_save_pair_upload and attachment.filename.endswith(".bin"):
-                await orbis.parse_sealedkey(file_path)
+                await parse_sealedkey(file_path)
 
             emb = embuplSuccess.copy()
             emb.description = emb.description.format(filename=attachment.filename, i=i, filecount=filecount)
@@ -285,18 +311,18 @@ async def upload2(
 
     elif message.content == "EXIT":
         raise TimeoutError("EXITED!")
-    
+
     else:
         try:
             google_drive_link = message.content
             await message.delete()
             folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id: 
+            if not folder_id:
                 raise GDapiError("Could not find the folder id!")
             if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, saveLocation, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
+                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, save_location, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
             else:
-                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)]
+                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
             await d_ctx.msg.edit(embed=cancel_notify_emb)
             await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0]
@@ -306,10 +332,10 @@ async def upload2(
             raise TimeoutError("TIMED OUT!")
 
         opt.method = UploadMethod.GOOGLE_DRIVE
-       
+
     return uploaded_file_paths
 
-async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:  
+async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
 
     if len(message.attachments) == 1:
@@ -322,17 +348,11 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
         elif attachment.size > FILE_LIMIT_DISCORD:
             await message.delete()
             raise FileError(f"DISCORD UPLOAD ERROR: File size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.")
-        
+
         else:
-            save_path = saveLocation
-            file_path = os.path.join(save_path, attachment.filename)
-            try:
-                await attachment.save(file_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {file_path}")
+            task = [lambda: download_attachment(attachment, save_location)]
+            file_path = (await task_handler(d_ctx, task, []))[0]
+
             emb = embuplSuccess1.copy()
             emb.description = emb.description.format(filename=attachment.filename)
             await message.delete()
@@ -346,10 +366,11 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
             google_drive_link = message.content
             await message.delete()
             folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id: 
+            if not folder_id:
                 raise GDapiError("Could not find the folder id!")
-            files = await gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, 1)
-            file_path = files[0][0]
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
+            files = await task_handler(d_ctx, task, [])
+            file_path = files[0][0][0]
 
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -359,7 +380,7 @@ async def upload1(d_ctx: DiscordContext, saveLocation: str) -> str:
 
 async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
-    
+
     if len(message.attachments) > max_files:
         raise FileError(f"Attachments uploaded cannot exceed {max_files}!")
 
@@ -367,10 +388,13 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         attachments = message.attachments
         uploaded_file_paths = []
 
-        valid_attachments = await orbis.checkSaves(d_ctx.msg, attachments, False, False, True, savesize)
+        valid_attachments = await check_saves(d_ctx.msg, attachments, False, False, True, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
+
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
 
         i = 1
         for attachment in valid_attachments:
@@ -378,38 +402,31 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             rel_file_path = "/".join(rel_file_path)
             rel_file_path = os.path.normpath(rel_file_path)
             path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_file_path + "/")
-    
+
             file_name = os.path.basename(rel_file_path)
             if len(file_name) > MAX_FILENAME_LEN:
                 raise FileError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
-            
+
             elif path_len > MAX_PATH_LEN:
                 raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
-            
+
             dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
-            full_path = os.path.join(dir_path, file_name)
+            task = [lambda: download_attachment(attachment, dir_path)]
+            full_path = (await task_handler(d_ctx, task, []))[0]
 
-            try:
-                await attachment.save(full_path)
-            except asyncio.TimeoutError:
-                raise TimeoutError("TIMED OUT!")
-            except aiohttp.ClientError:
-                raise FileError("Failed to download file.")
-            logger.info(f"Saved {attachment.filename} to {full_path}")
-            
             emb = embuplSuccess.copy()
             emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  
             await d_ctx.msg.edit(embed=emb)
 
             uploaded_file_paths.append(full_path)
             i += 1
-        
+
         await message.delete()
 
     elif message.content == "EXIT":
         raise TimeoutError("EXITED!")
-    
+
     else:
         try:
             google_drive_link = message.content
@@ -424,7 +441,7 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-        
+
     return uploaded_file_paths
 
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
@@ -447,8 +464,6 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         else:
             raise PSNIDError("Could not find previously stored account ID.")
 
-    limit = 0
-
     if len(username) < 3 or len(username) > 16:
         await asyncio.sleep(1)
         raise PSNIDError("Invalid PS username!")
@@ -458,11 +473,11 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
 
     if NPSSO_global.val:
         try:
-            userSearch = psnawp.user(online_id=username)
-            user_id = userSearch.account_id
-            user_id = orbis.handle_accid(user_id)
+            user = psnawp.user(online_id=username)
+            user_id = user.account_id
+            user_id = handle_accid(user_id)
             delmsg = False
-        
+
         except PSNAWPNotFoundError:
             await ctx.respond(embed=emb8)
             delmsg = True
@@ -473,34 +488,10 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
             user_id = response.content
         except PSNAWPAuthenticationError:
             NPSSO_global.val = ""
-    
+
     if not user_id:
-        while True:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://psn.flipscreen.games/search.php?username={username}") as response:
-                    response.text = await response.text()
+        raise PSNIDError("Account ID fetcher is unavailable. Use the `store_accountid` command.")
 
-            if response.status == 200 and limit != 20:
-                data = json.loads(response.text)
-                obtainedUsername = data["online_id"]
-
-                if obtainedUsername.lower() == username.lower():
-                    user_id = data["user_id"]
-                    user_id = orbis.handle_accid(user_id)
-                    delmsg = False
-                    break
-                else:
-                    limit += 1
-            else:
-                await ctx.respond(embed=emb8)
-                delmsg = True
-
-                response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
-                if response.content == "EXIT":
-                    raise PSNIDError("EXITED!")
-                user_id = response.content
-                break
-            
     if delmsg:
         await asyncio.sleep(0.5)
         await ctx.edit(embed=embvalidpsn)
@@ -522,15 +513,15 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     await write_accountid_db(ctx.author.id, user_id.lower())
     return user_id.lower()
 
-async def replaceDecrypted(
-          d_ctx: DiscordContext, 
-          fInstance: FTPps, 
-          files: list[str], 
-          titleid: str, 
-          mountLocation: str, 
-          upload_individually: bool, 
-          local_download_path: str, 
-          savePairName: str,
+async def replace_decrypted(
+          d_ctx: DiscordContext,
+          fInstance: FTPps,
+          files: list[str],
+          titleid: str,
+          mount_location: str,
+          upload_individually: bool,
+          local_download_path: str,
+          savepair_name: str,
           savesize: int,
           ignore_secondlayer_checks: bool
         ) -> list[str]:
@@ -541,34 +532,34 @@ async def replaceDecrypted(
     if upload_individually:
         total_count = 0
         for file in files:
-            fullPath = mountLocation + "/" + file
-            cwdHere = fullPath.split("/")
-            lastN = cwdHere.pop(len(cwdHere) - 1)
-            cwdHere = "/".join(cwdHere)
+            fullPath = mount_location + "/" + file
+            cwd_here = fullPath.split("/")
+            last_N = cwd_here.pop(len(cwd_here) - 1)
+            cwd_here = "/".join(cwd_here)
 
             emb = embencupl.copy()
-            emb.title = emb.title.format(savename=savePairName)
+            emb.title = emb.title.format(savename=savepair_name)
             emb.description = emb.description.format(filename=file)
             await d_ctx.msg.edit(embed=emb)
 
-            attachmentPath = await upload1(d_ctx, local_download_path)
-            newPath = os.path.join(local_download_path, lastN)
-            await aiofiles.os.rename(attachmentPath, newPath)
+            attachment_path = await upload1(d_ctx, local_download_path)
+            new_path = os.path.join(local_download_path, last_N)
+            await aiofiles.os.rename(attachment_path, new_path)
 
             if not ignore_secondlayer_checks:
-                await crypthelp.extra_import(Crypto, titleid, newPath)
-            
-            task = [lambda: fInstance.replacer(cwdHere, lastN)]
+                await extra_import(Crypto, titleid, new_path)
+
+            task = [lambda: fInstance.replacer(cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
-            total_count += await aiofiles.os.path.getsize(newPath)
+            total_count += await aiofiles.os.path.getsize(new_path)
         if total_count > savesize:
-            raise orbis.OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-    
+            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
+
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
             emb = embenc_out.copy()
-            emb.title = emb.title.format(savename=savePairName)
+            emb.title = emb.title.format(savename=savepair_name)
             emb.description = emb.description = chunk
             msg = await d_ctx.ctx.send(embed=emb)
             msg_container.append(msg)
@@ -577,7 +568,7 @@ async def replaceDecrypted(
         SPLITVALUE = "SLASH"
 
         emb = embencinst.copy()
-        emb.title = emb.title.format(savename=savePairName)
+        emb.title = emb.title.format(savename=savepair_name)
         emb.description = emb.description.format(splitvalue=SPLITVALUE)
         await d_ctx.msg.edit(embed=emb)
         await asyncio.sleep(2)
@@ -588,7 +579,7 @@ async def replaceDecrypted(
             if len(current_chunk) + len(line) + 1 > EMBED_DESC_LIM:
                 await send_chunk(msg_container, current_chunk)
                 current_chunk = ""
-            
+
             if current_chunk:
                 current_chunk += "\n"
             current_chunk += line
@@ -611,31 +602,31 @@ async def replaceDecrypted(
 
                 if file_constructed not in files:
                     await aiofiles.os.remove(path)
-                    
-                else:
-                    for saveFile in files:
-                        if file_constructed == saveFile:
-                            lastN = os.path.basename(saveFile)
-                            cwdHere = saveFile.split("/")
-                            cwdHere = cwdHere[:-1]
-                            cwdHere = "/".join(cwdHere)
-                            cwdHere = mountLocation + "/" + cwdHere
 
-                            file_renamed = os.path.join(local_download_path, lastN)
+                else:
+                    for savefile in files:
+                        if file_constructed == savefile:
+                            last_N = os.path.basename(savefile)
+                            cwd_here = savefile.split("/")
+                            cwd_here = cwd_here[:-1]
+                            cwd_here = "/".join(cwd_here)
+                            cwd_here = mount_location + "/" + cwd_here
+
+                            file_renamed = os.path.join(local_download_path, last_N)
                             await aiofiles.os.rename(path, file_renamed)
 
                             if not ignore_secondlayer_checks:
-                                await crypthelp.extra_import(Crypto, titleid, file_renamed)
+                                await extra_import(Crypto, titleid, file_renamed)
 
-                            task = [lambda: fInstance.replacer(cwdHere, lastN)]
+                            task = [lambda: fInstance.replacer(cwd_here, last_N)]
                             await task_handler(d_ctx, task, [])
-                            completed.append(lastN)
+                            completed.append(last_N)
         else:
-            task = [lambda: fInstance.upload_folder(mountLocation, local_download_path)]
+            task = [lambda: fInstance.upload_folder(mount_location, local_download_path)]
             await task_handler(d_ctx, task, [])
             idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)
             completed.extend([x[idx:] for x in uploaded_file_paths])
-    
+
     if len(completed) == 0:
         raise FileError("Could not replace any files!")
 
@@ -649,13 +640,15 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shar
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
         try:
-            await d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)
+            task = [lambda: d_ctx.ctx.send(content=extra_msg, file=discord.File(final_file), reference=d_ctx.msg)]
+            await task_handler(d_ctx, task, [])
         except asyncio.TimeoutError:
             raise TimeoutError("TIMED OUT!")
         except aiohttp.ClientError:
             raise FileError("Failed to upload file.")
     else:
-        file_url = await task_handler(d_ctx, [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)], [])
+        task = [lambda: gdapi.uploadzip(d_ctx.msg, final_file, file_name, shared_gd_folderid)]
+        file_url = await task_handler(d_ctx, task, [])
         emb = embgdout.copy()
         emb.description = emb.description.format(url=file_url[0], extra_msg=extra_msg)
         await d_ctx.ctx.send(embed=emb, reference=d_ctx.msg)
@@ -677,9 +670,9 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
     game_msgs = []
     selection = {}
     entries_added = 0
-    
+
     emb = embgames.copy()
-    
+
     for game, _ in stored_saves.items():
         game_info = f"\n{entries_added + 1}. {game}"
         if len(game_desc + game_info) <= EMBED_DESC_LIM:
@@ -695,7 +688,7 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
         emb.description = emb.description = game_desc
         msg = await d_ctx.ctx.respond(embed=emb)
         game_msgs.append(msg)
-    
+
     if entries_added == 0:
         raise WorkspaceError("NO STORED SAVES!")
 
@@ -704,13 +697,13 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
     except asyncio.TimeoutError:
         await clean_msgs(game_msgs)
         raise TimeoutError("TIMED OUT!")
-    
+
     await message.delete()
     await clean_msgs(game_msgs)
 
     if message.content == "EXIT":
         return message.content, message.content
-    
+
     else:
         game = selection[int(message.content) - 1]
         selected_game = stored_saves.get(game)
@@ -744,28 +737,28 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
                 entries_added += 1
                 fields_added += 1
         pages_list.append(emb)
-        
+
         if entries_added == 0:
             raise WorkspaceError("NO STORED SAVES!")
-        
+
         paginator = pages.Paginator(pages=pages_list, show_disabled=False, timeout=None)
         p_msg = await paginator.respond(d_ctx.ctx.interaction)
-            
+
         try:
             message: discord.Message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT) 
         except asyncio.TimeoutError:
             await paginator.disable(page=pages_list[0])
             await p_msg.delete()
             raise TimeoutError("TIMED OUT!")
-        
+
         await message.delete()
 
         await paginator.disable(page=pages_list[0])
         await p_msg.delete()
-        
+
         if message.content == "BACK":
             continue
-        
+
         else:
             selected_save = selection[int(message.content) - 1]
             savenames = await get_savenames_from_bin_ext(selected_save)

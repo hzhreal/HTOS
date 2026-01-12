@@ -1,64 +1,52 @@
-import zlib
-import aiofiles
 from data.crypto.common import CustomCrypto as CC
 
 class Crypt_RCube:
     @staticmethod
-    def namecheck(name: str | list[str]) -> bool | list[str]:
-        if isinstance(name, str):
-            return name.endswith(".dat")
-        elif isinstance(name, list):
-            valid = []
-            for path in name:
-                if path.endswith(".dat"):
-                    valid.append(path)
-            return valid
-        else:
-            return False
+    async def decrypt_file(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_RCube.files_check(files)
+
+        for filepath in files:
+            async with CC(filepath, in_place=False) as cc:
+                zlib = cc.create_ctx_zlib_decompress()
+                header = await cc.r_stream.read(0xC)
+                await cc.w_stream.write(header)
+                cc.set_ptr(0xC)
+                while await cc.read():
+                    await cc.decompress(zlib)
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtainFiles(folderPath)
-        files = Crypt_RCube.namecheck(files)
-
-        for filePath in files:
-            async with aiofiles.open(filePath, "rb") as savegame:
-                header = await savegame.read(0xC)
-                comp_data = await savegame.read()
-            
-            decomp_data = zlib.decompress(comp_data)
-
-            async with aiofiles.open(filePath, "wb") as savegame:
-                await savegame.write(header)
-                await savegame.write(decomp_data)
-    
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        if not Crypt_RCube.namecheck(fileToEncrypt):
+    async def encrypt_file(filepath: str) -> None:
+        if not Crypt_RCube.file_check(filepath):
             return
 
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            header = await savegame.read(0xC)
-            decomp_data = await savegame.read()
-
-        comp_data = zlib.compress(decomp_data)
-        
-        async with aiofiles.open(fileToEncrypt, "wb") as savegame:
-            await savegame.write(header)
-            await savegame.write(comp_data)
+        async with CC(filepath, in_place=False) as cc:
+            zlib = cc.create_ctx_zlib_compress()
+            header = await cc.r_stream.read(0xC)
+            await cc.w_stream.write(header)
+            cc.set_ptr(0xC)
+            while await cc.read():
+                await cc.compress(zlib)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        if not Crypt_RCube.namecheck(fileName):
+    async def check_enc_ps(filepath: str) -> None:
+        if not Crypt_RCube.file_check(filepath):
             return
 
-        null_count = 0
-        async with aiofiles.open(fileName, "rb") as savegame:
-            data = await savegame.read()
-        
-        for byte in data:
-            if byte == 0:
-                null_count += 1
+        async with CC(filepath) as cc:
+            is_dec = await cc.fraction_byte()
+        if is_dec:
+            await Crypt_RCube.encrypt_file(filepath)
 
-        if null_count >= len(data) / 2:
-            await Crypt_RCube.encryptFile(fileName)
+    @staticmethod
+    def file_check(filepath: str) -> bool:
+        return filepath.endswith(".dat")
+
+    @staticmethod
+    def files_check(files: list[str]) -> list[str]:
+        valid = []
+        for path in files:
+            if path.endswith(".dat"):
+                valid.append(path)
+        return valid
+

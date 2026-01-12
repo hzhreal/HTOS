@@ -4,7 +4,7 @@ from aiofiles.os import mkdir, listdir
 from aiofiles.ospath import exists, isfile, isdir, getsize
 
 from app_core.models import Logger, Settings
-from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX
+from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
 from utils.extras import FileError
 from utils.extras import generate_random_string
@@ -47,7 +47,7 @@ def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None
             logger.warning(f"Path {path} ({path_len}) will exceed {MAX_FILENAME_LEN}. Skipping...")
             continue
         valid_files_temp.append(file)
-        
+
     valid_files = []
     for file in valid_files_temp:
         filename = os.path.basename(file)
@@ -57,7 +57,7 @@ def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None
                 filename_nested = os.path.basename(file_nested)
                 if filename_nested == filename:
                     continue
-                
+
                 # pair found
                 if filename_nested == os.path.splitext(filename)[0]:
                     valid_files.append(file)
@@ -101,7 +101,7 @@ async def prepare_save_input_folder(settings: Settings, logger: Logger, folder_p
             filepath_out = os.path.join(cur_output_dir, filename)
             finished_files.append(finished_files_cycle)
             finished_files_cycle = []
-    
+
         shutil.copyfile(file, filepath_out)
         finished_files_cycle.append(filepath_out)
     finished_files.append(finished_files_cycle)
@@ -114,7 +114,7 @@ async def prepare_files_input_folder(settings: Settings, folder_path: str, outpu
         files = await get_files_recursive(folder_path)
     else:
         files = await get_files_nonrecursive(folder_path)
-    
+
     cur_output_dir = os.path.join(output_folder_path, os.path.basename(output_folder_path))
     await mkdir(cur_output_dir)
 
@@ -128,7 +128,7 @@ async def prepare_files_input_folder(settings: Settings, folder_path: str, outpu
             filepath_out = os.path.join(cur_output_dir, filename)
             finished_files.append(finished_files_cycle)
             finished_files_cycle = []
-        
+
         shutil.copyfile(file, filepath_out)
         finished_files_cycle.append(filepath_out)
     finished_files.append(finished_files_cycle)

@@ -35,10 +35,10 @@ class Profile:
 
     def pad_name(self) -> str:
         return self.name.ljust(self.MAX_NAME_LENGTH)
-    
+
     def copy(self) -> Profile:
         return Profile(self.name, self.account_id)
-    
+
     def is_set(self) -> bool:
         t_v = bool(self.name) and bool(self.account_id)
         if t_v:
@@ -53,7 +53,7 @@ class Profiles:
         self.profiles_path = profiles_path
         self.profiles: list[Profile] = []
         self.selected_profile: Profile | None = None
-    
+
     def construct(self) -> None:
         if not os.path.exists(self.profiles_path):
             f = open(self.profiles_path, "w")
@@ -66,7 +66,7 @@ class Profiles:
                 profiles_json: dict[str, str] = json.loads(data)
             except json.JSONDecodeError:
                 raise ProfileError("Invalid profile file!")
-        
+
         for name, account_id in profiles_json.items():
             if not isinstance(name, str) or not isinstance(account_id, str):
                 continue
@@ -87,7 +87,7 @@ class Profiles:
     def create(self, p: Profile) -> None:
         self.profiles.append(p)
         self.update()
-    
+
     def delete(self, p: Profile) -> None:
         self.profiles.remove(p)
         self.update()
@@ -101,16 +101,16 @@ class Profiles:
             if p.name == name:
                 return p
         return None
-    
+
     def select_profile(self, p: Profile | None) -> None:
         self.selected_profile = p
-        
+
     def is_selected(self) -> bool:
         return bool(self.selected_profile)
-    
+
     def is_empty(self) -> bool:
         return len(self.profiles) == 0
-    
+
 class Logger:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings
@@ -125,7 +125,7 @@ class Logger:
     def clear(self) -> None:
         self.text = ""
         self.update_obj()
-    
+
     def write(self, prefix: str | None, msg: str) -> None:
         if not msg:
             return
@@ -153,7 +153,7 @@ class Logger:
     def hide(self) -> None:
         self.obj.set_visibility(False)
         self.scroll_area.set_visibility(False)
-    
+
     def show(self) -> None:
         self.obj.set_visibility(True)
         self.scroll_area.set_visibility(True)
@@ -164,12 +164,12 @@ class SettingObject(Enum):
 
 class SettingKey:
     def __init__(
-        self, 
-        default_value: Any, 
-        obj: SettingObject, 
-        key: str, 
-        desc: str, 
-        value: Any | None = None, 
+        self,
+        default_value: Any,
+        obj: SettingObject,
+        key: str,
+        desc: str,
+        value: Any | None = None,
         validator: Callable[[Any], bool] | partial[Callable[[Any], bool]] | None = None
     ) -> None:
         match obj:
@@ -207,7 +207,7 @@ class SettingKey:
     @property
     def value(self) -> Any:
         return self._value
-    
+
     @value.setter
     def value(self, value: Any) -> None:
         if not isinstance(value, self.type):
@@ -274,7 +274,7 @@ class TabBase:
         self.tab = ui.tab(name)
         self.in_folder = self.settings.default_infolder.value
         self.out_folder = self.settings.default_outfolder.value
-    
+
     def construct(self) -> None:
         with ui.row().style("align-items: center"):
             self.input_button = ui.button("Select folder of savefiles", on_click=self.on_input)
@@ -290,7 +290,7 @@ class TabBase:
         if folder:
             self.in_folder = folder[0]
             self.in_label.set_value(self.in_folder)
- 
+
     async def on_output(self) -> None:
         folder = await app.native.main_window.create_file_dialog(dialog_type=FileDialog.FOLDER)
         if folder:
@@ -299,20 +299,20 @@ class TabBase:
 
     def on_input_label(self, event: ValueChangeEventArguments) -> None:
         self.in_folder = event.value
- 
+
     def on_output_label(self, event: ValueChangeEventArguments) -> None:
         self.out_folder = event.value
 
     async def validation(self) -> bool:
         return await isdir(self.in_folder) and await isdir(self.out_folder)
-    
+
     def disable_buttons(self) -> None:
         self.input_button.disable()
         self.in_label.disable()
         self.output_button.disable()
         self.out_label.disable()
         self.start_button.disable()
-    
+
     def enable_buttons(self) -> None:
         self.input_button.enable()
         self.in_label.enable()

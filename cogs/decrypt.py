@@ -5,9 +5,13 @@ import aiofiles.os
 from discord.ext import commands
 from discord import Option
 from aiogoogle import HTTPError
-from network import FTPps, C1socket, FTPError, SocketError
-from google_drive import gdapi, GDapiError
-from data.crypto import extra_decrypt, CryptoError
+from network.socket_functions import C1socket
+from network.ftp_functions import FTPps
+from network.exceptions import SocketError, FTPError
+from google_drive.gd_functions import gdapi
+from google_drive.exceptions import GDapiError
+from data.crypto.exceptions import CryptoError
+from data.crypto.helpers import extra_decrypt
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger
@@ -15,8 +19,8 @@ from utils.constants import (
 from utils.embeds import (
     embDecrypt1, emb11, emb_dl, emb13, embDdone
 )
-from utils.workspace import initWorkspace, makeWorkspace, cleanup, cleanupSimple
-from utils.helpers import DiscordContext, upload2, errorHandling, send_final, task_handler
+from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
+from utils.helpers import DiscordContext, upload2, error_handling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
 from utils.namespaces import Crypto
 from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
@@ -25,24 +29,24 @@ from utils.instance_lock import INSTANCE_LOCK_global
 class Decrypt(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-    
+
     @discord.slash_command(description="Decrypt a savefile and download the contents.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def decrypt(
-              self, 
-              ctx: discord.ApplicationContext, 
-              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."), # type: ignore
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="") # type: ignore
+              self,
+              ctx: discord.ApplicationContext,
+              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."),
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
-        
-        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = initWorkspace()
-        workspaceFolders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+
+        newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
-        try: await makeWorkspace(ctx, workspaceFolders, ctx.channel_id)
+        try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
-        mountPaths = []
+        mount_paths = []
 
         try:
             await ctx.respond(embed=embDecrypt1)
@@ -53,23 +57,23 @@ class Decrypt(commands.Cog):
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
-            await errorHandling(msg, err, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, err, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except (TimeoutError, GDapiError, FileError, OrbisError, TaskCancelledError) as e:
-            await errorHandling(msg, e, workspaceFolders, None, None, None)
-            logger.exception(f"{e} - {ctx.user.name} - (expected)")
+            await error_handling(msg, e, workspace_folders, None, None, None)
+            logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
         except Exception as e:
-            await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, None, None)
+            await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, None, None)
             logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
-                
+
         batches = len(uploaded_file_paths)
-        batch = SaveBatch(C1ftp, C1socket, "", [], mountPaths, "")
+        batch = SaveBatch(C1ftp, C1socket, "", [], mount_paths, "")
         savefile = SaveFile("", batch)
 
         i = 1
@@ -80,7 +84,7 @@ class Decrypt(commands.Cog):
                 destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str) 
                 await aiofiles.os.mkdir(destination_directory_outer)
             except OSError as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, None, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, mount_paths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
@@ -121,12 +125,15 @@ class Decrypt(commands.Cog):
                     elif isinstance(e, OSError):
                         e = BASE_ERROR_MSG
                         status = "unexpected"
-                    await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
-                    logger.exception(f"{e} - {ctx.user.name} - ({status})")
+                    await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
+                    if status == "expected":
+                        logger.info(f"{e} - {ctx.user.name} - ({status})", exc_info=True)
+                    else:
+                        logger.exception(f"{e} - {ctx.user.name} - ({status})")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
                 except Exception as e:
-                    await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                    await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
                     logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
@@ -136,32 +143,32 @@ class Decrypt(commands.Cog):
             try:
                 await msg.edit(embed=emb)
             except discord.HTTPException as e:
-                logger.exception(f"Error while editing msg: {e}")
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
             if batches == 1 and len(batch.savenames) == 1:
                 zipname = os.path.basename(destination_directory) + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
             else:
                 zipname = "Decrypted-Saves" + f"_{batch.rand_str}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, destination_directory_outer, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
-                await errorHandling(msg, e, workspaceFolders, batch.entry, mountPaths, C1ftp)
-                logger.exception(f"{e} - {ctx.user.name} - (expected)")
+                await error_handling(msg, e, workspace_folders, batch.entry, mount_paths, C1ftp)
+                logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
             except Exception as e:
-                await errorHandling(msg, BASE_ERROR_MSG, workspaceFolders, batch.entry, mountPaths, C1ftp)
+                await error_handling(msg, BASE_ERROR_MSG, workspace_folders, batch.entry, mount_paths, C1ftp)
                 logger.exception(f"{e} - {ctx.user.name} - (unexpected)")
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
-            
+
             await asyncio.sleep(1)
-            await cleanup(C1ftp, None, batch.entry, mountPaths)
+            await cleanup(C1ftp, None, batch.entry, mount_paths)
             i += 1
-        await cleanupSimple(workspaceFolders)
+        await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:

@@ -8,26 +8,21 @@ from utils.exceptions import FileError
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
-    def get_all_file_paths(directory: str) -> list[tuple[str, str]]: 
-  
-        # initializing empty file paths list 
-        file_paths = [] 
-    
-        # crawling through directory and subdirectories 
-        for root, _, files in os.walk(directory): 
-            for filename in files: 
-                # join the two strings in order to form the full filepath.
-                filepath = os.path.join(root, filename)
-                file_paths.append((root, filepath))  # Store both the root and the full file path
-    
-        # returning all file paths 
-        return file_paths    
+    def get_all_file_paths(directory: str) -> list[tuple[str, str]]:
+        file_paths = []
 
-    file_paths = get_all_file_paths(directory_to_zip) 
+        # crawling through directory and subdirectories
+        for root, _, files in os.walk(directory):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                file_paths.append((root, filepath))
+
+        return file_paths
+
+    file_paths = get_all_file_paths(directory_to_zip)
     full_new_path = os.path.join(directory_to_zip, zip_file_name)
-  
-    # writing files to a zipfile 
-    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f: 
+
+    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f:
        # writing each file one by one without the top-level folder
         for _, file in file_paths:
             archive_name = os.path.relpath(file, directory_to_zip)
@@ -62,12 +57,12 @@ async def obtain_savenames(saves: list[str]) -> list[str]:
 
 def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIM // 4) -> str:
     assert pos > 0
-    
+
     savenames = [os.path.basename(x) for x in savenames]
 
     if len(savenames) == 1:
         return savenames[0]
-    
+
     delim = ", "
     finished_files = delim.join(savenames)
     strlen = len(finished_files)
@@ -78,5 +73,5 @@ def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIM // 4) -> str
         i -= 1
     if i != len(savenames) - 1:
         finished_files += ", ..."
-    
+
     return finished_files

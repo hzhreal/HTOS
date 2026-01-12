@@ -1,81 +1,81 @@
 import aiofiles
-import mmh3
 from data.crypto.common import CustomCrypto as CC
 from utils.type_helpers import uint32
 
 class Crypt_RE4R:
     SECRET_KEY = b"wa9Ui_tFKa_6E_D5gVChjM69xMKDX8QxEykYKhzb4cRNLknpCZUra"
+    SECRET_KEY_RE2R = b"K<>$cl%isqA|~nV4W5~3z_Q)j]5DHdB9sb{cI9Hn&Gqc-zO8O6zf"
     HEADER = b"DSSSDSSS"
-    IV = b"\x00" * CC.BLOWFISH_BLOCKSIZE
-    SEED = 0x_FF_FF_FF_FF
+    SEED = uint32(0x_FF_FF_FF_FF, "little", const=True)
 
     @staticmethod
-    async def decryptFile(folderPath: str) -> None:
-        files = await CC.obtainFiles(folderPath)
+    async def decrypt_file(folderpath: str, re2r: bool = False) -> None:
+        files = await CC.obtain_files(folderpath)
+        key = Crypt_RE4R.SECRET_KEY if not re2r else Crypt_RE4R.SECRET_KEY_RE2R
 
-        for filePath in files:
+        for filepath in files:
+            async with CC(filepath) as cc:
+                blowfish_ecb = cc.Blowfish.new(key, cc.Blowfish.MODE_ECB)
+                blowfish_cbc = cc.create_ctx_blowfish(key, cc.Blowfish.MODE_CBC, iv=bytes([0] * 8))
 
-            async with aiofiles.open(filePath, "rb") as savegame:
-                await savegame.seek(0x10)
-                header = await savegame.read(0x10)
-                data = await savegame.read()
+                await cc.r_stream.seek(0x10)
+                header = bytearray(await cc.r_stream.read(0x10))
+                cc.set_ptr(0x10)
 
-            ciphertext = header + data
+                cc.ES32(header)
+                blowfish_ecb.decrypt(header, header)
+                cc.ES32(header)
 
-            header = CC.ES32(header)
-            header = CC.decrypt_blowfish_ecb(header, Crypt_RE4R.SECRET_KEY)
-            header = CC.ES32(header)
+                if cc.size - 0x20 > 0 and (cc.size - 0x20) % cc.Blowfish.block_size == 0:
+                    n = 8
+                else:
+                    n = 0
 
-            # Pad the data to be a multiple of the block size
-            p_ciphertext, p_len = CC.pad_to_blocksize(ciphertext, CC.BLOWFISH_BLOCKSIZE)
-
-            p_ciphertext = CC.ES32(p_ciphertext)
-            plaintext = CC.decrypt_blowfish_cbc(p_ciphertext, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
-            plaintext = CC.ES32(plaintext)
-            if p_len > 0:
-                plaintext = plaintext[:-p_len] # remove padding that we added to avoid exception
-
-            plaintext[:len(header)] = header
-
-            async with aiofiles.open(filePath, "r+b") as savegame:
-                await savegame.seek(0x10)
-                await savegame.write(plaintext)
-
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str) -> None:
-        async with aiofiles.open(fileToEncrypt, "rb") as savegame:
-            init_header = await savegame.read(0x10)
-            header = await savegame.read(0x10)
-            data = await savegame.read()
-
-        header = CC.ES32(header)
-        header = CC.encrypt_blowfish_ecb(header, Crypt_RE4R.SECRET_KEY)
-        header = CC.decrypt_blowfish_cbc(header, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
-        header = CC.ES32(header)
-
-        plaintext = header + data
-
-        # Pad the data to be a multiple of the block size
-        p_plaintext, p_len = CC.pad_to_blocksize(plaintext, CC.BLOWFISH_BLOCKSIZE)
-
-        plaintext = CC.ES32(p_plaintext)
-        ciphertext = CC.encrypt_blowfish_cbc(plaintext, Crypt_RE4R.SECRET_KEY, Crypt_RE4R.IV)
-        ciphertext = bytes(CC.ES32(ciphertext))
-        if p_len > 0:
-            ciphertext = ciphertext[:-p_len] # remove padding that we added to avoid exception
-
-        ciphertext = ciphertext[:-4]
-        csum = uint32(mmh3.hash(init_header + ciphertext, Crypt_RE4R.SEED, False), "little")
-
-        async with aiofiles.open(fileToEncrypt, "r+b") as savegame:
-            await savegame.write(init_header)
-            await savegame.write(ciphertext)
-            await savegame.write(csum.as_bytes)
+                while await cc.read(stop_off=cc.size - n):
+                    cc.ES32()
+                    cc.decrypt(blowfish_cbc)
+                    cc.ES32()
+                    await cc.write()
+                await cc.w_stream.seek(0x10)
+                await cc.w_stream.write(header)
 
     @staticmethod
-    async def checkEnc_ps(fileName: str) -> None:
-        async with aiofiles.open(fileName, "rb") as savegame:
+    async def encrypt_file(filepath: str, re2r: bool = False) -> None:
+        key = Crypt_RE4R.SECRET_KEY if not re2r else Crypt_RE4R.SECRET_KEY_RE2R
+        async with CC(filepath) as cc:
+            blowfish_ecb = cc.Blowfish.new(key, cc.Blowfish.MODE_ECB)
+            blowfish_cbc = cc.Blowfish.new(key, cc.Blowfish.MODE_CBC, bytes([0] * 8))
+
+            await cc.r_stream.seek(0x10)
+            header = bytearray(await cc.r_stream.read(0x10))
+            cc.set_ptr(0x10)
+
+            cc.ES32(header)
+            blowfish_ecb.encrypt(header, header)
+            blowfish_cbc.decrypt(header, header)
+            cc.ES32(header)
+            await cc.w_stream.seek(0x10)
+            await cc.w_stream.write(header)
+
+            if cc.size - 0x20 > 0 and (cc.size - 0x20) % cc.Blowfish.block_size == 0:
+                n = 8
+            else:
+                n = 0
+
+            blowfish_cbc = cc.create_ctx_blowfish(key, cc.Blowfish.MODE_CBC, iv=bytes([0] * 8))
+            mmh3 = cc.create_ctx_mmh3_u32(Crypt_RE4R.SEED)
+            while await cc.read(stop_off=cc.size - n):
+                cc.ES32()
+                cc.encrypt(blowfish_cbc)
+                cc.ES32()
+                await cc.write()
+            await cc.checksum(mmh3, 0, cc.size - 4)
+            await cc.write_checksum(mmh3, cc.size - 4)
+
+    @staticmethod
+    async def check_enc_ps(filepath: str, re2r: bool = False) -> None:
+        async with aiofiles.open(filepath, "rb") as savegame:
             await savegame.seek(0x10)
             header = await savegame.read(len(Crypt_RE4R.HEADER))
         if header == Crypt_RE4R.HEADER:
-            await Crypt_RE4R.encryptFile(fileName)
+            await Crypt_RE4R.encrypt_file(filepath, re2r)

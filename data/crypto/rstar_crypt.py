@@ -1,12 +1,10 @@
 import aiofiles
-import struct
-import re
 import os
 from enum import Enum
-from typing import Literal
+
 from data.crypto.common import CustomCrypto as CC
 from utils.constants import GTAV_TITLEID
-from utils.type_helpers import uint32, uint64
+from utils.type_helpers import uint32, int8
 
 class Crypt_Rstar:
     class TitleHashTypes(Enum):
@@ -46,166 +44,165 @@ class Crypt_Rstar:
 
     UNSUPPORTED_FORMATS = ("pgta", "prdr", "profile", "player")
 
-    @staticmethod
-    def namecheck(name: str | list[str]) -> bool | list[str]:
-        if isinstance(name, str):
-            filename = os.path.basename(name).lower()
-            return not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS)
-        elif isinstance(name, list):
-            valid = []
-            for path in name:
-                filename = os.path.basename(path).lower()
-                if not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS):
-                    valid.append(path)
-            return valid
-        else:
-            return False
+    class Rstar(CC):
+        def __init__(self, filepath: str) -> None:
+            super().__init__(filepath)
+
+        class jooat:
+            def __init__(self, seed: uint32 = uint32(0x3FAC7125, "big", const=True)) -> None:
+                self.jooat = uint32(seed.value, seed.ENDIANNESS)
+
+            def update(self, chunk: bytes | bytearray) -> None:
+                assert len(chunk) <= CC.CHUNKSIZE
+
+                for byte in chunk:
+                    char = int8(byte).value
+                    self.jooat.value += char
+                    self.jooat.value += (self.jooat.value << 10)
+                    self.jooat.value ^= (self.jooat.value >> 6)
+
+            def digest(self) -> bytes:
+                self.jooat.value += (self.jooat.value << 3)
+                self.jooat.value ^= (self.jooat.value >> 11)
+                self.jooat.value += (self.jooat.value << 15)
+                return self.jooat.as_bytes
+
+        def create_ctx_jooat(self, seed: uint32 = uint32(0x3FAC7125, "big")) -> int:
+            update_obj = Crypt_Rstar.Rstar.jooat(seed)
+            return self._create_ctx(update_obj)
+
+        async def fix_title_chks(self) -> None:
+            """GTA V PS4 & PC, RDR2 PS4"""
+            jooat = Crypt_Rstar.Rstar.jooat(uint32(0, "big"))
+
+            # title seed is jooat of iv with initial seed of 0
+            await self.r_stream.seek(0)
+            iv = bytearray(await self.r_stream.read(4)) # normally 00 00 00 01 (gta), 00 00 00 04 (rdr2)
+            self.ES32(iv)
+            jooat.update(iv)
+            jooat.digest()
+
+            # read title and fix checksum
+            title = await self.r_stream.read(0x100)
+            jooat.update(title)
+            jooat.digest()
+            await self.w_stream.seek(4 + 0x100)
+            await self.w_stream.write(jooat.jooat.as_bytes)
+
+        async def fix_date_chks(self) -> None:
+            """RDR2 PC"""
+            jooat = Crypt_Rstar.Rstar.jooat(uint32(0, "big"))
+
+            # data seed is jooat of iv with initial seed of 0
+            await self.r_stream.seek(0)
+            iv = bytearray(await self.r_stream.read(4)) # normally 00 00 00 04
+            self.ES32(iv)
+            jooat.update(iv)
+            jooat.digest()
+
+            # read date and fix checksum
+            await self.r_stream.seek(0x104)
+            date = bytearray(await self.r_stream.read(8))
+            self.ES32(date)
+            jooat.update(date)
+            jooat.digest()
+            await self.w_stream.seek(0x104 + 8)
+            await self.w_stream.write(jooat.jooat.as_bytes)
 
     @staticmethod
-    def jooat(data: bytes | bytearray, seed: int = 0x3FAC7125, byteorder: Literal["little", "big"] = "big") -> uint32:
-        num = uint32(seed, byteorder)
-        for byte in data:
-            char = (byte + 128) % 256 - 128  # casting to signed char
-            num.value = num.value + char
-            num.value = num.value + (num.value << 10)
-            num.value = num.value ^ (num.value >> 6)
+    async def decrypt_file(folderpath: str, start_off: int) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_Rstar.files_check(files)
+        key = Crypt_Rstar.TYPES[start_off]["key"]
 
-        num.value = num.value + (num.value << 3)
-        num.value = num.value ^ (num.value >> 11)
-        num.value = num.value + (num.value << 15)
-
-        return num
-    
-    @staticmethod
-    async def fix_title_chks(savegame: aiofiles.threadpool.binary.AsyncFileIO) -> None:
-        """GTA V PS4 & PC, RDR2 PS4"""
-        await savegame.seek(0)
-        iv = await savegame.read(4) # read the initial data, must be 00 00 00 01 (gta), 00 00 00 04 (rdr2)
-        seed_data = iv[::-1] # reverse order
-        seed = Crypt_Rstar.jooat(seed_data, 0) # generate seed
-
-        # read title and fix checksum
-        title = await savegame.read(0x100)
-        chks = Crypt_Rstar.jooat(title, seed.value)
-        await savegame.write(chks.as_bytes)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                aes = cc.create_ctx_aes(key, cc.AES.MODE_ECB)
+                await cc.trim_trailing_bytes(min_required=16 + 1) # remove empty space that autosaves have towards EOF
+                cc.set_ptr(start_off)
+                while await cc.read():
+                    cc.decrypt(aes)
+                    await cc.write()
 
     @staticmethod
-    async def fix_date_chks(savegame: aiofiles.threadpool.binary.AsyncFileIO) -> None:
-        """RDR2 PC"""
-        await savegame.seek(0)
-        iv = await savegame.read(4) # read initial data, must be 00 00 00 04
-        seed_data = iv[::-1] # reverse order
-        seed = Crypt_Rstar.jooat(seed_data, 0) # generate seed
-
-        # read date and fix checksum
-        await savegame.seek(0x104)
-        date = uint64(await savegame.read(8), "big")
-        date.value = CC.ES32(date.as_bytes)
-        chks = Crypt_Rstar.jooat(date.as_bytes, seed.value)
-        await savegame.write(chks.as_bytes)
-
-    @staticmethod
-    async def encryptFile(fileToEncrypt: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        if not Crypt_Rstar.namecheck(fileToEncrypt):
+    async def encrypt_file(filepath: str, start_off: int) -> None:
+        if not Crypt_Rstar.file_check(filepath):
             return
 
-        key = Crypt_Rstar.TYPES[start_offset]["key"]
-        type_ = Crypt_Rstar.TYPES[start_offset]["type"]
+        key = Crypt_Rstar.TYPES[start_off]["key"]
+        type_ = Crypt_Rstar.TYPES[start_off]["type"]
 
-        # Read the entire plaintext data from the file
-        async with aiofiles.open(fileToEncrypt, "r+b") as file:
+        async with Crypt_Rstar.Rstar(filepath) as cc:
+            aes = cc.create_ctx_aes(key, cc.AES.MODE_ECB)
+            await cc.trim_trailing_bytes(min_required=16 + 1) # remove empty space that autosaves have towards EOF
             match type_:
                 case Crypt_Rstar.TitleHashTypes.STANDARD:
-                    # fix title checksum
-                    await Crypt_Rstar.fix_title_chks(file)
-                    await file.seek(0)
+                    await cc.fix_title_chks()
                 case Crypt_Rstar.TitleHashTypes.DATE:
-                    await Crypt_Rstar.fix_date_chks(file)
-                    await file.seek(0)
+                    await cc.fix_date_chks()
 
-            await file.seek(start_offset)  # Move the file pointer to the start_offset
-            data_to_encrypt = await file.read()  # Read the part to encrypt
+            ptr = start_off
+            while True:
+                jooat = cc.create_ctx_jooat()
+                chks_off = await cc.find(b"CHKS", ptr)
+                if chks_off == -1:
+                    break
 
-            # Leave out the empty space that autosaves have
-            data_to_encrypt, null_off = CC.trim_trailing_bytes(data_to_encrypt, len(data_to_encrypt) - 1)
+                await cc.r_stream.seek(chks_off + 4)
+                header_size = uint32(await cc.r_stream.read(4), "big")
+                if header_size.value != 0x14 or chks_off + 0x14 > cc.size:
+                    raise CryptoError("Invalid!")
+                data_size = uint32(await cc.r_stream.read(4), "big")
 
-            # checksum handling
-            for chunk in [m.start() for m in re.finditer(b"CHKS\x00", data_to_encrypt)]: # calculate checksums for each chunk
-                await file.seek(start_offset + chunk + 4, 0) # 4 bytes for the magic CHKS
-                header_size = struct.unpack(">I", await file.read(4))[0]
-                data_length = struct.unpack(">I", await file.read(4))[0]
-                await file.seek(header_size - 4 - 4 - 4, 1) # 4 for the header size num, 4 for the data length num and 4 for the checksum
+                # nullify data size and checksum
+                await cc.w_stream.seek(chks_off + 8)
+                await cc.w_stream.write(bytes([0] * (4 + 4)))
 
-                await file.seek(-data_length, 1)
-                data_to_be_hashed = bytearray(await file.read(data_length))
+                chks_start_off = chks_off - data_size.value + header_size.value
+                await cc.checksum(jooat, chks_start_off, chks_start_off + data_size.value)
+                await cc.write_checksum(jooat, chks_off + (4 + 4 + 4))
+                cc.delete_ctx(jooat)
 
-                chks_offset = len(data_to_be_hashed) - header_size + (4 + 4)
-                data_to_be_hashed[chks_offset:chks_offset + (4 + 4)] = b"\x00" * (4 + 4) # remove the length and hash
-                new_hash = Crypt_Rstar.jooat(data_to_be_hashed)
-                
-                await file.seek(start_offset + chunk + (4 + 4 + 4), 0) # 4 bytes for header size num, 4 bytes for the data length and 4 bytes for the checksum
-                await file.write(new_hash.as_bytes)
-            
-            await file.seek(start_offset)
-            if null_off != -1:
-                data_to_encrypt = await file.read(null_off + 1) # Read upto the empty space that autosaves have
-            else:
-                data_to_encrypt = await file.read()
+                await cc.w_stream.seek(chks_off + 8)
+                await cc.w_stream.write(data_size.as_bytes)
 
-        # Pad the data to be a multiple of the block size
-        data_to_encrypt, _ = CC.pad_to_blocksize(data_to_encrypt, CC.AES_BLOCKSIZE)
+                ptr = chks_off + header_size.value
 
-        # Encrypt the data
-        encrypted_data = CC.encrypt_aes_ecb(data_to_encrypt, key)
-
-        # Combine all the parts and save the new encrypted data to a new file (e.g., "encrypted_SGTA50000")
-        async with aiofiles.open(fileToEncrypt, "r+b") as encrypted_file:
-            await encrypted_file.seek(start_offset)
-            await encrypted_file.write(encrypted_data)
+            cc.set_ptr(start_off)
+            while await cc.read():
+                cc.encrypt(aes)
+                await cc.write()
 
     @staticmethod
-    async def decryptFile(upload_decrypted: str, start_offset: Literal[0x114, 0x108, 0x120, 0x110]) -> None:
-        files = await CC.obtainFiles(upload_decrypted)
-        files = Crypt_Rstar.namecheck(files)
-        key = Crypt_Rstar.TYPES[start_offset]["key"]
-
-        for file_name in files:
-
-            # Read the entire ciphertext data from the file
-            async with aiofiles.open(file_name, "rb") as file:
-                await file.seek(start_offset)  # Move the file pointer to the start_offset
-                data_to_decrypt = await file.read()  # Read the part to decrypt
-
-            # Leave out the empty space that autosaves have
-            data_to_decrypt, _ = CC.trim_trailing_bytes(data_to_decrypt, len(data_to_decrypt) - 1)
-                
-            # Pad the data to be a multiple of the block size
-            data_to_decrypt, _ = CC.pad_to_blocksize(data_to_decrypt, CC.AES_BLOCKSIZE)
-
-            # Decrypt the data
-            decrypted_data = CC.decrypt_aes_ecb(data_to_decrypt, key)
-
-            # Save the decrypted data to a new file (e.g., "decrypted_SGTA50000")
-            async with aiofiles.open(file_name, "r+b") as decrypted_file:
-                await decrypted_file.seek(start_offset)
-                await decrypted_file.write(decrypted_data)
-    
-    @staticmethod
-    async def checkEnc_ps(fileName: str, title_ids: list[str]) -> None:
-        if not Crypt_Rstar.namecheck(fileName):
+    async def check_enc_ps(filepath: str, title_ids: list[str]) -> None:
+        if not Crypt_Rstar.file_check(filepath):
             return
 
-        async with aiofiles.open(fileName, "rb") as savegame:
+        async with aiofiles.open(filepath, "rb") as savegame:
             if title_ids == GTAV_TITLEID:
                 await savegame.seek(Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
                 header = await savegame.read(len(Crypt_Rstar.GTAV_HEADER))
-    
             else:
                 await savegame.seek(Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
                 header = await savegame.read(len(Crypt_Rstar.RDR2_HEADER))
-        
+
         match header:
             case Crypt_Rstar.GTAV_HEADER:
-                await Crypt_Rstar.encryptFile(fileName, Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
+                await Crypt_Rstar.encrypt_file(filepath, Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
             case Crypt_Rstar.RDR2_HEADER:
-                await Crypt_Rstar.encryptFile(fileName, Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
+                await Crypt_Rstar.encrypt_file(filepath, Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
+
+    @staticmethod
+    def file_check(filepath: str) -> bool:
+        filename = os.path.basename(filepath).lower()
+        return not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS)
+
+    @staticmethod
+    def files_check(files: list[str]) -> list[str]:
+        valid = []
+        for path in files:
+            filename = os.path.basename(path).lower()
+            if not filename.startswith(Crypt_Rstar.UNSUPPORTED_FORMATS):
+                valid.append(path)
+        return valid
+

@@ -12,7 +12,6 @@ from zipfile import (
 )
 from sys import argv
 from discord.ext import commands
-from enum import Enum
 from psnawp_api import PSNAWP
 from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb
 
@@ -109,6 +108,7 @@ if os.path.basename(argv[0]) == "bot.py":
         psnawp = PSNAWP(NPSSO_global)
         print("psnawp initialized")
     else:
+        psnawp = None
         print("It is recommended that you register a NPSSO token.")
         time.sleep(3)
 else:
@@ -123,33 +123,63 @@ bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
 
 # TITLE IDS FOR CRYPT HANDLING
 GTAV_TITLEID = frozenset(["CUSA00411", "CUSA00419", "CUSA00880"])
-RDR2_TITLEID = frozenset(["CUSA03041", "CUSA08519", "CUSA08568", "CUSA15698"])
+RDR2_TITLEID = frozenset(["CUSA03041", "CUSA08519", "CUSA08568", "CUSA15698", "CUSA11081"])
 XENO2_TITLEID = frozenset(["CUSA05350", "CUSA05088", "CUSA04904", "CUSA05085", "CUSA05774"])
-BL3_TITLEID = frozenset(["CUSA07823", "CUSA08025"])
+BL3_TITLEID = frozenset(["CUSA07823", "CUSA08025", "CUSA07823"])
 WONDERLANDS_TITLEID = frozenset(["CUSA23766", "CUSA23767"])
 NDOG_TITLEID = frozenset([
     "CUSA00557", "CUSA00559", "CUSA00552", "CUSA00556", "CUSA00554", # tlou remastered
     "CUSA00341", "CUSA00917", "CUSA00918", "CUSA04529", "CUSA00912", # uncharted 4
-    "CUSA07875", "CUSA09564", "CUSA07737", "CUSA08347", "CUSA08352" # uncharted the lost legacy
+    "CUSA07875", "CUSA09564", "CUSA07737", "CUSA08347", "CUSA08352", # uncharted the lost legacy
+    "CUSA03281", "CUSA03335", "CUSA03268", "CUSA03259", # uncharted 2 remastered
+    "CUSA03282", "CUSA03260", "CUSA03271", "CUSA03336" # uncharted 3 remastered
 ])
 NDOG_COL_TITLEID = frozenset(["CUSA02344", "CUSA02343", "CUSA02826", "CUSA02320", "CUSA01399"]) # the nathan drake collection
-NDOG_TLOU2_TITLEID = frozenset(["CUSA07820", "CUSA10249", "CUSA13986", "CUSA14006"]) # tlou part 2
+NDOG_TLOU2_TITLEID = frozenset([
+    "CUSA07820", "CUSA10249", "CUSA13986", "CUSA14006", "CUSA17954",
+    "CUSA17962" # tlou part 2
+])
 MGSV_TPP_TITLEID = frozenset(["CUSA01140", "CUSA01154", "CUSA01099"])
 MGSV_GZ_TITLEID = frozenset(["CUSA00218", "CUSA00211", "CUSA00225"])
-REV2_TITLEID = frozenset(["CUSA00924", "CUSA01133", "CUSA01141", "CUSA00804"])
-RE7_TITLEID = frozenset(["CUSA03842", "CUSA03962", "CUSA09473", "CUSA09643", "CUSA09993"])
+REV2_TITLEID = frozenset(["CUSA00924", "CUSA01133", "CUSA01141", "CUSA00804", "CUSA00901", "CUSA00999"])
+RE7_TITLEID = frozenset([
+    "CUSA03842", "CUSA03962", "CUSA09473", "CUSA09643", "CUSA09993",
+    "CUSA03839", "CUSA04927", "CUSA09443", "CUSA09470"
+])
 RERES_TITLEID = frozenset(["CUSA14122", "CUSA14169", "CUSA16725"])
-DL1_TITLEID = frozenset(["CUSA00050", "CUSA02010", "CUSA03991", "CUSA03946", "CUSA00078"])
+DL1_TITLEID = frozenset(["CUSA00050", "CUSA02010", "CUSA03991", "CUSA03946", "CUSA00078", "CUSA01090", "CUSA01473"])
 DL2_TITLEID = frozenset(["CUSA12555", "CUSA12584", "CUSA28617", "CUSA28743"])
 RGG_TITLEID = frozenset(["CUSA32173", "CUSA32174", "CUSA32171"])
-DI1_TITLEID = frozenset(["CUSA03291", "CUSA03290", "CUSA03684", "CUSA03685"])
+DI1_TITLEID = frozenset(["CUSA03291", "CUSA03290", "CUSA03684", "CUSA03685", "CUSA05688"])
 DI2_TITLEID = frozenset(["CUSA27043", "CUSA01104", "CUSA35681"])
 NMS_TITLEID = frozenset(["CUSA03952", "CUSA04841", "CUSA05777", "CUSA05965"])
-TERRARIA_TITLEID = frozenset(["CUSA00737", "CUSA00740"])
-SMT5_TITLEID = frozenset(["CUSA42697", "CUSA42698"])
+TERRARIA_TITLEID = frozenset(["CUSA00737", "CUSA00740", "CUSA01616"])
+SMT5_TITLEID = frozenset(["CUSA42697", "CUSA42698", "CUSA42502", "CUSA42315"])
 RCUBE_TITLEID = frozenset(["CUSA16074", "CUSA27390"])
-DSR_TITLEID = frozenset(["CUSA08692", "CUSA08495", "CUSA08526", "CUSA11771", "CUSA11315", "CUSA11299"])
-RE4R_TITLEID = frozenset(["CUSA33388", "CUSA33387", "CUSA35714"])
+DSR_TITLEID = frozenset(["CUSA08432", "CUSA08692", "CUSA08495", "CUSA08526"])
+RE4R_TITLEID = frozenset(["CUSA33388", "CUSA33387", "CUSA35714", "CUSA33389", "CUSA40600", "CUSA35714", "CUSA40603"])
+RE3R_TITLEID = frozenset(["CUSA14278", "CUSA14168", "CUSA14123", "CUSA14129", "CUSA14881", "CUSA16723", "CUSA16724"])
+RE2R_TITLEID = frozenset(["CUSA09171", "CUSA12590", "CUSA12497", "CUSA09171", "CUSA09161", "CUSA09193"])
+DIGIMON_TITLEID = frozenset(["CUSA06263", "CUSA05392", "CUSA05469"])
+SDEW_TITLEID = frozenset(["CUSA06829", "CUSA13911", "CUSA06840", "CUSA26625"])
+NIOH2_TITLEID = frozenset(["CUSA15532", "CUSA15526", "CUSA16157"])
+MINECRAFT_TITLEID = frozenset([
+    "CUSA17401", "CUSA20050", "CUSA17472", "CUSA19622", "CUSA17382", "CUSA00744", "CUSA00265",
+    "CUSA00283", "CUSA02169", "CUSA17908"
+])
+
+def verify_titleids() -> None:
+    from utils.orbis import check_titleid
+    title_ids = frozenset([
+        GTAV_TITLEID, RDR2_TITLEID, XENO2_TITLEID, BL3_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
+        MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
+        DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
+        DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MINECRAFT_TITLEID
+    ])
+    for ts in title_ids:
+        for t in ts:
+            assert check_titleid(t), t
+SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID, MINECRAFT_TITLEID)
 
 # BOT CONFIG
 FILE_LIMIT_DISCORD = mb_to_bytes(100) # discord file limit for nitro users
@@ -158,6 +188,7 @@ MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, for uploading files or google drive folder link
 OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, for button click, responding to quickresign command, and responding with account id
 GENERAL_TIMEOUT = None # seconds, for general processes like google drive uploads,
+GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(8) # 8 mb minimum when no nitro boosts in server
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes

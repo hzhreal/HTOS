@@ -57,4 +57,7 @@ if __name__ in {"__main__", "__mp_main__"}:
         workspace_opt.ignore_startup = True
     startup(workspace_opt, lite=True)
 
-    ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))
+    try:
+        ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))
+    except KeyboardInterrupt:
+        pass

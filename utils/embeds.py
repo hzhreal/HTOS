@@ -201,7 +201,7 @@ gd_maintenance_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng1 = discord.Embed(
     title="PNG process: Initializng",
-    description="Your save (**{savefile.basename}**) is being mounted, (save {j}/{batch.savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) is being mounted, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -372,7 +372,7 @@ embDdone = discord.Embed(
     description=(
         "**{printed}** has been decrypted (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "Send 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
