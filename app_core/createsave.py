@@ -10,7 +10,10 @@ from data.crypto.helpers import extra_import
 from network.socket_functions import C1socket 
 from network.ftp_functions import FTPps 
 from network.exceptions import SocketError, FTPError
-from utils.constants import IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, RANDOMSTRING_LENGTH, MAX_FILENAME_LEN, MAX_PATH_LEN, SCE_SYS_NAME, PARAM_NAME, CREATESAVE_ENC_CHECK_LIMIT, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
+from utils.constants import (
+    IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, RANDOMSTRING_LENGTH, MAX_FILENAME_LEN, MAX_PATH_LEN,
+    SCE_SYS_NAME, PARAM_NAME, CREATESAVE_ENC_CHECK_LIMIT, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
+)
 from utils.workspace import cleanup
 from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA
 from utils.exceptions import OrbisError
@@ -90,7 +93,7 @@ class Createsave(TabBase):
         save = []
         sys_folder = os.path.join(self.in_folder, SCE_SYS_NAME)
         rand_str = generate_random_string(RANDOMSTRING_LENGTH)
-        
+
         try:
             # size check
             foldersize, files = await calculate_foldersize(self.settings, self.in_folder)
@@ -106,7 +109,7 @@ class Createsave(TabBase):
                 raise OrbisError(f"The length of the savename will exceed {MAX_FILENAME_LEN}!")
             elif path_len > MAX_PATH_LEN:
                 raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
-            
+
             if not await isdir(sys_folder):
                 raise OrbisError("No sce_sys folder found!")
             sys_files = await get_files_nonrecursive(sys_folder)
@@ -142,13 +145,13 @@ class Createsave(TabBase):
                 ftp = await C1ftp.create_ctx()
                 for sys_file in sys_files:
                     remote_path = os.path.join(location_to_scesys, os.path.basename(sys_file))
-                    await C1ftp.uploadStream(ftp, sys_file, remote_path)
+                    await C1ftp.upload_stream(ftp, sys_file, remote_path)
                 for file in files:
                     remote_path = os.path.join(mount_location_new, os.path.basename(file))
-                    await C1ftp.uploadStream(ftp, file, remote_path)
+                    await C1ftp.upload_stream(ftp, file, remote_path)
                 await C1ftp.free_ctx(ftp)
             await C1socket.socket_update(mount_location_new, temp_savename)
-            
+
             # make paths for save
             out_folder = os.path.join(self.out_folder, rand_str)
             save_dirs = os.path.join(out_folder, "PS4", "SAVEDATA", p.account_id, title_id)
@@ -156,8 +159,8 @@ class Createsave(TabBase):
 
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
-            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
-            await C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+            await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
+            await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
             await C1ftp.free_ctx(ftp_ctx)
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, None, save, mount_paths)
@@ -182,7 +185,7 @@ class Createsave(TabBase):
         self.saveblocks.disable()
         self.savesize_mb.disable()
         self.ignore_secondlayer_checks_checkbox.disable()
-    
+
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.savename.enable()

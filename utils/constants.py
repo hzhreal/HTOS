@@ -165,7 +165,7 @@ SDEW_TITLEID = frozenset(["CUSA06829", "CUSA13911", "CUSA06840", "CUSA26625"])
 NIOH2_TITLEID = frozenset(["CUSA15532", "CUSA15526", "CUSA16157"])
 MINECRAFT_TITLEID = frozenset([
     "CUSA17401", "CUSA20050", "CUSA17472", "CUSA19622", "CUSA17382", "CUSA00744", "CUSA00265",
-    "CUSA0283", "CUSA02169", "CUSA17908"
+    "CUSA00283", "CUSA02169", "CUSA17908"
 ])
 
 def verify_titleids() -> None:
@@ -178,7 +178,7 @@ def verify_titleids() -> None:
     ])
     for ts in title_ids:
         for t in ts:
-            assert check_titleid(t)
+            assert check_titleid(t), t
 SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID, MINECRAFT_TITLEID)
 
 # BOT CONFIG

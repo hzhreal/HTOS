@@ -91,7 +91,7 @@ class threadButton(discord.ui.View):
             for thread_id in ids_to_remove:
                 old_thread = bot.get_channel(thread_id)
                 if old_thread is not None:
-                    await old_thread.delete() 
+                    await old_thread.delete()
         except discord.Forbidden as e:
             logger.error(f"Cannot clear old thread: {e}")
 
@@ -170,10 +170,11 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
         raise TimeoutError("TIMED OUT!")
     return response
 
-async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> None:
+async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> str:
     if filename is None:
         _, ext = os.path.splitext(attachment.filename)
-        filepath = os.path.join(folderpath, attachment.title + ext)
+        basename = attachment.title + ext if attachment.title is not None else attachment.filename
+        filepath = os.path.join(folderpath, basename)
     else:
         filepath = os.path.join(folderpath, filename)
     try:
@@ -316,7 +317,7 @@ async def upload2(
             google_drive_link = message.content
             await message.delete()
             folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id: 
+            if not folder_id:
                 raise GDapiError("Could not find the folder id!")
             if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
                 task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, save_location, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
@@ -350,7 +351,7 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
 
         else:
             task = [lambda: download_attachment(attachment, save_location)]
-            await task_handler(d_ctx, task, [])
+            file_path = (await task_handler(d_ctx, task, []))[0]
 
             emb = embuplSuccess1.copy()
             emb.description = emb.description.format(filename=attachment.filename)
@@ -365,11 +366,11 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
             google_drive_link = message.content
             await message.delete()
             folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id: 
+            if not folder_id:
                 raise GDapiError("Could not find the folder id!")
             task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
             files = await task_handler(d_ctx, task, [])
-            file_path = files[0][0]
+            file_path = files[0][0][0]
 
         except asyncio.TimeoutError:
             await d_ctx.msg.edit(embed=embgdt)
@@ -541,17 +542,17 @@ async def replace_decrypted(
             emb.description = emb.description.format(filename=file)
             await d_ctx.msg.edit(embed=emb)
 
-            attachmentPath = await upload1(d_ctx, local_download_path)
-            newPath = os.path.join(local_download_path, last_N)
-            await aiofiles.os.rename(attachmentPath, newPath)
+            attachment_path = await upload1(d_ctx, local_download_path)
+            new_path = os.path.join(local_download_path, last_N)
+            await aiofiles.os.rename(attachment_path, new_path)
 
             if not ignore_secondlayer_checks:
-                await extra_import(Crypto, titleid, newPath)
+                await extra_import(Crypto, titleid, new_path)
 
             task = [lambda: fInstance.replacer(cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
-            total_count += await aiofiles.os.path.getsize(newPath)
+            total_count += await aiofiles.os.path.getsize(new_path)
         if total_count > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 

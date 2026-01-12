@@ -89,7 +89,7 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
             delete_folder_contents_ftp_BLOCKING(ftp, MOUNT_LOCATION)
             delete_folder_contents_ftp_BLOCKING(ftp, PS_UPLOADDIR)
             ftp.mkd(MOUNT_LOCATION)
-            ftp.mkd(PS_UPLOADDIR) 
+            ftp.mkd(PS_UPLOADDIR)
             ftp.quit()
         except:
             pass
@@ -295,7 +295,7 @@ async def get_savenames_from_bin_ext(path: str) -> list[str]:
 
 async def list_stored_saves() -> dict[str, dict[str, dict[str, str]]]:
     """Lists the saves in the stored folder, used in the quick resign command."""
-    game_list = await aiofiles.os.listdir(STORED_SAVES_FOLDER) 
+    game_list = await aiofiles.os.listdir(STORED_SAVES_FOLDER)
     stored_saves = {}
 
     if len(game_list) == 0:

@@ -52,7 +52,7 @@ class CreateSave(commands.Cog):
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
-        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
@@ -165,7 +165,7 @@ class CreateSave(commands.Cog):
             mount_paths.append(mount_location_new)
             tasks = [
                 # now mount save and get ready to upload files to it
-                lambda: C1ftp.make1(mount_location_new), 
+                lambda: C1ftp.make1(mount_location_new),
                 lambda: C1ftp.make1(location_to_scesys),
                 # dump, and begin uploading
                 lambda: C1socket.socket_dump(mount_location_new, temp_savename),
@@ -187,8 +187,8 @@ class CreateSave(commands.Cog):
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
             tasks = [
-                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
-                lambda: C1ftp.downloadStream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
             ]
             await task_handler(d_ctx, tasks, [])
             await C1ftp.free_ctx(ftp_ctx)
@@ -221,7 +221,7 @@ class CreateSave(commands.Cog):
 
         zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
 
-        try: 
+        try:
             await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
         except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
             if isinstance(e, discord.HTTPException):
@@ -236,7 +236,7 @@ class CreateSave(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)   
+        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 
 def setup(bot: commands.Bot) -> None:

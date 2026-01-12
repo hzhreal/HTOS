@@ -138,7 +138,7 @@ class QuickCodes(CustomCrypto):
                         match t:
                             case "0" | "8":
                                 wv8 = uint8(await self.r_stream.read(1))
-                                wv8 += val
+                                wv8.value += val
 
                                 await self.ext_write(off, wv8.as_bytes)
 
@@ -162,7 +162,7 @@ class QuickCodes(CustomCrypto):
 
                             case "4" | "C":
                                 wv8 = uint8(await self.r_stream.read(1))
-                                wv8 -= val
+                                wv8.value -= val
 
                                 await self.ext_write(off, wv8.as_bytes)
 
@@ -450,7 +450,7 @@ class QuickCodes(CustomCrypto):
                                 val &= 0x000000FF
                                 wv8 = uint8(await self.r_stream.read(1))
                                 if val < wv8.value:
-                                    wv8.value.value = val
+                                    wv8.value = val
 
                                 await self.ext_write(write, wv8.as_bytes)
 
@@ -493,7 +493,7 @@ class QuickCodes(CustomCrypto):
 
                         find = bytearray(alloc)
 
-                        if not cnt: 
+                        if not cnt:
                             cnt = 1
 
                         find[:4] = val.as_bytes

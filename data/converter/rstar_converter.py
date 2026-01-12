@@ -6,7 +6,7 @@ from data.crypto.common import CustomCrypto
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 from utils.type_helpers import uint32
 
-class Converter_Rstar: 
+class Converter_Rstar:
     @staticmethod
     async def handle_title(cc: CustomCrypto, write_date_rdr2: bool = False, clear_rdr2_pc_chks: bool = False) -> None:
         unix = int(time.time())
@@ -36,7 +36,7 @@ class Converter_Rstar:
         try:
             async with aiofiles.open(filepath, "rb") as file:
                 await file.seek(crypt.GTAV_PC_HEADER_OFFSET)
-                check_bytes = await file.read(len(crypt.GTAV_HEADER)) 
+                check_bytes = await file.read(len(crypt.GTAV_HEADER))
                 if check_bytes == b"\x00\x00\x00\x00": # ps4 if true
                     platform = "ps4"
                     await file.seek(crypt.GTAV_PS_HEADER_OFFSET)
@@ -120,7 +120,7 @@ class Converter_Rstar:
             else:
                 raise ConverterError("File not supported!")
 
-            if platform == "ps4": 
+            if platform == "ps4":
                 return "CONVERTED: PS4 -> PC"
             else:
                 return "CONVERTED: PC -> PS4"

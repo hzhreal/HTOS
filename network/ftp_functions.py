@@ -270,9 +270,9 @@ class FTPps:
 
         # exclude sce_sys, parent- and working directory)
         files = [
-            str(file) 
-            for file, attributes in files 
-            if SCE_SYS_NAME not in file.parts 
+            str(file)
+            for file, attributes in files
+            if SCE_SYS_NAME not in file.parts
             and file.name not in ".." and file.name not in "."
             and attributes.get("type", "") != "dir"
             and attributes.get("type", "") != "cdir"

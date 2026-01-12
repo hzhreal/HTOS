@@ -187,4 +187,4 @@ class Reregion(TabBase):
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.sample_save_button.enable()
-        self.sample_save_label.disable()
+        self.sample_save_label.enable()

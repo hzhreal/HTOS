@@ -409,11 +409,11 @@ def handle_accid(user_id: str) -> str:
     return user_id
 
 async def check_saves(
-          ctx: discord.ApplicationContext | discord.Message, 
-          attachments: list[discord.message.Attachment], 
-          ps_save_pair_upload: bool, 
-          sys_files: bool, 
-          ignore_filename_check: bool, 
+          ctx: discord.ApplicationContext | discord.Message,
+          attachments: list[discord.message.Attachment],
+          ps_save_pair_upload: bool,
+          sys_files: bool,
+          ignore_filename_check: bool,
           savesize: int | None = None
         ) -> list[discord.message.Attachment]:
 
@@ -564,7 +564,7 @@ async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) 
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
     elif title_id in MINECRAFT_TITLEID:
-        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).value
+        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).value.rstrip("\x00")
         savename = savename.split("-")
         # legacy edition only
         if not savename[0] in MINECRAFT_TITLEID:
@@ -600,7 +600,7 @@ async def reregion_check(title_id: str, savepath: str) -> None:
         savename = os.path.basename(savepath)
         savename = savename.split("-")
         # legacy edition only
-        if savename[0] in MINECRAFT_TITLEID:
+        if savename[0] not in MINECRAFT_TITLEID:
             return
         savename[0] = title_id
         savename = "-".join(savename)

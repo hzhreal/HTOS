@@ -111,12 +111,12 @@ class Change(commands.Cog):
                     await savefile.construct()
 
                     emb = embpng1.copy()
-                    emb.description = emb.description = emb.description = emb.description.format(savefile.basename, j, batch.savecount, i, batches)
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     task = [savefile.dump]
                     await task_handler(d_ctx, task, [emb])
 
                     emb = embpng2.copy()
-                    emb.description = emb.description = emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     tasks = [
                         lambda: C1ftp.swap_png(batch.location_to_scesys),
                         savefile.resign
@@ -124,7 +124,7 @@ class Change(commands.Cog):
                     await task_handler(d_ctx, tasks, [emb])
 
                     emb = embpngs.copy()
-                    emb.description = emb.description.format(savefile.basename, j, batch.savecount, i, batches)
+                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
                     await msg.edit(embed=emb)
                     j += 1
 
@@ -157,7 +157,7 @@ class Change(commands.Cog):
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
@@ -182,7 +182,7 @@ class Change(commands.Cog):
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def title(
               self,
-              ctx: discord.ApplicationContext, 
+              ctx: discord.ApplicationContext,
               maintitle: Option(str, description="For example Grand Theft Auto V.", default=""),
               subtitle: Option(str, description="For example Franklin and Lamar (1.6%).", default=""),
               playstation_id: Option(str, description=PS_ID_DESC, default=""),
@@ -193,7 +193,7 @@ class Change(commands.Cog):
             await ctx.respond(embed=embTitleErr)
             return
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
-        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
@@ -203,7 +203,7 @@ class Change(commands.Cog):
 
         msg = ctx
 
-        try: 
+        try:
             user_id = await psusername(ctx, playstation_id)
             await asyncio.sleep(0.5)
             shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
@@ -296,7 +296,7 @@ class Change(commands.Cog):
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
-            try: 
+            try:
                 await send_final(d_ctx, zipname, C1ftp.download_encrypted_path, shared_gd_folderid)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):

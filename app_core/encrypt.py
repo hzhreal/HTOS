@@ -141,14 +141,14 @@ class Encrypt(TabBase):
 
                         for file in encrypt_files:
                             remote_path = os.path.join(batch.mount_location, os.path.basename(file))
-                            await C1ftp.uploadStream(ftp, file, remote_path)
+                            await C1ftp.upload_stream(ftp, file, remote_path)
 
                         sys_folder = os.path.join(self.encrypt_folder, SCE_SYS_NAME)
                         if await isdir(sys_folder):
                             sys_files = await get_files_nonrecursive(sys_folder)
                             for sys_file in sys_files:
                                 remote_path = os.path.join(batch.location_to_scesys, os.path.basename(sys_file))
-                                await C1ftp.uploadStream(ftp, sys_file, remote_path)
+                                await C1ftp.upload_stream(ftp, sys_file, remote_path)
                             encrypt_files.extend(sys_files)
                         await C1ftp.free_ctx(ftp)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
@@ -224,8 +224,9 @@ class Encrypt(TabBase):
 
     @staticmethod
     def parse_filelist(files: list[str]) -> str:
-        s = "```"
+        s = "```\n"
         for f in files:
             s += f
-        s += "```"
+            s += "\n"
+        s += "\n```"
         return s

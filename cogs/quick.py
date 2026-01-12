@@ -18,7 +18,7 @@ from utils.constants import (
     logger
 )
 from utils.embeds import (
-    emb_upl_savegame, embTimedOut, working_emb, embExit, 
+    emb_upl_savegame, embTimedOut, working_emb, embExit,
     embresb, embresbs, embRdone, embLoading, embApplied,
     embqcCompleted, embchLoading
 )
@@ -50,7 +50,7 @@ class Quick(commands.Cog):
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
-        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
@@ -180,7 +180,7 @@ class Quick(commands.Cog):
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
-        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id)
         except (WorkspaceError, discord.HTTPException): return
@@ -285,7 +285,7 @@ class Quick(commands.Cog):
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def cheats(self, ctx: discord.ApplicationContext, game: Option(str, choices=["GTA V", "RDR 2"]), savefile: discord.Attachment) -> None: # type: ignore
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
-        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, 
+        workspace_folders = [newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED,
                             newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH]
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return

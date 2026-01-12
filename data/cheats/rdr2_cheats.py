@@ -106,7 +106,7 @@ class Cheats_RDR2:
                     await file.seek(crypt.RDR2_PS_HEADER_OFFSET)
                     header = await file.read(len(crypt.RDR2_HEADER))
 
-                else: # pc if true or invalid 
+                else: # pc if true or invalid
                     platform = "pc"
                     header = await file.read(len(crypt.RDR2_HEADER))
         except (ValueError, IOError, IndexError):
@@ -134,12 +134,12 @@ class Cheats_RDR2:
                     raise QuickCheatsError("File not supported!")
 
                 await qc.w_stream.seek(money_offset)
-                money = uint32(money, "big") 
+                money = uint32(money, "big")
                 await qc.w_stream.write(money.as_bytes)
 
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             await crypt.encrypt_file(filepath, start_offset)
-            await crypt.decrypt_file(filepath, start_offset) # for better compatability 
+            await crypt.decrypt_file(filepath, start_offset) # for better compatability
         except (ValueError, IOError, IndexError):
             raise QuickCheatsError("File not supported!")
 

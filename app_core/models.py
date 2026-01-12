@@ -164,12 +164,12 @@ class SettingObject(Enum):
 
 class SettingKey:
     def __init__(
-        self, 
-        default_value: Any, 
-        obj: SettingObject, 
-        key: str, 
-        desc: str, 
-        value: Any | None = None, 
+        self,
+        default_value: Any,
+        obj: SettingObject,
+        key: str,
+        desc: str,
+        value: Any | None = None,
         validator: Callable[[Any], bool] | partial[Callable[[Any], bool]] | None = None
     ) -> None:
         match obj:

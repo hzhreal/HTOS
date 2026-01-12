@@ -8,21 +8,21 @@ from utils.exceptions import FileError
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
 
-    def get_all_file_paths(directory: str) -> list[tuple[str, str]]: 
-        file_paths = [] 
+    def get_all_file_paths(directory: str) -> list[tuple[str, str]]:
+        file_paths = []
 
-        # crawling through directory and subdirectories 
-        for root, _, files in os.walk(directory): 
-            for filename in files: 
+        # crawling through directory and subdirectories
+        for root, _, files in os.walk(directory):
+            for filename in files:
                 filepath = os.path.join(root, filename)
                 file_paths.append((root, filepath))
 
         return file_paths
 
-    file_paths = get_all_file_paths(directory_to_zip) 
+    file_paths = get_all_file_paths(directory_to_zip)
     full_new_path = os.path.join(directory_to_zip, zip_file_name)
 
-    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f: 
+    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f:
        # writing each file one by one without the top-level folder
         for _, file in file_paths:
             archive_name = os.path.relpath(file, directory_to_zip)

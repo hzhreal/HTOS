@@ -98,10 +98,10 @@ class Misc(commands.Cog):
         else:
             emb = embpingfail.copy()
         emb.title = emb.title.format(
-            ftp_result=ftp_result, 
-            socket_result=socket_result, 
-            instances_len=INSTANCE_LOCK_global.instances_len, 
-            maximum_instances=INSTANCE_LOCK_global.maximum_instances, 
+            ftp_result=ftp_result,
+            socket_result=socket_result,
+            instances_len=INSTANCE_LOCK_global.instances_len,
+            maximum_instances=INSTANCE_LOCK_global.maximum_instances,
             latency=latency
         )
 

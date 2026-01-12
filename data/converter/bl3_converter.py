@@ -70,16 +70,16 @@ class Converter_BL3:
     async def convert_file(ctx: discord.ApplicationContext | None, helper: TimeoutHelper | None, filepath: str, ttwl: bool, emb_btn: discord.Embed | None) -> str:
         async with CustomCrypto(filepath) as cc:
             off = await cc.find(crypt.COMMON)
-        if off != -1: 
+        if off != -1:
             if not ctx or not helper or not emb_btn:
                 return ""
             conv_button = BL3_conv_button(ctx, helper, filepath, ttwl)
             await ctx.edit(embed=emb_btn, view=conv_button)
             await helper.await_done()
             return conv_button.result
- 
+
         # try decrypting it with ps4 keys
-        try: 
+        try:
             await crypt.decrypt_file(filepath, "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
@@ -90,7 +90,7 @@ class Converter_BL3:
         async with CustomCrypto(filepath) as cc:
             off = await cc.find(crypt.COMMON)
         # ps4 -> pc
-        if off != -1: 
+        if off != -1:
             platform = "ps4"
             try:
                 await crypt.encrypt_file(filepath, "pc", ttwl)
@@ -101,7 +101,7 @@ class Converter_BL3:
             return Converter_BL3.obtain_ret_val(platform)
 
         # not decrypted, rewrite to orignal data
-        try: 
+        try:
             await crypt.encrypt_file(filepath, "ps4", ttwl)
         except CryptoError as e:
             raise ConverterError(e)
@@ -121,7 +121,7 @@ class Converter_BL3:
             off = await cc.find(crypt.COMMON)
 
         # pc -> ps4
-        if off != -1: 
+        if off != -1:
             platform = "pc"
             try:
                 await crypt.encrypt_file(filepath, "ps4", ttwl)
@@ -135,7 +135,7 @@ class Converter_BL3:
 
     @staticmethod
     def obtain_ret_val(platform: str) -> str:
-        if platform == "ps4": 
+        if platform == "ps4":
             return "CONVERTED: PS4 -> PC"
         else: 
             return "CONVERTED: PC -> PS4"
