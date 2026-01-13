@@ -176,6 +176,12 @@ class utf_8:
             case _:
                 raise ValueError("Invalid type!")
 
+    def to_str(self) -> str:
+        return self._value.rstrip("\x00")
+
+    def to_cstr(self) -> bytes:
+        return self.as_bytes.rstrip(b"\x00") + b"\x00"
+
     def to_bytes(self) -> bytes:
         return self._value.encode("utf-8")
 

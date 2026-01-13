@@ -196,16 +196,22 @@ class SFOContextParam:
             case "ACCOUNT_ID":
                 try:
                     accid = utf_8(self.value)
+                    if accid.value.startswith("0x"):
+                        if not checkid(accid.value[2:]):
+                            raise OrbisError("Invalid!")
+                    else:
+                        if not checkid(accid.value):
+                            raise OrbisError("Invalid!")
                     value = accid.value
-                except UnicodeDecodeError:
+                except (UnicodeDecodeError, OrbisError):
                     accid = uint64(self.value, "little")
-                    value = hex(accid.value)
+                    value = "0x" + hex(accid.value)[2:].zfill(16)
             case "SAVEDATA_BLOCKS":
                 blocks = uint64(self.value, "little")
                 value = hex(blocks.value)
             case "CATEGORY" | "DETAIL" | "FORMAT" | "MAINTITLE" | "SAVEDATA_DIRECTORY" | "SUBTITLE" | "TITLE_ID":
                 ctx = utf_8(self.value)
-                value = ctx.value
+                value = ctx.to_str()
             case "ATTRIBUTE" | "SAVEDATA_LIST_PARAM":
                 ctx = uint32(self.value, "little")
                 value = hex(ctx.value)
@@ -320,14 +326,19 @@ class SFOContext:
         max_len = param.max_length | param.actual_length
 
         if ctx.CATEGORY == TypeCategory.CHARACTER:
+            ctx: utf_8 | utf_8_s
             if ctx.bytelen >= max_len:
                raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}! Remember last byte is reserved for null termination for this parameter.")
+            v = ctx.to_cstr()
+            l = len(v)
         else:
             if ctx.bytelen > max_len:
                 raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}!")
+            v = ctx.as_bytes
+            l = ctx.bytelen
 
-        param.length = ctx.bytelen
-        param.value = ctx.as_bytes
+        param.length = l
+        param.value = v
 
     def sfo_get_param_value(self, parameter: str) -> bytes:
         param: SFOContextParam = next((param for param in self.params if param.key == parameter), None)
@@ -446,7 +457,7 @@ async def check_saves(
         elif savesize is not None and total_count > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
-        else: 
+        else:
             total_count += attachment.size
             valid_files.append(attachment)
 
@@ -525,10 +536,9 @@ def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: int | str) -> None:
 def obtainCUSA(ctx: SFOContext) -> str:
     """Obtains TITLE_ID from sfo file."""
     data_title_id = ctx.sfo_get_param_value("TITLE_ID")
-    data_title_id = bytearray(filter(lambda x: x != 0x00, data_title_id))
 
     try:
-        title_id = data_title_id.decode("utf-8")
+        title_id = utf_8(data_title_id).to_str()
     except UnicodeDecodeError:
         raise OrbisError("Invalid title ID in param.sfo!")
 
@@ -564,7 +574,7 @@ async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) 
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
 
     elif title_id in MINECRAFT_TITLEID:
-        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).value.rstrip("\x00")
+        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).to_str()
         savename = savename.split("-")
         # legacy edition only
         if not savename[0] in MINECRAFT_TITLEID:
