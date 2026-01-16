@@ -17,11 +17,12 @@ class SocketPS:
         self.semaphore = asyncio.Semaphore(maxConnections) # Maximum 16 mounts at once
         self.semaphore_alt = asyncio.Semaphore(maxConnections) # For operations that does not need a mount slot
     SUCCESS = "srOk"
+    CONNECTION_TIMEOUT = 10 # seconds
     async def send_tcp_message_with_response(self, message: bytes, semaphore: asyncio.Semaphore, deserialize: bool = True) -> str | bytes:
         writer = None
         try:
             async with semaphore:
-                reader, writer = await asyncio.open_connection(self.host, self.port)
+                reader, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), timeout=self.CONNECTION_TIMEOUT)
                 writer.write(message)
                 await writer.drain()
 
@@ -32,6 +33,9 @@ class SocketPS:
                     response = orjson.loads(response)
                 return response
 
+        except TimeoutError:
+            logger.error("Timed out whiile connecting to socket (Cecie)!")
+            raise SocketError("Error communicating with socket.")
         except OSError as e:
             logger.error(f"An error occured while sending tcp message (Cecie): {e}")
             raise SocketError("Error communicating with socket.")
@@ -45,7 +49,7 @@ class SocketPS:
         writer = None
         try:
             async with self.semaphore_alt:
-                _, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), timeout=10)
+                _, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), timeout=self.CONNECTION_TIMEOUT)
         finally:
             if writer is not None:
                 writer.close()

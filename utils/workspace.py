@@ -151,7 +151,7 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
         logger.error(f"Error creating databases: {e}")
         sys.exit()
 
-async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_saveList: list[str] | None, remote_mount_paths: list[str] | None) -> None:
+async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_savelist: list[str] | None, remote_mount_paths: list[str] | None) -> None:
     """Used to cleanup after a command utilizing the ps4 (remote)."""
     if local_folders is not None and len(local_folders) > 0:
         for folderpath in local_folders:
@@ -161,9 +161,9 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
             except OSError as e:
                 logger.error(f"Error accessing {folderpath} when cleaning up: {e}")
 
-    if remote_saveList is not None and len(remote_saveList) > 0:
+    if remote_savelist is not None and len(remote_savelist) > 0:
         try:
-            await fInstance.delete_list(PS_UPLOADDIR, remote_saveList)
+            await fInstance.delete_list(PS_UPLOADDIR, remote_savelist)
         except FTPError as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
