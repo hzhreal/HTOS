@@ -12,7 +12,7 @@ Start off by downloading and installing the [cecie](https://github.com/hzhreal/c
 Then download the [config.ini](https://github.com/hzhreal/cecie.nim/blob/main/examples/config.ini) file and start editing it. You should not use any whitespaces in this file.  
 `saveDirectory`: This is the folder where encrypted saves will be uploaded and deleted afterwards. You can for example set this to `/data/htos/upload`.  
 `port`: Let this be any available port on your console, if you are unsure, just leave it as default.  
-After editing, upload the `config.ini` file to the `/data/cecie` folder on your console.  
+After editing, upload the `config.ini` file to the `/data/cecie` folder on your console. If the directory does not already exist, you will need to create it yourself.  
 
 In the root directory of the repository, find the `.env` file and start editing it. You can use whitespaces in this file.  
 `IP`: The IP address of the console.  
@@ -29,6 +29,7 @@ uv run app.py
 ```
 or any equivalent command (dependencies must be installed, with uv this is done automatically).  
 On startup of the program, the folders you set as `UPLOAD_PATH` and `MOUNT_PATH` will be deleted and remade. They will also be cleaned after any operation is finished.  
+The directories `UPLOAD_PATH` and `MOUNT_PATH` must exist when the program is running. Either create them manually or have the FTP server running before you run the program.  
 The application stores files temporarily in the `UserSaves` folder from where you run the application from. The startup process also makes sure these folders are made.  
 To run without the start up process, add the flag `--ignore-startup`. You may want to do this if your console is not on yet because it will try to make a FTP connection and timeout.  
 
