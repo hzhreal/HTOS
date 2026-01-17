@@ -182,7 +182,7 @@ def verify_titleids() -> None:
 SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID, MINECRAFT_TITLEID)
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = mb_to_bytes(100) # discord file limit for nitro users
+FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, how long the user has to upload files or send google drive folder link
