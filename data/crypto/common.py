@@ -32,7 +32,7 @@ class CustomCryptoCtx:
         self.attr = attr
 
 class CustomCrypto:
-    CHUNKSIZE = mb_to_bytes(1) # minimum: 16 (without assert)
+    CHUNKSIZE = mb_to_bytes(1)
     SAVESIZE_MAX = SAVESIZE_MAX
     AES = AES
     Blowfish = Blowfish
@@ -586,6 +586,16 @@ class CustomCrypto:
             b"\x78\x01", b"\x78\x5E", b"\x78\x9C", b"\x78\xDA",
         })
         return header in ZLIB_HEADERS
+
+    @staticmethod
+    def ES32_int(val: int) -> int:
+        val &= 0xFF_FF_FF_FF
+        return (
+            ((val & 0xFF_00_00_00) >> 24) |
+            ((val & 0x00_FF_00_00) >> 8)  |
+            ((val & 0x00_00_FF_00) << 8)  |
+            ((val & 0x00_00_00_FF) << 24)
+        ) & 0xFF_FF_FF_FF
 
     @staticmethod
     async def obtain_files(path: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:

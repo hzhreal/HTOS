@@ -33,6 +33,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Metal Gear Solid V: Ground Zeroes        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Minecraft: Legacy Edition                | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Monster Hunter World: Iceborne           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Nioh 2                                   | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                             | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -98,6 +99,7 @@ Terraria: Only `.plr` and some `.wld` are implemented.
 ## Acknowledgements
 * [Alfizari](https://github.com/alfizari)
 * [Alfizari](https://github.com/alfizari): [Dark-Souls-Remastered-Save-decrypt-PS4](https://github.com/alfizari/Dark-Souls-Remastered-Save-decrypt-PS4)
+* [Alfizari](https://github.com/alfizari): [Monster-Hunter-World-Save-Decrypt-PS4](https://github.com/alfizari/Monster-Hunter-World-Save-Decrypt-PS4)
 * [AxrzZ](https://github.com/AxrzZ)
 * [Batang](https://github.com/B-a-t-a-n-g)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)

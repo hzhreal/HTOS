@@ -13,7 +13,7 @@ from utils.constants import (
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
     DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
-    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID
+    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
@@ -97,6 +97,8 @@ async def extra_decrypt(
                         await Crypto.Sdew.check_dec_ps(destination_directory)
                     case "NIOH2":
                         await Crypto.Nioh2.check_dec_ps(destination_directory)
+                    case "MHWI":
+                        await Crypto.Mhwi.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -111,7 +113,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
@@ -121,7 +122,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
@@ -131,7 +131,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Xeno2.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("XENO2"))
@@ -141,7 +140,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.BL3.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("BL3"))
@@ -151,7 +149,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.BL3.check_dec_ps(destination_directory, True)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TTWL"))
@@ -161,7 +158,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
@@ -171,7 +167,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_COL)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
@@ -181,7 +176,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
@@ -191,7 +185,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.MGSV.check_dec_ps(destination_directory, title_id)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV", title_id=title_id))
@@ -201,7 +194,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Rev2.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("REV2"))
@@ -211,7 +203,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.DL.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL1"))
@@ -221,7 +212,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.DL.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL2"))
@@ -231,7 +221,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.RGG.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RGG"))
@@ -241,7 +230,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.DL.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI1"))
@@ -251,7 +239,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.DI2.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI2"))
@@ -261,7 +248,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.NMS.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NMS"))
@@ -271,7 +257,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.TERRARIA.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TERRARIA"))
@@ -281,7 +266,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.SMT5.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SMT5"))
@@ -291,7 +275,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.RCube.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RCUBE"))
@@ -301,7 +284,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.DSR.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DSR"))
@@ -311,7 +293,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.RE4R.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE4R"))
@@ -321,7 +302,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.RE4R.check_dec_ps(destination_directory, True)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE2R"))
@@ -331,7 +311,6 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Sdew.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SDEW"))
@@ -341,10 +320,18 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 await Crypto.Nioh2.check_dec_ps(destination_directory)
-                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NIOH2"))
+        await helper.await_done()
+
+    elif title_id in MHWI_TITLEID:
+        if choice is not None:
+            if choice:
+                await Crypto.Mhwi.check_dec_ps(destination_directory)
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MHWI"))
         await helper.await_done()
 
 async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) -> None:
@@ -426,6 +413,9 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) ->
 
         elif title_id in NIOH2_TITLEID:
             await Crypto.Nioh2.check_enc_ps(filepath)
+
+        elif title_id in MHWI_TITLEID:
+            await Crypto.Mhwi.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
