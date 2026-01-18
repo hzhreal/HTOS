@@ -72,7 +72,7 @@ If you put it to `False`, and there is more than 1 file inside, you may have to 
 The bot will prompt you on the details either way.  
 `include_sce_sys`: Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.
 Defaults to `False`.  
-`ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation.  
+`ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation. Defaults to `False`.  
 If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 
 ---
@@ -88,8 +88,8 @@ then obtains the keystone file and prompts you to upload the files you want to r
 `savename`: The name you want to give the save.  
 `saveblocks`: The size of the save in saveblocks (the size in bytes will be saveblocks * 2¹⁵).  
 `savesize_mb`: The size of the save in MB.  
-`ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation.  
-`saveblocks` and `savesize_mb` both represent the same concept, you must choose at least one of them. Keep in mind that `saveblocks` has priority over `savesize_mb`.  
+`ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation. Defaults to `False`.  
+Both `saveblocks` and `savesize_mb` represent the same concept, you must choose at least one of them. Keep in mind that `saveblocks` has priority over `savesize_mb`.  
 
 ---
 
