@@ -3,7 +3,7 @@ import os
 from enum import Enum
 
 from data.crypto.common import CustomCrypto as CC
-from utils.constants import GTAV_TITLEID
+from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32, int8
 
 class Crypt_Rstar:
@@ -33,6 +33,9 @@ class Crypt_Rstar:
     RDR2_PS_HEADER_OFFSET = 0x120
     RDR2_PC_HEADER_OFFSET = 0x110
     RDR2_HEADER = b"RSAV"
+
+    assert len(GTAV_HEADER) == len(RDR2_HEADER)
+    HEADER_SIZE = len(GTAV_HEADER)
 
     TYPES = {
         GTAV_PS_HEADER_OFFSET: {"key": PS4_KEY, "type": TitleHashTypes.STANDARD},
@@ -110,19 +113,19 @@ class Crypt_Rstar:
             await self.w_stream.write(jooat.jooat.as_bytes)
 
     @staticmethod
-    async def decrypt_file(folderpath: str, start_off: int) -> None:
-        files = await CC.obtain_files(folderpath)
-        files = Crypt_Rstar.files_check(files)
+    async def decrypt_file(filepath: str, start_off: int) -> None:
+        if not Crypt_Rstar.file_check(filepath):
+            return
+
         key = Crypt_Rstar.TYPES[start_off]["key"]
 
-        for filepath in files:
-            async with CC(filepath) as cc:
-                aes = cc.create_ctx_aes(key, cc.AES.MODE_ECB)
-                await cc.trim_trailing_bytes(min_required=16 + 1) # remove empty space that autosaves have towards EOF
-                cc.set_ptr(start_off)
-                while await cc.read():
-                    cc.decrypt(aes)
-                    await cc.write()
+        async with CC(filepath) as cc:
+            aes = cc.create_ctx_aes(key, cc.AES.MODE_ECB)
+            await cc.trim_trailing_bytes(min_required=16 + 1) # remove empty space that autosaves have towards EOF
+            cc.set_ptr(start_off)
+            while await cc.read():
+                cc.decrypt(aes)
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str, start_off: int) -> None:
@@ -174,23 +177,26 @@ class Crypt_Rstar:
                 await cc.write()
 
     @staticmethod
-    async def check_enc_ps(filepath: str, title_ids: list[str]) -> None:
+    async def check_dec_ps(folderpath: str, start_off: int) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_Rstar.files_check(files)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(start_off)
+                header = await savegame.read(Crypt_Rstar.HEADER_SIZE)
+            if header != Crypt_Rstar.GTAV_HEADER and header != Crypt_Rstar.RDR2_HEADER:
+                await Crypt_Rstar.decrypt_file(filepath, start_off)
+
+    @staticmethod
+    async def check_enc_ps(filepath: str, start_off: int) -> None:
         if not Crypt_Rstar.file_check(filepath):
             return
 
         async with aiofiles.open(filepath, "rb") as savegame:
-            if title_ids == GTAV_TITLEID:
-                await savegame.seek(Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
-                header = await savegame.read(len(Crypt_Rstar.GTAV_HEADER))
-            else:
-                await savegame.seek(Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
-                header = await savegame.read(len(Crypt_Rstar.RDR2_HEADER))
-
-        match header:
-            case Crypt_Rstar.GTAV_HEADER:
-                await Crypt_Rstar.encrypt_file(filepath, Crypt_Rstar.GTAV_PS_HEADER_OFFSET)
-            case Crypt_Rstar.RDR2_HEADER:
-                await Crypt_Rstar.encrypt_file(filepath, Crypt_Rstar.RDR2_PS_HEADER_OFFSET)
+            await savegame.seek(start_off)
+            header = await savegame.read(Crypt_Rstar.HEADER_SIZE)
+        if header == Crypt_Rstar.GTAV_HEADER or header == Crypt_Rstar.RDR2_HEADER:
+            await Crypt_Rstar.encrypt_file(filepath, start_off)
 
     @staticmethod
     def file_check(filepath: str) -> bool:

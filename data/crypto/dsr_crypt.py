@@ -10,20 +10,17 @@ class Crypt_DSR:
     ])
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with CC(filepath) as cc:
-                iv = await cc.r_stream.read(16)
-                cc.set_ptr(16)
-                aes = cc.create_ctx_aes(Crypt_DSR.KEY, cc.AES.MODE_CBC, iv=iv)
-                stop_off = cc.size - 16
-                if stop_off < 0:
-                    raise CryptoError("Invalid save!")
-                while await cc.read(stop_off=stop_off):
-                    cc.decrypt(aes)
-                    await cc.write()
+    async def decrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            iv = await cc.r_stream.read(16)
+            cc.set_ptr(16)
+            aes = cc.create_ctx_aes(Crypt_DSR.KEY, cc.AES.MODE_CBC, iv=iv)
+            stop_off = cc.size - 16
+            if stop_off < 0:
+                raise CryptoError("Invalid save!")
+            while await cc.read(stop_off=stop_off):
+                cc.decrypt(aes)
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -41,6 +38,15 @@ class Crypt_DSR:
                 await cc.write()
             await cc.checksum(md5, 0, stop_off)
             await cc.write_checksum(md5, stop_off)
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                decrypted = await cc.fraction_byte()
+            if not decrypted:
+                await Crypt_DSR.decrypt_file(filepath)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:

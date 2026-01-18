@@ -17,12 +17,23 @@ from utils.constants import (
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
-async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, title_id: str, destination_directory: str, savePairName: str) -> None:
+async def extra_decrypt(
+          d_ctx: DiscordContext | None,
+          Crypto: SimpleNamespace,
+          title_id: str,
+          destination_directory: str,
+          savepairname: str,
+          choice: bool | None = None
+        ) -> None:
+
     from utils.helpers import TimeoutHelper
+
+    if d_ctx is None:
+        assert choice is not None
 
     helper = TimeoutHelper(embdecTimeout)
     emb = embdecFormat.copy()
-    emb.title = emb.title.format(savename=savePairName)
+    emb.title = emb.title.format(savename=savepairname)
 
     class CryptChoiceButton(discord.ui.View):
         def __init__(self, game: str | None = None, start_offset: int | None = None, title_id: str | None = None) -> None:
@@ -49,43 +60,43 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             try:
                 match self.game:
                     case "GTAV" | "RDR2":
-                        await Crypto.Rstar.decrypt_file(destination_directory, self.offset)
+                        await Crypto.Rstar.check_dec_ps(destination_directory, self.offset)
                     case "XENO2":
-                        await Crypto.Xeno2.decrypt_file(destination_directory)
+                        await Crypto.Xeno2.check_dec_ps(destination_directory)
                     case "BL3":
-                        await Crypto.BL3.decrypt_file(destination_directory, "ps4", False)
+                        await Crypto.BL3.check_dec_ps(destination_directory)
                     case "TTWL":
-                        await Crypto.BL3.decrypt_file(destination_directory, "ps4", True)
+                        await Crypto.BL3.check_dec_ps(destination_directory, True)
                     case "NDOG":
-                        await Crypto.Ndog.decrypt_file(destination_directory, self.offset)
+                        await Crypto.Ndog.check_dec_ps(destination_directory, self.offset)
                     case "MGSV":
-                        await Crypto.MGSV.decrypt_file(destination_directory, self.title_id)
+                        await Crypto.MGSV.check_dec_ps(destination_directory, self.title_id)
                     case "REV2":
-                        await Crypto.Rev2.decrypt_file(destination_directory)
+                        await Crypto.Rev2.check_dec_ps(destination_directory)
                     case "DL1" | "DL2" | "DI1":
-                        await Crypto.DL.decrypt_file(destination_directory)
+                        await Crypto.DL.check_dec_ps(destination_directory)
                     case "RGG":
-                       await Crypto.RGG.decrypt_file(destination_directory)
+                       await Crypto.RGG.check_dec_ps(destination_directory)
                     case "DI2":
-                        await Crypto.DI2.decrypt_file(destination_directory)
+                        await Crypto.DI2.check_dec_ps(destination_directory)
                     case "NMS":
-                        await Crypto.NMS.decrypt_file(destination_directory)
+                        await Crypto.NMS.check_dec_ps(destination_directory)
                     case "TERRARIA":
-                        await Crypto.TERRARIA.decrypt_file(destination_directory)
+                        await Crypto.TERRARIA.check_dec_ps(destination_directory)
                     case "SMT5":
-                        await Crypto.SMT5.decrypt_file(destination_directory)
+                        await Crypto.SMT5.check_dec_ps(destination_directory)
                     case "RCUBE":
-                        await Crypto.RCube.decrypt_file(destination_directory)
+                        await Crypto.RCube.check_dec_ps(destination_directory)
                     case "DSR":
-                        await Crypto.DSR.decrypt_file(destination_directory)
+                        await Crypto.DSR.check_dec_ps(destination_directory)
                     case "RE4R":
-                        await Crypto.RE4R.decrypt_file(destination_directory)
+                        await Crypto.RE4R.check_dec_ps(destination_directory)
                     case "RE2R":
-                        await Crypto.RE4R.decrypt_file(destination_directory, True)
+                        await Crypto.RE4R.check_dec_ps(destination_directory, True)
                     case "SDEW":
-                        await Crypto.Sdew.decrypt_file(destination_directory)
+                        await Crypto.Sdew.check_dec_ps(destination_directory)
                     case "NIOH2":
-                        await Crypto.Nioh2.decrypt_file(destination_directory)
+                        await Crypto.Nioh2.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -97,276 +108,324 @@ async def extra_decrypt(d_ctx: DiscordContext | None, Crypto: SimpleNamespace, t
             helper.done = True
 
     if title_id in GTAV_TITLEID:
-        if not d_ctx:
-            await Crypto.Rstar.decrypt_file(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+        if choice is not None:
+            if choice:
+                await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
         await helper.await_done()
 
     elif title_id in RDR2_TITLEID:
-        if not d_ctx:
-            await Crypto.Rstar.decrypt_file(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+        if choice is not None:
+            if choice:
+                await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
         await helper.await_done()
 
     elif title_id in XENO2_TITLEID:
-        if not d_ctx:
-            await Crypto.Xeno2.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.Xeno2.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("XENO2"))
         await helper.await_done()
 
     elif title_id in BL3_TITLEID:
-        if not d_ctx:
-            await Crypto.BL3.decrypt_file(destination_directory, "ps4", False)
+        if choice is not None:
+            if choice:
+                await Crypto.BL3.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("BL3"))
         await helper.await_done()
 
     elif title_id in WONDERLANDS_TITLEID:
-        if not d_ctx:
-            await Crypto.BL3.decrypt_file(destination_directory, "ps4", True)
+        if choice is not None:
+            if choice:
+                await Crypto.BL3.check_dec_ps(destination_directory, True)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TTWL"))
         await helper.await_done()
 
     elif title_id in NDOG_TITLEID:
-        if not d_ctx:
-            await Crypto.Ndog.decrypt_file(destination_directory, Crypto.Ndog.START_OFFSET)
+        if choice is not None:
+            if choice:
+                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
         await helper.await_done()
 
     elif title_id in NDOG_COL_TITLEID:
-        if not d_ctx:
-            await Crypto.Ndog.decrypt_file(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+        if choice is not None:
+            if choice:
+                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
         await helper.await_done()
 
     elif title_id in NDOG_TLOU2_TITLEID:
-        if not d_ctx:
-            await Crypto.Ndog.decrypt_file(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+        if choice is not None:
+            if choice:
+                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
         await helper.await_done()
 
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-        if not d_ctx:
-            await Crypto.MGSV.decrypt_file(destination_directory, title_id)
+        if choice is not None:
+            if choice:
+                await Crypto.MGSV.check_dec_ps(destination_directory, title_id)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV", title_id=title_id))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
-        if not d_ctx:
-            await Crypto.Rev2.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.Rev2.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("REV2"))
         await helper.await_done()
 
     elif title_id in DL1_TITLEID:
-        if not d_ctx:
-            await Crypto.DL.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.DL.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL1"))
         await helper.await_done()
 
     elif title_id in DL2_TITLEID:
-        if not d_ctx:
-            await Crypto.DL.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.DL.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL2"))
         await helper.await_done()
 
     elif title_id in RGG_TITLEID:
-        if not d_ctx:
-            await Crypto.RGG.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.RGG.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RGG"))
         await helper.await_done()
 
     elif title_id in DI1_TITLEID:
-        if not d_ctx:
-            await Crypto.DL.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.DL.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI1"))
         await helper.await_done()
 
     elif title_id in DI2_TITLEID:
-        if not d_ctx:
-            await Crypto.DI2.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.DI2.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI2"))
         await helper.await_done()
 
     elif title_id in NMS_TITLEID:
-        if not d_ctx:
-            await Crypto.NMS.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.NMS.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NMS"))
         await helper.await_done()
 
     elif title_id in TERRARIA_TITLEID:
-        if not d_ctx:
-            await Crypto.TERRARIA.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.TERRARIA.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TERRARIA"))
         await helper.await_done()
 
     elif title_id in SMT5_TITLEID:
-        if not d_ctx:
-            await Crypto.SMT5.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.SMT5.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SMT5"))
         await helper.await_done()
 
     elif title_id in RCUBE_TITLEID:
-        if not d_ctx:
-            await Crypto.RCube.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.RCube.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RCUBE"))
         await helper.await_done()
 
     elif title_id in DSR_TITLEID:
-        if not d_ctx:
-            await Crypto.DSR.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.DSR.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DSR"))
         await helper.await_done()
 
     elif title_id in RE4R_TITLEID:
-        if not d_ctx:
-            await Crypto.RE4R.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.RE4R.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE4R"))
         await helper.await_done()
 
     elif title_id in RE2R_TITLEID:
-        if not d_ctx:
-            await Crypto.RE4R.decrypt_file(destination_directory, True)
+        if choice is not None:
+            if choice:
+                await Crypto.RE4R.check_dec_ps(destination_directory, True)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE2R"))
         await helper.await_done()
 
     elif title_id in SDEW_TITLEID:
-        if not d_ctx:
-            await Crypto.Sdew.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.Sdew.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SDEW"))
         await helper.await_done()
 
     elif title_id in NIOH2_TITLEID:
-        if not d_ctx:
-            await Crypto.Nioh2.decrypt_file(destination_directory)
+        if choice is not None:
+            if choice:
+                await Crypto.Nioh2.check_dec_ps(destination_directory)
+                return
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NIOH2"))
         await helper.await_done()
 
-async def extra_import(Crypto: SimpleNamespace, title_id: str, file_name: str) -> None:
+async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
-            await Crypto.Rstar.check_enc_ps(file_name, GTAV_TITLEID)
+            await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
 
         elif title_id in RDR2_TITLEID:
-            await Crypto.Rstar.check_enc_ps(file_name, RDR2_TITLEID)
+            await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
 
         elif title_id in XENO2_TITLEID:
-            await Crypto.Xeno2.check_enc_ps(file_name)
+            await Crypto.Xeno2.check_enc_ps(filepath)
 
         elif title_id in BL3_TITLEID:
-            await Crypto.BL3.check_enc_ps(file_name, False)
+            await Crypto.BL3.check_enc_ps(filepath)
 
         elif title_id in WONDERLANDS_TITLEID:
-            await Crypto.BL3.check_enc_ps(file_name, True)
+            await Crypto.BL3.check_enc_ps(filepath, True)
 
         elif title_id in NDOG_TITLEID:
-            await Crypto.Ndog.check_enc_ps(file_name, Crypto.Ndog.START_OFFSET)
+            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET)
 
         elif title_id in NDOG_COL_TITLEID:
-            await Crypto.Ndog.check_enc_ps(file_name, Crypto.Ndog.START_OFFSET_COL)
+            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET_COL)
 
         elif title_id in NDOG_TLOU2_TITLEID:
-            await Crypto.Ndog.check_enc_ps(file_name, Crypto.Ndog.START_OFFSET_TLOU2)
+            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET_TLOU2)
 
         elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-            await Crypto.MGSV.check_enc_ps(file_name, title_id)
+            await Crypto.MGSV.check_enc_ps(filepath, title_id)
 
         elif title_id in REV2_TITLEID:
-            await Crypto.Rev2.check_enc_ps(file_name)
+            await Crypto.Rev2.check_enc_ps(filepath)
 
         elif title_id in RE7_TITLEID or title_id in RERES_TITLEID or title_id in RE3R_TITLEID:
-            await Crypto.RE7.check_enc_ps(file_name)
+            await Crypto.RE7.check_enc_ps(filepath)
 
         elif title_id in DL1_TITLEID:
-            await Crypto.DL.check_enc_ps(file_name, "DL1")
+            await Crypto.DL.check_enc_ps(filepath, "DL1")
 
         elif title_id in DL2_TITLEID:
-            await Crypto.DL.check_enc_ps(file_name, "DL2")
+            await Crypto.DL.check_enc_ps(filepath, "DL2")
 
         elif title_id in RGG_TITLEID:
-            await Crypto.RGG.check_enc_ps(file_name)
+            await Crypto.RGG.check_enc_ps(filepath)
 
         elif title_id in DI1_TITLEID:
-            await Crypto.DL.check_enc_ps(file_name, "DI1")
+            await Crypto.DL.check_enc_ps(filepath, "DI1")
 
         elif title_id in DI2_TITLEID:
-            await Crypto.DI2.check_enc_ps(file_name)
+            await Crypto.DI2.check_enc_ps(filepath)
 
         elif title_id in NMS_TITLEID:
-            await Crypto.NMS.check_enc_ps(file_name)
+            await Crypto.NMS.check_enc_ps(filepath)
 
         elif title_id in TERRARIA_TITLEID:
-            await Crypto.TERRARIA.check_enc_ps(file_name)
+            await Crypto.TERRARIA.check_enc_ps(filepath)
 
         elif title_id in SMT5_TITLEID:
-            await Crypto.SMT5.check_enc_ps(file_name)
+            await Crypto.SMT5.check_enc_ps(filepath)
 
         elif title_id in RCUBE_TITLEID:
-            await Crypto.RCube.check_enc_ps(file_name)
+            await Crypto.RCube.check_enc_ps(filepath)
 
         elif title_id in DSR_TITLEID:
-            await Crypto.DSR.check_enc_ps(file_name)
+            await Crypto.DSR.check_enc_ps(filepath)
 
         elif title_id in RE4R_TITLEID:
-            await Crypto.RE4R.check_enc_ps(file_name)
+            await Crypto.RE4R.check_enc_ps(filepath)
 
         elif title_id in RE2R_TITLEID:
-            await Crypto.RE4R.check_enc_ps(file_name, True)
+            await Crypto.RE4R.check_enc_ps(filepath, True)
 
         elif title_id in DIGIMON_TITLEID:
-            await Crypto.Digimon.check_enc_ps(file_name)
+            await Crypto.Digimon.check_enc_ps(filepath)
 
         elif title_id in SDEW_TITLEID:
-            await Crypto.Sdew.check_enc_ps(file_name)
+            await Crypto.Sdew.check_enc_ps(filepath)
 
         elif title_id in NIOH2_TITLEID:
-            await Crypto.Nioh2.check_enc_ps(file_name)
+            await Crypto.Nioh2.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 

@@ -36,8 +36,12 @@ class Encrypt(commands.Cog):
     async def encrypt(
               self,
               ctx: discord.ApplicationContext,
-              upload_individually: Option(bool, description="Choose if you want to upload the decrypted files one by one, or the ones you want at once."),
-              include_sce_sys: Option(bool, description="Choose if you want to upload the contents of the 'sce_sys' folder."),
+              upload_individually: Option(bool, description=(
+                  "Choose if you want to upload the decrypted files one by one, or the ones you want at once."
+              )),
+              include_sce_sys: Option(bool, description=(
+                  "Choose if you want to upload the contents of the 'sce_sys' folder."
+              ), default=False),
               playstation_id: Option(str, description=PS_ID_DESC, default=""),
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""),
               ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False)

@@ -10,15 +10,12 @@ class Crypt_SMT5:
     MAGIC = b"GVAS"
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with CC(filepath) as cc:
-                aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
-                while await cc.read():
-                    cc.decrypt(aes)
-                    await cc.write()
+    async def decrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            aes = cc.create_ctx_aes(Crypt_SMT5.SECRET_KEY, cc.AES.MODE_ECB)
+            while await cc.read():
+                cc.decrypt(aes)
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -34,10 +31,19 @@ class Crypt_SMT5:
                 await cc.write()
 
     @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x40)
+                magic = await savegame.read(len(Crypt_SMT5.MAGIC))
+            if magic != Crypt_SMT5.MAGIC:
+                await Crypt_SMT5.decrypt_file(filepath)
+
+    @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         async with aiofiles.open(filepath, "rb") as savegame:
             await savegame.seek(0x40)
             magic = await savegame.read(len(Crypt_SMT5.MAGIC))
-
         if magic == Crypt_SMT5.MAGIC:
             await Crypt_SMT5.encrypt_file(filepath)

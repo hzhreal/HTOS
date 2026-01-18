@@ -13,6 +13,7 @@ class Crypt_Ndog:
 
     HEADER_TLOU = b"The Last of Us"
     HEADER_UNCHARTED = b"Uncharted"
+    HEADERS = frozenset([HEADER_TLOU, HEADER_UNCHARTED])
 
     START_OFFSET = 0x08 # tlou, uncharted 4 & the lost legacy
     START_OFFSET_TLOU2 = 0x10 # tlou part 2
@@ -61,22 +62,22 @@ class Crypt_Ndog:
             await self.write_checksum(hmac_sha1, self.dsize - hash_sub)
 
     @staticmethod
-    async def decrypt_file(foldepath: str, start_off: int) -> None:
-        files = await CC.obtain_files(foldepath, Crypt_Ndog.EXCLUDE)
+    async def decrypt_file(filepath: str, start_off: int) -> None:
+        if os.path.basename(filepath) in Crypt_Ndog.EXCLUDE:
+            return
 
-        for filepath in files:
-            async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
-                blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.MODE_ECB)
-                await cc.get_dsize()
-                cc.set_ptr(cc.start_off)
+        async with Crypt_Ndog.Ndog(filepath, start_off) as cc:
+            blowfish = cc.create_ctx_blowfish(Crypt_Ndog.SECRET_KEY, cc.Blowfish.MODE_ECB)
+            await cc.get_dsize()
+            cc.set_ptr(cc.start_off)
 
-                while await cc.read(stop_off=cc.start_off + cc.dsize):
-                    if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
-                        cc.ES32()
-                    cc.decrypt(blowfish)
-                    if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
-                        cc.ES32()
-                    await cc.write()
+            while await cc.read(stop_off=cc.start_off + cc.dsize):
+                if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
+                    cc.ES32()
+                cc.decrypt(blowfish)
+                if cc.start_off == Crypt_Ndog.START_OFFSET_COL:
+                    cc.ES32()
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str, start_off: int) -> None:
@@ -98,6 +99,20 @@ class Crypt_Ndog:
                 await cc.write()
 
     @staticmethod
+    async def check_dec_ps(folderpath: str, start_off) -> None:
+        files = await CC.obtain_files(folderpath, Crypt_Ndog.EXCLUDE)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(start_off)
+                header = await savegame.read(len(Crypt_Ndog.HEADER_TLOU))
+
+                await savegame.seek(start_off)
+                header1 = await savegame.read(len(Crypt_Ndog.HEADER_UNCHARTED))
+
+            if header not in Crypt_Ndog.HEADERS and header1 not in Crypt_Ndog.HEADERS:
+                await Crypt_Ndog.decrypt_file(filepath, start_off)
+
+    @staticmethod
     async def check_enc_ps(filepath: str, start_off: int) -> None:
         if os.path.basename(filepath) in Crypt_Ndog.EXCLUDE:
             return
@@ -109,7 +124,6 @@ class Crypt_Ndog:
             await savegame.seek(start_off)
             header1 = await savegame.read(len(Crypt_Ndog.HEADER_UNCHARTED))
 
-        if header == Crypt_Ndog.HEADER_TLOU or header == Crypt_Ndog.HEADER_UNCHARTED:
+        if header in Crypt_Ndog.HEADERS or header1 in Crypt_Ndog.HEADERS:
             await Crypt_Ndog.encrypt_file(filepath, start_off)
-        elif header1 == Crypt_Ndog.HEADER_TLOU or header1 == Crypt_Ndog.HEADER_UNCHARTED:
-            await Crypt_Ndog.encrypt_file(filepath, start_off)
+

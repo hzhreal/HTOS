@@ -71,23 +71,22 @@ class Crypt_NMS:
                 await self.w_stream.write(decomp)
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        unfiltered_files = await CC.obtain_files(folderpath)
-        filtered_files = Crypt_NMS.files_check(unfiltered_files)
+    async def decrypt_file(filepath: str) -> None:
+        if not Crypt_NMS.file_check(filepath):
+            return
 
-        for filepath in filtered_files:
-            async with Crypt_NMS.NMS(filepath) as cc:
-                await cc.decompress()
+        async with Crypt_NMS.NMS(filepath) as cc:
+            await cc.decompress()
 
-            filesize = await aiofiles.ospath.getsize(filepath)
-            if filesize > Crypt_NMS.MAX_JSON_FILESIZE:
-                return
+        filesize = await aiofiles.ospath.getsize(filepath)
+        if filesize > Crypt_NMS.MAX_JSON_FILESIZE:
+            return
 
-            async with aiofiles.open(filepath, "rb") as savegame:
-                uncompressed_data = await savegame.read()
-            deobfuscated_data = Crypt_NMS.deobfuscate(uncompressed_data)
-            async with aiofiles.open(filepath, "wb") as savegame:
-                await savegame.write(deobfuscated_data)
+        async with aiofiles.open(filepath, "rb") as savegame:
+            uncompressed_data = await savegame.read()
+        deobfuscated_data = Crypt_NMS.deobfuscate(uncompressed_data)
+        async with aiofiles.open(filepath, "wb") as savegame:
+            await savegame.write(deobfuscated_data)
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -104,6 +103,16 @@ class Crypt_NMS:
 
         async with Crypt_NMS.NMS(filepath) as cc:
             await cc.compress()
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        unfiltered_files = await CC.obtain_files(folderpath)
+        filtered_files = Crypt_NMS.files_check(unfiltered_files)
+        for filepath in filtered_files:
+            async with CC(filepath) as cc:
+                off = await cc.find(Crypt_NMS.LZ4_MAGIC)
+            if off != -1:
+                await Crypt_NMS.decrypt_file(filepath)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:

@@ -15,14 +15,11 @@ class Crypt_RGG:
                 self.idx += 1
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with Crypt_RGG.RGG(filepath) as cc:
-                while await cc.read(stop_off=cc.size - 0x10):
-                    cc.xor()
-                    await cc.write()
+    async def decrypt_file(filepath: str) -> None:
+        async with Crypt_RGG.RGG(filepath) as cc:
+            while await cc.read(stop_off=cc.size - 0x10):
+                cc.xor()
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -34,6 +31,15 @@ class Crypt_RGG:
             while await cc.read(stop_off=cc.size - 0x10):
                 cc.xor()
                 await cc.write()
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                is_dec = await cc.fraction_byte()
+            if not is_dec:
+                await Crypt_RGG.decrypt_file(filepath)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:

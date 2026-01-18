@@ -1,6 +1,7 @@
 import aiofiles
 from pyaes import AES
 from data.crypto.common import CustomCrypto as CC
+from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint8
 
 class Crypt_Nioh2:
@@ -155,14 +156,12 @@ class Crypt_Nioh2:
             return self._create_ctx(cipher, blocksize)
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-        for filepath in files:
-            async with Crypt_Nioh2.Nioh2(filepath) as cc:
-                aes = cc.create_ctx_aes_nioh2()
-                while await cc.read():
-                    cc.decrypt(aes)
-                    await cc.write()
+    async def decrypt_file(filepath: str) -> None:
+        async with Crypt_Nioh2.Nioh2(filepath) as cc:
+            aes = cc.create_ctx_aes_nioh2()
+            while await cc.read():
+                cc.decrypt(aes)
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -191,9 +190,18 @@ class Crypt_Nioh2:
                 await cc.write()
 
     @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                d = await savegame.read(4)
+            if d != b"\x00\x00\x00\x00":
+                await Crypt_Nioh2.decrypt_file(filepath)
+
+    @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         async with aiofiles.open(filepath, "rb") as savegame:
             d = await savegame.read(4)
-        if d == bytes([0] * 4):
+        if d == b"\x00\x00\x00\x00":
             await Crypt_Nioh2.encrypt_file(filepath)
 

@@ -148,39 +148,37 @@ class Crypt_BL3:
                 self.idx += 1
 
     @staticmethod
-    async def decrypt_file(folderpath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
-        files = await CC.obtain_files(folderpath)
+    async def decrypt_file(filepath: str, platform: Literal["ps4", "pc"], ttwl: bool = False) -> None:
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["savegame"]
 
-        for filepath in files:
-            async with Crypt_BL3.BL3(filepath) as cc:
-                if (offset := await cc.find(profile_string)) != -1:
-                    pre = Crypt_BL3.KEYS_PROFILE[platform]["pre"]
-                    xor = Crypt_BL3.KEYS_PROFILE[platform]["xor"]
-                elif (offset := await cc.find(savegame_string)) != -1:
-                    pre = Crypt_BL3.KEYS_SAVEGAME[platform]["pre"]
-                    xor = Crypt_BL3.KEYS_SAVEGAME[platform]["xor"]
-                else:
-                    raise CryptoError("Invalid save!")
+        async with Crypt_BL3.BL3(filepath) as cc:
+            if (offset := await cc.find(profile_string)) != -1:
+                pre = Crypt_BL3.KEYS_PROFILE[platform]["pre"]
+                xor = Crypt_BL3.KEYS_PROFILE[platform]["xor"]
+            elif (offset := await cc.find(savegame_string)) != -1:
+                pre = Crypt_BL3.KEYS_SAVEGAME[platform]["pre"]
+                xor = Crypt_BL3.KEYS_SAVEGAME[platform]["xor"]
+            else:
+                raise CryptoError("Invalid save!")
 
-                next_null = await cc.find(b"\x00", offset)
-                if next_null == -1:
-                    raise CryptoError("Invalid save!")
-                offset = next_null + 1
+            next_null = await cc.find(b"\x00", offset)
+            if next_null == -1:
+                raise CryptoError("Invalid save!")
+            offset = next_null + 1
 
-                await cc.r_stream.seek(offset)
-                size = uint32(await cc.r_stream.read(4), "little").value
-                offset += 4
-                cc.prepare_down(offset, size)
+            await cc.r_stream.seek(offset)
+            size = uint32(await cc.r_stream.read(4), "little").value
+            offset += 4
+            cc.prepare_down(offset, size)
 
-                while await cc.read(stop_off=offset, backwards=True):
-                    await cc.xor_down(pre, xor)
-                    await cc.write()
+            while await cc.read(stop_off=offset, backwards=True):
+                await cc.xor_down(pre, xor)
+                await cc.write()
 
     @staticmethod
-    async def encrypt_file(filepath: str, platform: Literal["ps4", "pc"], ttwl: bool) -> None:
+    async def encrypt_file(filepath: str, platform: Literal["ps4", "pc"], ttwl: bool = False) -> None:
         game = "TTWL" if ttwl else "BL3"
         profile_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["profile"]
         savegame_string = Crypt_BL3.IDENTIFIER_STRINGS[game]["savegame"]
@@ -210,9 +208,18 @@ class Crypt_BL3:
                 await cc.write()
 
     @staticmethod
-    async def check_enc_ps(filename: str, ttwl: bool) -> None:
-        async with CC(filename) as cc:
+    async def check_dec_ps(folderpath: str, ttwl: bool = False):
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                s = await cc.find(Crypt_BL3.COMMON)
+            if s == -1:
+                await Crypt_BL3.decrypt_file(filepath, "ps4", ttwl)
+
+    @staticmethod
+    async def check_enc_ps(filepath: str, ttwl: bool = False) -> None:
+        async with CC(filepath) as cc:
             s = await cc.find(Crypt_BL3.COMMON)
         if s != -1:
-            await Crypt_BL3.encrypt_file(filename, "ps4", ttwl)
+            await Crypt_BL3.encrypt_file(filepath, "ps4", ttwl)
 

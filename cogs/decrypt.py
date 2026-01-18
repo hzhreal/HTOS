@@ -35,7 +35,12 @@ class Decrypt(commands.Cog):
     async def decrypt(
               self,
               ctx: discord.ApplicationContext,
-              include_sce_sys: Option(bool, description="Choose if you want to include the 'sce_sys' folder."),
+              include_sce_sys: Option(bool, description=(
+                  "Choose if you want to include the 'sce_sys' folder."
+              ), default=False),
+              secondlayer_choice: Option(bool, description=(
+                  "Apply or do not apply second layer implementation for all saves applicable."
+              ), default=""),
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
@@ -112,7 +117,8 @@ class Decrypt(commands.Cog):
 
                     await aiofiles.os.rename(destination_directory, destination_directory + f"_{savefile.title_id}")
                     destination_directory += f"_{savefile.title_id}"
-                    await extra_decrypt(d_ctx, Crypto, savefile.title_id, destination_directory, savefile.basename)
+                    choice = secondlayer_choice if secondlayer_choice != "" else None
+                    await extra_decrypt(d_ctx, Crypto, savefile.title_id, destination_directory, savefile.basename, choice)
 
                     emb = emb13.copy()
                     emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)

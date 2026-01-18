@@ -51,15 +51,12 @@ class Crypt_DI2:
                 ptr = off + r_size
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with Crypt_DI2.DI2(filepath) as cc:
-                header = await cc.r_stream.read(0x1D)
-                await cc.w_stream.write(header)
-                cc.set_ptr(0x1D)
-                await cc.decompress()
+    async def decrypt_file(filepath: str) -> None:
+        async with Crypt_DI2.DI2(filepath) as cc:
+            header = await cc.r_stream.read(0x1D)
+            await cc.w_stream.write(header)
+            cc.set_ptr(0x1D)
+            await cc.decompress()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -68,6 +65,15 @@ class Crypt_DI2:
             await cc.w_stream.write(header)
             cc.set_ptr(0x1D)
             await cc.compress()
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                off = await cc.find(Crypt_DI2.DI2.ZSTD_MAGIC)
+            if off != -1:
+                await Crypt_DI2.decrypt_file(filepath)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:

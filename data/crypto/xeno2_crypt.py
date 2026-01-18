@@ -9,29 +9,27 @@ class Crypt_Xeno2:
     DEC_MAGIC = b"#SAV"
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
+    async def decrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            aes_header = cc.AES.new(Crypt_Xeno2.SAVE_HEADER_KEY, cc.AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=bytes())
+            await cc.r_stream.seek(0x20)
+            header = bytearray(await cc.r_stream.read(Crypt_Xeno2.SAVE_HEADER_SIZE))
+            aes_header.decrypt(header, header)
+            if header[5] & 0x4:
+                key_off = 0x4C
+            else:
+                key_off = 0x1C
+            key = header[key_off:key_off + 0x20]
+            iv = header[(key_off + 0x20):(key_off + 0x20) + 0x10]
+            aes = cc.create_ctx_aes(key, cc.AES.MODE_CTR, initial_value=iv, nonce=bytes())
 
-        for filepath in files:
-            async with CC(filepath) as cc:
-                aes_header = cc.AES.new(Crypt_Xeno2.SAVE_HEADER_KEY, cc.AES.MODE_CTR, initial_value=Crypt_Xeno2.SAVE_HEADER_INITIAL_VALUE, nonce=bytes())
-                await cc.r_stream.seek(0x20)
-                header = bytearray(await cc.r_stream.read(Crypt_Xeno2.SAVE_HEADER_SIZE))
-                aes_header.decrypt(header, header)
-                if header[5] & 0x4:
-                    key_off = 0x4C
-                else:
-                    key_off = 0x1C
-                key = header[key_off:key_off + 0x20]
-                iv = header[(key_off + 0x20):(key_off + 0x20) + 0x10]
-                aes = cc.create_ctx_aes(key, cc.AES.MODE_CTR, initial_value=iv, nonce=bytes())
+            await cc.w_stream.seek(0x20)
+            await cc.w_stream.write(header)
+            cc.set_ptr(0x20 + Crypt_Xeno2.SAVE_HEADER_SIZE)
+            while await cc.read():
+                cc.decrypt(aes)
+                await cc.write()
 
-                await cc.w_stream.seek(0x20)
-                await cc.w_stream.write(header)
-                cc.set_ptr(0x20 + Crypt_Xeno2.SAVE_HEADER_SIZE)
-                while await cc.read():
-                    cc.decrypt(aes)
-                    await cc.write()
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
         async with CC(filepath) as cc:
@@ -73,11 +71,20 @@ class Crypt_Xeno2:
             await cc.write_checksum(md5, 0x10)
 
     @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x20)
+                magic = await savegame.read(len(Crypt_Xeno2.DEC_MAGIC))
+            if magic != Crypt_Xeno2.DEC_MAGIC:
+                await Crypt_Xeno2.decrypt_file(filepath)
+
+    @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         async with aiofiles.open(filepath, "rb") as savegame:
             await savegame.seek(0x20)
             magic = await savegame.read(len(Crypt_Xeno2.DEC_MAGIC))
-
         if magic == Crypt_Xeno2.DEC_MAGIC:
             await Crypt_Xeno2.encrypt_file(filepath)
 

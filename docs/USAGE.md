@@ -59,7 +59,8 @@ The bot will still own the file, so it will get deleted in the future.
 If the game has second layer of encryption that is implemented, you will get prompted if you want it removed or not.  
 
 **Arguments**:  
-`include_sce_sys`: If you want to include the `sce_sys` folder that contains metadata about the save.  
+`include_sce_sys`: If you want to include the `sce_sys` folder that contains metadata about the save. Defaults to `False`.  
+`secondlayer_choice`: Apply or do not apply second layer implementation for all saves applicable. If not included, then you will be prompted for each savepair applicable.  
 
 ---
 
@@ -67,10 +68,10 @@ If the game has second layer of encryption that is implemented, you will get pro
 
 **Arguments**:  
 `upload_individually`: Choose if you want to upload the decrypted files one by one, or the ones you want at once.  
-Put to `True` if you want to swap all the files in the save.  
-If you put it to `False`, and there is more than 1 file inside, you will have to rename the files you want uploaded using a format if you are using Discord upload.
+If you put it to `False`, and there is more than 1 file inside, you may have to rename the files you want uploaded using a format if you are using Discord upload.
 The bot will prompt you on the details either way.  
-`include_sce_sys`: Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.  
+`include_sce_sys`: Choose if you want to upload the contents of the 'sce_sys' folder. You can replace any sce_sys files you want, make sure to have the same filenames.
+Defaults to `False`.  
 `ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation.  
 If the game has second layer of encryption that is implemented, the savefiles you swap will automatically get encrypted if needed.  
 

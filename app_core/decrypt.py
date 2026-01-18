@@ -108,7 +108,7 @@ class Decrypt(TabBase):
                     destination_directory += f"_{savefile.title_id}"
 
                     if not ignore_secondlayer_checks:
-                        await extra_decrypt(None, Crypto, savefile.title_id, destination_directory, savefile.basename)
+                        await extra_decrypt(None, Crypto, savefile.title_id, destination_directory, savefile.basename, True)
 
                     self.logger.info(f"Decrypted **{savefile.basename}** {info}.")
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:

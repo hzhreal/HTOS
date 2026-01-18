@@ -45,7 +45,7 @@ def main() -> None:
 
     match opt:
         case Option.DECRYPT:
-            asyncio.run(extra_decrypt(None, Crypto, title_id, filepath, ""))
+            asyncio.run(extra_decrypt(None, Crypto, title_id, filepath, "", True))
         case Option.ENCRYPT:
             asyncio.run(extra_import(Crypto, title_id, filepath))
     print(f"{opt.value} {filepath}.")

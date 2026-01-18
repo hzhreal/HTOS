@@ -48,16 +48,13 @@ class Crypt_MGSV:
         return key.value
 
     @staticmethod
-    async def decrypt_file(folderpath: str, title_id: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with Crypt_MGSV.MGSV(filepath, title_id) as cc:
-                while await cc.read():
-                    cc.bytes_to_u32array("little")
-                    cc.crypt()
-                    cc.array_to_bytearray()
-                    await cc.write()
+    async def decrypt_file(filepath: str, title_id: str) -> None:
+        async with Crypt_MGSV.MGSV(filepath, title_id) as cc:
+            while await cc.read():
+                cc.bytes_to_u32array("little")
+                cc.crypt()
+                cc.array_to_bytearray()
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str, title_id: str) -> None:
@@ -70,6 +67,13 @@ class Crypt_MGSV:
                 cc.crypt()
                 cc.array_to_bytearray()
                 await cc.write()
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str, title_id: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if not await Crypt_MGSV.header_check(filepath):
+                await Crypt_MGSV.decrypt_file(filepath, title_id)
 
     @staticmethod
     async def check_enc_ps(filepath: str, title_id: str) -> None:

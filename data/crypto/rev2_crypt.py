@@ -6,18 +6,15 @@ class Crypt_Rev2:
     SECRET_KEY = b"zW$2eWaHNdT~6j86T_&j"
 
     @staticmethod
-    async def decrypt_file(folderpath: str) -> None:
-        files = await CC.obtain_files(folderpath)
-
-        for filepath in files:
-            async with CC(filepath) as cc:
-                blowfish_ecb = cc.create_ctx_blowfish(Crypt_Rev2.SECRET_KEY, cc.Blowfish.MODE_ECB)
-                cc.set_ptr(0x20)
-                while await cc.read():
-                    cc.ES32()
-                    cc.decrypt(blowfish_ecb)
-                    cc.ES32()
-                    await cc.write()
+    async def decrypt_file(filepath: str) -> None:
+        async with CC(filepath) as cc:
+            blowfish_ecb = cc.create_ctx_blowfish(Crypt_Rev2.SECRET_KEY, cc.Blowfish.MODE_ECB)
+            cc.set_ptr(0x20)
+            while await cc.read():
+                cc.ES32()
+                cc.decrypt(blowfish_ecb)
+                cc.ES32()
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -40,6 +37,15 @@ class Crypt_Rev2:
                 cc.encrypt(blowfish_ecb)
                 cc.ES32()
                 await cc.write()
+
+    @staticmethod
+    async def check_dec_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                is_dec = await cc.fraction_byte()
+            if not is_dec:
+                await Crypt_Rev2.decrypt_file(filepath)
 
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:
