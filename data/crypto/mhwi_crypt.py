@@ -812,20 +812,20 @@ class Crypt_Mhwi:
             uStack_ac = auStack_a8[7] ^ auStack_68[3] ^ auStack_58[7]
 
             # Compute final CRC over all intermediate values
-            uVar8 = (auStack_68[3] ^ auStack_68[saveslot]) & 0xFFFFFFFF
+            uVar8 = auStack_68[3] ^ auStack_68[saveslot]
 
             # Process auStack_58 values
             for val in auStack_58:
                 for byte_idx in range(4):
                     byte_val = (val >> (byte_idx * 8)) & 0xFF
-                    uVar8 = ((uVar8 >> 8) ^ Crypt_Mhwi.CRC_TABLE[byte_val ^ (uVar8 & 0xFF)]) & 0xFFFFFFFF
+                    uVar8 = (uVar8 >> 8) ^ Crypt_Mhwi.CRC_TABLE[byte_val ^ (uVar8 & 0xFF)]
 
             # Process auStack_a8 values
             for val in auStack_a8:
                 val_swapped = self.ES32_int(val)
                 for byte_idx in range(4):
                     byte_val = (val_swapped >> ((3 - byte_idx) * 8)) & 0xFF
-                    uVar8 = ((uVar8 >> 8) ^ Crypt_Mhwi.CRC_TABLE[byte_val ^ (uVar8 & 0xFF)]) & 0xFFFFFFFF
+                    uVar8 = (uVar8 >> 8) ^ Crypt_Mhwi.CRC_TABLE[byte_val ^ (uVar8 & 0xFF)]
 
             uVar10 = uVar8
 
@@ -839,14 +839,14 @@ class Crypt_Mhwi:
                 s_box_val = Crypt_Mhwi.BLOWFISH_SBOX[uVar9 & 0xFFF]
                 stack_idx = (s_box_val + saveslot) & 7
 
-                output_val = (s_box_val ^ combined_stack[stack_idx] ^ param_1_offset) & 0xFFFFFFFF
+                output_val = s_box_val ^ combined_stack[stack_idx] ^ param_1_offset
 
                 struct.pack_into("<I", result, i * 4, output_val)
 
                 # Update uVar9 for next iteration
                 byte_sum = ((uVar10 & 0xFF) + ((uVar10 >> 8) & 0xFF) +
                            ((uVar10 >> 16) & 0xFF) + (uVar8 >> 24) + 1)
-                uVar9 = (uVar9 + byte_sum) & 0xFFFFFFFF
+                uVar9 = (uVar9 + byte_sum) & 0xFF_FF_FF_FF
 
             return bytes(result)
 
@@ -856,19 +856,19 @@ class Crypt_Mhwi:
 
             # First DWORD
             first_offset = 0xC0490023 & 0xFFF
-            salt[0:4] = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[first_offset] ^ 0x4BF0CF23 ^ key_salt) & 0xFF_FF_FF_FF)
+            salt[0:4] = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[first_offset] ^ 0x4BF0CF23 ^ key_salt)
 
             # Calculate increment
             iVar4 = ((key_salt >> 24) + ((key_salt >> 16) & 0xFF) +
-                    ((key_salt >> 8) & 0xFF) + (key_salt & 0xFF) + 1) & 0xFFFFFFFF
+                    ((key_salt >> 8) & 0xFF) + (key_salt & 0xFF) + 1)
             iVar2 = iVar4
 
             # Generate remaining 508 bytes
             for i in range(4, 0x200, 4):
-                uVar1 = (0xC0490023 + iVar2) & 0xFFFFFFFF
-                iVar2 = (iVar2 + iVar4) & 0xFFFFFFFF
+                uVar1 = (0xC0490023 + iVar2) & 0xFF_FF_FF_FF
+                iVar2 = (iVar2 + iVar4) & 0xFF_FF_FF_FF
                 table_offset = uVar1 & 0xFFF
-                salt[i:i + 4] = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[table_offset] ^ 0x4BF0CF23 ^ key_salt) & 0xFF_FF_FF_FF)
+                salt[i:i + 4] = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[table_offset] ^ 0x4BF0CF23 ^ key_salt)
 
             return bytes(salt)
 
@@ -880,14 +880,14 @@ class Crypt_Mhwi:
 
             # Calculate iVar11 once (same for all iterations)
             iVar11 = ((INITIAL_SEED >> 24) + (INITIAL_SEED & 0xFF) +
-                     ((INITIAL_SEED >> 8) & 0xFF) + ((INITIAL_SEED >> 16) & 0xFF)) & 0xFFFFFFFF
+                     ((INITIAL_SEED >> 8) & 0xFF) + ((INITIAL_SEED >> 16) & 0xFF))
 
             # 32 keys
             for i in range(0x20):
                 salt_value = struct.unpack("<I", salt[i * 4:(i * 4) + 4])[0]
 
                 # uVar9 = salt[i] ^ key_salt ^ INITIAL_SEED
-                uVar9 = (salt_value ^ key_salt ^ INITIAL_SEED) & 0xFFFFFFFF
+                uVar9 = salt_value ^ key_salt ^ INITIAL_SEED
 
                 # Calculate the 4 offsets into blowfish_s_box
                 offset0 =  INITIAL_SEED & 0xFFF
@@ -898,10 +898,10 @@ class Crypt_Mhwi:
                 # Generate 16-byte key
                 key = bytearray(16)
 
-                key[0:4]    = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[offset0] ^ uVar9 ^ 0x701D5D68) & 0xFFFFFFFF)
-                key[4:8]    = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[offset1] ^ uVar9 ^ 0x4BF0CF23) & 0xFFFFFFFF)
-                key[8:12]   = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[offset2] ^ uVar9 ^ 0x7C8B3AF0) & 0xFFFFFFFF)
-                key[12:16]  = struct.pack("<I", (Crypt_Mhwi.BLOWFISH_SBOX[offset3] ^ uVar9 ^ 0x67308D52) & 0xFFFFFFFF)
+                key[0:4]    = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[offset0] ^ uVar9 ^ 0x701D5D68)
+                key[4:8]    = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[offset1] ^ uVar9 ^ 0x4BF0CF23)
+                key[8:12]   = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[offset2] ^ uVar9 ^ 0x7C8B3AF0)
+                key[12:16]  = struct.pack("<I", Crypt_Mhwi.BLOWFISH_SBOX[offset3] ^ uVar9 ^ 0x67308D52)
 
                 keys.append(bytes(key))
 
@@ -913,12 +913,12 @@ class Crypt_Mhwi:
             SEED = 0xC0490023
 
             # Calculated from (0x67308D52 ^ 0xC0490023) & 0xFFF
-            MAGIC_XOR_MASK = 0xD71 
+            MAGIC_XOR_MASK = 0xD71
 
             average_length_int = length >> 5
             average_length_float = float(average_length_int)
 
-            accumulator = (average_length_int + 0xF) & 0xFFFFFFFF
+            accumulator = (average_length_int + 0xF) & 0xFF_FF_FF_FF
 
             for i in range(31):
                 # 1. Calculate Index 1 (Salt + Iteration XOR Seed)
@@ -934,11 +934,11 @@ class Crypt_Mhwi:
                 variation = Crypt_Mhwi.FLOATS[idx2] - 0.5
 
                 # 5. Final length for this round (masked to 16-byte alignment)
-                calc_len = (int(variation * average_length_float) + accumulator) & 0xFFFFFFF0
+                calc_len = (int(variation * average_length_float) + accumulator) & 0xFF_FF_FF_F0
                 key_length[i] = calc_len
 
                 # 6. Increment accumulator by the average length for next iteration
-                accumulator = (accumulator + average_length_int) & 0xFFFFFFFF
+                accumulator = (accumulator + average_length_int) & 0xFF_FF_FF_FF
 
             # Last entry is always the total length
             key_length[31] = length
