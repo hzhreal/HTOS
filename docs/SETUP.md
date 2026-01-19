@@ -49,7 +49,7 @@ The bot will accept files from Google Drive and will upload the final files ther
 Some things to keep in mind are
 * When you are prompted to select application type, select `Desktop app`.
 * Add the email of the Google Drive account you want to use as a tester.
-* On the Google Cloud dashboard, make sure to enable the Google Drive API.
+* On the Google Cloud dashboard, make sure to enable the Google Drive API.  
 A [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) is also supported. But after April 15, 2025, new service accounts do not get any storage.  
 Therefore, new service accounts will not work.  
 
