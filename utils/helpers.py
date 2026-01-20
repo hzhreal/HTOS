@@ -446,7 +446,17 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
 
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
     """Used to obtain an account ID, either through converting from username, obtaining from db, or manually. Utilizes the PSN API or a website doing it for us."""
+    async def on_fail(msg: str) -> str:
+        e = emb8.copy()
+        e.description = e.description.format(msg=msg)
+        await ctx.respond(embed=e)
+        res = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
+        if res.content == "EXIT":
+            raise PSNIDError("EXITED!")
+        return res.content
+
     user_id = ""
+    delmsg = True
 
     if username == "":
         user_id = await fetch_accountid_db(ctx.author.id)
@@ -462,43 +472,33 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
                 raise PSNIDError(msg)
             return user_id
         else:
-            raise PSNIDError("Could not find previously stored account ID.")
+            user_id = await on_fail("Failed to find stored account ID")
+    else:
+        if (len(username) < 3 or len(username) > 16) or (not bool(PSN_USERNAME_RE.fullmatch(username))):
+            user_id = await on_fail("Invalid username")
 
-    if len(username) < 3 or len(username) > 16:
-        await asyncio.sleep(1)
-        raise PSNIDError("Invalid PS username!")
-    elif not bool(PSN_USERNAME_RE.fullmatch(username)):
-        await asyncio.sleep(1)
-        raise PSNIDError("Invalid PS username!")
-
-    if NPSSO_global.val:
+    if NPSSO_global.val and not user_id:
         try:
             user = psnawp.user(online_id=username)
             user_id = user.account_id
             user_id = handle_accid(user_id)
             delmsg = False
-
         except PSNAWPNotFoundError:
-            await ctx.respond(embed=emb8)
-            delmsg = True
-
-            response = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
-            if response.content == "EXIT":
-                raise PSNIDError("EXITED!")
-            user_id = response.content
-        except PSNAWPAuthenticationError:
+            user_id = await on_fail("Failed to search for username")
+        except PSNAWPAuthenticationError as e:
+            logger.exception(f"NPSSO disabled: {e}")
             NPSSO_global.val = ""
 
+    # if `NPSSO_global.val` is falsy or `PSNAWPAuthenticationError` was raised
     if not user_id:
-        raise PSNIDError("Account ID fetcher is unavailable. Use the `store_accountid` command.")
+        user_id = await on_fail("Account ID fetcher is unavailable")
 
     if delmsg:
-        await asyncio.sleep(0.5)
+        # an embed has already been sent, edit it
         await ctx.edit(embed=embvalidpsn)
     else:
+        # no embeds has been sent yet, we are currently deferring
         await ctx.respond(embed=embvalidpsn)
-
-    await asyncio.sleep(0.5)
 
     # check blacklist while we are at it
     search = await blacklist_check_db(None, user_id)

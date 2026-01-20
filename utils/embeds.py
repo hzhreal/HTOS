@@ -78,8 +78,8 @@ embpng.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb8 = discord.Embed(
     title="Error: PSN username",
-    description=f"Your input was not a valid PSN username, you have {OTHER_TIMEOUT} seconds to reply with your account ID instead.\nOr type 'EXIT' to cancel command.",
-    colour=Color.DEFAULT.value
+    description=f"{{msg}}. You have {OTHER_TIMEOUT} seconds to reply with your account ID instead.\nOr type 'EXIT' to cancel command.",
+    colour=Color.YELLOW.value
 )
 emb8.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
