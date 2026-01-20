@@ -42,6 +42,7 @@ Make sure to read more about it [here](https://github.com/isFakeAccount/psnawp/b
 > [!TIP]
 > Although it is recommended that you do this step, the bot can function without.
 > But then, account ID must be manually set using the `store_accountid` command and will not be converted from username.
+> The bot will also prompt the user for a manual input when doing a command if the account ID fetcher is not available.
 > Once username or account ID is given, it is saved for that Discord user and if no value is given in a command, then it will default to the saved one.
 
 Now you need to set up a [Google OAuth Client](https://support.google.com/cloud/answer/15549257?hl=en). You should follow the tutorial in the link.  
