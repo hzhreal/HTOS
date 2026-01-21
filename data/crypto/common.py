@@ -8,7 +8,6 @@ import aiofiles.os
 import crc32c
 import mmh3
 import zlib
-import pyzstd
 from types import TracebackType
 
 from data.crypto.exceptions import CryptoError
@@ -37,7 +36,6 @@ class CustomCrypto:
     AES = AES
     Blowfish = Blowfish
     zlib = zlib
-    zstd = pyzstd
     crc32c = crc32c
     mmh3 = mmh3
     hashlib = hashlib
@@ -347,9 +345,6 @@ class CustomCrypto:
 
         if type(ctx.obj) is type(zlib.compressobj()):
             await self._zlib_compress(ctx.obj)
-        elif isinstance(ctx.obj, pyzstd.ZstdCompressor):
-            assert type(ctx.attr) == bool
-            await self._zstd_compress(ctx.obj, ctx.attr)
         else:
             assert 0
 
@@ -363,11 +358,6 @@ class CustomCrypto:
             try:
                 return await self._zlib_decompress(ctx.obj)
             except zlib.error as e:
-                raise CryptoError("Invalid save!") from e
-        elif isinstance(ctx.obj, (pyzstd.ZstdDecompressor, pyzstd.EndlessZstdDecompressor)):
-            try:
-                return await self._zstd_decompress(ctx.obj)
-            except (pyzstd.ZstdError, EOFError) as e:
                 raise CryptoError("Invalid save!") from e
         else:
             assert 0
@@ -448,12 +438,6 @@ class CustomCrypto:
         obj = zlib.compressobj(wbits=zlib.MAX_WBITS | 16)
         return self._create_ctx(obj)
 
-    def create_ctx_zstd_compress(self, per_chunk_frame: bool = False) -> int:
-        self._prepare_compression()
-        obj = pyzstd.ZstdCompressor()
-        attr = per_chunk_frame
-        return self._create_ctx(obj, attr)
-
     def create_ctx_zlib_decompress(self) -> int:
         self._prepare_compression()
         obj = zlib.decompressobj()
@@ -462,14 +446,6 @@ class CustomCrypto:
     def create_ctx_gzip_decompress(self) -> int:
         self._prepare_compression()
         obj = zlib.decompressobj(zlib.MAX_WBITS | 16)
-        return self._create_ctx(obj)
-
-    def create_ctx_zstd_decompress(self, endless: bool = False) -> int:
-        self._prepare_compression()
-        if endless:
-            obj = pyzstd.EndlessZstdDecompressor()
-        else:
-            obj = pyzstd.ZstdDecompressor()
         return self._create_ctx(obj)
 
     def create_ctx_crc32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
@@ -506,18 +482,6 @@ class CustomCrypto:
         comp = obj.flush(zlib.Z_SYNC_FLUSH)
         await self.w_stream.write(comp)
 
-    async def _zstd_compress(self, obj: pyzstd.ZstdCompressor, per_chunk_frame: bool) -> None:
-        await self.w_stream.seek(0, 2)
-        comp = obj.compress(self.chunk)
-        await self.w_stream.write(comp)
-
-        if per_chunk_frame:
-            flush_mode = obj.FLUSH_FRAME
-        else:
-            flush_mode = obj.FLUSH_BLOCK
-        comp = obj.flush(flush_mode)
-        await self.w_stream.write(comp)
-
     @staticmethod
     def _decomp_max_size_calc(size: int, inc: int) -> None:
         if size + inc > SAVESIZE_MAX:
@@ -525,52 +489,35 @@ class CustomCrypto:
 
     async def _zlib_decompress(self, obj: zlib._Decompress) -> None | int:
         size = await self.w_stream.seek(0, 2)
+
+        decomp = obj.decompress(self.chunk, self.CHUNKSIZE)
         if obj.unused_data:
             raise CryptoError("Invalid!")
+        if decomp:
+            self._decomp_max_size_calc(size, len(decomp))
+            await self.w_stream.write(decomp)
+
         if obj.unconsumed_tail:
             while True:
                 comp = obj.unconsumed_tail
                 if not comp:
                     break
                 decomp = obj.decompress(comp, self.CHUNKSIZE)
+                if obj.unused_data:
+                    raise CryptoError("Invalid!")
+                if not decomp:
+                    break
                 self._decomp_max_size_calc(size, len(decomp))
                 await self.w_stream.write(decomp)
 
-        decomp = obj.decompress(self.chunk, self.CHUNKSIZE)
-        self._decomp_max_size_calc(size, len(decomp))
-        await self.w_stream.write(decomp)
-
         if obj.eof:
-            eof_off = self.chunk_start + (len(self.chunk) - len(obj.unused_data)) 
+            eof_off = self.chunk_start + len(self.chunk)
             while True:
                 decomp = obj.flush(self.CHUNKSIZE)
                 if not decomp:
                     break
                 self._decomp_max_size_calc(size, len(decomp))
                 await self.w_stream.write(decomp)
-            return eof_off # in r_stream
-
-    async def _zstd_decompress(self, obj: pyzstd.ZstdDecompressor | pyzstd.EndlessZstdDecompressor) -> None | int:
-        size = await self.w_stream.seek(0, 2)
-        if obj.unused_data:
-            raise CryptoError("Invalid!")
-        if not obj.needs_input:
-            while True:
-                try:
-                    decomp = obj.decompress(bytes(), self.CHUNKSIZE)
-                except pyzstd.ZstdError:
-                    break
-                if not decomp:
-                    break
-                self._decomp_max_size_calc(size, len(decomp))
-                await self.w_stream.write(decomp)
-
-        decomp = obj.decompress(self.chunk, self.CHUNKSIZE)
-        self._decomp_max_size_calc(size, len(decomp))
-        await self.w_stream.write(decomp)
-
-        if isinstance(obj, pyzstd.ZstdDecompressor) and obj.eof:
-            eof_off = self.chunk_start + (len(self.chunk) - len(obj.unused_data))
             return eof_off # in r_stream
 
     @staticmethod
