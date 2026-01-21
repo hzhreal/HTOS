@@ -12,7 +12,7 @@ from utils.embeds import (
     embinit, loadkeyset_emb,
     keyset_emb, embpingsuccess, embpingfail
 )
-from utils.helpers import threadButton, error_handling
+from utils.helpers import ThreadButton, error_handling
 from utils.workspace import fetchall_threadid_db, delall_threadid_db, make_workspace
 from utils.orbis import keyset_to_fw
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -115,7 +115,7 @@ class Misc(commands.Cog):
     @commands.is_owner()
     async def init(self, ctx: discord.ApplicationContext) -> None:
         await ctx.respond("Sending panel...", ephemeral=True)
-        await ctx.send(embed=embinit, view=threadButton())
+        await ctx.send(embed=embinit, view=ThreadButton())
 
     @discord.slash_command(description="Remove all threads created by the bot.")
     @commands.is_owner()

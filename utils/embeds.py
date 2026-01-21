@@ -174,9 +174,11 @@ blacklist_emb = discord.Embed(
 )
 blacklist_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-embChannelError = discord.Embed(title="Error",
-                                    description="Invalid channel!",
-                                    colour=Color.DEFAULT.value)
+embChannelError = discord.Embed(
+    title="Error",
+    description="Invalid channel!",
+    colour=Color.DEFAULT.value
+)
 embChannelError.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 cancel_notify_emb = discord.Embed(
@@ -271,14 +273,14 @@ emb_conv_choice = discord.Embed(
 emb_conv_choice.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embCDone1 = discord.Embed(
-    title="TIMED OUT!", 
+    title="TIMED OUT!",
     colour=Color.DEFAULT.value
 )
 embCDone1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embCDone2 = discord.Embed(
-    title="ERROR!", 
-    description="Invalid save!", 
+    title="ERROR!",
+    description="Invalid save!",
     colour=Color.RED.value
 )
 embCDone2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -357,7 +359,7 @@ emb_dl = discord.Embed(
     title="Decryption process: Downloading",
     description="{savename} mounted (save {j}/{savecount}, batch {i}/{batches}), downloading decrypted savefile...\nSend 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
-) 
+)
 emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb13 = discord.Embed(
@@ -416,7 +418,7 @@ embpingsuccess = discord.Embed(
         "CECIE: **{socket_result}**\n"
         "Active instances: **{instances_len}**/**{maximum_instances}**\n"
         "Latency: **{latency: .2f}** ms"
-    ), 
+    ),
     colour=Color.GREEN.value)
 embpingsuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
@@ -426,7 +428,7 @@ embpingfail = discord.Embed(
         "CECIE: **{socket_result}**\n"
         "Active instances: **{instances_len}**/**{maximum_instances}**\n"
         "Latency: **{latency: .2f}** ms"
-    ), 
+    ),
     colour=Color.RED.value)
 embpingfail.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
@@ -523,7 +525,7 @@ embrrdone = discord.Embed(
     description=(
         "**{printed}** re-regioned & resigned to **{id}** (**{target_titleid}**), (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."         
+        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -575,22 +577,22 @@ paramEmb.set_footer(
 )
 
 embchErr = discord.Embed(
-    title="ERROR!", 
-    description="Could not add cheat: {error}.", 
+    title="ERROR!",
+    description="Could not add cheat: {error}.",
     colour=Color.RED.value
 )
 embchErr.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embErrconv = discord.Embed(
-    title="ERROR!", 
-    description="Could not convert: {error}.", 
+    title="ERROR!",
+    description="Could not convert: {error}.",
     colour=Color.RED.value
 )
 embErrconv.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embErrdec = discord.Embed(
-    title="ERROR!", 
-    description="Could not convert: {error}.", 
+    title="ERROR!",
+    description="Could not convert: {error}.",
     colour=Color.RED.value
 )
 embErrdec.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -667,10 +669,10 @@ embgddone = discord.Embed(
 embgddone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embuplSuccess = discord.Embed(
-    title="Upload alert: Successful", 
-    description="File '{filename}' has been successfully uploaded and saved ({i}/{filecount}).", 
+    title="Upload alert: Successful",
+    description="File '{filename}' has been successfully uploaded and saved ({i}/{filecount}).",
     colour=Color.DEFAULT.value
-)            
+)
 embuplSuccess.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embe = discord.Embed(
@@ -681,8 +683,8 @@ embe = discord.Embed(
 embe.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embuplSuccess1 = discord.Embed(
-    title="Upload alert: Successful", 
-    description="File '{filename}' has been successfully uploaded and saved.", 
+    title="Upload alert: Successful",
+    description="File '{filename}' has been successfully uploaded and saved.",
     colour=Color.DEFAULT.value
 )
 embuplSuccess1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -740,14 +742,14 @@ emb_il = discord.Embed(
 emb_il.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embdecTimeout = discord.Embed(
-        title="Timeout Error:", 
+        title="Timeout Error:",
         description="You took too long, sending the file with the format: 'Encrypted'",
         colour=Color.DEFAULT.value)
 embdecTimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embdecFormat = discord.Embed(
-    title="Current save: {savename}", 
-    description="Choose if you want second layer removed ('Decrypted') or just Sony PFS layer ('Encrypted').", 
+    title="Current save: {savename}",
+    description="Choose if you want second layer removed ('Decrypted') or just Sony PFS layer ('Encrypted').",
     colour=Color.DEFAULT.value)
 embdecFormat.set_footer(text="If you want to use the file in a save editor, choose 'Decrypted'!")
 

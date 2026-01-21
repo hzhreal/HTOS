@@ -59,7 +59,7 @@ class TimeoutHelper:
             await asyncio.sleep(4) # make sure user is aware of msg
             self.done = True
 
-class threadButton(discord.ui.View):
+class ThreadButton(discord.ui.View):
     """The panel that allows the user to create a thread to use the bot."""
     def __init__(self) -> None:
         super().__init__(timeout=None)
