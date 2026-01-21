@@ -1,3 +1,4 @@
+import aiofiles
 import struct
 from os.path import basename
 from data.crypto.common import CustomCrypto as CC
@@ -557,7 +558,6 @@ class Crypt_Mhwi:
     ]
     UNSUPPORTED_FORMATS = ("photodata")
     EXCLUDE = ["SYSTEM2.DAT"]
-    COMMON = b"PLAYER"
 
     class Mhwi(CC):
         def __init__(self, filepath: str) -> None:
@@ -999,9 +999,10 @@ class Crypt_Mhwi:
         files = await CC.obtain_files(folderpath, Crypt_Mhwi.EXCLUDE)
         files = Crypt_Mhwi.files_check(files)
         for filepath in files:
-            async with CC(filepath) as cc:
-                off = await cc.find(Crypt_Mhwi.COMMON)
-            if off == -1:
+            async with aiofiles.open(filepath) as savegame:
+                await savegame.seek(0x48A)
+                magic = await savegame.read(2)
+            if magic != b"\x00\x00":
                 await Crypt_Mhwi.decrypt_file(filepath)
 
     @staticmethod
@@ -1009,9 +1010,10 @@ class Crypt_Mhwi:
         if not Crypt_Mhwi.file_check(filepath):
             return
 
-        async with CC(filepath) as cc:
-            off = await cc.find(Crypt_Mhwi.COMMON)
-        if off != -1:
+        async with aiofiles.open(filepath) as savegame:
+            await savegame.seek(0x48A)
+            magic = await savegame.read(2)
+        if magic == b"\x00\x00":
             await Crypt_Mhwi.encrypt_file(filepath)
 
     @staticmethod
