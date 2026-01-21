@@ -130,12 +130,16 @@ for emb, v in _MAP_PLACEHOLDER.items():
     # assume title and description are the only fields that we care about
 
     if v == set():
-        fmts = {emb.title, emb.description}
-        for fmt in fmts:
+        fmts = {"title": emb.title, "description": emb.description}
+        for field, fmt in fmts.items():
             if not fmt:
                 continue
             actual_fields = {fname for _, fname, _, _ in string.Formatter().parse(fmt) if fname}
-            assert len(actual_fields) == 0
+            assert len(actual_fields) == 0, (
+                f"There are extra placeholders {actual_fields} defined in the {field} of the embed with\n"
+                f"title: {emb.title}\n"
+                f"description: {emb.description}"
+            )
         continue
 
     prev_field = None
@@ -159,10 +163,16 @@ for emb, v in _MAP_PLACEHOLDER.items():
 
     if len(v) == 1:
         if prev_field == "title":
+            field = "description"
             fmt = emb.description
         else:
+            field = "title"
             fmt = emb.title
         if fmt:
             actual_fields = {fname for _, fname, _, _ in string.Formatter().parse(fmt) if fname}
-            assert len(actual_fields) == 0
+            assert len(actual_fields) == 0, (
+                f"There are extra placeholders {actual_fields} defined in the {field} of the embed with\n"
+                f"title: {emb.title}\n"
+                f"description: {emb.description}"
+            )
 
