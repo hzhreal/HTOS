@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 from data.crypto.exceptions import CryptoError
 from utils.constants import (
-    logger, OTHER_TIMEOUT,
+    RE_VILLAGE_TITLEID, logger, OTHER_TIMEOUT,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
     DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
@@ -366,7 +366,7 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) ->
         elif title_id in REV2_TITLEID:
             await Crypto.Rev2.check_enc_ps(filepath)
 
-        elif title_id in RE7_TITLEID or title_id in RERES_TITLEID or title_id in RE3R_TITLEID:
+        elif title_id in RE7_TITLEID or title_id in RERES_TITLEID or title_id in RE3R_TITLEID or title_id in RE_VILLAGE_TITLEID:
             await Crypto.RE7.check_enc_ps(filepath)
 
         elif title_id in DL1_TITLEID:

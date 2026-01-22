@@ -40,10 +40,11 @@ Certain games need to have an extra implementation for it to work out of the box
 | Red Dead Redemption 2                    | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Resident Evil 2 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 3 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil 4 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil 7: Biohazard               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 4 Remake                   | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 7: Biohazard               | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Resistance                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Revelations 2             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil Village                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shin Megami Tensei 5                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Stardew Valley                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Terraria                                 | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
