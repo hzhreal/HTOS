@@ -46,14 +46,16 @@ Make sure to read more about it [here](https://github.com/isFakeAccount/psnawp/b
 > Once username or account ID is given, it is saved for that Discord user and if no value is given in a command, then it will default to the saved one.
 
 > [!CAUTION] 
-> The bot will attempt to delete all files that exist in the authenticated Google Drive account. Because of this, it is recommended to use a Google Drive account that does not contain any personal files that you do not want to be deleted. 
-
+> The bot will attempt to delete all files that exist in the authenticated Google Drive account. Because of this, it is recommended to use a Google Drive account that does not contain any personal files that you do not want to be deleted.
 Now you need to set up a [Google OAuth Client](https://support.google.com/cloud/answer/15549257?hl=en). You should follow the tutorial in the link.  
 The bot will accept files from Google Drive and will upload the final files there, if the Discord filesize limit is exceeded.  
 Some things to keep in mind are
 * When you are prompted to select application type, select `Desktop app`.
 * Add the email of the Google Drive account you want to use as a tester.
 * On the Google Cloud dashboard, make sure to enable the Google Drive API.
+> [!NOTE]
+> Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion. The age of every file will be checked every hour.
+> If the drive runs out of space, then every single file owned by the drive will be deleted. Commands that may use the drive will become unavailable until after the cleanup.
 > [!NOTE]
 > A [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) is also supported.
 > But after April 15, 2025, new service accounts do not get any storage.
