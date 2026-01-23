@@ -105,7 +105,7 @@ NPSSO_global = NPSSO()
 
 if os.path.basename(argv[0]) == "bot.py":
     if NPSSO_global.val:
-        psnawp = PSNAWP(NPSSO_global)
+        psnawp = PSNAWP(NPSSO_global.val)
         print("psnawp initialized")
     else:
         psnawp = None
