@@ -38,6 +38,7 @@ from utils.conversions import gb_to_bytes, bytes_to_mb, round_half_up, minutes_t
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
 GD_LINK_RE = re.compile(r"https://drive\.google\.com/.*")
+BOT_FOLDER_NAME = "HTOS_Bot"  # Dedicated folder for bot operations
 
 class GDapi:
     class AccountType(Enum):
@@ -66,6 +67,7 @@ class GDapi:
             self.pagesizes = [1000 for _ in range(q)]
             self.pagesizes.append(r)
 
+        self.bot_folder_id: str | None = None  # Cached bot folder ID
         self.authorize()
 
     def authorize(self) -> None:
@@ -126,6 +128,42 @@ class GDapi:
         )
         self.creds = {"client_creds": client_creds, "user_creds": user_creds}
         self.account_type = self.AccountType.PERSONAL_ACCOUNT
+
+    async def get_bot_folder_id(self) -> str:
+        """Get or create the bot's dedicated folder and return its ID."""
+        if self.bot_folder_id:
+            return self.bot_folder_id
+
+        async with Aiogoogle(**self.creds) as aiogoogle:
+            drive_v3 = await aiogoogle.discover("drive", "v3")
+
+            # Search for existing bot folder
+            req = drive_v3.files.list(
+                q=f"name='{BOT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+                fields="files(id, name)",
+                pageSize=1
+            )
+            res = await self.send_req(aiogoogle, req)
+            files = res.get("files", [])
+
+            if files:
+                # Folder exists, use it
+                self.bot_folder_id = files[0]["id"]
+                logger.info(f"Found existing bot folder: {self.bot_folder_id}")
+            else:
+                # Create new folder
+                req = drive_v3.files.create(
+                    json={
+                        "name": BOT_FOLDER_NAME,
+                        "mimeType": "application/vnd.google-apps.folder"
+                    },
+                    fields="id"
+                )
+                res = await self.send_req(aiogoogle, req)
+                self.bot_folder_id = res["id"]
+                logger.info(f"Created bot folder: {self.bot_folder_id}")
+
+        return self.bot_folder_id
 
     async def send_req(self, aiogoogle: Aiogoogle, req: models.Request, full_res: bool = False) -> models.Response:
         match self.account_type:
@@ -420,6 +458,9 @@ class GDapi:
         return files, total_filesize
 
     async def list_drive(self) -> list[dict[str, str]]:
+        """List all files within the bot's dedicated folder only."""
+        bot_folder_id = await self.get_bot_folder_id()
+        
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
@@ -428,7 +469,7 @@ class GDapi:
 
             while next_page_token is not None:
                 req = drive_v3.files.list(
-                    q="'me' in owners",
+                    q=f"'{bot_folder_id}' in parents and trashed=false",
                     pageSize=1000,
                     fields="nextPageToken, files(id, createdTime)",
                     pageToken=next_page_token
@@ -441,13 +482,15 @@ class GDapi:
             return files
 
     async def clear_drive(self, files: list[dict[str, str]] | None = None) -> None:
+        """Clear files only within the bot's dedicated folder."""
         if files is None:
             try:
                 files = await self.list_drive()
             except HTTPError as e:
-                logger.error(f"Failed to list drive: {e}")
+                logger.error(f"Failed to list drive in bot folder: {e}")
                 return
 
+        logger.info(f"Clearing {len(files)} files from bot folder only")
         for file in files:
             file_id = file["id"]
             try:
@@ -521,6 +564,10 @@ class GDapi:
         metadata = {"name": file_name}
         if shared_folderid:
             metadata["parents"] = [shared_folderid]
+        else:
+            # Default to bot's dedicated folder
+            bot_folder_id = await self.get_bot_folder_id()
+            metadata["parents"] = [bot_folder_id]
         filesize = await aiofiles.os.path.getsize(file_path)
 
         # Initial request for resumable upload
@@ -771,6 +818,15 @@ if os.path.basename(argv[0]) == "bot.py":
     gdapi = GDapi()
 else:
     gdapi = None
+
+@tasks.loop(count=1, reconnect=False)
+async def init_GDrive() -> None:
+    """Initialize the bot's dedicated folder on startup."""
+    try:
+        await gdapi.get_bot_folder_id()
+        logger.info("Google Drive bot folder initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize bot folder: {e}")
 
 @tasks.loop(count=1, reconnect=False)
 async def clean_GDrive() -> None:
