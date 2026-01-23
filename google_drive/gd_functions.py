@@ -56,6 +56,8 @@ class GDapi:
         sock_connect=30
     )
     RANGE_PATTERN = re.compile(r"bytes=(\d+)-(\d+)")
+    TAG_KEY = "purpose"
+    TAG_VALUE = "HTOS"
 
     def __init__(self) -> None:
         assert self.UPLOAD_CHUNKSIZE % (256 * 1024) == 0
@@ -473,7 +475,7 @@ class GDapi:
 
             while next_page_token is not None:
                 req = drive_v3.files.list(
-                    q="'me' in owners and appProperties has { key='purpose' and value='HTOS' }",
+                    q=f"'me' in owners and appProperties has {{ key='{self.TAG_KEY}' and value='{self.TAG_VALUE}' }}",
                     pageSize=1000,
                     fields="nextPageToken, files(id, createdTime)",
                     pageToken=next_page_token
@@ -579,7 +581,7 @@ class GDapi:
             metadata["parents"] = [self.bot_folder_id]
         # Tag metadata with appProperties
         metadata["appProperties"] = {
-            "purpose": "HTOS"
+            self.TAG_KEY: self.TAG_VALUE
         }
 
         filesize = await aiofiles.os.path.getsize(file_path)
