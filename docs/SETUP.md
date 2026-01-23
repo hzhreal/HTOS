@@ -45,10 +45,6 @@ Make sure to read more about it [here](https://github.com/isFakeAccount/psnawp/b
 > The bot will also prompt the user for a manual input when doing a command if the account ID fetcher is not available.
 > Once username or account ID is given, it is saved for that Discord user and if no value is given in a command, then it will default to the saved one. 
 
-> [!CAUTION]
-> The bot will attempt to delete all files that exist in the authenticated Google Drive account.
-> Because of this, it is recommended to use a Google Drive account that does not contain any personal files that you do not want to be deleted.
-
 Now you need to set up a [Google OAuth Client](https://support.google.com/cloud/answer/15549257?hl=en). You should follow the tutorial in the link.  
 The bot will accept files from Google Drive and will upload the final files there, if the Discord filesize limit is exceeded.  
 Some things to keep in mind are
@@ -58,6 +54,8 @@ Some things to keep in mind are
 
 Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion. The age of every file will be checked every hour.  
 If the drive runs out of space, then every single file owned by the drive will be deleted. Commands that may use the drive will become unavailable until after the cleanup.  
+Files are mainly uploaded to a folder called `HTOS_Bot` in the drive, this folder is created when the bot boots. Files can also be uploaded to arbitrary writable folders chosen by any user.  
+Any file uploaded by the bot is tagged and only those will be tracked.  
 
 > [!NOTE]
 > A [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) is also supported.

@@ -75,6 +75,7 @@ class GDapi:
         except HTTPError as e:
             logger.error(f"Failed to initialize bot folder: {e}")
             raise GDapiError(self.get_err_str_HTPERROR(e))
+        logger.info("Google Drive bot folder initialized successfully")
 
     def authorize(self) -> None:
         CREDENTIALS_PATH = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
@@ -167,7 +168,6 @@ class GDapi:
                 bot_folder_id = res["id"]
                 logger.info(f"Created bot folder: {bot_folder_id}")
 
-        logger.info("Google Drive bot folder initialized successfully")
         return bot_folder_id
 
     async def send_req(self, aiogoogle: Aiogoogle, req: models.Request, full_res: bool = False) -> models.Response:
