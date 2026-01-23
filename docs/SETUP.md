@@ -56,10 +56,8 @@ Some things to keep in mind are
 * Add the email of the Google Drive account you want to use as a tester.
 * On the Google Cloud dashboard, make sure to enable the Google Drive API.
 
-Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion.  
-The age of every file will be checked every hour.  
-If the drive runs out of space, then every single file owned by the drive will be deleted.  
-Commands that may use the drive will become unavailable until after the cleanup.  
+Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion. The age of every file will be checked every hour.  
+If the drive runs out of space, then every single file owned by the drive will be deleted. Commands that may use the drive will become unavailable until after the cleanup.  
 
 > [!NOTE]
 > A [Google Service Account](https://support.google.com/a/answer/7378726?hl=en) is also supported.
