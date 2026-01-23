@@ -54,7 +54,8 @@ The bot will accept files from Google Drive and will upload the final files ther
 Some things to keep in mind are
 * When you are prompted to select application type, select `Desktop app`.
 * Add the email of the Google Drive account you want to use as a tester.
-* On the Google Cloud dashboard, make sure to enable the Google Drive API.  
+* On the Google Cloud dashboard, make sure to enable the Google Drive API.
+
 Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion.  
 The age of every file will be checked every hour.  
 If the drive runs out of space, then every single file owned by the drive will be deleted.  
