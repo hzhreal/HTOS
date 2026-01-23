@@ -15,11 +15,10 @@ workspace_opt = WorkspaceOpt()
 
 @bot.event
 async def on_ready() -> None:
-    from google_drive.gd_functions import check_GDrive, init_GDrive
+    from google_drive.gd_functions import check_GDrive
     startup(workspace_opt)
     await check_version()
     bot.add_view(ThreadButton()) # make view persistent
-    init_GDrive.start() # initialize bot folder
     check_GDrive.start() # start gd daemon
     print(
         f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot"
