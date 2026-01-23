@@ -126,7 +126,7 @@ class Createsave(TabBase):
                 for gamesave in files:
                     if os.path.basename(gamesave) in SCE_SYS_CONTENTS:
                         continue
-                    await extra_import(Crypto, title_id, gamesave)
+                    await extra_import(Crypto, title_id, gamesave, savename)
 
             temp_savename = savename + f"_{rand_str}"
             mount_location_new = MOUNT_LOCATION + "/" + rand_str

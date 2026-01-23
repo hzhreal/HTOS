@@ -13,7 +13,7 @@ from utils.constants import (
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
     DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
-    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID
+    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
@@ -99,6 +99,8 @@ async def extra_decrypt(
                         await Crypto.Nioh2.check_dec_ps(destination_directory)
                     case "MHWI":
                         await Crypto.Mhwi.check_dec_ps(destination_directory)
+                    case "LANOIRE":
+                        await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -334,7 +336,16 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MHWI"))
         await helper.await_done()
 
-async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) -> None:
+    elif title_id in LA_NOIRE_TITLEID:
+        if choice is not None:
+            if choice:
+                await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("LANOIRE"))
+        await helper.await_done()
+
+async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
             await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
@@ -416,6 +427,9 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str) ->
 
         elif title_id in MHWI_TITLEID:
             await Crypto.Mhwi.check_enc_ps(filepath)
+
+        elif title_id in LA_NOIRE_TITLEID:
+            await Crypto.LaNoire.check_enc_ps(filepath, savepairname)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
