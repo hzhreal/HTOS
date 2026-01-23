@@ -24,6 +24,10 @@ def main() -> None:
     title_id = argv[1].upper()
     opt = argv[2].lower()
     filepath = argv[3]
+    if len(argv) - 1 >= 4:
+        savepairname = argv[4]
+    else:
+        savepairname = ""
 
     if not check_titleid(title_id):
         print(f"Invalid title ID: {title_id}.")
@@ -45,13 +49,13 @@ def main() -> None:
 
     match opt:
         case Option.DECRYPT:
-            asyncio.run(extra_decrypt(None, Crypto, title_id, filepath, "", True))
+            asyncio.run(extra_decrypt(None, Crypto, title_id, filepath, savepairname, True))
         case Option.ENCRYPT:
-            asyncio.run(extra_import(Crypto, title_id, filepath))
+            asyncio.run(extra_import(Crypto, title_id, filepath, savepairname))
     print(f"{opt.value} {filepath}.")
 
 def print_usage() -> None:
-    print(f"USAGE: python {argv[0]} <title ID> [option] <filepath>")
+    print(f"USAGE: python {argv[0]} <title ID> [option] <filepath> <savepairname (optional)>")
     print("OPTIONS\tExplanation")
     print("-d\tDecrypt file")
     print("-e\tEncrypt file")

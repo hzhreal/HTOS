@@ -133,7 +133,7 @@ class Encrypt(TabBase):
                         for file in encrypt_files:
                             if os.path.basename(file) in SCE_SYS_CONTENTS:
                                 continue
-                            await extra_import(Crypto, savefile.title_id, file)
+                            await extra_import(Crypto, savefile.title_id, file, savefile.basename)
                     if self.settings.recursivity.value:
                         await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     else:

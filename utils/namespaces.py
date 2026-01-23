@@ -24,6 +24,7 @@ from data.crypto.dsr_crypt import Crypt_DSR
 from data.crypto.digimon_crypt import Crypt_Digimon
 from data.crypto.nioh2_crypt import Crypt_Nioh2
 from data.crypto.mhwi_crypt import Crypt_Mhwi
+from data.crypto.lanoire_crypt import Crypt_LaNoire
 
 from types import SimpleNamespace
 
@@ -37,5 +38,5 @@ Crypto = SimpleNamespace(
     NMS=Crypt_NMS, TERRARIA=Crypt_Terraria, SMT5=Crypt_SMT5,
     RCube=Crypt_RCube, RE7=Crypt_RE7, DSR=Crypt_DSR,
     RE4R=Crypt_RE4R, Digimon=Crypt_Digimon, Sdew=Crypt_Sdew,
-    Nioh2=Crypt_Nioh2, Mhwi=Crypt_Mhwi
+    Nioh2=Crypt_Nioh2, Mhwi=Crypt_Mhwi, LaNoire=Crypt_LaNoire
 )

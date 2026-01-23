@@ -148,7 +148,7 @@ class CreateSave(commands.Cog):
                     emb.title = emb.title.format(displaysave=displaysave)
                     await msg.edit(embed=emb)
                     await asyncio.sleep(0.5)
-                    await extra_import(Crypto, title_id, gamesave)
+                    await extra_import(Crypto, title_id, gamesave, savename)
 
             emb = embc.copy()
             emb.description = emb.description.format(savename=savename)

@@ -521,7 +521,7 @@ async def replace_decrypted(
           mount_location: str,
           upload_individually: bool,
           local_download_path: str,
-          savepair_name: str,
+          savepairname: str,
           savesize: int,
           ignore_secondlayer_checks: bool
         ) -> list[str]:
@@ -538,7 +538,7 @@ async def replace_decrypted(
             cwd_here = "/".join(cwd_here)
 
             emb = embencupl.copy()
-            emb.title = emb.title.format(savename=savepair_name)
+            emb.title = emb.title.format(savename=savepairname)
             emb.description = emb.description.format(filename=file)
             await d_ctx.msg.edit(embed=emb)
 
@@ -547,7 +547,7 @@ async def replace_decrypted(
             await aiofiles.os.rename(attachment_path, new_path)
 
             if not ignore_secondlayer_checks:
-                await extra_import(Crypto, titleid, new_path)
+                await extra_import(Crypto, titleid, new_path, savepairname)
 
             task = [lambda: fInstance.replacer(cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
@@ -559,7 +559,7 @@ async def replace_decrypted(
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
             emb = embenc_out.copy()
-            emb.title = emb.title.format(savename=savepair_name)
+            emb.title = emb.title.format(savename=savepairname)
             emb.description = emb.description = chunk
             msg = await d_ctx.ctx.send(embed=emb)
             msg_container.append(msg)
@@ -568,7 +568,7 @@ async def replace_decrypted(
         SPLITVALUE = "SLASH"
 
         emb = embencinst.copy()
-        emb.title = emb.title.format(savename=savepair_name)
+        emb.title = emb.title.format(savename=savepairname)
         emb.description = emb.description.format(splitvalue=SPLITVALUE)
         await d_ctx.msg.edit(embed=emb)
         await asyncio.sleep(2)
@@ -616,7 +616,7 @@ async def replace_decrypted(
                             await aiofiles.os.rename(path, file_renamed)
 
                             if not ignore_secondlayer_checks:
-                                await extra_import(Crypto, titleid, file_renamed)
+                                await extra_import(Crypto, titleid, file_renamed, savepairname)
 
                             task = [lambda: fInstance.replacer(cwd_here, last_N)]
                             await task_handler(d_ctx, task, [])
