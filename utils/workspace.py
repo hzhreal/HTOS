@@ -59,9 +59,10 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
     if opt.ignore_startup:
         return
 
-    FOLDERS = [UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, 
-                DOWNLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED,
-                PNG_PATH, PARAM_PATH, KEYSTONE_PATH, STORED_SAVES_FOLDER]
+    FOLDERS = [
+        UPLOAD_ENCRYPTED, UPLOAD_DECRYPTED, DOWNLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED,
+        PNG_PATH, PARAM_PATH, KEYSTONE_PATH, STORED_SAVES_FOLDER
+    ]
 
     for path in FOLDERS:
         if not os.path.exists(path):

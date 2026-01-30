@@ -41,7 +41,7 @@ class Converter_Rstar:
                     platform = "ps4"
                     await file.seek(crypt.GTAV_PS_HEADER_OFFSET)
                     header = await file.read(len(crypt.GTAV_HEADER))
-                else: # pc if true or invalid 
+                else: # pc if true or invalid
                     platform = "pc"
                     header = await file.read(len(crypt.GTAV_HEADER))
 

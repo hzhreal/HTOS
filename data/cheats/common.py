@@ -8,7 +8,7 @@ class QuickCheats(CustomCrypto):
 
         while index < self.size:
             identifier_offset = await self.find(before_offset, index)
-            if identifier_offset == -1: 
+            if identifier_offset == -1:
                 break
 
             if after_offset is not None:
