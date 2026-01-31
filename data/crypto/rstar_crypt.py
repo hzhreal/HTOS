@@ -145,16 +145,17 @@ class Crypt_Rstar:
                     await cc.fix_date_chks()
 
             ptr = start_off
+            header_size = uint32(0x14, "big", const=True)
+            s = b"CHKS" + header_size.as_bytes
             while True:
                 jooat = cc.create_ctx_jooat()
-                chks_off = await cc.find(b"CHKS", ptr)
+                chks_off = await cc.find(s, ptr)
                 if chks_off == -1:
                     break
+                if chks_off + header_size.value > cc.size:
+                    raise CryptoError("Invalid save!")
 
-                await cc.r_stream.seek(chks_off + 4)
-                header_size = uint32(await cc.r_stream.read(4), "big")
-                if header_size.value != 0x14 or chks_off + 0x14 > cc.size:
-                    raise CryptoError("Invalid!")
+                await cc.r_stream.seek(chks_off + 8)
                 data_size = uint32(await cc.r_stream.read(4), "big")
 
                 # nullify data size and checksum
