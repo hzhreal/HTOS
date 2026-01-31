@@ -128,17 +128,24 @@ async def error_handling(
           mount_paths: list[str] | None,
           C1ftp: FTPps | None
         ) -> None:
+    # No exception should be raised from here
+
     emb = embe.copy()
     emb.description = emb.description.format(error=error)
     try:
         await ctx.edit(embed=emb)
     except discord.HTTPException as e:
         logger.info(f"Error while editing msg: {e}", exc_info=True)
+    except Exception as e:
+        logger.exception(f"Unexpected exception while editing msg: {e}")
 
-    if C1ftp is not None and error != CON_FAIL_MSG:
-        await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
-    else:
-        await cleanup_simple(workspace_folders)
+    try:
+        if C1ftp is not None and error != CON_FAIL_MSG:
+            await cleanup(C1ftp, workspace_folders, uploaded_file_paths, mount_paths)
+        else:
+            await cleanup_simple(workspace_folders)
+    except Exception as e:
+        logger.exception(f"Unhandled exception while cleaning up: {e}")
 
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
