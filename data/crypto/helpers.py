@@ -114,7 +114,10 @@ async def extra_decrypt(
     if title_id in GTAV_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+                try:
+                    await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GTAV", start_offset=Crypto.Rstar.GTAV_PS_HEADER_OFFSET))
@@ -123,7 +126,10 @@ async def extra_decrypt(
     elif title_id in RDR2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+                try:
+                    await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RDR2", start_offset=Crypto.Rstar.RDR2_PS_HEADER_OFFSET))
@@ -132,7 +138,10 @@ async def extra_decrypt(
     elif title_id in XENO2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Xeno2.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.Xeno2.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("XENO2"))
@@ -141,7 +150,10 @@ async def extra_decrypt(
     elif title_id in BL3_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.BL3.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.BL3.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("BL3"))
@@ -150,7 +162,10 @@ async def extra_decrypt(
     elif title_id in WONDERLANDS_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.BL3.check_dec_ps(destination_directory, True)
+                try:
+                    await Crypto.BL3.check_dec_ps(destination_directory, True)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TTWL"))
@@ -159,7 +174,10 @@ async def extra_decrypt(
     elif title_id in NDOG_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET)
+                try:
+                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET))
@@ -168,7 +186,10 @@ async def extra_decrypt(
     elif title_id in NDOG_COL_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+                try:
+                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_COL))
@@ -177,7 +198,10 @@ async def extra_decrypt(
     elif title_id in NDOG_TLOU2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+                try:
+                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
@@ -186,7 +210,10 @@ async def extra_decrypt(
     elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.MGSV.check_dec_ps(destination_directory, title_id)
+                try:
+                    await Crypto.MGSV.check_dec_ps(destination_directory, title_id)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV", title_id=title_id))
@@ -195,7 +222,10 @@ async def extra_decrypt(
     elif title_id in REV2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Rev2.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.Rev2.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("REV2"))
@@ -204,7 +234,10 @@ async def extra_decrypt(
     elif title_id in DL1_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.DL.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.DL.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL1"))
@@ -213,7 +246,10 @@ async def extra_decrypt(
     elif title_id in DL2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.DL.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.DL.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DL2"))
@@ -222,7 +258,10 @@ async def extra_decrypt(
     elif title_id in RGG_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.RGG.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.RGG.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RGG"))
@@ -231,7 +270,10 @@ async def extra_decrypt(
     elif title_id in DI1_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.DL.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.DL.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI1"))
@@ -240,7 +282,10 @@ async def extra_decrypt(
     elif title_id in DI2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.DI2.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.DI2.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DI2"))
@@ -249,7 +294,10 @@ async def extra_decrypt(
     elif title_id in NMS_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.NMS.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.NMS.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NMS"))
@@ -258,7 +306,10 @@ async def extra_decrypt(
     elif title_id in TERRARIA_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.TERRARIA.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.TERRARIA.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("TERRARIA"))
@@ -267,7 +318,10 @@ async def extra_decrypt(
     elif title_id in SMT5_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.SMT5.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.SMT5.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SMT5"))
@@ -276,7 +330,10 @@ async def extra_decrypt(
     elif title_id in RCUBE_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.RCube.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.RCube.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RCUBE"))
@@ -285,7 +342,10 @@ async def extra_decrypt(
     elif title_id in DSR_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.DSR.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.DSR.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("DSR"))
@@ -294,7 +354,10 @@ async def extra_decrypt(
     elif title_id in RE4R_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.RE4R.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.RE4R.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE4R"))
@@ -303,7 +366,10 @@ async def extra_decrypt(
     elif title_id in RE2R_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.RE4R.check_dec_ps(destination_directory, True)
+                try:
+                    await Crypto.RE4R.check_dec_ps(destination_directory, True)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("RE2R"))
@@ -312,7 +378,10 @@ async def extra_decrypt(
     elif title_id in SDEW_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Sdew.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.Sdew.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SDEW"))
@@ -321,7 +390,10 @@ async def extra_decrypt(
     elif title_id in NIOH2_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Nioh2.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.Nioh2.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NIOH2"))
@@ -330,7 +402,10 @@ async def extra_decrypt(
     elif title_id in MHWI_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.Mhwi.check_dec_ps(destination_directory)
+                try:
+                    await Crypto.Mhwi.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MHWI"))
@@ -339,7 +414,10 @@ async def extra_decrypt(
     elif title_id in LA_NOIRE_TITLEID:
         if choice is not None:
             if choice:
-                await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+                try:
+                    await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
             return
 
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("LANOIRE"))
