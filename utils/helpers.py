@@ -5,6 +5,7 @@ import aiohttp
 import aiofiles
 import aiofiles.os
 import errno
+import pathlib
 
 from discord.ext import pages
 from dataclasses import dataclass
@@ -181,9 +182,17 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
     if filename is None:
         _, ext = os.path.splitext(attachment.filename)
         basename = attachment.title + ext if attachment.title is not None else attachment.filename
+        basename = os.path.basename(basename)
         filepath = os.path.join(folderpath, basename)
     else:
+        assert os.path.basename(filename) == filename
         filepath = os.path.join(folderpath, filename)
+
+    p = pathlib.Path(filepath).resolve()
+    fp = pathlib.Path(folderpath).resolve()
+    if not p.is_relative_to(fp):
+        raise FileError("Invalid file!")
+
     try:
         async with aiofiles.open(filepath, "wb") as out:
             async for chunk in attachment.read_chunked(chunksize=GENERAL_CHUNKSIZE):
@@ -385,7 +394,7 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
 
     return file_path
 
-async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
+async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
 
     if len(message.attachments) > max_files:
@@ -404,26 +413,36 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
         await asyncio.sleep(1)
 
         i = 1
+        sl = pathlib.Path(save_location).resolve()
         for attachment in valid_attachments:
-            rel_file_path = attachment.filename.split(splitvalue)
+            _, ext = os.path.splitext(attachment.filename)
+            basename = attachment.title + ext if attachment.title is not None else attachment.filename
+            basename = os.path.basename(basename)
+
+            rel_file_path = basename.split(splitvalue)
             rel_file_path = "/".join(rel_file_path)
             rel_file_path = os.path.normpath(rel_file_path)
             path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_file_path + "/")
 
             file_name = os.path.basename(rel_file_path)
+            if not file_name:
+                raise FileError("Invalid file detected!")
             if len(file_name) > MAX_FILENAME_LEN:
                 raise FileError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
 
             elif path_len > MAX_PATH_LEN:
                 raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
 
-            dir_path = os.path.join(saveLocation, os.path.dirname(rel_file_path))
+            dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
+            if not pathlib.Path(dir_path).resolve().is_relative_to(sl):
+                raise FileError("Invalid file detected!")
+
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
-            task = [lambda: download_attachment(attachment, dir_path)]
+            task = [lambda: download_attachment(attachment, dir_path, file_name)]
             full_path = (await task_handler(d_ctx, task, []))[0]
 
             emb = embuplSuccess.copy()
-            emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)  
+            emb.description = emb.description.format(filename=rel_file_path, i=i, filecount=filecount)
             await d_ctx.msg.edit(embed=emb)
 
             uploaded_file_paths.append(full_path)
@@ -439,9 +458,9 @@ async def upload2_special(d_ctx: DiscordContext, saveLocation: str, max_files: i
             google_drive_link = message.content
             await message.delete()
             folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id: 
+            if not folder_id:
                 raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, saveLocation, folder_id, max_files, savesize)]
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
             await d_ctx.msg.edit(embed=cancel_notify_emb)
             await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0][0]
@@ -539,8 +558,8 @@ async def replace_decrypted(
     if upload_individually:
         total_count = 0
         for file in files:
-            fullPath = mount_location + "/" + file
-            cwd_here = fullPath.split("/")
+            full_path = mount_location + "/" + file
+            cwd_here = full_path.split("/")
             last_N = cwd_here.pop(len(cwd_here) - 1)
             cwd_here = "/".join(cwd_here)
 
@@ -603,7 +622,7 @@ async def replace_decrypted(
             for path in uploaded_file_paths:
                 file = os.path.basename(path)
                 file_constructed = file.split(SPLITVALUE)
-                if file_constructed[0] == "": 
+                if file_constructed[0] == "":
                     file_constructed = file_constructed[1:]
                 file_constructed = "/".join(file_constructed)
 
