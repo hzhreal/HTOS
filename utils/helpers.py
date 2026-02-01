@@ -436,6 +436,8 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
             dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
             if not pathlib.Path(dir_path).resolve().is_relative_to(sl):
                 raise FileError("Invalid file detected!")
+            if await aiofiles.os.path.exists(os.path.join(dir_path, file_name)):
+                raise FileError("Duplicate file detected!")
 
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             task = [lambda: download_attachment(attachment, dir_path, file_name)]
