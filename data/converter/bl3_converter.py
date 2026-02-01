@@ -31,7 +31,11 @@ class BL3_conv_button(discord.ui.View):
     async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
         self.disable_all_items()
         emb = embErrconv.copy()
-        emb.description = emb.description.format(error=error)
+        if isinstance(error, ConverterError):
+            e = error
+        else:
+            e = "Unexpected error!"
+        emb.description = emb.description.format(error=e)
         self.helper.embTimeout = emb
         await self.helper.handle_timeout(self.ctx)
         logger.info(f"{error} - {self.ctx.user.name}")

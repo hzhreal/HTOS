@@ -56,7 +56,11 @@ class TimeoutHelper:
     async def handle_timeout(self, ctx: discord.ApplicationContext | discord.Message) -> None:
         await asyncio.sleep(2)
         if not self.done:
-            await ctx.edit(embed=self.embTimeout, view=None)
+            try:
+                await ctx.edit(embed=self.embTimeout, view=None)
+            except discord.HTTPException:
+                logger.info(f"Error while editing msg: {e}", exc_info=True)
+
             await asyncio.sleep(4) # make sure user is aware of msg
             self.done = True
 

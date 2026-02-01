@@ -49,7 +49,11 @@ async def extra_decrypt(
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             emb = embErrdec.copy()
-            emb.description = emb.description.format(error=error)
+            if isinstance(error, CryptoError):
+                e = error
+            else:
+                e = "Unexpected error!"
+            emb.description = emb.description.format(error=e)
             helper.embTimeout = emb
             await helper.handle_timeout(d_ctx.msg)
             logger.info(f"{error} - {d_ctx.ctx.user.name}")

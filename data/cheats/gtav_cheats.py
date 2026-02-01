@@ -13,7 +13,7 @@ from typing import Literal
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
-from utils.constants import OTHER_TIMEOUT, logger
+from utils.constants import OTHER_TIMEOUT, BASE_ERROR_MSG, logger
 from utils.embeds import embDone_G, embchErr, embchgtav
 from utils.type_helpers import uint32
 
@@ -94,7 +94,7 @@ class Cheats_GTAV:
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             emb = embchErr.copy()
-            emb.description = emb.description.format(error=error)
+            emb.description = emb.description.format(error="Unexpected error!")
             self.helper.embTimeout = emb
             await self.helper.handle_timeout(self.ctx)
             logger.info(f"{error} - {self.ctx.user.name}")

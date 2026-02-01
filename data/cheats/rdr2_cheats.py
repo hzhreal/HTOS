@@ -78,7 +78,7 @@ class Cheats_RDR2:
         async def on_error(self, error: Exception, _: Item, __: discord.Interaction) -> None:
             self.disable_all_items()
             emb = embchErr.copy()
-            emb.description = emb.description.format(error=error)
+            emb.description = emb.description.format(error="Unexpected error!")
             self.helper.embTimeout = emb
             await self.helper.handle_timeout(self.ctx)
             logger.info(f"{error} - {self.ctx.user.name}")
@@ -115,7 +115,7 @@ class Cheats_RDR2:
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             try:
                 await crypt.decrypt_file(filepath, start_offset)
-            except (ValueError, IOError, IndexError): 
+            except (ValueError, IOError, IndexError):
                 raise QuickCheatsError("File not supported!")
         return platform
 
