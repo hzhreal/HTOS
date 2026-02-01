@@ -112,21 +112,18 @@ class Cheats_GTAV:
 
     @staticmethod
     async def init_savefile(filepath: str) -> str | None:
-        try:
-            async with aiofiles.open(filepath, "rb") as file:
-                await file.seek(crypt.GTAV_PC_HEADER_OFFSET)
-                check_bytes = await file.read(4)
+        async with aiofiles.open(filepath, "rb") as file:
+            await file.seek(crypt.GTAV_PC_HEADER_OFFSET)
+            check_bytes = await file.read(4)
 
-                if check_bytes == b"\x00\x00\x00\x00": # ps4 if true
-                    platform = "ps4"
-                    await file.seek(crypt.GTAV_PS_HEADER_OFFSET)
-                    header = await file.read(len(crypt.GTAV_HEADER))
+            if check_bytes == b"\x00\x00\x00\x00": # ps4 if true
+                platform = "ps4"
+                await file.seek(crypt.GTAV_PS_HEADER_OFFSET)
+                header = await file.read(len(crypt.GTAV_HEADER))
 
-                else: # pc if true or invalid
-                    platform = "pc"
-                    header = await file.read(len(crypt.GTAV_HEADER))
-        except (ValueError, IOError, IndexError):
-            raise QuickCheatsError("File not supported!")
+            else: # pc if true or invalid
+                platform = "pc"
+                header = await file.read(len(crypt.GTAV_HEADER))
 
         encrypted == header != crypt.GTAV_HEADER
 
@@ -134,9 +131,9 @@ class Cheats_GTAV:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
             try:
                 await crypt.decrypt_file(filepath, start_offset)
-            except (ValueError, IOError, IndexError):
+            except (ValueError, IOError, IndexError, CryptoError):
                 raise QuickCheatsError("File not supported!")
-        return platform 
+        return platform
 
     @staticmethod
     async def change_money(filepath: str, money: int, character: str, platform: Literal["ps4", "pc"]) -> None:
@@ -156,7 +153,7 @@ class Cheats_GTAV:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
             await crypt.encrypt_file(filepath, start_offset)
             await crypt.decrypt_file(filepath, start_offset) 
-        except (ValueError, IOError, IndexError):
+        except (ValueError, IOError, IndexError, CryptoError):
             raise QuickCheatsError("File not supported!")
 
     @staticmethod
@@ -169,7 +166,7 @@ class Cheats_GTAV:
                     await qc.r_stream.seek(money_offset)
                     money = uint32(await qc.r_stream.read(4), "big") 
                     values[key + "_cash"] = money.value
-        except (ValueError, IOError, IndexError):
+        except (ValueError, IOError, IndexError, CryptoError):
             raise QuickCheatsError("File not supported!")
 
         values["Platform"] = platform

@@ -32,7 +32,9 @@ class Convert(commands.Cog):
     async def convert(
               self,
               ctx: discord.ApplicationContext,
-              game: Option(str, choices=["GTA V", "RDR 2", "BL 3", "TTWL"], description="Choose what game the savefile belongs to."),
+              game: Option(str, choices=[
+                  "GTA V", "RDR 2", "BL 3", "TTWL", "XENO 2"
+              ], description="Choose what game the savefile belongs to."),
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
 
@@ -102,6 +104,9 @@ class Convert(commands.Cog):
                         case "TTWL":
                             helper = TimeoutHelper(embTimedOut)
                             result = await Converter.BL3.convert_file(ctx, helper, savegame, True, emb)
+
+                        case "XENO 2":
+                            result = await Converter.Xeno2.convert_file(savegame)
 
                 except ConverterError as e:
                     await error_handling(ctx, e, workspace_folders, None, None, None)

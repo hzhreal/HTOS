@@ -3,6 +3,7 @@ from data.cheats.rdr2_cheats import Cheats_RDR2
 
 from data.converter.rstar_converter import Converter_Rstar
 from data.converter.bl3_converter import Converter_BL3
+from data.converter.xeno2_converter import Converter_Xeno2
 
 from data.crypto.rstar_crypt import Crypt_Rstar
 from data.crypto.rev2_crypt import Crypt_Rev2
@@ -30,7 +31,7 @@ from types import SimpleNamespace
 
 # NAMESPACES
 Cheats = SimpleNamespace(GTAV=Cheats_GTAV, RDR2=Cheats_RDR2)
-Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3)
+Converter = SimpleNamespace(Rstar=Converter_Rstar, BL3=Converter_BL3, Xeno2=Converter_Xeno2)
 Crypto = SimpleNamespace(
     BL3=Crypt_BL3, Rstar=Crypt_Rstar, Xeno2=Crypt_Xeno2,
     Ndog=Crypt_Ndog, MGSV=Crypt_MGSV, Rev2=Crypt_Rev2,

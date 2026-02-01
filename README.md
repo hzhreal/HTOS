@@ -57,7 +57,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Uncharted 4                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Lost Legacy               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Nathan Drake Collection   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Xenoverse 2                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Xenoverse 2                              | :white_check_mark:      | :large_blue_circle:                 | :black_circle:           | :white_check_mark:                 |
 
 > [!NOTE]
 > Resigning and re-regioning will mostly work with all games.
@@ -83,7 +83,7 @@ Nioh 2: Checksum fix is for version 01.27 only.
 No Man's Sky: Only `savedata.hg` is implemented.  
 Red Dead Redemption 2: Only money quick cheat is implemented.  
 Terraria: Only `.plr` and some `.wld` are implemented.  
-
+Xenoverse 2: The conversion will only make the savegame work on the PC save editor.  
 
 :white_circle:: Assumed to not need an implementation, may or may not work.  
 

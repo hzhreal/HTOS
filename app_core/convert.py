@@ -28,7 +28,9 @@ class Convert(TabBase):
         with ui.row().style("align-items: center"):
             self.output_button = ui.button("Select output folder", on_click=self.on_output)
             self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
-        self.game_dropdown = ui.select(["GTA V", "RDR 2", "BL 3", "TTWL"])
+        self.game_dropdown = ui.select([
+            "GTA V", "RDR 2", "BL 3", "TTWL", "XENO 2"
+        ])
         self.start_button = ui.button("Start", on_click=self.on_start)
         self.logger = Logger(self.settings)
 
@@ -96,6 +98,9 @@ class Convert(TabBase):
                             result = await Converter.BL3.convert_file(None, None, savegame, True, None)
                             if not result:
                                 result = await self.special_case_wrapper(savegame)
+
+                        case "XENO 2":
+                            result = await Converter.Xeno2.convert_file(savegame)
 
                 except ConverterError as e:
                     await cleanup_simple(workspace_folders)

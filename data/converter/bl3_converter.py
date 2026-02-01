@@ -137,5 +137,5 @@ class Converter_BL3:
     def obtain_ret_val(platform: str) -> str:
         if platform == "ps4":
             return "CONVERTED: PS4 -> PC"
-        else: 
+        else:
             return "CONVERTED: PC -> PS4"
