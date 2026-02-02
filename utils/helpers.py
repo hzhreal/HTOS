@@ -477,7 +477,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
     return uploaded_file_paths
 
 async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
-    """Used to obtain an account ID, either through converting from username, obtaining from db, or manually. Utilizes the PSN API or a website doing it for us."""
+    """Used to obtain an account ID, either through converting from username (utilizes PSN API), obtaining from db, or manually."""
     async def on_fail(msg: str) -> str:
         e = emb8.copy()
         e.description = e.description.format(msg=msg)
