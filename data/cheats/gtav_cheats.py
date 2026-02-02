@@ -13,7 +13,7 @@ from typing import Literal
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
-from utils.constants import OTHER_TIMEOUT, BASE_ERROR_MSG, logger
+from utils.constants import OTHER_TIMEOUT, logger
 from utils.embeds import embDone_G, embchErr, embchgtav
 from utils.type_helpers import uint32
 
