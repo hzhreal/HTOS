@@ -169,7 +169,7 @@ class CreateSave(commands.Cog):
                 lambda: C1ftp.make1(location_to_scesys),
                 # dump, and begin uploading
                 lambda: C1socket.socket_dump(mount_location_new, temp_savename),
-                lambda: C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, location_to_scesys),
+                lambda: C1ftp.upload_scesys_contents(msg, uploaded_file_paths_sys, location_to_scesys),
             ]
             await task_handler(d_ctx, tasks, [])
             shutil.rmtree(scesys_local)

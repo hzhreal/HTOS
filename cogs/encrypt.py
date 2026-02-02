@@ -115,7 +115,7 @@ class Encrypt(commands.Cog):
                     await task_handler(d_ctx, tasks, [emb])
 
                     files = await C1ftp.list_files(batch.mount_location)
-                    if len(files) == 0: 
+                    if len(files) == 0:
                         raise FileError("Could not list any decrypted saves!")
 
                     completed = await replace_decrypted(
@@ -141,7 +141,7 @@ class Encrypt(commands.Cog):
                             ignore_filename_check=False,
                             savesize=pfs_size)
                         )[0]
-                        await C1ftp.upload_scesysContents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
+                        await C1ftp.upload_scesys_contents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
 
                     tasks = [
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO]),

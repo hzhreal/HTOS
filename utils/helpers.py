@@ -31,7 +31,7 @@ from utils.embeds import (
 )
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError, OrbisError
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
-from utils.extras import zipfiles
+from utils.extras import zipfiles, generate_random_string
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
 
@@ -576,12 +576,12 @@ async def replace_decrypted(
 
             attachment_path = await upload1(d_ctx, local_download_path)
             new_path = os.path.join(local_download_path, last_N)
-            await aiofiles.os.rename(attachment_path, new_path)
+            await aiofiles.os.replace(attachment_path, new_path) # use replace to prevent collision
 
             if not ignore_secondlayer_checks:
                 await extra_import(Crypto, titleid, new_path, savepairname)
 
-            task = [lambda: fInstance.replacer(cwd_here, last_N)]
+            task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
             total_count += await aiofiles.os.path.getsize(new_path)
@@ -644,15 +644,21 @@ async def replace_decrypted(
                             cwd_here = "/".join(cwd_here)
                             cwd_here = mount_location + "/" + cwd_here
 
-                            file_renamed = os.path.join(local_download_path, last_N)
-                            await aiofiles.os.rename(path, file_renamed)
+                            new_path = os.path.join(local_download_path, last_N)
+                            # prevent collision
+                            if await aiofiles.os.path.exists(new_path):
+                                new_folder = os.path.join(local_download_path, generate_random_string(RANDOMSTRING_LENGTH))
+                                await aiofiles.os.mkdir(new_folder)
+                                new_path = os.path.join(new_folder, last_N)
+                            await aiofiles.os.rename(path, new_path)
 
                             if not ignore_secondlayer_checks:
-                                await extra_import(Crypto, titleid, file_renamed, savepairname)
+                                await extra_import(Crypto, titleid, new_path, savepairname)
 
-                            task = [lambda: fInstance.replacer(cwd_here, last_N)]
+                            task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
                             await task_handler(d_ctx, task, [])
                             completed.append(last_N)
+                            await aiofiles.os.remove(new_path) # remove to decrease chance of collison
         else:
             task = [lambda: fInstance.upload_folder(mount_location, local_download_path)]
             await task_handler(d_ctx, task, [])

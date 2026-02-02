@@ -65,32 +65,31 @@ class FTPps:
         await ftp.quit()
         ftp.close()
 
-    async def download_stream(self, ftp: aioftp.Client, file_to_download: str, recieve_path: str) -> None:
+    async def download_stream(self, ftp: aioftp.Client, file_to_download: str, receive_path: str) -> None:
         # Download the file
         async with ftp.download_stream(file_to_download) as stream:
-            async with aiofiles.open(recieve_path, "wb") as f:
+            async with aiofiles.open(receive_path, "wb") as f:
                 async for chunk in stream.iter_by_block(self.CHUNKSIZE):
                     await f.write(chunk)
-        logger.info(f"Downloaded {file_to_download} to {recieve_path}")
+        logger.info(f"Downloaded {file_to_download} to {receive_path}")
 
-    async def upload_stream(self, ftp: aioftp.Client, file_to_upload: str, recieve_path: str) -> None:
+    async def upload_stream(self, ftp: aioftp.Client, file_to_upload: str, receive_path: str) -> None:
         # Upload the file
         async with aiofiles.open(file_to_upload, "rb") as f:
-            stream = await ftp.upload_stream(recieve_path)
+            stream = await ftp.upload_stream(receive_path)
             while True:
                 chunk = await f.read(self.CHUNKSIZE)
                 if not chunk:
                     break
                 await stream.write(chunk)
             await stream.finish()
-        logger.info(f"Uploaded {file_to_upload} to {recieve_path}")
+        logger.info(f"Uploaded {file_to_upload} to {receive_path}")
 
-    async def replacer(self, mount_location: str, replaceName: str) -> None:
+    async def replacer(self, local_filepath: str, remote_folderpath: str, remote_filename: str) -> None:
         try:
             async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
-                await ftp.change_directory(mount_location)
-                local_file_path_replace = os.path.join(self.upload_decrypted_path, replaceName)
-                await self.upload_stream(ftp, local_file_path_replace, replaceName)
+                await ftp.change_directory(remote_folderpath)
+                await self.upload_stream(ftp, local_filepath, remote_filename)
 
         except AIOFTPException as e:
             logger.exception(f"[FTP ERROR]: {e}")
@@ -275,12 +274,12 @@ class FTPps:
             logger.error("Failed to connect to FTP!")
             raise FTPError("FTP ERROR!")
 
-    async def upload_scesysContents(self, ctx: discord.ApplicationContext | discord.Message, filepaths: list[str], sce_sysPath: str) -> None:
+    async def upload_scesys_contents(self, ctx: discord.ApplicationContext | discord.Message, filepaths: list[str], sce_sys_path: str) -> None:
         n = len(filepaths)
         i = 1
         try:
             async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
-                await ftp.change_directory(sce_sysPath)
+                await ftp.change_directory(sce_sys_path)
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
                     emb = embuplSuccess.copy()
