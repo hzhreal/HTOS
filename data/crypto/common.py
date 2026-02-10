@@ -8,6 +8,7 @@ import aiofiles.os
 import crc32c
 import mmh3
 import zlib
+import anycrc
 from types import TracebackType
 
 from data.crypto.exceptions import CryptoError
@@ -40,6 +41,7 @@ class CustomCrypto:
     mmh3 = mmh3
     hashlib = hashlib
     hmac = hmac
+    anycrc = anycrc
 
     def __init__(
         self,
@@ -142,7 +144,7 @@ class CustomCrypto:
 
     async def trim_trailing_bytes(self, off: int = -1, byte: uint8 = uint8(0, const=True), min_required: int = 1) -> None:
         """
-        Start from off and move backward, stop when a byte that differs from the given has been reached. 
+        Start from off and move backward, stop when a byte that differs from the given has been reached.
         Truncate data from the occurence offset if the minimum required amount of bytes moved backward has been reached.
         """
         if off < 0:
@@ -252,7 +254,11 @@ class CustomCrypto:
 
         u32_array = []
         for i in range(0, len(self.chunk), 4):
-            u32 = uint32(self.chunk[i:i + 4], endianness=byteorder)
+            n = self.chunk[i:i + 4]
+            if len(n) != 4:
+                raise CryptoError("Invalid!")
+
+            u32 = uint32(n, endianness=byteorder)
             u32_array.append(u32)
         self.chunk = u32_array
 
@@ -458,6 +464,19 @@ class CustomCrypto:
         call = crc32c.crc32c
         return self._create_ctx(call, seed)
 
+    def create_ctx_crc32_any(
+        self,
+        poly: int,
+        init: int,
+        refin: bool,
+        refout: bool,
+        xorout: int,
+        seed: uint32 = uint32(0, "little", const=True),
+    ) -> int:
+        seed = uint32(seed.value, seed.ENDIANNESS)
+        call = anycrc.CRC(width=32, poly=poly, init=init, refin=refin, refout=refout, xorout=xorout).calc
+        return self._create_ctx(call, seed)
+
     def create_ctx_mmh3_u32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
         seed = uint32(seed.value, seed.ENDIANNESS)
         update_obj = mmh3.mmh3_32(seed=seed.value)
@@ -543,6 +562,15 @@ class CustomCrypto:
             ((val & 0x00_00_FF_00) << 8)  |
             ((val & 0x00_00_00_FF) << 24)
         ) & 0xFF_FF_FF_FF
+
+    @staticmethod
+    def reverse_32_bits(n: int) -> int:
+        """Reverse the bits of a 32-bit unsigned integer."""
+        result = 0
+        for i in range(32):
+            result |= (n & 1) << (31 - i)
+            n >>= 1
+        return result
 
     @staticmethod
     async def obtain_files(path: str, exclude: list[str] | None = None, files: list[str] | None = None) -> list[str]:

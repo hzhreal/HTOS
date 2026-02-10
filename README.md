@@ -19,45 +19,51 @@ A Discord bot and app to manage external PS4 saves using a jailbroken PS4.
 ## Table of games with extra implementation
 Certain games need to have an extra implementation for it to work out of the box.  
 
-| Game                                     | Second layer            | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support            |
-| ---------------------------------------- | ----------------------- | ----------------------------------- | ------------------------ | -----------------------------------|
-| Borderlands 3                            | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
-| Dark Souls: Remastered                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dead Island 1                            | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dead Island 2                            | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Digimon World: Next Order                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dying Light 1                            | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dying Light 2                            | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Grand Theft Auto V                       | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
-| L.A. Noire                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Like a Dragon: Ishin                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Metal Gear Solid V: Ground Zeroes        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| Metal Gear Solid V: The Phantom Pain     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| Minecraft: Legacy Edition                | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| Monster Hunter World: Iceborne           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Nioh 2                                   | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| No Man's Sky                             | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Raspberry Cube                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Red Dead Redemption 2                    | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
-| Resident Evil 2 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil 3 Remake                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil 4 Remake                   | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil 7: Biohazard               | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil: Resistance                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil: Revelations 2             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Resident Evil Village                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Shin Megami Tensei 5                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Stardew Valley                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Terraria                                 | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| The Last of Us                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| The Last of Us Part II                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Tiny Tina's Wonderlands                  | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
-| Uncharted 2: Remastered                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Uncharted 3: Remastered                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Uncharted 4                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Uncharted: The Lost Legacy               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Uncharted: The Nathan Drake Collection   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Xenoverse 2                              | :white_check_mark:      | :large_blue_circle:                 | :black_circle:           | :white_check_mark:                 |
+| Game                                                | Second layer            | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support            |
+| --------------------------------------------------- | ----------------------- | ----------------------------------- | ------------------------ | -----------------------------------|
+| Borderlands 3                                       | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dead Island 1                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dead Island 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Digimon World: Next Order                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dying Light 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dying Light 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
+| L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Like a Dragon: Ishin                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Metal Gear Solid V: Ground Zeroes                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Metal Gear Solid V: The Phantom Pain                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Minecraft: Legacy Edition                           | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Nioh 2                                              | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| No Man's Sky                                        | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Raspberry Cube                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Red Dead Redemption 2                               | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
+| Resident Evil 2 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 3 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 4 Remake                              | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 7: Biohazard                          | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil: Resistance                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil: Revelations 2                        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil Village                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Shin Megami Tensei 5                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Stardew Valley                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Terraria                                            | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Last of Us                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Last of Us Part II                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails beyond the Horizon     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails from Zero              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails of Cold Steel IV       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails through Daybreak       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails through Daybreak II    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| The Legend of Heroes: Trails to Azure               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Tiny Tina's Wonderlands                             | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Uncharted 2: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Uncharted 3: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Uncharted 4                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Uncharted: The Lost Legacy                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Uncharted: The Nathan Drake Collection              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Xenoverse 2                                         | :white_check_mark:      | :large_blue_circle:                 | :black_circle:           | :white_check_mark:                 |
 
 > [!NOTE]
 > Resigning and re-regioning will mostly work with all games.

@@ -2,6 +2,7 @@ import aiofiles
 from data.converter.exceptions import ConverterError
 from data.crypto.common import CustomCrypto
 from data.crypto.xeno2_crypt import Crypt_Xeno2 as crypt
+from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32
 
 class Converter_Xeno2:
@@ -140,6 +141,6 @@ class Converter_Xeno2:
                     while await cc.read():
                         await cc.w_stream.write(cc.chunk)
 
-        except (ValueError, IOError, IndexError):
+        except (ValueError, IOError, IndexError, CryptoError):
             raise ConverterError("File not supported!")
         return ret

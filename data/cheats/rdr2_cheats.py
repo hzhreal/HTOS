@@ -11,6 +11,7 @@ from discord.ui.item import Item
 from typing import Literal
 
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
+from data.crypto.exceptions import CryptoError
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
 from utils.constants import OTHER_TIMEOUT, logger
@@ -115,7 +116,7 @@ class Cheats_RDR2:
             start_offset = crypt.RDR2_PS_HEADER_OFFSET if platform == "ps4" else crypt.RDR2_PC_HEADER_OFFSET
             try:
                 await crypt.decrypt_file(filepath, start_offset)
-            except (ValueError, IOError, IndexError):
+            except (ValueError, IOError, IndexError, CryptoError):
                 raise QuickCheatsError("File not supported!")
         return platform
 

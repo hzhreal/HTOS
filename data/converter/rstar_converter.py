@@ -4,6 +4,7 @@ from data.converter.common import Converter
 from data.converter.exceptions import ConverterError
 from data.crypto.common import CustomCrypto
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
+from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32
 
 class Converter_Rstar:

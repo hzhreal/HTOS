@@ -11,6 +11,7 @@ from discord.ui.item import Item
 from typing import Literal
 
 from data.crypto.rstar_crypt import Crypt_Rstar as crypt
+from data.crypto.exceptions import CryptoError
 from data.cheats.common import QuickCheats
 from data.cheats.exceptions import QuickCheatsError
 from utils.constants import OTHER_TIMEOUT, logger

@@ -13,7 +13,8 @@ from utils.constants import (
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
     DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
-    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID
+    DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
+    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 
@@ -105,6 +106,8 @@ async def extra_decrypt(
                         await Crypto.Mhwi.check_dec_ps(destination_directory)
                     case "LANOIRE":
                         await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+                    case "LOHTRAILSCS4":
+                        await Crypto.LoHTrails.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -427,6 +430,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("LANOIRE"))
         await helper.await_done()
 
+    elif title_id in LOH_TRAILS_CS4_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.LoHTrails.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("LOHTRAILSCS4"))
+        await helper.await_done()
+
 async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -512,6 +527,9 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, sa
 
         elif title_id in LA_NOIRE_TITLEID:
             await Crypto.LaNoire.check_enc_ps(filepath, savepairname)
+
+        elif title_id in LOH_TRAILS_CS4_TITLEID or title_id in LOH_TRAILS_DAYBREAK_TITLEID or title_id in LOH_TRAILS_ZERO_AZURE:
+            await Crypto.LoHTrails.check_enc_ps(filepath, title_id)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
