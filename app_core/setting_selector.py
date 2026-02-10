@@ -26,7 +26,7 @@ class SettingSelector:
                 case SettingObject.FOLDERSELECT:
                     with ui.row().style("align-items: center"):
                         ui.button(v.desc, on_click=partial(self.folder_dialog, v))
-                        self.widgets[v.key] = ui.input(value=v.value, on_change=lambda e, v=v: v.set_value_safe(e.value)).props("clearable")
+                        self.widgets[v.key] = ui.input(value=v.value, on_change=lambda e, v=v: v.set_value(e.value)).props("clearable")
         ui.button("Save", on_click=self.save)
 
     def save(self) -> None:

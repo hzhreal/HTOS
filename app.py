@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import argparse
-from nicegui import ui
+from nicegui import ui, app
 from app_core import models
 from app_core.profile_selector import ProfileSelector
 from app_core.setting_selector import SettingSelector
@@ -27,8 +27,9 @@ async def initialize_tabs() -> None:
     profiles = models.Profiles(APP_PROFILES_PATH)
     settings = models.Settings(APP_SETTINGS_PATH)
 
-    with ui.header().classes("h-12 justify-center"):
-        ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;")
+    with ui.header().classes("h-12"):
+        ui.button("X", on_click=app.shutdown, color="red").props("dense flat round").classes("-translate-y-2")
+        ui.label(f"HTOS {VERSION} ({status})").style("font-size: 15px; font-weight: bold;").classes("absolute-center")
 
     with ui.tabs().classes("w-full") as tabs:
         tab_container = [
@@ -57,7 +58,4 @@ if __name__ in {"__main__", "__mp_main__"}:
         workspace_opt.ignore_startup = True
     startup(workspace_opt, lite=True)
 
-    try:
-        ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))
-    except KeyboardInterrupt:
-        pass
+    ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))

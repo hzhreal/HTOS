@@ -198,11 +198,8 @@ class SettingKey:
     def restore(self) -> None:
         self.value = self.default_value
 
-    def set_value_safe(self, value: Any) -> None:
+    def set_value(self, value: Any) -> None:
         self.value = value
-
-    def set_value_unsafe(self, value: Any) -> None:
-        self._value = value 
 
     @property
     def value(self) -> Any:
