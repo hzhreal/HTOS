@@ -251,14 +251,13 @@ class CustomCrypto:
 
     def bytes_to_u32array(self, byteorder: Literal["little", "big"]) -> None:
         self._prepare_write()
+        if not self._trim_chunk(4):
+            self.chunk = []
+            return
 
         u32_array = []
         for i in range(0, len(self.chunk), 4):
-            n = self.chunk[i:i + 4]
-            if len(n) != 4:
-                raise CryptoError("Invalid!")
-
-            u32 = uint32(n, endianness=byteorder)
+            u32 = uint32(self.chunk[i:i + 4], endianness=byteorder)
             u32_array.append(u32)
         self.chunk = u32_array
 
@@ -273,9 +272,13 @@ class CustomCrypto:
     def ES32(self, chunk: bytearray | None = None) -> None:
         if chunk is None:
             self._prepare_write()
+            if not self._trim_chunk(4):
+                return
             c = self.chunk
         else:
             assert len(chunk) <= self.CHUNKSIZE
+            if len(chunk) % 4 != 0:
+                raise CryptoError("Invalid")
             c = chunk
 
         for i in range(0, len(c), 4):
@@ -301,6 +304,25 @@ class CustomCrypto:
         b = id(object()) & 0xFF
         return bytes([b] * length)
 
+    def _trim_chunk(self, blocksize: int) -> bool:
+        """
+        Internal method to make `chunk` a multiple of `blocksize`.
+        If chunksize is less than blocksize, `False` is returned.
+        If chunk is trimmed or does not need to be trimmed, `True` is returned.
+        This can be used to prepare `chunk` before processing it in an algorithm that operates on blocks.
+        Then if there is some remainder that cannot be processed, the default behavior will be to ignore it.
+        """
+        assert blocksize > 0
+
+        remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
+        if self.chunk == remainder:
+            return False
+        r = len(remainder)
+        if r > 0:
+            del self.chunk[-r:]
+            self.chunk_end -= r
+        return True
+
     def encrypt(self, ctx: int) -> None:
         self._prepare_write()
         ctx = self._get_ctx(ctx)
@@ -311,14 +333,8 @@ class CustomCrypto:
         if blocksize == 0:
             ctx.obj.encrypt(self.chunk, self.chunk)
             return
-
-        remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
-        if self.chunk == remainder:
+        if not self._trim_chunk(blocksize):
             return
-        r = len(remainder)
-        if r > 0:
-            del self.chunk[-r:]
-            self.chunk_end -= r
 
         ctx.obj.encrypt(self.chunk, self.chunk)
 
@@ -332,14 +348,8 @@ class CustomCrypto:
         if blocksize == 0:
             ctx.obj.decrypt(self.chunk, self.chunk)
             return
-
-        remainder = self.chunk[len(self.chunk) - (len(self.chunk) % blocksize):]
-        if self.chunk == remainder:
+        if not self._trim_chunk(blocksize):
             return
-        r = len(remainder)
-        if r > 0:
-            del self.chunk[-r:]
-            self.chunk_end -= r
 
         ctx.obj.decrypt(self.chunk, self.chunk)
 
