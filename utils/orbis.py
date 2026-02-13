@@ -632,6 +632,9 @@ async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> No
         await pfs.seek(0x38)
         data_block_count = struct.unpack("<Q", await pfs.read(0x08))[0]
 
+    if basic_block_size != 0x8_000:
+        raise OrbisError("Unsupported pfs block size!")
+
     expected_file_size = basic_block_size * data_block_count
     actual_file_size = await aiofiles.os.path.getsize(pfs_path)
 
