@@ -111,6 +111,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [AxrzZ](https://github.com/AxrzZ)
 * [Batang](https://github.com/B-a-t-a-n-g)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
+* [Bawsdeep](https://github.com/bawsdeep): [xenoverse2-save-converter](https://github.com/bawsdeep/xenoverse2-save-converter)
 * [Bawsdeep](https://github.com/bawsdeep): [xvtoolkit](https://github.com/bawsdeep/xvtoolkit)
 * [Brotherguns5624](https://github.com/Brotherguns5624)
 * [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
