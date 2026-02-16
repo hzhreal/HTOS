@@ -52,8 +52,8 @@ Some things to keep in mind are
 * Add the email of the Google Drive account you want to use as a tester.
 * On the Google Cloud dashboard, make sure to enable the Google Drive API.
 
-Every file uploaded by the drive will have a lifetime of maximum 24 hours before deletion. The age of every file will be checked every hour.  
-If the drive runs out of space, then every single file owned by the drive will be deleted. Commands that may use the drive will become unavailable until after the cleanup.  
+Every file uploaded by the bot will have a lifetime of maximum 24 hours before deletion. The age of every file will be checked every hour.  
+If the drive runs out of space, then every single file owned by the bot will be deleted. Commands that may use the drive will become unavailable until after the cleanup.  
 Files are mainly uploaded to a folder called `HTOS_Bot` in the drive, this folder is created when the bot boots. Files can also be uploaded to arbitrary writable folders chosen by any user.  
 Any file uploaded by the bot is tagged and only those will be tracked.  
 
