@@ -72,6 +72,7 @@ So for example, you can create the path `"Grand Theft Auto V/CUSA00411/Max money
 `TOKEN`: The Discord bot token.  
 The bot needs
 * Permission `Manage Threads and Posts`.
+* Permission `Manage Messages` in the channel where threads will be created.
 * Intent `Message Content`.
 
 You run the bot the same way as you would do the app.  
