@@ -15,7 +15,7 @@ from discord.ext import commands
 from psnawp_api import PSNAWP
 from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb
 
-VERSION = "v2.1.0"
+VERSION = "v3.0.0"
 
 # LOGGER
 def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
