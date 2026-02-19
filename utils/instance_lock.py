@@ -35,7 +35,7 @@ class InstanceLock:
 
         # check if timeout has passed
         if epoch - instance.timestamp >= INSTANCE_TIMEOUT:
-            # free a slot, no need to delete it because it will be used in acquire
+            # free a slot, no need to delete it (if active_instances == 0) because it will be used in acquire
             instance.active_instances -= 1
             self.instances_len -= 1
             instance.timestamp = epoch
