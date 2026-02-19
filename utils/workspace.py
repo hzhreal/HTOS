@@ -275,12 +275,12 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
         try:
             await aiofiles.os.makedirs(path)
         except OSError as e:
-            logger.error(f"Error creating folder {path}: {e}")
+            logger.error(f"Error while creating folder {path}: {e}")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=retry_emb)
             raise WorkspaceError("Please try again.")
         except Exception as e:
-            logger.error(f"Unexpected error creating folder {path}: {e}")
+            logger.error(f"Unexpected error while creating folder {path}: {e}")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=retry_emb)
             raise WorkspaceError("Please try again.")
