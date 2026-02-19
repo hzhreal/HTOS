@@ -104,6 +104,15 @@ class Extra(commands.Cog):
         except WorkspaceError as e:
             await ctx.respond(e)
 
+    instance_group = discord.SlashCommandGroup("instance")
+
+    @instance_group.command(description="Free all instances for a user.")
+    @commands.is_owner()
+    async def free(self, ctx: discord.ApplicationContext, user: discord.User) -> None:
+        await ctx.respond("Freeing...", ephemeral=True)
+        await INSTANCE_LOCK_global.release_all(user.id)
+        await ctx.edit(content="Freed!")
+
     @discord.slash_command(description="Store your account ID in hexadecimal format.")
     @commands.cooldown(1, COMMAND_COOLDOWN, commands.BucketType.user)
     async def store_accountid(

@@ -213,6 +213,13 @@ Minimum 1 argument must be specified.
 
 `/blacklist show`: Receive a JSON file of all the entries.  
 
+---
+
+`/instance free`: Free all instances for a user.  
+
+**Arguments**:  
+`user`: Discord user.  
+
 ## Other guides
 * [Kidd's Nexus](https://www.youtube.com/@kiddsnexus): [HTOS Tutorials](https://www.youtube.com/playlist?list=PLxevmZH4AJusnb9VnOpRojfe8fQndy1Js)
 * [That-Kidd](https://github.com/That-Kidd): [HTOS Tutorials](https://github.com/That-Kidd/ps-resources/tree/main/HTOS)
