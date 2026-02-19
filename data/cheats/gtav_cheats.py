@@ -126,7 +126,7 @@ class Cheats_GTAV:
                 platform = "pc"
                 header = await file.read(len(crypt.GTAV_HEADER))
 
-        encrypted == header != crypt.GTAV_HEADER
+        encrypted = header != crypt.GTAV_HEADER
 
         if encrypted:
             start_offset = crypt.GTAV_PS_HEADER_OFFSET if platform == "ps4" else crypt.GTAV_PC_HEADER_OFFSET
