@@ -17,10 +17,10 @@ from google_drive.exceptions import GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
     DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
-    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH,
+    DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, BASE_ERROR_MSG,
     logger, blacklist_logger, psnawp, verify_titleids
 )
-from utils.embeds import emb_il, embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb
+from utils.embeds import emb_il, embChannelError, retry_emb, blacklist_emb, gd_maintenance_emb, embe
 from utils.extras import generate_random_string
 from utils.type_helpers import uint64
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -255,8 +255,17 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
             gd_emb.description = e
             await ctx.respond(embed=gd_emb)
             raise WorkspaceError("Please try again!")
+        except Exception as e:
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            err_emb = embe.copy()
+            err_emb.description = err_emb.description.format(error=BASE_ERROR_MSG)
+            await ctx.respond(embed=err_emb)
+            raise WorkspaceError("Please try again!")
         if not gd_check:
-            clean_GDrive.start()
+            try:
+                clean_GDrive.start()
+            except RuntimeError:
+                pass
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=gd_maintenance_emb)
             raise WorkspaceError("Please try again!")
@@ -267,6 +276,11 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
             await aiofiles.os.makedirs(path)
         except OSError as e:
             logger.error(f"Error creating folder {path}: {e}")
+            await INSTANCE_LOCK_global.release(ctx.author.id)
+            await ctx.respond(embed=retry_emb)
+            raise WorkspaceError("Please try again.")
+        except Exception as e:
+            logger.error(f"Unexpected error creating folder {path}: {e}")
             await INSTANCE_LOCK_global.release(ctx.author.id)
             await ctx.respond(embed=retry_emb)
             raise WorkspaceError("Please try again.")
