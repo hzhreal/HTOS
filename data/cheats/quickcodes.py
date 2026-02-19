@@ -755,8 +755,9 @@ class QuickCodes(CustomCrypto):
                         #   Y = Address to test
                         #   C = Lines of code to skip if test fails
                         #   Z = Value data type
-                        #   0 = 16-bit
+                        #   0 = 16-bit (BE)
                         #   1 = 8-bit
+                        #   2 = 16-bit (LE)
                         #   D = Test Operation
                         #   0 = Equal
                         #   1 = Not Equal
@@ -779,13 +780,22 @@ class QuickCodes(CustomCrypto):
                         tmp4 = line[13:17]
                         val = int32(tmp4).value
 
-                        await self.r_stream.seek(off)
-                        src = uint16(await self.r_stream.read(2), "little").value
+                        match bit:
+                            case "0":
+                                await self.r_streamm.seek(off)
+                                src = uint16(await self.r_stream.read(2), "big").value
 
-                        if bit == "1":
-                            val &= 0xFF
-                            await self.r_stream.seek(off)
-                            src = uint8(await self.r_stream.read(1)).value
+                            case "1":
+                                val &= 0xFF
+                                await self.r_stream.seek(off)
+                                src = (await self.r_stream.read(1))[0]
+
+                            case "2":
+                                await self.r_stream.seek(off)
+                                src = uint16(await self.r_stream.read(2), "little").value
+
+                            case _:
+                                src = 0
 
                         match op:
                             case "0":
