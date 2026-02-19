@@ -13,7 +13,7 @@ from zipfile import (
 from sys import argv
 from discord.ext import commands
 from psnawp_api import PSNAWP
-from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb
+from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb, hours_to_seconds
 
 VERSION = "v3.0.0"
 
@@ -211,7 +211,7 @@ SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep thi
 MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, how long the user has to upload files or send google drive folder link
 OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, how long the user has for button clicks, responding to quickresign command, and responding with account id
-GENERAL_TIMEOUT = None # seconds, how long files can actually be downloaded and uploaded for, before timing out
+GENERAL_TIMEOUT = hours_to_seconds(1) # seconds, how long files can actually be downloaded and uploaded for, before timing out
 GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(10) # 10 mb maximum when not considering boost levels
