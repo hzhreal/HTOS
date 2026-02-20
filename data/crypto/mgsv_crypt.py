@@ -21,29 +21,29 @@ class Crypt_MGSV:
         "CUSA01140": {
                 "TPP": {"key": MGSV_TPP_PS4KEY_CUSA01140, "name": "MGSVTPPSaveDataNA"},
                 "GZ" : {"key": MGSV_TPP_PS4KEY_CUSA01140, "name": "MGSVTPPSaveDataNA"}
-            },
+        },
         "CUSA01154": {
                 "TPP": {"key": MGSV_TPP_PS4KEY_CUSA01154, "name": "MGSVTPPSaveDataEU"},
                 "GZ" : {"key": MGSV_TPP_PS4KEY_CUSA01154, "name": "MGSVTPPSaveDataEU"}
-            },
+        },
         "CUSA01099": {
                 "TPP": {"key": MGSV_TPP_PS4KEY_CUSA01099, "name": "MGSVTPPSaveDataJP"},
                 "GZ" : {"key": MGSV_TPP_PS4KEY_CUSA01099, "name": "MGSVTPPSaveDataJP"}
-            },
+        },
 
         # MGSV GZ (map TPP as the same to follow same format as DE)
         "CUSA00218": {
                 "TPP": {"key": MGSV_GZ_PS4KEY_CUSA00218,  "name": "MGSVGZSaveDataNA"},
                 "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00218,  "name": "MGSVGZSaveDataNA"},
-            },
+        },
         "CUSA00211": {
                 "TPP": {"key": MGSV_GZ_PS4KEY_CUSA00211,  "name": "MGSVGZSaveDataEU"},
                 "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00211,  "name": "MGSVGZSaveDataEU"},
-            },
+        },
         "CUSA00225": {
                 "TPP": {"key": MGSV_GZ_PS4KEY_CUSA00225,  "name": "MGSVGZSaveDataJP"},
                 "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00225,  "name": "MGSVGZSaveDataJP"}
-            },
+        },
 
         # MGSV DE
         "CUSA05610": {
@@ -53,6 +53,10 @@ class Crypt_MGSV:
         "CUSA05597": {
             "TPP": {"key": MGSV_TPP_PS4KEY_CUSA01154, "name": "MGSVTPPSaveDataEU"},
             "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00211,  "name": "MGSVGZSaveDataEU"},
+        },
+        "CUSA05707": {
+                "TPP": {"key": MGSV_TPP_PS4KEY_CUSA01099, "name": "MGSVTPPSaveDataJP"},
+                "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00225,  "name": "MGSVGZSaveDataJP"},
         },
         "CUSA05662": {
             "TPP": {"key": MGSV_TPP_PS4KEY_CUSA05662, "name": "MGSVTPPSaveDataAS"},
