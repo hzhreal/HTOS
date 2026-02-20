@@ -13,7 +13,6 @@ from os.path import isfile
 rootdir = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(rootdir)
 from data.crypto.helpers import extra_decrypt, extra_import
-from utils.namespaces import Crypto
 from utils.orbis import check_titleid
 
 class Option(Enum):
@@ -49,9 +48,9 @@ def main() -> None:
 
     match opt:
         case Option.DECRYPT:
-            asyncio.run(extra_decrypt(None, Crypto, title_id, filepath, savepairname, True))
+            asyncio.run(extra_decrypt(None, title_id, filepath, savepairname, True))
         case Option.ENCRYPT:
-            asyncio.run(extra_import(Crypto, title_id, filepath, savepairname))
+            asyncio.run(extra_import(title_id, filepath, savepairname))
     print(f"{opt.value} {filepath}.")
 
 def print_usage() -> None:

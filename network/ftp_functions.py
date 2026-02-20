@@ -7,6 +7,7 @@ import aiofiles.os
 import asyncio
 from aioftp.errors import AIOFTPException
 
+from data.crypto.helpers import extra_reregion_post
 from network.exceptions import FTPError
 from utils.constants import GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
@@ -246,8 +247,7 @@ class FTPps:
                 await self.download_stream(ftp, savename_bin, new_savepath_bin)
 
             if reregion:
-                from utils.orbis import reregion_check
-                await reregion_check(title_id, new_savepath)
+                await extra_reregion_post(new_savepath, title_id)
 
         except AIOFTPException as e:
             logger.exception(f"[FTP ERROR]: {e}")

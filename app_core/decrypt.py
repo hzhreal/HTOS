@@ -13,7 +13,6 @@ from network.exceptions import SocketError, FTPError
 from utils.constants import IP, PORT_FTP, PS_UPLOADDIR
 from utils.workspace import init_workspace, cleanup, cleanup_simple
 from utils.orbis import SaveBatch, SaveFile
-from utils.namespaces import Crypto
 from utils.exceptions import OrbisError
 
 class Decrypt(TabBase):
@@ -108,7 +107,7 @@ class Decrypt(TabBase):
                     destination_directory += f"_{savefile.title_id}"
 
                     if not ignore_secondlayer_checks:
-                        await extra_decrypt(None, Crypto, savefile.title_id, destination_directory, savefile.basename, True)
+                        await extra_decrypt(None, savefile.title_id, destination_directory, savefile.basename, True)
 
                     self.logger.info(f"Decrypted **{savefile.basename}** {info}.")
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError) as e:

@@ -22,7 +22,6 @@ from utils.embeds import (
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.helpers import DiscordContext, upload2, error_handling, send_final, task_handler
 from utils.orbis import SaveBatch, SaveFile
-from utils.namespaces import Crypto
 from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 
@@ -118,7 +117,7 @@ class Decrypt(commands.Cog):
                     await aiofiles.os.rename(destination_directory, destination_directory + f"_{savefile.title_id}")
                     destination_directory += f"_{savefile.title_id}"
                     choice = secondlayer_choice if secondlayer_choice != "" else None
-                    await extra_decrypt(d_ctx, Crypto, savefile.title_id, destination_directory, savefile.basename, choice)
+                    await extra_decrypt(d_ctx, savefile.title_id, destination_directory, savefile.basename, choice)
 
                     emb = emb13.copy()
                     emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)

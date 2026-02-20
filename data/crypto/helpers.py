@@ -3,24 +3,27 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from utils.helpers import DiscordContext
 
+import os
+import aiofiles.os
+
 import discord
 from discord.ui.item import Item
-from types import SimpleNamespace
 
 from data.crypto.exceptions import CryptoError
 from utils.constants import (
-    logger, OTHER_TIMEOUT,
+    logger, OTHER_TIMEOUT, RANDOMSTRING_LENGTH,
     GTAV_TITLEID, BL3_TITLEID, RDR2_TITLEID, XENO2_TITLEID, WONDERLANDS_TITLEID, NDOG_TITLEID, NDOG_COL_TITLEID, NDOG_TLOU2_TITLEID,
-    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
-    DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
+    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID,
+    DI1_TITLEID, DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
-    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE
+    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
+from utils.extras import generate_random_string
+from utils.namespaces import Crypto
 
 async def extra_decrypt(
           d_ctx: DiscordContext | None,
-          Crypto: SimpleNamespace,
           title_id: str,
           destination_directory: str,
           savepairname: str,
@@ -37,10 +40,9 @@ async def extra_decrypt(
     emb.title = emb.title.format(savename=savepairname)
 
     class CryptChoiceButton(discord.ui.View):
-        def __init__(self, game: str | None = None, start_offset: int | None = None, title_id: str | None = None) -> None:
+        def __init__(self, game: str | None = None, start_offset: int | None = None) -> None:
             self.game = game
             self.offset = start_offset
-            self.title_id = title_id
             super().__init__(timeout=OTHER_TIMEOUT)
 
         async def on_timeout(self) -> None:
@@ -75,7 +77,7 @@ async def extra_decrypt(
                     case "NDOG":
                         await Crypto.Ndog.check_dec_ps(destination_directory, self.offset)
                     case "MGSV":
-                        await Crypto.MGSV.check_dec_ps(destination_directory, self.title_id)
+                        await Crypto.MGSV.check_dec_ps(destination_directory, title_id, savepairname)
                     case "REV2":
                         await Crypto.Rev2.check_dec_ps(destination_directory)
                     case "DL1" | "DL2" | "DI1":
@@ -214,16 +216,16 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("NDOG", start_offset=Crypto.Ndog.START_OFFSET_TLOU2))
         await helper.await_done()
 
-    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
+    elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.MGSV.check_dec_ps(destination_directory, title_id)
+                    await Crypto.MGSV.check_dec_ps(destination_directory, title_id, savepairname)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
 
-        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV", title_id=title_id))
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("MGSV"))
         await helper.await_done()
 
     elif title_id in REV2_TITLEID:
@@ -442,7 +444,7 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("LOHTRAILSCS4"))
         await helper.await_done()
 
-async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, savepairname: str) -> None:
+async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
             await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
@@ -468,13 +470,13 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, sa
         elif title_id in NDOG_TLOU2_TITLEID:
             await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET_TLOU2)
 
-        elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-            await Crypto.MGSV.check_enc_ps(filepath, title_id)
+        elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
+            await Crypto.MGSV.check_enc_ps(filepath, title_id, savepairname)
 
         elif title_id in REV2_TITLEID:
             await Crypto.Rev2.check_enc_ps(filepath)
 
-        elif title_id in RE7_TITLEID or title_id in RERES_TITLEID or title_id in RE3R_TITLEID or title_id in RE_VILLAGE_TITLEID:
+        elif title_id in frozenset.union(RE7_TITLEID, RERES_TITLEID, RE3R_TITLEID, RE_VILLAGE_TITLEID):
             await Crypto.RE7.check_enc_ps(filepath)
 
         elif title_id in DL1_TITLEID:
@@ -528,8 +530,71 @@ async def extra_import(Crypto: SimpleNamespace, title_id: str, filepath: str, sa
         elif title_id in LA_NOIRE_TITLEID:
             await Crypto.LaNoire.check_enc_ps(filepath, savepairname)
 
-        elif title_id in LOH_TRAILS_CS4_TITLEID or title_id in LOH_TRAILS_DAYBREAK_TITLEID or title_id in LOH_TRAILS_ZERO_AZURE:
+        elif title_id in frozenset.union(LOH_TRAILS_CS4_TITLEID, LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE):
             await Crypto.LoHTrails.check_enc_ps(filepath, title_id)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
+async def extra_reregion_pre(
+          folderpath: str,
+          title_id: str,
+          savepairname: str,
+        ) -> str:
+    """On decrypted savepairs. Returns new savepairname or empty string."""
+
+    newname = ""
+    try:
+        if title_id in XENO2_TITLEID:
+            newname = Crypto.Xeno2.reregion_get_new_name(title_id)
+
+        elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
+            await Crypto.MGSV.reregion_change_crypt(folderpath, title_id, savepairname)
+            newname = Crypto.MGSV.reregion_get_new_name(title_id, savepairname)
+
+        elif title_id in MINECRAFT_TITLEID:
+            newname = Crypto.Minecraft.reregion_get_new_name(title_id, savepairname)
+    except (ValueError, IOError, IndexError):
+        raise CryptoError("Invalid save!")
+    return newname
+
+def extra_reregion_pre_needs_folder(
+          title_id: str,
+        ) -> bool:
+
+    if title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
+        return True
+
+    return False
+
+async def extra_reregion_post(
+          savepath: str,
+          title_id: str,
+        ) -> None:
+    """
+    On encrypted savepairs.
+    Renames the save after re-regioning for the games that need it, random string is appended at the end for no overwriting.
+    """
+
+    savepairname = os.path.basename(savepath)
+
+    if title_id in XENO2_TITLEID:
+        new_name = Crypto.Xeno2.reregion_get_new_name(title_id)
+
+    elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
+        new_name = Crypto.MGSV.reregion_get_new_name(title_id, savepairname)
+
+    elif title_id in MINECRAFT_TITLEID:
+        new_name = Crypto.Minecraft.reregion_get_new_name(title_id, savepairname)
+
+    else:
+        return
+    if not new_name:
+        return
+
+    savefolder = os.path.dirname(savepath)
+    new_file = os.path.join(savefolder, new_name)
+    if await aiofiles.os.path.exists(new_file):
+        rand_str = generate_random_string(RANDOMSTRING_LENGTH)
+        new_file = os.path.join(savepath, new_name + f"_{rand_str}")
+    await aiofiles.os.rename(savepath, new_file)
+    await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
