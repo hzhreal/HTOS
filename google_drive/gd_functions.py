@@ -253,6 +253,14 @@ class GDapi:
               savesize: int | None = None
             ) -> list[dict[str, str]]:
 
+        # check for duplicate files (doesnt seem to be possible), if found, then error
+        paths = set()
+        for file_info in file_data:
+            path = file_info["filepath"]
+            if path in paths:
+                raise FileError("Duplicate file detected!")
+            paths.add(path)
+
         valid_files_data = []
         total_size = 0
 
@@ -261,25 +269,25 @@ class GDapi:
             return valid_files_data
 
         for file_info in file_data:
-            file_name = file_info["filename"]
+            filepath = file_info["filepath"]
             file_id = file_info["fileid"]
             file_size = file_info["filesize"]
 
-            if len(file_name) > MAX_FILENAME_LEN and not ignore_filename_check:
+            if len(filepath) > MAX_FILENAME_LEN and not ignore_filename_check:
                 emb = embfn.copy()
-                emb.description = emb.description(filename=file_name, len=len(file_name), max=MAX_FILENAME_LEN)
+                emb.description = emb.description(filename=filepath, len=len(filepath), max=MAX_FILENAME_LEN)
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
             elif file_size > GDapi.SAVEGAME_MAX:
                 emb = embFileLarge.copy()
-                emb.description = emb.description.format(filename=file_name, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
+                emb.description = emb.description.format(filename=filepath, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
-            elif (sys_files is not None) and (file_size > SYS_FILE_MAX or file_name not in sys_files): # sce_sys files are not that big
+            elif (sys_files is not None) and (file_size > SYS_FILE_MAX or filepath not in sys_files): # sce_sys files are not that big
                 emb = embnvSys.copy()
-                emb.description = emb.description.format(filename=file_name)
+                emb.description = emb.description.format(filename=filepath)
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
@@ -288,7 +296,7 @@ class GDapi:
 
             else:
                 total_size += file_size
-                file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
+                file_data = {"filepath": filepath, "fileid": file_id, "filesize": file_size}
                 valid_files_data.append(file_data)
         return valid_files_data
 
@@ -450,16 +458,16 @@ class GDapi:
                 else:
                     file_path = file_name
 
-                file_data = {"filename": file_path, "fileid": file_id, "filesize": file_size}
+                file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                 file_data_storage.append(file_data)
 
         valid_file_data = await GDapi.file_check(ctx, file_data_storage, sys_files, ps_save_pair_upload, ignore_filename_check)
         for data in valid_file_data:
-            file_path = data["filename"]
+            file_path = data["filepath"]
             file_id = data["fileid"]
             file_size = data["filesize"]
 
-            file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size} 
+            file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
             files.append(file_data)
             total_filesize += file_size
 
