@@ -424,12 +424,12 @@ class GDapi:
         for file_info in entries:
             mimetype = file_info["mimeType"]
             name = file_info["name"]
-            id = file_info["id"]
+            id_ = file_info["id"]
             file_size = int(file_info.get("size", 0))
 
             if mimetype == "application/vnd.google-apps.folder":
                 folder_name = name
-                folder_id = id
+                folder_id = id_
                 if folder_name == "." or folder_name == ".." or folder_name == SCE_SYS_NAME:
                     continue
                 if rel_path is not None:
@@ -450,7 +450,7 @@ class GDapi:
                 rel_path = os.path.dirname(rel_path)
             else:
                 file_name = name
-                file_id = id
+                file_id = id_
                 if file_size == 0 or (file_name in SCE_SYS_CONTENTS and sys_files is None):
                     continue
 
