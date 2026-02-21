@@ -590,6 +590,8 @@ async def extra_reregion_post(
         return
     if not new_name:
         return
+    if savepairname == new_name:
+        return
 
     savefolder = os.path.dirname(savepath)
     new_file = os.path.join(savefolder, new_name)
