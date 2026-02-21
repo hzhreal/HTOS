@@ -597,6 +597,6 @@ async def extra_reregion_post(
     new_file = os.path.join(savefolder, new_name)
     if await aiofiles.os.path.exists(new_file):
         rand_str = generate_random_string(RANDOMSTRING_LENGTH)
-        new_file = os.path.join(savepath, new_name + f"_{rand_str}")
+        new_file = os.path.join(savefolder, new_name + f"_{rand_str}")
     await aiofiles.os.rename(savepath, new_file)
     await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
