@@ -304,64 +304,64 @@ class GDapi:
     async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, file_data: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
         valid_saves_check1 = []
         for file_info in file_data:
-            file_name = file_info["filename"]
+            file_path = file_info["filepath"]
             file_size = file_info["filesize"]
             file_id = file_info["fileid"]
 
-            filename = file_name + f"_{'X' * RANDOMSTRING_LENGTH}"
-            filename_len = len(filename)
-            path_len = len(PS_UPLOADDIR + "/" + filename + "/")
+            file_name = os.path.basename(file_path) + f"_{'X' * RANDOMSTRING_LENGTH}"
+            file_name_len = len(file_name)
+            path_len = len(PS_UPLOADDIR + "/" + file_name + "/")
 
-            if filename_len > MAX_FILENAME_LEN:
+            if file_name_len > MAX_FILENAME_LEN:
                 emb = embfn.copy()
-                emb.description = emb.description.format(filename=file_name, len=filename_len, max=MAX_FILENAME_LEN)
+                emb.description = emb.description.format(filename=file_path, len=file_name_len, max=MAX_FILENAME_LEN)
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
             elif path_len > MAX_PATH_LEN:
                 emb = embpn.copy()
-                emb.description = emb.description.format(filename=file_name, len=path_len, max=MAX_PATH_LEN)
+                emb.description = emb.description.format(filename=file_path, len=path_len, max=MAX_PATH_LEN)
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
-            elif file_name.endswith(".bin"):
+            elif file_path.endswith(".bin"):
                 if file_size != SEALED_KEY_ENC_SIZE:
                     emb = embnvBin.copy()
-                    emb.description = emb.description.format(filename=file_name, size=SEALED_KEY_ENC_SIZE)
+                    emb.description = emb.description.format(filename=file_path, size=SEALED_KEY_ENC_SIZE)
                     await ctx.edit(embed=emb)
                     await asyncio.sleep(1)
 
                 else:
-                    file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
+                    file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                     valid_saves_check1.append(file_data)
             else:
                 if file_size > GDapi.SAVEGAME_MAX:
                     emb = embFileLarge.copy()
-                    emb.description = emb.description.format(filename=file_name, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
+                    emb.description = emb.description.format(filename=file_path, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
                     await ctx.edit(embed=embFileLarge)
                     await asyncio.sleep(1)
                 else:
-                    file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
+                    file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                     valid_saves_check1.append(file_data)
 
         valid_saves_final = []
         for file_info in valid_saves_check1:
-            file_name = file_info["filename"]
+            file_path = file_info["filepath"]
             file_id = file_info["fileid"]
             file_size = file_info["filesize"]
-            if file_name.endswith(".bin"): # look for corresponding file
 
+            if file_path.endswith(".bin"): # look for corresponding file
                 for file_info_nested in valid_saves_check1:
-                    file_name_nested = file_info_nested["filename"]
+                    file_path_nested = file_info_nested["filepath"]
                     file_id_nested = file_info_nested["fileid"]
                     file_size_nested = file_info_nested["filesize"]
-                    if file_name_nested == file_name: 
+                    if file_path_nested == file_path:
                         continue
 
-                    elif file_name_nested == os.path.splitext(file_name)[0]:
-                        file_data = {"filename": file_name, "fileid": file_id, "filesize": file_size}
+                    elif file_path_nested == os.path.splitext(file_path)[0]:
+                        file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                         valid_saves_final.append(file_data)
-                        file_data_nested = {"filename": file_name_nested, "fileid": file_id_nested, "filesize": file_size_nested}
+                        file_data_nested = {"filepath": file_path_nested, "fileid": file_id_nested, "filesize": file_size_nested}
                         valid_saves_final.append(file_data_nested)
                         break
         return valid_saves_final
@@ -402,7 +402,7 @@ class GDapi:
 
             for pagesize in self.pagesizes:
                 req = drive_v3.files.list(
-                    q=f"'{folder_id}' in parents and trashed=false", 
+                    q=f"'{folder_id}' in parents and trashed=false",
                     fields="files(name, id, size, mimeType), nextPageToken",
                     pageSize=pagesize,
                     pageToken=next_page_token
@@ -423,26 +423,34 @@ class GDapi:
 
         for file_info in entries:
             mimetype = file_info["mimeType"]
-            file_name = file_info["name"]
-            file_id = file_info["id"]
+            name = file_info["name"]
+            id = file_info["id"]
             file_size = int(file_info.get("size", 0))
 
             if mimetype == "application/vnd.google-apps.folder":
-                if file_name == "." or file_name == ".." or file_name == SCE_SYS_NAME:
+                folder_name = name
+                folder_id = id
+                if folder_name == "." or folder_name == ".." or folder_name == SCE_SYS_NAME:
                     continue
                 if rel_path is not None:
-                    rel_path = os.path.join(rel_path, file_name)
+                    rel_path = os.path.join(rel_path, folder_name)
                     rel_path = os.path.normpath(rel_path)
                     if mounted_len_checks:
                         path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_path + "/")
                         if path_len > MAX_PATH_LEN:
                             raise GDapiError(f"Path: {rel_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
                 else:
-                    rel_path = file_name
-                await self.list_dir(ctx, file_id, sys_files, ps_save_pair_upload, ignore_filename_check, mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files)
+                    rel_path = folder_name
+                _, sub_size = await self.list_dir(
+                    ctx, folder_id, sys_files, ps_save_pair_upload, ignore_filename_check,
+                    mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files
+                )
+                total_filesize += sub_size
                 # go up one level
                 rel_path = os.path.dirname(rel_path)
             else:
+                file_name = name
+                file_id = id
                 if file_size == 0 or (file_name in SCE_SYS_CONTENTS and sys_files is None):
                     continue
 
