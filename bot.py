@@ -21,7 +21,7 @@ async def on_ready() -> None:
     bot.add_view(ThreadButton()) # make view persistent
     check_GDrive.start() # start gd daemon
     print(
-        f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot"
+        f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=0&scope=bot"
     )
 
 @bot.event
