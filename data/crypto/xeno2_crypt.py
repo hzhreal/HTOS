@@ -89,6 +89,10 @@ class Crypt_Xeno2:
             await Crypt_Xeno2.encrypt_file(filepath)
 
     @staticmethod
+    def reregion_get_new_name(title_id: str) -> str:
+        return title_id + "01"
+
+    @staticmethod
     async def add_checksums(cc: CC, header: bytearray) -> None:
         chks = uint8(0)
 

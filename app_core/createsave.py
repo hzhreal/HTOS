@@ -18,7 +18,6 @@ from utils.workspace import cleanup
 from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA
 from utils.exceptions import OrbisError
 from utils.conversions import mb_to_saveblocks, saveblocks_to_bytes, bytes_to_mb
-from utils.namespaces import Crypto
 from utils.extras import generate_random_string
 
 class Createsave(TabBase):
@@ -126,7 +125,7 @@ class Createsave(TabBase):
                 for gamesave in files:
                     if os.path.basename(gamesave) in SCE_SYS_CONTENTS:
                         continue
-                    await extra_import(Crypto, title_id, gamesave, savename)
+                    await extra_import(title_id, gamesave, savename)
 
             temp_savename = savename + f"_{rand_str}"
             mount_location_new = MOUNT_LOCATION + "/" + rand_str

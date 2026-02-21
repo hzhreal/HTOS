@@ -25,7 +25,6 @@ from utils.workspace import make_workspace, init_workspace, cleanup
 from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
 from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
-from utils.namespaces import Crypto
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks
 
@@ -148,7 +147,7 @@ class CreateSave(commands.Cog):
                     emb.title = emb.title.format(displaysave=displaysave)
                     await msg.edit(embed=emb)
                     await asyncio.sleep(0.5)
-                    await extra_import(Crypto, title_id, gamesave, savename)
+                    await extra_import(title_id, gamesave, savename)
 
             emb = embc.copy()
             emb.description = emb.description.format(savename=savename)

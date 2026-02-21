@@ -9,15 +9,15 @@ import shutil
 from enum import Enum
 from dataclasses import dataclass
 
+from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_folder
 from network.ftp_functions import FTPps
 from network.socket_functions import SocketPS
 from utils.constants import (
     MOUNT_LOCATION, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, MAX_FILENAME_LEN,
     PS_UPLOADDIR, MAX_PATH_LEN, RANDOMSTRING_LENGTH, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME,
-    XENO2_TITLEID, MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MINECRAFT_TITLEID
 )
 from utils.embeds import embfn, embFileLarge, embnvSys, embpn, embnvBin
-from utils.extras import generate_random_string, obtain_savenames, completed_print
+from utils.extras import obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
@@ -148,7 +148,7 @@ class SaveFile:
 
     async def __reregion(self) -> None:
         dec_path = ""
-        if self.title_id in MGSV_TPP_TITLEID or self.title_id in MGSV_GZ_TITLEID:
+        if extra_reregion_pre_needs_folder(self.title_id):
             dec_path = self.batch.fInstance.download_decrypted_path
             await self.batch.fInstance.download_folder(self.batch.mount_location, dec_path, True)
         await reregion_write(self.sfo_ctx, self.title_id, dec_path)
@@ -556,70 +556,12 @@ def resign(ctx: SFOContext, account_id: str) -> None:
 
 async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
-    from utils.namespaces import Crypto
 
     ctx.sfo_patch_parameter("TITLE_ID", title_id)
-
-    if title_id in XENO2_TITLEID:
-        newname = title_id + "01"
-        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
-
-    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_GZ_TITLEID:
-        try:
-            await Crypto.MGSV.reregion_change_crypt(dec_files_folder, title_id)
-        except (ValueError, IOError, IndexError):
-            raise OrbisError("Error changing MGSV crypt!")
-
-        newname = Crypto.MGSV.KEYS[title_id]["name"]
-        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", newname)
-
-    elif title_id in MINECRAFT_TITLEID:
-        savename = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).to_str()
-        savename = savename.split("-")
-        # legacy edition only
-        if not savename[0] in MINECRAFT_TITLEID:
-            return
-        savename[0] = title_id
-        savename = "-".join(savename)
-        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", savename)
-
-async def reregion_check(title_id: str, savepath: str) -> None:
-    """Renames the save after Re-regioning for the games that need it, random string is appended at the end for no overwriting."""
-    from utils.namespaces import Crypto
-
-    savefolder = os.path.dirname(savepath)
-
-    if title_id in XENO2_TITLEID:
-        new_file = os.path.join(savefolder, title_id + "01")
-        if await aiofiles.os.path.exists(new_file):
-            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
-            new_file = os.path.join(savepath, title_id + f"01_{rand_str}")
-        await aiofiles.os.rename(savepath, new_file)
-        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
-
-    elif title_id in MGSV_TPP_TITLEID or title_id in MGSV_TPP_TITLEID:
-        new_name = Crypto.MGSV.KEYS[title_id]["name"]
-        new_file = os.path.join(savefolder, new_name)
-        if await aiofiles.os.path.exists(new_file):
-            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
-            new_file = os.path.join(savefolder, new_name + f"_{rand_str}")
-        await aiofiles.os.rename(savepath, new_file)
-        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
-
-    elif title_id in MINECRAFT_TITLEID:
-        savename = os.path.basename(savepath)
-        savename = savename.split("-")
-        # legacy edition only
-        if savename[0] not in MINECRAFT_TITLEID:
-            return
-        savename[0] = title_id
-        savename = "-".join(savename)
-        new_file = os.path.join(savefolder, savename)
-        if await aiofiles.os.path.exists(new_file):
-            rand_str = generate_random_string(RANDOMSTRING_LENGTH)
-            new_file = os.path.join(savefolder, savename + f"_{rand_str}")
-        await aiofiles.os.rename(savepath, new_file)
-        await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
+    savepairname = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).to_str()
+    new_name = await extra_reregion_pre(dec_files_folder, title_id, savepairname)
+    if new_name:
+        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", new_name)
 
 def validate_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))

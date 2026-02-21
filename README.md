@@ -32,6 +32,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Like a Dragon: Ishin                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Metal Gear Solid V: Ground Zeroes                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Metal Gear Solid V: The Definitive Experience       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Minecraft: Legacy Edition                           | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |

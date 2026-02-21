@@ -20,7 +20,6 @@ from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import OrbisError, FileError
 from utils.conversions import bytes_to_mb
 from utils.extras import completed_print
-from utils.namespaces import Crypto
 
 class Encrypt(TabBase):
     def __init__(self, profiles: Profiles, settings: Settings) -> None:
@@ -133,7 +132,7 @@ class Encrypt(TabBase):
                         for file in encrypt_files:
                             if os.path.basename(file) in SCE_SYS_CONTENTS:
                                 continue
-                            await extra_import(Crypto, savefile.title_id, file, savefile.basename)
+                            await extra_import(savefile.title_id, file, savefile.basename)
                     if self.settings.recursivity.value:
                         await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     else:
