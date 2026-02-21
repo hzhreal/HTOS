@@ -220,7 +220,7 @@ class SFOContextParam:
 class SFOContext:
     """Instance creator for param.sfo r/w."""
     def __init__(self) -> None:
-        self.params = []
+        self.params: list[SFOContextParam] = []
 
     def sfo_read(self, sfo: bytearray) -> None:
         if len(sfo) < 20:
@@ -269,7 +269,10 @@ class SFOContext:
         header = SFOHeader(SFO_MAGIC, SFO_VERSION, 20 + num_params * 16, (20 + num_params * 16 + key_table_size) + 2, num_params)
 
         try:
-            struct.pack_into("<IIIII", sfo, 0, header.magic, header.version, header.key_table_offset, header.data_table_offset, header.num_entries)
+            struct.pack_into(
+                "<IIIII",
+                sfo, 0, header.magic, header.version, header.key_table_offset, header.data_table_offset, header.num_entries
+            )
         except struct.error:
             raise OrbisError("Failed to generate a param.sfo!")
 
@@ -279,7 +282,11 @@ class SFOContext:
             index_table = SFOIndexTable(key_offset, param.format, param.length, param.max_length, data_offset)
 
             try:
-                struct.pack_into("<HHIII", sfo, index_offset, index_table.key_offset, index_table.param_format, index_table.param_length, index_table.param_max_length, index_table.data_offset)
+                struct.pack_into(
+                    "<HHIII",
+                    sfo, index_offset, index_table.key_offset, index_table.param_format,
+                    index_table.param_length, index_table.param_max_length, index_table.data_offset
+                )
             except struct.error:
                 raise OrbisError("Failed to generate a param.sfo!")
 
@@ -300,11 +307,11 @@ class SFOContext:
         return sfo
 
     def sfo_patch_parameter(self, parameter: str, new_data: str | int) -> None:
-        param: SFOContextParam = next((param for param in self.params if param.key == parameter), None)
+        param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Invalid parameter: {parameter}!")
 
-        param_type: uint32 | uint64 | utf_8 | utf_8_s = SFO_TYPES.get(parameter)
+        param_type: uint32 | uint64 | utf_8 | utf_8_s | None = SFO_TYPES.get(parameter)
         if not param_type:
             raise OrbisError(f"Unsupported parameter: {parameter}!")
 
@@ -313,17 +320,20 @@ class SFOContext:
                 ctx = uint32(new_data, "little")
             case uint64():
                 ctx = uint64(new_data, "little")
-            case utf_8():
-                ctx = utf_8(new_data)
             case utf_8_s():
                 ctx = utf_8_s(new_data)
+            case utf_8():
+                ctx = utf_8(new_data)
 
         max_len = param.max_length | param.actual_length
 
         if ctx.CATEGORY == TypeCategory.CHARACTER:
             ctx: utf_8 | utf_8_s
             if ctx.bytelen >= max_len:
-               raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}! Remember last byte is reserved for null termination for this parameter.")
+               raise OrbisError(
+                    f"The parameter: {parameter} reached the max length it has of {max_len}! "
+                    "Remember last byte is reserved for null termination for this parameter."
+                )
             v = ctx.to_cstr()
             l = len(v)
         else:
@@ -335,12 +345,11 @@ class SFOContext:
         param.length = l
         param.value = v
 
-    def sfo_get_param_value(self, parameter: str) -> bytes:
-        param: SFOContextParam = next((param for param in self.params if param.key == parameter), None)
-        if param:
-            return param.value
-        else:
+    def sfo_get_param_value(self, parameter: str) -> bytearray:
+        param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
+        if not param:
             raise OrbisError(f"Invalid parameter: {parameter}!")
+        return param.value
 
     def sfo_get_param_data(self) -> list[dict[str, str | int | bytearray]]:
         param_data = []
