@@ -2,19 +2,19 @@ import aiofiles
 from data.crypto.common import CustomCrypto as CC
 from utils.type_helpers import uint32
 
-def msgv_get_key(name: bytes) -> int:
+def mgsv_get_key(name: bytes) -> int:
     return uint32(CC.hashlib.md5(name).digest()[:4], "little").value
 
 class Crypt_MGSV:
     MGSV_TPP_PS4KEY_CUSA01140 = 0x4131F8BE
     MGSV_TPP_PS4KEY_CUSA01154 = 0x4F36C055
     MGSV_TPP_PS4KEY_CUSA01099 = 0x40FDA272
-    MGSV_TPP_PS4KEY_CUSA05662 = 0xB2FF18A0
+    MGSV_TPP_PS4KEY_CUSA05662 = 0x332E72A8
 
     MGSV_GZ_PS4KEY_CUSA00218  = 0xEA11D524
     MGSV_GZ_PS4KEY_CUSA00211  = 0xD2225CCB
     MGSV_GZ_PS4KEY_CUSA00225  = 0x697B6E1B
-    MGSV_GZ_PS4KEY_CUSA05662  = 0xB6220F16
+    MGSV_GZ_PS4KEY_CUSA05662  = 0xB2D4611B
 
     KEYS = {
         # MGSV TPP (map GZ as the same to follow same format as DE)
@@ -59,8 +59,8 @@ class Crypt_MGSV:
                 "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA00225,  "name": "MGSVGZSaveDataJP"},
         },
         "CUSA05662": {
-            "TPP": {"key": MGSV_TPP_PS4KEY_CUSA05662, "name": "MGSVTPPSaveDataAS"},
-            "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA05662,  "name": "MGSVGZSaveDataAS"}
+            "TPP": {"key": MGSV_TPP_PS4KEY_CUSA05662, "name": "MGSVTPPSaveDataCK"},
+            "GZ" : {"key": MGSV_GZ_PS4KEY_CUSA05662,  "name": "MGSVGZSaveDataCK"}
         }
 
     }
@@ -68,7 +68,7 @@ class Crypt_MGSV:
         for v_ in v.values():
             key = v_["key"]
             name = v_["name"]
-            assert key == msgv_get_key(name.encode())
+            assert key == mgsv_get_key(name.encode())
 
     HEADER_TPP = b"SV"
     HEADER_GZ = b"gz"
