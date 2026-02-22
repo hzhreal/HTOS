@@ -158,11 +158,11 @@ However if there is a type of second layer that is not implemented in the bot, i
 
 ---
 
-`/sfo write`: Accepts a param.sfo file, you can patch the keys it contains  
+`/sfo write`: Accepts a param.sfo file, you can patch the key-value pairs it contains  
 
 **Arguments**:  
 `sfo`: The `param.sfo` file.  
-The rest of the arguments are keys in the param.sfo file that you can choose to patch.  
+The rest of the arguments are keys in the `param.sfo` file that you can choose to patch.  
 
 ---
 
@@ -173,7 +173,7 @@ The rest of the arguments are keys in the param.sfo file that you can choose to 
 
 ---
 
-`/info keyset`: Display the max the maximum keyset the hoster's console can mount/unmount and the firmware version associated.   
+`/info keyset`: Display the maximum keyset the hoster's console can mount/unmount and the firmware version associated.  
 
 ---
 
