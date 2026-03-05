@@ -62,6 +62,11 @@ Any file uploaded by the bot is tagged and only those will be tracked.
 > But after April 15, 2025, new service accounts do not get any storage.
 > Therefore, new service accounts will not work.
 
+> [!TIP]
+> Although it is recommended that you do this step, the bot can function without.
+> But then, the only upload method available is Discord.
+> If the Discord upload file size limit is reached, then an error will be raised.
+
 Now, go back to editing the `.env` file.  
 `STORED_SAVES_FOLDER_PATH`: This is the folder where pre-existing saves are stored for use in the `quick resign` command.  
 The format inside this folder is 
