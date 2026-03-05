@@ -72,12 +72,12 @@ else:
     blacklist_logger = logger
 
 # CONFIG
-IP = str(os.getenv("IP"))
+IP = os.getenv("IP")
 PORT_FTP = int(os.getenv("FTP_PORT"))
 PORT_CECIE = int(os.getenv("CECIE_PORT"))
-MOUNT_LOCATION = str(os.getenv("MOUNT_PATH"))
-PS_UPLOADDIR = str(os.getenv("UPLOAD_PATH"))
-STORED_SAVES_FOLDER = str(os.getenv("STORED_SAVES_FOLDER_PATH"))
+MOUNT_LOCATION = os.getenv("MOUNT_PATH")
+PS_UPLOADDIR = os.getenv("UPLOAD_PATH")
+STORED_SAVES_FOLDER = os.getenv("STORED_SAVES_FOLDER_PATH")
 APP_PROFILES_PATH = "profiles.json"
 APP_SETTINGS_PATH = "settings.json"
 UPLOAD_ENCRYPTED = os.path.join("UserSaves", "uploadencrypted")
@@ -91,7 +91,7 @@ RANDOMSTRING_LENGTH = 10
 DATABASENAME_THREADS = "valid_threads.db"
 DATABASENAME_ACCIDS = "account_ids.db"
 DATABASENAME_BLACKLIST = "blacklist.db"
-TOKEN = str(os.getenv("TOKEN"))
+TOKEN = os.getenv("TOKEN")
 # how to obtain NPSSO:
 # go to playstation.com and login
 # go to this link https://ca.account.sony.com/api/v1/ssocookie
@@ -100,7 +100,7 @@ TOKEN = str(os.getenv("TOKEN"))
 # if you leave it None the psn.flipscreen.games website will be used to obtain account ID
 class NPSSO:
     def __init__(self) -> None:
-        self.val: str = str(os.getenv("NPSSO"))
+        self.val: str = os.getenv("NPSSO")
 NPSSO_global = NPSSO()
 
 if os.path.basename(argv[0]) == "bot.py":
