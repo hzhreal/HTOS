@@ -103,6 +103,7 @@ class NPSSO:
         self.val: str = os.getenv("NPSSO")
 NPSSO_global = NPSSO()
 
+psnawp: PSNAWP | None
 if os.path.basename(argv[0]) == "bot.py":
     if NPSSO_global.val:
         psnawp = PSNAWP(NPSSO_global.val)

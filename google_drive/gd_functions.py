@@ -882,6 +882,7 @@ class GDapi:
 
         return [uploaded_file_paths]
 
+gdapi: GDapi | None
 if os.path.basename(argv[0]) == "bot.py":
     gdapi = GDapi()
 else:

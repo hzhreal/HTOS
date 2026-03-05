@@ -15,7 +15,6 @@ import utils.embeds_assert as _
 
 workspace_opt = WorkspaceOpt()
 
-
 @bot.event
 async def on_ready() -> None:
     startup(workspace_opt)
