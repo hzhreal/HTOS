@@ -240,8 +240,9 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
         raise WorkspaceError(e)
 
     # google drive check: are we currently deleting all files or do we need to delete all files
-    if not skip_gd_check:
-        from google_drive.gd_functions import gdapi, clean_GDrive
+    from google_drive.gd_functions import gdapi
+    if not skip_gd_check and gdapi.is_available():
+        from google_drive.gd_functions import clean_GDrive
 
         if clean_GDrive.is_running():
             await INSTANCE_LOCK_global.release(ctx.author.id)
