@@ -4,6 +4,8 @@ load_dotenv()
 import discord
 import argparse
 from discord.ext import commands
+
+from google_drive.gd_functions import gdapi, check_GDrive
 from utils.constants import bot, TOKEN
 from utils.workspace import WorkspaceOpt, startup, check_version
 from utils.helpers import ThreadButton
@@ -15,11 +17,11 @@ workspace_opt = WorkspaceOpt()
 
 @bot.event
 async def on_ready() -> None:
-    from google_drive.gd_functions import check_GDrive
     startup(workspace_opt)
     await check_version()
     bot.add_view(ThreadButton()) # make view persistent
-    check_GDrive.start() # start gd daemon
+    if gdapi.is_available():
+        check_GDrive.start() # start gd daemon
     print(
         f"Bot is ready, invite link: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=0&scope=bot"
     )

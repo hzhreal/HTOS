@@ -15,6 +15,7 @@ from discord.ext import tasks
 from aiogoogle import Aiogoogle, auth, HTTPError, models
 from dateutil import parser
 from enum import Enum, auto
+from typing import Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -70,7 +71,11 @@ class GDapi:
             self.pagesizes = [1000 for _ in range(q)]
             self.pagesizes.append(r)
 
-        self.authorize()
+        self.creds:        dict[str, Any]    | None = None
+        self.account_type: GDapi.AccountType | None = None
+
+        if not self.authorize():
+            return
 
         # Initialize the bot's dedicated folder on startup
         try:
@@ -80,8 +85,19 @@ class GDapi:
             raise GDapiError(self.get_err_str_HTPERROR(e))
         logger.info("Google Drive bot folder initialized successfully")
 
-    def authorize(self) -> None:
-        CREDENTIALS_PATH = str(os.getenv("GOOGLE_DRIVE_JSON_PATH"))
+    def is_available(self) -> bool:
+        return self.creds is not None and self.account_type is not None
+
+    def is_available_check(self) -> None:
+        if not self.is_available():
+            raise GDapiError("Google Drive is unavailable on the bot's end!")
+
+    def authorize(self) -> bool:
+        CREDENTIALS_PATH = os.getenv("GOOGLE_DRIVE_JSON_PATH")
+        if not CREDENTIALS_PATH:
+            print("Google Drive credentials are unavailable.")
+            return False
+
         SCOPE = ["https://www.googleapis.com/auth/drive"]
 
         if not os.path.isfile(CREDENTIALS_PATH):
@@ -96,7 +112,7 @@ class GDapi:
         if acc_type == "service_account":
             self.creds = {"service_account_creds": serviceacc_creds}
             self.account_type = self.AccountType.SERVICE_ACCOUNT
-            return
+            return True
 
         CACHED_CREDENTIALS_PATH = os.path.join(os.path.dirname(CREDENTIALS_PATH), "token.json")
 
@@ -138,9 +154,11 @@ class GDapi:
         )
         self.creds = {"client_creds": client_creds, "user_creds": user_creds}
         self.account_type = self.AccountType.PERSONAL_ACCOUNT
+        return True
 
     async def get_bot_folder_id(self) -> str:
         """Get or create the bot's dedicated folder."""
+        self.is_available_check()
 
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
@@ -174,6 +192,8 @@ class GDapi:
         return bot_folder_id
 
     async def send_req(self, aiogoogle: Aiogoogle, req: models.Request, full_res: bool = False) -> models.Response:
+        assert self.is_available()
+
         match self.account_type:
             case self.AccountType.SERVICE_ACCOUNT:
                 return await aiogoogle.as_service_account(req, full_res=full_res)
@@ -379,6 +399,7 @@ class GDapi:
               rel_path: str | None = None,
               files: list[dict[str, str]] | None = None
             ) -> tuple[list[dict[str, str | int]], int]:
+        self.is_available_check()
 
         async def warn_filecount(path: str | None) -> None:
             if path is None:
@@ -483,6 +504,7 @@ class GDapi:
 
     async def list_drive(self) -> list[dict[str, str]]:
         """List all files within the bot's dedicated folder only."""
+        self.is_available_check()
 
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
@@ -506,6 +528,7 @@ class GDapi:
 
     async def clear_drive(self, files: list[dict[str, str]] | None = None) -> None:
         """Clear files only related to the bot."""
+
         if files is None:
             try:
                 files = await self.list_drive()
@@ -522,6 +545,8 @@ class GDapi:
                 pass
 
     async def check_drive_storage(self) -> bool:
+        self.is_available_check()
+
         async with Aiogoogle(**self.creds) as aiogoogle:
             try:
                 drive_v3 = await aiogoogle.discover("drive", "v3")
@@ -541,6 +566,8 @@ class GDapi:
         return False
 
     async def delete_file(self, fileid: str) -> None:
+        self.is_available_check()
+
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
@@ -554,6 +581,8 @@ class GDapi:
                 await self.send_req(aiogoogle, req)
 
     async def check_writeperm(self, folderid: str) -> bool:
+        self.is_available_check()
+
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
 
@@ -589,6 +618,7 @@ class GDapi:
               file_name: str,
               shared_folderid: str = ""
             ) -> str:
+        self.is_available_check()
 
         metadata = {"name": file_name}
         if shared_folderid:
@@ -719,6 +749,7 @@ class GDapi:
               allow_duplicates: bool = False
             ) -> list[list[str]]:
         """Setting `ps_save_pair_upload` to `True` will also set `allow_duplicates` to `True`."""
+        self.is_available_check()
 
         if ps_save_pair_upload:
             allow_duplicates = True
@@ -794,8 +825,9 @@ class GDapi:
               max_files: int,
               savesize: int | None = None
             ) -> list[list[str]]:
-
         """For encrypt & createsave command."""
+        self.is_available_check()
+
         files, total_filesize = await self.list_dir(ctx, folder_id, None, False, True, mounted_len_checks=True)
         filecount = len(files)
         if filecount == 0:
@@ -850,6 +882,7 @@ class GDapi:
 
         return [uploaded_file_paths]
 
+gdapi: GDapi | None
 if os.path.basename(argv[0]) == "bot.py":
     gdapi = GDapi()
 else:
