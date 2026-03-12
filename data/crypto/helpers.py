@@ -34,6 +34,8 @@ async def extra_decrypt(
 
     if d_ctx is None:
         assert choice is not None
+    if choice == False:
+        return
 
     helper = TimeoutHelper(embdecTimeout)
     emb = embdecFormat.copy()
