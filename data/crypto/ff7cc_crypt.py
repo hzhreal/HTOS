@@ -376,7 +376,7 @@ class Crypt_FF7CC:
 
             aes = cc.create_ctx_aes(Crypt_FF7CC.KEY, cc.AES.MODE_ECB)
             cc.set_ptr(0x568)
-            while await cc.read(stop_off=0x560 + length):
+            while await cc.read(stop_off=0x568 + (length - 8)):
                 cc.decrypt(aes)
                 await cc.write()
 
