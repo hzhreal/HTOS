@@ -389,7 +389,7 @@ class Crypt_FF7CC:
             aes = cc.create_ctx_aes(Crypt_FF7CC.KEY, cc.AES.MODE_ECB)
             checksum = ~0x52494146 # RIAF
             cc.set_ptr(0x568)
-            while await cc.read(stop_off=0x560 + length):
+            while await cc.read(stop_off=0x568 + (length - 8)):
                 cc.encrypt(aes)
                 # the length of our chunk is now a multiple of 16
                 # or in 1, ..., 15 (last chunk)
@@ -399,7 +399,7 @@ class Crypt_FF7CC:
                     # we dont need to write the remainder, it's already in place
                     break
                 for i in range(0, len(cc.chunk), 8):
-                    l = uint32(cc.chunk[i    :(i) + 4   ],  "little").value ^ checksum
+                    l = uint32(cc.chunk[i + 0:(i + 0) + 4], "little").value ^ checksum
                     r = uint32(cc.chunk[i + 4:(i + 4) + 4], "little").value
                     checksum = Crypt_FF7CC.C0[(r >> 0x18) & 0xFF] ^ Crypt_FF7CC.C1[(r >> 0x10) & 0xFF] ^ \
                                Crypt_FF7CC.C2[(r >> 0x08) & 0xFF] ^ Crypt_FF7CC.C3[r & 0xFF] ^ \
