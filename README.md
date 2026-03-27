@@ -22,6 +22,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Game                                                | Second layer            | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support            |
 | --------------------------------------------------- | ----------------------- | ----------------------------------- | ------------------------ | -----------------------------------|
 | Borderlands 3                                       | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Castle Crashers Remastered                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 1                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -110,6 +111,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 
 ## Acknowledgements
 * [Alfizari](https://github.com/alfizari)
+* [Alfizari](https://github.com/alfizari): [Castle-Crashers-Remastered-Save-Decrypt-PS4](https://github.com/alfizari/Castle-Crashers-Remastered-Save-Decrypt-PS4)
 * [Alfizari](https://github.com/alfizari): [Dark-Souls-Remastered-Save-decrypt-PS4](https://github.com/alfizari/Dark-Souls-Remastered-Save-decrypt-PS4)
 * [Alfizari](https://github.com/alfizari): [Monster-Hunter-World-Save-Decrypt-PS4](https://github.com/alfizari/Monster-Hunter-World-Save-Decrypt-PS4)
 * [AxrzZ](https://github.com/AxrzZ)
