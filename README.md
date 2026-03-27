@@ -44,6 +44,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil 2 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 3 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 4 Remake                              | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 5                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 7: Biohazard                          | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Resistance                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Revelations 2                        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -127,3 +128,4 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [That-Kidd](https://github.com/That-Kidd)
 * [Zhaxxy](https://github.com/Zhaxxy): [rdr2_enc_dec](https://github.com/Zhaxxy/rdr2_enc_dec)
 * [Zhaxxy](https://github.com/Zhaxxy): [xenoverse2_ps4_decrypt](https://github.com/Zhaxxy/xenoverse2_ps4_decrypt)
+

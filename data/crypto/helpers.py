@@ -16,7 +16,7 @@ from utils.constants import (
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID,
     DI1_TITLEID, DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
-    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID
+    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -554,6 +554,9 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
 
         elif title_id in TOSR_TITLEID:
             await Crypto.ToSR.check_enc_ps(filepath)
+
+        elif title_id in RE5_TITLEID:
+            await Crypto.RE5.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
@@ -622,3 +625,4 @@ async def extra_reregion_post(
         new_file = os.path.join(savefolder, new_name + f"_{rand_str}")
     await aiofiles.os.rename(savepath, new_file)
     await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
+
