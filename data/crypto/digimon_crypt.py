@@ -16,3 +16,4 @@ class Crypt_Digimon:
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         await Crypt_Digimon.check_enc_ps(filepath)
+

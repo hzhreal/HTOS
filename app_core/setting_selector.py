@@ -49,3 +49,4 @@ class SettingSelector:
             v.value = folder[0]
             md: ui.input = self.widgets[v.key]
             md.set_value(v.value)
+

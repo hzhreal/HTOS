@@ -14,3 +14,4 @@ class Crypt_RE7:
     @staticmethod
     async def check_enc_ps(filepath: str) -> None:
         await Crypt_RE7.encrypt_file(filepath)
+

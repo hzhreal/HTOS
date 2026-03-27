@@ -81,3 +81,4 @@ class Crypt_DI2:
             off = await cc.find(Crypt_DI2.DI2.ZSTD_MAGIC)
         if off == -1:
             await Crypt_DI2.encrypt_file(filepath)
+

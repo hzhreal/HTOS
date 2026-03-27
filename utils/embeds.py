@@ -759,3 +759,4 @@ embwlcom = discord.Embed(
     colour=Color.DEFAULT.value
 )
 embwlcom.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+

@@ -125,3 +125,4 @@ class SocketPS:
         sealed_key.dec_key.extend(orjson.loads(response["json"]))
 
 C1socket = SocketPS(IP, PORT_CECIE)
+

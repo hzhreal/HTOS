@@ -183,3 +183,4 @@ class Cheats_GTAV:
             trevor_cash=stats["Trevor_cash"]
         )
         return emb
+

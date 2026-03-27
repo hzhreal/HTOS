@@ -87,3 +87,4 @@ class Crypt_RE4R:
             header = await savegame.read(len(Crypt_RE4R.HEADER))
         if header == Crypt_RE4R.HEADER:
             await Crypt_RE4R.encrypt_file(filepath, re2r)
+

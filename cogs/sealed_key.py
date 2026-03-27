@@ -70,3 +70,4 @@ class Sealed_Key(commands.Cog):
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Sealed_Key(bot))
+

@@ -65,3 +65,4 @@ class Crypt_LaNoire:
     @staticmethod
     def savepairname_check(savepairname: str) -> bool:
         return "SAVEGAME" in savepairname or "USERPREFERENCES" in savepairname
+

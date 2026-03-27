@@ -47,3 +47,4 @@ class Crypt_SMT5:
             magic = await savegame.read(len(Crypt_SMT5.MAGIC))
         if magic == Crypt_SMT5.MAGIC:
             await Crypt_SMT5.encrypt_file(filepath)
+

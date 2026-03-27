@@ -229,3 +229,4 @@ class Encrypt(TabBase):
             s += "\n"
         s += "\n```"
         return s
+

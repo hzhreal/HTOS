@@ -101,3 +101,4 @@ class Resign(TabBase):
             i += 1
         self.logger.info("Done!")
         self.enable_buttons()
+

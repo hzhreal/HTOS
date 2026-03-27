@@ -316,3 +316,4 @@ class TabBase:
         self.output_button.enable()
         self.out_label.enable()
         self.start_button.enable()
+

@@ -188,3 +188,4 @@ class Reregion(TabBase):
         super().enable_buttons()
         self.sample_save_button.enable()
         self.sample_save_label.enable()
+

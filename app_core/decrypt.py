@@ -137,3 +137,4 @@ class Decrypt(TabBase):
         super().enable_buttons()
         self.include_sce_sys_checkbox.enable()
         self.ignore_secondlayer_checks_checkbox.enable()
+

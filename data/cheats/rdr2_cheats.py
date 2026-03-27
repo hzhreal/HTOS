@@ -177,3 +177,4 @@ class Cheats_RDR2:
             money=stats["Money"]
         )
         return emb
+

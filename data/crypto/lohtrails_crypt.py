@@ -360,3 +360,4 @@ class Crypt_LoHTrails:
                 await Crypt_LoHTrails.encrypt_file(filepath, title_id)
         else:
             await Crypt_LoHTrails.encrypt_file(filepath, title_id)
+

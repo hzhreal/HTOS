@@ -127,3 +127,4 @@ class Converter_Rstar:
                 return "CONVERTED: PC -> PS4"
         except (ValueError, IOError, IndexError, CryptoError):
             raise ConverterError("File not supported!")
+

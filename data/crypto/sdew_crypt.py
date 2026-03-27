@@ -42,3 +42,4 @@ class Crypt_Sdew:
             header = await savegame.read(2)
         if not CC.is_valid_zlib_header(header):
             await Crypt_Sdew.encrypt_file(filepath)
+

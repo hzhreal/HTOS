@@ -75,3 +75,4 @@ def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIM // 4) -> str
         finished_files += ", ..."
 
     return finished_files
+
