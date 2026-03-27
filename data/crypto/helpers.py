@@ -16,7 +16,7 @@ from utils.constants import (
     MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID,
     DI1_TITLEID, DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
-    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID
+    LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -114,6 +114,8 @@ async def extra_decrypt(
                         await Crypto.LoHTrails.check_dec_ps(destination_directory)
                     case "FF7CC":
                         await Crypto.FF7CC.check_dec_ps(destination_directory)
+                    case "CCR":
+                        await Crypto.CCR.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -460,6 +462,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("FF7CC"))
         await helper.await_done()
 
+    elif title_id in CCR_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.CCR.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("CCR"))
+        await helper.await_done()
+
 async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -557,6 +571,9 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
 
         elif title_id in RE5_TITLEID:
             await Crypto.RE5.check_enc_ps(filepath)
+
+        elif title_id in CCR_TITLEID:
+            await Crypto.CCR.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
