@@ -10,3 +10,4 @@ class Crypt_Minecraft:
         savepairname[0] = title_id
         savepairname = "-".join(savepairname)
         return savepairname
+

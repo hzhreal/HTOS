@@ -59,3 +59,4 @@ if __name__ in {"__main__", "__mp_main__"}:
     startup(workspace_opt, lite=True)
 
     ui.run(root=initialize_tabs, reload=args.reload, native=True, dark=True, window_size=(1400, 800))
+

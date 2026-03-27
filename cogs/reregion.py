@@ -232,3 +232,4 @@ class ReRegion(commands.Cog):
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(ReRegion(bot))
+

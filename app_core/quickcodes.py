@@ -94,10 +94,10 @@ class QuickCodes(TabBase):
                     self.logger.exception("Unexpected error. Stopping...")
                     self.enable_buttons()
                     return
-                
+
                 completed.append(basename)
                 j += 1
-            
+
             out = os.path.join(self.out_folder, rand_str)
             finished_files = completed_print(completed)
             shutil.copytree(out_path, out, dirs_exist_ok=True)
@@ -112,7 +112,8 @@ class QuickCodes(TabBase):
     def disable_buttons(self) -> None:
         super().disable_buttons()
         self.codes_obj.disable()
-    
+
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.codes_obj.enable()
+

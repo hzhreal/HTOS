@@ -54,3 +54,4 @@ class Crypt_DSR:
             decrypted = await cc.fraction_byte()
         if decrypted:
             await Crypt_DSR.encrypt_file(filepath)
+

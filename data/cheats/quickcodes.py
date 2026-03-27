@@ -822,3 +822,4 @@ class QuickCodes(CustomCrypto):
                 raise QuickCodesError("Invalid code!")
 
             line_index += 1
+

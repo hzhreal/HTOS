@@ -605,3 +605,4 @@ async def check_version() -> str:
         print(f"Latest version: {latest_ver}")
         print("\n")
         return "Stable"
+

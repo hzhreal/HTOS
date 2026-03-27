@@ -89,3 +89,4 @@ or any equivalent command.
 The `--ignore-startup` flag is also available. The only extra step in the startup process for the bot is making sure the database files exist, and in the correct format.  
 
 Do the `/init` command in the channel where you want the threads to get created in. You only need to do this once.  
+

@@ -125,3 +125,4 @@ class Converter_Xeno2:
         except (ValueError, IOError, IndexError, CryptoError):
             raise ConverterError("File not supported!")
         return ret
+

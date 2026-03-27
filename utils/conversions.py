@@ -36,3 +36,4 @@ def hours_to_seconds(n: int) -> int:
 
 def minutes_to_seconds(n: int) -> int:
     return n * 60
+

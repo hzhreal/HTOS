@@ -78,3 +78,4 @@ class InstanceLock:
                 del self.instances[disc_user_id]
 
 INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE, MAXIMUM_INSTANCES_PER_USER)
+

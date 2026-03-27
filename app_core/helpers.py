@@ -188,3 +188,4 @@ def int_validation(s: str | int, min_: int, max_: int) -> bool:
         except ValueError:
             return False
     return min_ <= n <= max_
+

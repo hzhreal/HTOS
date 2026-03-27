@@ -192,3 +192,4 @@ class SFOEditor(SFOContext):
         if s.lower().startswith("0x"):
             s = s[2:]
         return checkid(s)
+

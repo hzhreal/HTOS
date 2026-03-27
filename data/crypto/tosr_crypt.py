@@ -18,3 +18,4 @@ class Crypt_ToSR:
     async def check_enc_ps(filepath: str) -> None:
         if basename(filepath).startswith("TOSSaveData"):
             await Crypt_ToSR.encrypt_file(filepath)
+

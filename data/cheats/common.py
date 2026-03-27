@@ -27,3 +27,4 @@ class QuickCheats(CustomCrypto):
                 break
 
         return target_offset
+

@@ -119,3 +119,4 @@ class ProfileSelector:
         for i in inputs:
             i.set_value("")
         dialog.close()
+

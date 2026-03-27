@@ -199,3 +199,4 @@ class utf_8_s(utf_8):
 
     def from_bytes(self) -> str:
         return self.as_bytes.decode("utf-8", errors="ignore")
+

@@ -910,3 +910,4 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
             if len(savenames) == 0:
                 raise WorkspaceError("Failed to get saves!")
             return ReturnTypes.SUCCESS, [os.path.join(selected_save, x) for x in savenames]
+

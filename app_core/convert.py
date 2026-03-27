@@ -195,3 +195,4 @@ class Convert(TabBase):
     def enable_buttons(self) -> None:
         super().enable_buttons()
         self.game_dropdown.enable()
+
