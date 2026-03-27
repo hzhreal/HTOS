@@ -205,7 +205,7 @@ CCR_TITLEID = frozenset([
     "CUSA14537", "CUSA14409"
 ])
 TOB_TITLEID = frozenset([
-    "CUSA05105", "CUSA05258", "CUSA03931", "CUSA04986", "CUSA05105"
+    "CUSA05105", "CUSA05258", "CUSA03931", "CUSA04986"
 ])
 
 def verify_titleids() -> None:
