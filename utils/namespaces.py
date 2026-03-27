@@ -30,6 +30,7 @@ from data.crypto.lohtrails_crypt import Crypt_LoHTrails
 from data.crypto.minecraft_crypt import Crypt_Minecraft
 from data.crypto.ff7cc_crypt import Crypt_FF7CC
 from data.crypto.tosr_crypt import Crypt_ToSR
+from data.crypto.re5_crypt import Crypt_RE5
 
 from types import SimpleNamespace
 
@@ -45,6 +46,6 @@ Crypto = SimpleNamespace(
     RE4R=Crypt_RE4R, Digimon=Crypt_Digimon, Sdew=Crypt_Sdew,
     Nioh2=Crypt_Nioh2, Mhwi=Crypt_Mhwi, LaNoire=Crypt_LaNoire,
     LoHTrails=Crypt_LoHTrails, Minecraft=Crypt_Minecraft, FF7CC=Crypt_FF7CC,
-    ToSR=Crypt_ToSR
+    ToSR=Crypt_ToSR, RE5=Crypt_RE5
 )
 
