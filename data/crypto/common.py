@@ -255,6 +255,8 @@ class CustomCrypto:
             chunk = await self.r_stream.read(r_len)
             if not chunk:
                 break
+            if await self.w_stream.tell() + len(chunk) > self.SAVESIZE_MAX:
+                raise CryptoError("Invalid!")
             await self.w_stream.write(chunk)
 
     def bytes_to_u32array(self, byteorder: Literal["little", "big"]) -> None:
