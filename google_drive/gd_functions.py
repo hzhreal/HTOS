@@ -311,7 +311,7 @@ class GDapi:
                 await ctx.edit(embed=emb)
                 await asyncio.sleep(1)
 
-            elif savesize is not None and total_size > savesize:
+            elif savesize is not None and total_size + file_size > savesize:
                 raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
             else:

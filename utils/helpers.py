@@ -350,7 +350,7 @@ async def check_saves(
         basenames.add(basename)
 
     valid_files = []
-    total_count = 0
+    total_size = 0
     if ps_save_pair_upload:
         valid_files = await save_pair_check(ctx, attachments)
         return valid_files
@@ -374,11 +374,11 @@ async def check_saves(
             await ctx.edit(embed=emb)
             await asyncio.sleep(1)
 
-        elif savesize is not None and total_count > savesize:
+        elif savesize is not None and total_size + attachment.size > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         else:
-            total_count += attachment.size
+            total_size += attachment.size
             valid_files.append(attachment)
 
     return valid_files
@@ -669,7 +669,7 @@ async def replace_decrypted(
 
     completed = []
     if upload_individually:
-        total_count = 0
+        total_size = 0
         for file in files:
             full_path = mount_location + "/" + file
             cwd_here = full_path.split("/")
@@ -691,8 +691,8 @@ async def replace_decrypted(
             task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
-            total_count += await aiofiles.os.path.getsize(new_path)
-        if total_count > savesize:
+            total_size += await aiofiles.os.path.getsize(new_path)
+        if total_size > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
     else:
