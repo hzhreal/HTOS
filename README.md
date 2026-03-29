@@ -64,7 +64,6 @@ Certain games need to have an extra implementation for it to work out of the box
 | The Legend of Heroes: Trails through Daybreak II    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | The Legend of Heroes: Trails to Azure               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Tiny Tina's Wonderlands                             | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
-| Tomb Raider VI: Angel of Darkness                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 2: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 3: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 4                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
