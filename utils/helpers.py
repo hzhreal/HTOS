@@ -691,7 +691,7 @@ async def replace_decrypted(
             task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
-            total_count += await aiofiles.os.path.getsize(new_path)
+            total_size += await aiofiles.os.path.getsize(new_path)
         if total_size + attachment.size > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
