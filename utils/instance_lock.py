@@ -72,9 +72,11 @@ class InstanceLock:
             if instance.active_instances == 0:
                 del self.instances[disc_userid]
 
-    async def release_all(self, disc_user_id) -> None:
+    async def release_all(self, disc_user_id: int) -> None:
         async with self.lock:
             if disc_user_id in self.instances:
+                instance = self.instances[disc_user_id]
+                self.instances_len -= instance.active_instances
                 del self.instances[disc_user_id]
 
 INSTANCE_LOCK_global = InstanceLock(MAXIMUM_INSTANCES_AT_ONCE, MAXIMUM_INSTANCES_PER_USER)
