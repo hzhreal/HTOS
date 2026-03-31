@@ -1,4 +1,3 @@
-from aiohttp.client_middleware_digest_auth import CHALLENGE_FIELDS
 from data.crypto.common import CustomCrypto as CC
 from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32, int32
