@@ -454,25 +454,27 @@ class CustomCrypto:
         blocksize = uint8(Blowfish.block_size, const=True)
         return self._create_ctx(cipher, blocksize)
 
-    def create_ctx_zlib_compress(self) -> int:
+    def create_ctx_zlib_compress(self, wbits: int | None = None) -> int:
         self._prepare_compression()
-        obj = zlib.compressobj()
+        if wbits is None:
+            obj = zlib.compressobj()
+        else:
+            obj = zlib.compressobj(wbits=wbits)
         return self._create_ctx(obj)
 
     def create_ctx_gzip_compress(self) -> int:
-        self._prepare_compression()
-        obj = zlib.compressobj(wbits=zlib.MAX_WBITS | 16)
-        return self._create_ctx(obj)
+        return self.create_ctx_zlib_compress(wbits=zlib.MAX_WBITS | 16)
 
-    def create_ctx_zlib_decompress(self) -> int:
+    def create_ctx_zlib_decompress(self, wbits: int | None = None) -> int:
         self._prepare_compression()
-        obj = zlib.decompressobj()
+        if wbits is None:
+            obj = zlib.decompressobj()
+        else:
+            obj = zlib.decompressobj(wbits=wbits)
         return self._create_ctx(obj)
 
     def create_ctx_gzip_decompress(self) -> int:
-        self._prepare_compression()
-        obj = zlib.decompressobj(zlib.MAX_WBITS | 16)
-        return self._create_ctx(obj)
+        return self.create_ctx_zlib_decompress(wbits=zlib.MAX_WBITS | 16)
 
     def create_ctx_crc32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
         seed = uint32(seed.value, seed.ENDIANNESS)
