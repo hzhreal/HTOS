@@ -47,7 +47,7 @@ class Crypt_LoHTrails:
             self.target_buf_end = self.target_buf_start + alloc_len
 
         async def write_target(self, b: int) -> None:
-            if self.target_position > self.target_size:
+            if self.target_position >= self.target_size:
                 raise CryptoError("Unsupported save!")
             if self.target_position >= self.target_buf_end or not self.target_buf:
                 await self.alloc_target()

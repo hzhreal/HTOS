@@ -207,6 +207,9 @@ CCR_TITLEID = frozenset([
 TOB_TITLEID = frozenset([
     "CUSA05105", "CUSA05258", "CUSA03931", "CUSA04986"
 ])
+TR6R_TITLEID = frozenset([
+    "CUSA44837", "CUSA44839"
+])
 
 def verify_titleids() -> None:
     from utils.orbis import check_titleid
@@ -215,7 +218,7 @@ def verify_titleids() -> None:
         MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID, REV2_TITLEID, RE7_TITLEID, RERES_TITLEID, DL1_TITLEID, DL2_TITLEID, RGG_TITLEID, DI1_TITLEID,
         DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
         DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MINECRAFT_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
-        LOH_TRAILS_ZERO_AZURE, LOH_TRAILS_DAYBREAK_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, CCR_TITLEID, TOB_TITLEID
+        LOH_TRAILS_ZERO_AZURE, LOH_TRAILS_DAYBREAK_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, CCR_TITLEID, TOB_TITLEID, TR6R_TITLEID
     ])
     for ts in title_ids:
         for t in ts:
@@ -226,9 +229,10 @@ SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV
 FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
-UPLOAD_TIMEOUT = minutes_to_seconds(10) # seconds, how long the user has to upload files or send google drive folder link
-OTHER_TIMEOUT = minutes_to_seconds(5) # seconds, how long the user has for button clicks, responding to quickresign command, and responding with account id
-GENERAL_TIMEOUT = hours_to_seconds(1) # seconds, how long files can actually be downloaded and uploaded for, before timing out
+UPLOAD_TIMEOUT = minutes_to_seconds(10) # how long the user has to upload files or send google drive folder link
+OTHER_TIMEOUT = minutes_to_seconds(5) # how long the user has for button clicks, responding to quickresign command, and responding with account id
+GENERAL_TIMEOUT = hours_to_seconds(1) # how long files can actually be downloaded and uploaded for, before timing out
+MISC_TIMEOUT = minutes_to_seconds(1) # how long single operations like cleaning up a folder, or requesting keyset from the console can take
 GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(10) # 10 mb maximum when not considering boost levels

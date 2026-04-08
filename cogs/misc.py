@@ -1,10 +1,11 @@
+import asyncio
 import discord
 from discord.ext import commands
 from network.socket_functions import C1socket
 from network.ftp_functions import FTPps
 from network.exceptions import SocketError
 from utils.constants import (
-    IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN, MISC_TIMEOUT,
     logger, bot,
     BASE_ERROR_MSG
 )
@@ -39,12 +40,16 @@ class Misc(commands.Cog):
             return
 
         try:
-            keyset = await C1socket.socket_keyset()
+            async with asyncio.timeout(MISC_TIMEOUT):
+                keyset = await C1socket.socket_keyset()
             fw = keyset_to_fw(keyset)
 
             emb = keyset_emb.copy()
             emb.description = emb.description.format(keyset=keyset, fw=fw)
             await ctx.edit(embed=emb)
+        except TimeoutError:
+            await error_handling(ctx, "Timed out!", workspace_folders, None, None, None)
+            logger.info(f"Timed out!")
         except (SocketError, OSError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:

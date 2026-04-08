@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 from io import BytesIO
@@ -5,7 +6,7 @@ from network.socket_functions import C1socket
 from network.exceptions import SocketError
 from utils.workspace import make_workspace
 from utils.helpers import error_handling
-from utils.constants import logger, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN
+from utils.constants import logger, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN, MISC_TIMEOUT
 from utils.embeds import embLoad, embdec
 from utils.orbis import PfsSKKey
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -49,13 +50,17 @@ class Sealed_Key(commands.Cog):
             return
 
         try:
-            await C1socket.socket_decryptsdkey(sealedkey_t)
+            async with asyncio.timeout(MISC_TIMEOUT):
+                await C1socket.socket_decryptsdkey(sealedkey_t)
 
             emb = embdec.copy()
             emb.description = emb.description.format(filename=sealed_key.filename)
             await ctx.edit(embed=emb)
 
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))
+        except TimeoutError:
+            await error_handling(ctx, "Timed out!", workspace_folders, None, None, None)
+            logger.info(f"Timed out!")
         except SocketError as e:
             await error_handling(ctx, e, workspace_folders, None, None, None)
             logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)

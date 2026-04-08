@@ -7,6 +7,7 @@ import discord
 import aiofiles
 import aiofiles.os
 import aiohttp
+import asyncio
 from dataclasses import dataclass
 from ftplib import FTP, error_perm
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
@@ -16,7 +17,7 @@ from network.exceptions import FTPError
 from google_drive.exceptions import GDapiError
 from utils.constants import (
     UPLOAD_DECRYPTED, UPLOAD_ENCRYPTED, DOWNLOAD_DECRYPTED, PNG_PATH, KEYSTONE_PATH, NPSSO_global,
-    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR,
+    DOWNLOAD_ENCRYPTED, PARAM_PATH, STORED_SAVES_FOLDER, IP, PORT_FTP, MOUNT_LOCATION, PS_UPLOADDIR, MISC_TIMEOUT,
     DATABASENAME_THREADS, DATABASENAME_ACCIDS, DATABASENAME_BLACKLIST, BLACKLIST_MESSAGE, RANDOMSTRING_LENGTH, BASE_ERROR_MSG,
     logger, blacklist_logger, psnawp, verify_titleids
 )
@@ -164,15 +165,21 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
 
     if remote_savelist is not None and len(remote_savelist) > 0:
         try:
-            await fInstance.delete_list(PS_UPLOADDIR, remote_savelist)
+            async with asyncio.timeout(MISC_TIMEOUT):
+                await fInstance.delete_list(PS_UPLOADDIR, remote_savelist)
+        except TimeoutError:
+            logger.info("Timed out!")
         except FTPError as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
     if remote_mount_paths is not None and len(remote_mount_paths) > 0:
         for mountlocation in remote_mount_paths[:]:
             try:
-                await fInstance.delete_folder_contents(mountlocation)
+                async with asyncio.timeout(MISC_TIMEOUT):
+                    await fInstance.delete_folder_contents(mountlocation)
                 remote_mount_paths.remove(mountlocation)
+            except TimeoutError:
+                logger.info("Timed out!")
             except FTPError as e:
                 logger.error(f"An error occurred when cleaning up (FTP): {e}")
 

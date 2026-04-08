@@ -64,6 +64,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | The Legend of Heroes: Trails through Daybreak II    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | The Legend of Heroes: Trails to Azure               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Tiny Tina's Wonderlands                             | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Tomb Raider VI: Angel of Darkness                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 2: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 3: Remastered                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted 4                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -120,7 +121,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2-save-converter](https://github.com/bawsdeep/xenoverse2-save-converter)
 * [Bawsdeep](https://github.com/bawsdeep): [xvtoolkit](https://github.com/bawsdeep/xvtoolkit)
-* [Brotherguns5624](https://github.com/Brotherguns5624)
+* [Brotherguns](https://github.com/brotherguns)
 * [Bucanero](https://github.com/bucanero): [apollo-lib](https://github.com/bucanero/apollo-lib)
 * [Bucanero](https://github.com/bucanero): [pfd_sfo_tools](https://github.com/bucanero/pfd_sfo_tools)
 * [Bucanero](https://github.com/bucanero): [save-decrypters](https://github.com/bucanero/save-decrypters)
