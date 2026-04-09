@@ -151,7 +151,7 @@ class Change(commands.Cog):
             emb = embPdone.copy()
             emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
             try:
-                await msg.edit(embed=embPdone)
+                await msg.edit(embed=emb)
             except discord.HTTPException as e:
                 logger.info(f"Error while editing msg: {e}", exc_info=True)
 
