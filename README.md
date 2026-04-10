@@ -27,6 +27,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 1                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Diablo III                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Digimon World: Next Order                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dying Light 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dying Light 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
