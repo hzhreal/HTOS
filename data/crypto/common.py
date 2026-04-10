@@ -299,14 +299,42 @@ class CustomCrypto:
 
         await self.r_stream.seek(0)
         cnt = 0
+        bytes_read = 0
         while True:
             chunk = await self.r_stream.read(self.CHUNKSIZE)
             if not chunk:
                 break
+            bytes_read += len(chunk)
 
             cnt += chunk.count(byte.value)
             if cnt * div >= self.size:
                 return True
+
+            r = self.size - bytes_read
+            if (cnt + r) * div < self.size:
+                return False
+        return cnt * div >= self.size
+
+    NON_PRINTABLE_ASCII_TABLE = bytes([1 if (b <= 31 or b == 127) else 0 for b in range(256)])
+    async def fraction_non_printable_chars(self, div: int = 2) -> bool:
+        assert div != 0
+
+        await self.r_stream.seek(0)
+        cnt = 0
+        bytes_read = 0
+        while True:
+            chunk = await self.r_stream.read(self.CHUNKSIZE)
+            if not chunk:
+                break
+            bytes_read += len(chunk)
+
+            cnt += sum(self.NON_PRINTABLE_ASCII_TABLE[b] for b in chunk)
+            if cnt * div >= self.size:
+                return True
+
+            r = self.size - bytes_read
+            if (cnt + r) * div < self.size:
+                return False
         return cnt * div >= self.size
 
     def gen_bytes(self, length: int) -> bytes:
