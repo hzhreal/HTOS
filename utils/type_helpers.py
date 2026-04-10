@@ -96,10 +96,16 @@ class Cint:
                 raise ValueError("Invalid type!")
 
     def to_bytes(self) -> bytes:
-        return struct.pack(self.fmt, self._value)
+        try:
+            return struct.pack(self.fmt, self._value)
+        except struct.error:
+            raise ValueError("Invalid value provided!")
 
     def from_bytes(self) -> int:
-        return struct.unpack(self.fmt, self.as_bytes)[0]
+        try:
+            return struct.unpack(self.fmt, self.as_bytes)[0]
+        except struct.error:
+            raise ValueError("Invalid value provided!")
 
     def __cast_signed(self, n: int) -> int:
         # same as ((n + 2^(b - 1)) mod 2^b) - 2^(b - 1)
