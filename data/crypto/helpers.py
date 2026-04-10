@@ -17,7 +17,7 @@ from utils.constants import (
     DI1_TITLEID, DI2_TITLEID, NMS_TITLEID, TERRARIA_TITLEID, SMT5_TITLEID, RCUBE_TITLEID, DSR_TITLEID, RE4R_TITLEID, RE3R_TITLEID, RE2R_TITLEID,
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
     LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID,
-    TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID
+    TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -629,6 +629,9 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
 
         elif title_id in DIABLO3_TITLEID:
             await Crypto.Diablo3.check_enc_ps(filepath)
+
+        elif title_id in ALIEN_ISO_TITLEID:
+            await Crypto.AlienIso.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 

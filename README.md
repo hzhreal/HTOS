@@ -21,6 +21,7 @@ Certain games need to have an extra implementation for it to work out of the box
 
 | Game                                                | Second layer            | PS4 -> PC conversion and vice versa | Quick cheats             | Extra re-region support            |
 | --------------------------------------------------- | ----------------------- | ----------------------------------- | ------------------------ | -----------------------------------|
+| Alien: Isolation                                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Borderlands 3                                       | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
 | Castle Crashers Remastered                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
