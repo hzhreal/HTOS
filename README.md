@@ -52,6 +52,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil Village                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shin Megami Tensei 5                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Stardew Valley                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Strider                                             | :white_check_mark:      | :white_cirlce:                      | :black_circle:           | :white_circle:                     |
 | Tales of Berseria                                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Tales of Symphonia Remastered                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Terraria                                            | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
