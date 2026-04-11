@@ -4,21 +4,11 @@ import aiofiles
 from data.crypto.common import CustomCrypto as CC
 
 class Crypt_DL2:
-
     STRUCT_SIZE     = 20
     MAGIC_SGDS      = b"SGDS"
     MAGIC_SGDD      = b"SGDD"
     STRUCT_FMT      = "<IIQI"
     CRC_FIELD_OFF   = 8
-
-    CRC64 = CC.anycrc.CRC(
-        width=64,
-        poly=0xAD93D23594C935A9,
-        init=0xFF_FF_FF_FF_FF_FF_FF_FF,
-        refin=True,
-        refout=True,
-        xorout=0xFF_FF_FF_FF_FF_FF_FF_FF,
-    )
 
     @staticmethod
     async def _fix_crcs(filepath: str) -> None:
@@ -37,7 +27,7 @@ class Crypt_DL2:
                     break
 
                 header = await cc.ext_read(off, Crypt_DL2.STRUCT_SIZE)
-                _, seg_type, stored_crc, size = struct.unpack_from(Crypt_DL2.STRUCT_FMT, header)
+                _, seg_type, _stored_crc, size = struct.unpack_from(Crypt_DL2.STRUCT_FMT, header)
 
                 seg_start = off + Crypt_DL2.STRUCT_SIZE
                 seg_end   = seg_start + size
@@ -47,16 +37,16 @@ class Crypt_DL2:
                     continue
 
                 if seg_type == 2 and size > 0:
-                    calc_crc = None
-                    pos = seg_start
-                    while pos < seg_end:
-                        n     = min(CC.CHUNKSIZE, seg_end - pos)
-                        chunk = await cc.ext_read(pos, n)
-                        calc_crc = Crypt_DL2.CRC64.calc(chunk, calc_crc)
-                        pos += n
-
-                    if calc_crc != stored_crc:
-                        await cc.ext_write(off + Crypt_DL2.CRC_FIELD_OFF, struct.pack("<Q", calc_crc))
+                    crc = cc.create_ctx_crc64_any(
+                        poly=0xAD93D23594C935A9,
+                        init=0xFF_FF_FF_FF_FF_FF_FF_FF,
+                        refin=True,
+                        refout=True,
+                        xorout=0xFF_FF_FF_FF_FF_FF_FF_FF,
+                    )
+                    await cc.checksum(crc, seg_start, seg_end)
+                    await cc.write_checksum(crc, off + Crypt_DL2.CRC_FIELD_OFF)
+                    cc.delete_ctx(crc)
 
                 search_off = off + 4
 
