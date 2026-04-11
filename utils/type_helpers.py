@@ -13,7 +13,15 @@ class CIntSignednessState(Enum):
     UNSIGNED = False
 
 class Cint:
-    def __init__(self, bits: int, signed: bool, fmt: str, value: int | str | bytes | bytearray = 0, endianness: Literal["little", "big", "None"] = "None", const: bool = False) -> None:
+    def __init__(
+        self,
+        bits: int,
+        signed: bool,
+        fmt: str,
+        value: int | str | bytes | bytearray = 0,
+        endianness: Literal["little", "big", "None"] = "None",
+        const: bool = False,
+    ) -> None:
         if fmt == "":
             fmt_set = (bits, signed)
             fmt_search = self.FMT_TABLE.get(fmt_set)
@@ -26,6 +34,7 @@ class Cint:
         blen_expected = ceil(bits / 8)
         if struct.calcsize(self.fmt) != blen_expected:
             raise ValueError(f"Format string {self.fmt} does not match expected byte length {blen_expected}!")
+        self.bytelen = blen_expected
         self.ENDIANNESS = endianness
 
         if signed:
@@ -35,23 +44,17 @@ class Cint:
             self.signedness = CIntSignednessState.SIGNED
         else:
             self.max = (1 << bits) - 1
-            self.MIN = 0
+            self.min = 0
             self.cast = self.__cast_unsigned
             self.signedness = CIntSignednessState.UNSIGNED
 
         match value:
             case int():
                 self._value = self.cast(value)
-                self.as_bytes = self.to_bytes()
-                self.bytelen = len(self.as_bytes)
             case str():
                 self._value = self.cast(int(value, 16))
-                self.as_bytes = self.to_bytes()
-                self.bytelen = len(self.as_bytes)
             case bytes() | bytearray():
-                self.as_bytes = bytes(value)
-                self.bytelen = len(self.as_bytes)
-                self._value = self.from_bytes()
+                self._value = self.from_bytes(value)
             case _:
                 raise ValueError("Invalid type!")
         self.const = const
@@ -79,31 +82,32 @@ class Cint:
     def value(self) -> int:
         return self._value
 
+    @property
+    def as_bytes(self) -> bytes:
+        return self.to_bytes(self._value)
+
     @value.setter
     def value(self, value: int | str | bytes | bytearray) -> None:
         assert not self.const
         match value:
             case int():
                 self._value = self.cast(value)
-                self.as_bytes = self.to_bytes()
             case str():
                 self._value = self.cast(int(value, 16))
-                self.as_bytes = self.to_bytes()
             case bytes() | bytearray():
-                self.as_bytes = bytes(value)
-                self._value = self.from_bytes()
+                self._value = self.from_bytes(value)
             case _:
                 raise ValueError("Invalid type!")
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self, n: int) -> bytes:
         try:
-            return struct.pack(self.fmt, self._value)
+            return struct.pack(self.fmt, n)
         except struct.error:
             raise ValueError("Invalid value provided!")
 
-    def from_bytes(self) -> int:
+    def from_bytes(self, b: bytes | bytearray) -> int:
         try:
-            return struct.unpack(self.fmt, self.as_bytes)[0]
+            return struct.unpack(self.fmt, b)[0]
         except struct.error:
             raise ValueError("Invalid value provided!")
 
