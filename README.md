@@ -45,6 +45,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Nioh 2                                              | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                                        | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Prince of Persia: The Lost Crown                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Red Dead Redemption 2                               | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Resident Evil 2 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
