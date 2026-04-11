@@ -18,7 +18,7 @@ from utils.constants import (
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
     LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID,
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
-    KH3_TITLEID
+    KH3_TITLEID, PO_PERSIA_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -126,6 +126,8 @@ async def extra_decrypt(
                         await Crypto.Diablo3.check_dec_ps(destination_directory)
                     case "SHANTAESCURSE":
                         await Crypto.ShantaeSCurse.check_dec_ps(destination_directory)
+                    case "POPERSIA":
+                        await Crypto.PoPersia.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -532,6 +534,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("SHANTAESCURSE"))
         await helper.await_done()
 
+    elif title_id in PO_PERSIA_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.PoPersia.check_dec_ps(destination_directory)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("POPERSIA"))
+        await helper.await_done()
+
 async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -659,6 +673,9 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
 
         elif title_id in KH3_TITLEID:
             await Crypto.KH3.check_enc_ps(filepath)
+
+        elif title_id in PO_PERSIA_TITLEID:
+            await Crypto.PoPersia.check_enc_ps(filepath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
