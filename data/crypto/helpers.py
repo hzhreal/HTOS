@@ -84,7 +84,7 @@ async def extra_decrypt(
                         await Crypto.MGSV.check_dec_ps(destination_directory, title_id, savepairname)
                     case "REV2":
                         await Crypto.Rev2.check_dec_ps(destination_directory)
-                    case "DL1" | "DL2" | "DI1":
+                    case "DL1" | "DI1":
                         await Crypto.DL.check_dec_ps(destination_directory)
                     case "RGG":
                        await Crypto.RGG.check_dec_ps(destination_directory)
@@ -126,6 +126,8 @@ async def extra_decrypt(
                         await Crypto.Diablo3.check_dec_ps(destination_directory)
                     case "SHANTAESCURSE":
                         await Crypto.ShantaeSCurse.check_dec_ps(destination_directory)
+                    case "DL2":
+                        await Crypto.DL2.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -272,7 +274,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DL.check_dec_ps(destination_directory)
+                    await Crypto.DL2.check_dec_ps(destination_directory)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -571,7 +573,7 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
             await Crypto.DL.check_enc_ps(filepath, "DL1")
 
         elif title_id in DL2_TITLEID:
-            await Crypto.DL.check_enc_ps(filepath, "DL2")
+            await Crypto.DL2.check_enc_ps(filepath, "DL2")
 
         elif title_id in RGG_TITLEID:
             await Crypto.RGG.check_enc_ps(filepath)

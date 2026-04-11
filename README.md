@@ -32,7 +32,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Diablo III                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Digimon World: Next Order                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dying Light 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dying Light 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dying Light 2                                       | :white_check_mark:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Kingdom Hearts III                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -125,6 +125,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [Alfizari](https://github.com/alfizari): [Monster-Hunter-World-Save-Decrypt-PS4](https://github.com/alfizari/Monster-Hunter-World-Save-Decrypt-PS4)
 * [AxrzZ](https://github.com/AxrzZ)
 * [Batang](https://github.com/B-a-t-a-n-g)
+* [Batang](https://github.com/B-a-t-a-n-g): [Dying_Light_2_Checksum](https://github.com/B-a-t-a-n-g/Dying_Light_2_Checksum)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2-save-converter](https://github.com/bawsdeep/xenoverse2-save-converter)
 * [Bawsdeep](https://github.com/bawsdeep): [xvtoolkit](https://github.com/bawsdeep/xvtoolkit)
