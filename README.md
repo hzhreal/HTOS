@@ -35,6 +35,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Like a Dragon: Ishin                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Mafia III                                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Metal Gear Solid V: Ground Zeroes                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Definitive Experience       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
