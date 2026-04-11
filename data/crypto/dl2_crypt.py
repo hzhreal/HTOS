@@ -85,8 +85,9 @@ class Crypt_DL2:
                 await Crypt_DL2.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, game: str = "DL2") -> None:
+    async def check_enc_ps(filepath: str) -> None:
         async with aiofiles.open(filepath, "rb") as savegame:
             magic = await savegame.read(3)
         if magic != b"\x1F\x8B\x08":
             await Crypt_DL2.encrypt_file(filepath)
+

@@ -86,10 +86,12 @@ async def extra_decrypt(
                         await Crypto.Rev2.check_dec_ps(destination_directory)
                     case "DL1" | "DI1":
                         await Crypto.DL.check_dec_ps(destination_directory)
-                    case "RGG":
-                       await Crypto.RGG.check_dec_ps(destination_directory)
+                    case "DL2":
+                        await Crypto.DL2.check_dec_ps(destination_directory)
                     case "DI2":
                         await Crypto.DI2.check_dec_ps(destination_directory)
+                    case "RGG":
+                       await Crypto.RGG.check_dec_ps(destination_directory)
                     case "NMS":
                         await Crypto.NMS.check_dec_ps(destination_directory)
                     case "TERRARIA":
@@ -128,8 +130,6 @@ async def extra_decrypt(
                         await Crypto.ShantaeSCurse.check_dec_ps(destination_directory)
                     case "POPERSIA":
                         await Crypto.PoPersia.check_dec_ps(destination_directory)
-                    case "DL2":
-                        await Crypto.DL2.check_dec_ps(destination_directory)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -587,7 +587,7 @@ async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
             await Crypto.DL.check_enc_ps(filepath, "DL1")
 
         elif title_id in DL2_TITLEID:
-            await Crypto.DL2.check_enc_ps(filepath, "DL2")
+            await Crypto.DL2.check_enc_ps(filepath)
 
         elif title_id in RGG_TITLEID:
             await Crypto.RGG.check_enc_ps(filepath)
