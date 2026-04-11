@@ -11,6 +11,8 @@ import zlib
 import anycrc
 from types import TracebackType
 
+from data.crypto.algorithms.jhash.lookup2 import JHashLookup2
+
 from data.crypto.exceptions import CryptoError
 
 from aiofiles.threadpool.binary import AsyncBufferedReader
@@ -530,6 +532,11 @@ class CustomCrypto:
     def create_ctx_mmh3_u32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
         seed = uint32(seed.value, seed.ENDIANNESS)
         update_obj = mmh3.mmh3_32(seed=seed.value)
+        return self._create_ctx(update_obj)
+
+    def create_ctx_jhash_lookup2(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
+        seed = uint32(seed.value, seed.ENDIANNESS)
+        update_obj = JHashLookup2(seed.value, seed.ENDIANNESS)
         return self._create_ctx(update_obj)
 
     def create_ctx_md5(self) -> int:
