@@ -45,6 +45,7 @@ from data.crypto.popersia_crypt import Crypt_PoPersia
 from data.crypto.lunarr_crypt import Crypt_LunarR
 from data.crypto.dstranding_crypt import Crypt_DStranding
 from data.crypto.fc5_crypt import Crypt_FC5
+from data.crypto.dl2_crypt import Crypt_DL2
 
 from types import SimpleNamespace
 
@@ -65,6 +66,6 @@ Crypto = SimpleNamespace(
     Diablo3=Crypt_Diablo3, AlienIso=Crypt_AlienIso, ShantaeSCurse=Crypt_ShantaeSCurse,
     Mafia3=Crypt_Mafia3, DeadRising=Crypt_DeadRising, KH3=Crypt_KH3,
     PoPersia=Crypt_PoPersia, LunarR=Crypt_LunarR, DStranding=Crypt_DStranding,
-    FC5=Crypt_FC5
+    FC5=Crypt_FC5, DL2=Crypt_DL2
 )
 

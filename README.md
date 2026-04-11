@@ -33,7 +33,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Diablo III                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Digimon World: Next Order                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dying Light 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dying Light 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dying Light 2                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Far Cry 5                                           | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Kingdom Hearts III                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -101,7 +101,6 @@ That is, if you want to make modifications to the savegame without corrupting it
 :large_blue_circle:: Partially implemented:  
 Dead Island 1: There may be unimplemented checksums.  
 Dead Island 2: Unimplemented checksums.  
-Dying Light 2: Unimplemented checksums.  
 Far Cry 5: PNG data in `memory.dat` will not be decompressed.  
 Grand Theft Auto V: Only money quick cheat is implemented.  
 Nioh 2: Checksum fix is for version 01.27 only.  
@@ -131,6 +130,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [Alfizari](https://github.com/alfizari): [Monster-Hunter-World-Save-Decrypt-PS4](https://github.com/alfizari/Monster-Hunter-World-Save-Decrypt-PS4)
 * [AxrzZ](https://github.com/AxrzZ)
 * [Batang](https://github.com/B-a-t-a-n-g)
+* [Batang](https://github.com/B-a-t-a-n-g): [Dying_Light_2_Checksum](https://github.com/B-a-t-a-n-g/Dying_Light_2_Checksum)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2_crypt_checksum](https://github.com/bawsdeep/xenoverse2_crypt_checksum)
 * [Bawsdeep](https://github.com/bawsdeep): [xenoverse2-save-converter](https://github.com/bawsdeep/xenoverse2-save-converter)
 * [Bawsdeep](https://github.com/bawsdeep): [xvtoolkit](https://github.com/bawsdeep/xvtoolkit)
