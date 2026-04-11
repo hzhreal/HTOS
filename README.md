@@ -101,7 +101,7 @@ That is, if you want to make modifications to the savegame without corrupting it
 :large_blue_circle:: Partially implemented:  
 Dead Island 1: There may be unimplemented checksums.  
 Dead Island 2: Unimplemented checksums.  
-Far Cry 5: PNG data in `memory.dat` will not be decompressed.  
+Far Cry 5: Any compressed image data will not be decompressed.  
 Grand Theft Auto V: Only money quick cheat is implemented.  
 Nioh 2: Checksum fix is for version 01.27 only.  
 No Man's Sky: Only `savedata.hg` is implemented.  
