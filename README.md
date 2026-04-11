@@ -37,6 +37,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Kingdom Hearts III                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Like a Dragon: Ishin                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| LUNAR Remastered Collection                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Mafia III                                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Metal Gear Solid V: Ground Zeroes                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Definitive Experience       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
