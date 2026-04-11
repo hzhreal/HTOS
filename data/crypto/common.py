@@ -602,8 +602,7 @@ class CustomCrypto:
                     break
                 decomp = obj.decompress(comp, self.CHUNKSIZE)
                 if obj.unused_data:
-                    pass
-                    # raise CryptoError("Invalid!")
+                    raise CryptoError("Invalid!")
                 if not decomp:
                     break
                 self._decomp_max_size_calc(size, len(decomp))

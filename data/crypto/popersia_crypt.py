@@ -13,8 +13,9 @@ class Crypt_PoPersia:
             zlib = cc.create_ctx_zlib_decompress(wbits=-15)
             await cc.copy(0, 0x43C)
             cc.set_ptr(0x43C)
-            while await cc.read():
+            while await cc.read(stop_off=cc.size - 8):
                 await cc.decompress(zlib)
+            await cc.copy(cc.size - 8, cc.size)
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -33,8 +34,9 @@ class Crypt_PoPersia:
             zlib = cc.create_ctx_zlib_compress(wbits=-15)
             await cc.copy(0, 0x43C)
             cc.set_ptr(0x43C)
-            while await cc.read():
+            while await cc.read(stop_off=cc.size - 8):
                 await cc.compress(zlib)
+            await cc.copy(cc.size - 8, cc.size)
             size = await cc.w_stream.tell()
             comp_len = uint32(size - 0x43C + 0xA, "little").as_bytes
             await cc.w_stream.seek(0x42A)

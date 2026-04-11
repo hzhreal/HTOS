@@ -45,7 +45,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Nioh 2                                              | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                                        | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Prince of Persia: The Lost Crown                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Prince of Persia: The Lost Crown                    | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Red Dead Redemption 2                               | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Resident Evil 2 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -102,6 +102,7 @@ Dying Light 2: Unimplemented checksums.
 Grand Theft Auto V: Only money quick cheat is implemented.  
 Nioh 2: Checksum fix is for version 01.27 only.  
 No Man's Sky: Only `savedata.hg` is implemented.  
+Prince of Persia: The Lost Crown: Only `PopSaveGameSlot*.AlkSave` is implemented.  
 Red Dead Redemption 2: Only money quick cheat is implemented.  
 Terraria: Only `.plr` and some `.wld` are implemented.  
 Xenoverse 2: The conversion will only make the savegame work on the PC save editor.  
