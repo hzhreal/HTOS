@@ -21,7 +21,7 @@ from typing import Literal, Any, Self
 
 from utils.constants import SCE_SYS_NAME, RANDOMSTRING_LENGTH, SAVESIZE_MAX
 from utils.conversions import mb_to_bytes
-from utils.type_helpers import Cint, uint8, uint32
+from utils.type_helpers import Cint, uint8, uint32, uint64
 from utils.extras import generate_random_string
 
 class CustomCryptoCtx:
@@ -549,6 +549,19 @@ class CustomCrypto:
     ) -> int:
         seed = uint32(seed.value, seed.ENDIANNESS)
         call = anycrc.CRC(width=32, poly=poly, init=init, refin=refin, refout=refout, xorout=xorout).calc
+        return self._create_ctx(call, seed)
+
+    def create_ctx_crc64_any(
+        self,
+        poly: int,
+        init: int,
+        refin: bool,
+        refout: bool,
+        xorout: int,
+        seed: uint64 = uint64(0, "little", const=True),
+    ) -> int:
+        seed = uint64(seed.value, seed.ENDIANNESS)
+        call = anycrc.CRC(width=64, poly=poly, init=init, refin=refin, refout=refout, xorout=xorout).calc
         return self._create_ctx(call, seed)
 
     def create_ctx_mmh3_u32(self, seed: uint32 = uint32(0, "little", const=True)) -> int:
