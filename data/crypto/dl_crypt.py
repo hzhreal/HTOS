@@ -3,8 +3,6 @@ from typing import Literal
 
 from data.crypto.common import CustomCrypto as CC
 
-# both dying light 1 and dead island 1
-
 class Crypt_DL:
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
