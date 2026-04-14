@@ -21,6 +21,8 @@ class Crypt_AlienIso:
             await cc.ext_write(0x8, checksum)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_AlienIso.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_AlienIso.encrypt_file(filepath)
 

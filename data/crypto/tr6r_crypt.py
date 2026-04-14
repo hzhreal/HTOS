@@ -408,10 +408,12 @@ class Crypt_TR6R:
                 await Crypt_TR6R.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with CC(filepath) as cc:
-            id_search     = await cc.find(Crypt_TR6R.ID)
-            header_search = await cc.find(Crypt_TR6R.LZW.COMPRESSED_HEADER)
-        if id_search != -1 and header_search == -1:
-            await Crypt_TR6R.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                id_search     = await cc.find(Crypt_TR6R.ID)
+                header_search = await cc.find(Crypt_TR6R.LZW.COMPRESSED_HEADER)
+            if id_search != -1 and header_search == -1:
+                await Crypt_TR6R.encrypt_file(filepath)
 

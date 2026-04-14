@@ -16,9 +16,11 @@ class Crypt_DStranding:
             await cc.write_checksum(md5, 0x1EC)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if not basename(filepath) == "checkpoint.dat":
-            return
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if not basename(filepath) == "checkpoint.dat":
+                continue
 
-        await Crypt_DStranding.encrypt_file(filepath)
+            await Crypt_DStranding.encrypt_file(filepath)
 

@@ -13,6 +13,8 @@ class Crypt_RE5:
             await cc.ext_write(0x30, chks.as_bytes)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_RE5.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_RE5.encrypt_file(filepath)
 

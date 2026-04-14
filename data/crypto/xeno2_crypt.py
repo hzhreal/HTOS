@@ -81,12 +81,14 @@ class Crypt_Xeno2:
                 await Crypt_Xeno2.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(0x20)
-            magic = await savegame.read(len(Crypt_Xeno2.DEC_MAGIC))
-        if magic == Crypt_Xeno2.DEC_MAGIC:
-            await Crypt_Xeno2.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x20)
+                magic = await savegame.read(len(Crypt_Xeno2.DEC_MAGIC))
+            if magic == Crypt_Xeno2.DEC_MAGIC:
+                await Crypt_Xeno2.encrypt_file(filepath)
 
     @staticmethod
     def reregion_get_new_name(title_id: str) -> str:

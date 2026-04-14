@@ -189,15 +189,15 @@ class Crypt_Rstar:
                 await Crypt_Rstar.decrypt_file(filepath, start_off)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, start_off: int) -> None:
-        if not Crypt_Rstar.file_check(filepath):
-            return
-
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(start_off)
-            header = await savegame.read(Crypt_Rstar.HEADER_SIZE)
-        if header == Crypt_Rstar.GTAV_HEADER or header == Crypt_Rstar.RDR2_HEADER:
-            await Crypt_Rstar.encrypt_file(filepath, start_off)
+    async def check_enc_ps(folderpath: str, start_off: int) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_Rstar.files_check(files)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(start_off)
+                header = await savegame.read(Crypt_Rstar.HEADER_SIZE)
+            if header == Crypt_Rstar.GTAV_HEADER or header == Crypt_Rstar.RDR2_HEADER:
+                await Crypt_Rstar.encrypt_file(filepath, start_off)
 
     @staticmethod
     def file_check(filepath: str) -> bool:

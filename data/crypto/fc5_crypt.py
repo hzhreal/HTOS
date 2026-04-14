@@ -12,6 +12,8 @@ class Crypt_FC5:
             await cc.write_checksum(crc, 0xC)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_FC5.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_FC5.encrypt_file(filepath)
 

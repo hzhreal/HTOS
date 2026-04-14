@@ -27,7 +27,7 @@ from utils.namespaces import Crypto
 async def extra_decrypt(
           d_ctx: DiscordContext | None,
           title_id: str,
-          destination_directory: str,
+          folderpath: str,
           savepairname: str,
           choice: bool | None = None
         ) -> None:
@@ -71,65 +71,65 @@ async def extra_decrypt(
             try:
                 match self.game:
                     case "GTAV" | "RDR2":
-                        await Crypto.Rstar.check_dec_ps(destination_directory, self.offset)
+                        await Crypto.Rstar.check_dec_ps(folderpath, self.offset)
                     case "XENO2":
-                        await Crypto.Xeno2.check_dec_ps(destination_directory)
+                        await Crypto.Xeno2.check_dec_ps(folderpath)
                     case "BL3":
-                        await Crypto.BL3.check_dec_ps(destination_directory)
+                        await Crypto.BL3.check_dec_ps(folderpath)
                     case "TTWL":
-                        await Crypto.BL3.check_dec_ps(destination_directory, True)
+                        await Crypto.BL3.check_dec_ps(folderpath, True)
                     case "NDOG":
-                        await Crypto.Ndog.check_dec_ps(destination_directory, self.offset)
+                        await Crypto.Ndog.check_dec_ps(folderpath, self.offset)
                     case "MGSV":
-                        await Crypto.MGSV.check_dec_ps(destination_directory, title_id, savepairname)
+                        await Crypto.MGSV.check_dec_ps(folderpath, title_id, savepairname)
                     case "REV2":
-                        await Crypto.Rev2.check_dec_ps(destination_directory)
+                        await Crypto.Rev2.check_dec_ps(folderpath)
                     case "DL1" | "DI1":
-                        await Crypto.DL.check_dec_ps(destination_directory)
+                        await Crypto.DL.check_dec_ps(folderpath)
                     case "DL2":
-                        await Crypto.DL2.check_dec_ps(destination_directory)
+                        await Crypto.DL2.check_dec_ps(folderpath)
                     case "DI2":
-                        await Crypto.DI2.check_dec_ps(destination_directory)
+                        await Crypto.DI2.check_dec_ps(folderpath)
                     case "RGG":
-                       await Crypto.RGG.check_dec_ps(destination_directory)
+                       await Crypto.RGG.check_dec_ps(folderpath)
                     case "NMS":
-                        await Crypto.NMS.check_dec_ps(destination_directory)
+                        await Crypto.NMS.check_dec_ps(folderpath)
                     case "TERRARIA":
-                        await Crypto.TERRARIA.check_dec_ps(destination_directory)
+                        await Crypto.TERRARIA.check_dec_ps(folderpath)
                     case "SMT5":
-                        await Crypto.SMT5.check_dec_ps(destination_directory)
+                        await Crypto.SMT5.check_dec_ps(folderpath)
                     case "RCUBE":
-                        await Crypto.RCube.check_dec_ps(destination_directory)
+                        await Crypto.RCube.check_dec_ps(folderpath)
                     case "DSR":
-                        await Crypto.DSR.check_dec_ps(destination_directory)
+                        await Crypto.DSR.check_dec_ps(folderpath)
                     case "RE4R":
-                        await Crypto.RE4R.check_dec_ps(destination_directory)
+                        await Crypto.RE4R.check_dec_ps(folderpath)
                     case "RE2R":
-                        await Crypto.RE4R.check_dec_ps(destination_directory, True)
+                        await Crypto.RE4R.check_dec_ps(folderpath, True)
                     case "SDEW":
-                        await Crypto.Sdew.check_dec_ps(destination_directory)
+                        await Crypto.Sdew.check_dec_ps(folderpath)
                     case "NIOH2":
-                        await Crypto.Nioh2.check_dec_ps(destination_directory)
+                        await Crypto.Nioh2.check_dec_ps(folderpath)
                     case "MHWI":
-                        await Crypto.Mhwi.check_dec_ps(destination_directory)
+                        await Crypto.Mhwi.check_dec_ps(folderpath)
                     case "LANOIRE":
-                        await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+                        await Crypto.LaNoire.check_dec_ps(folderpath, savepairname)
                     case "LOHTRAILSCS4":
-                        await Crypto.LoHTrails.check_dec_ps(destination_directory)
+                        await Crypto.LoHTrails.check_dec_ps(folderpath)
                     case "FF7CC":
-                        await Crypto.FF7CC.check_dec_ps(destination_directory)
+                        await Crypto.FF7CC.check_dec_ps(folderpath)
                     case "CCR":
-                        await Crypto.CCR.check_dec_ps(destination_directory)
+                        await Crypto.CCR.check_dec_ps(folderpath)
                     case "TOB":
-                        await Crypto.ToB.check_dec_ps(destination_directory)
+                        await Crypto.ToB.check_dec_ps(folderpath)
                     case "TR6R":
-                        await Crypto.TR6R.check_dec_ps(destination_directory)
+                        await Crypto.TR6R.check_dec_ps(folderpath)
                     case "DIABLO3":
-                        await Crypto.Diablo3.check_dec_ps(destination_directory)
+                        await Crypto.Diablo3.check_dec_ps(folderpath)
                     case "SHANTAESCURSE":
-                        await Crypto.ShantaeSCurse.check_dec_ps(destination_directory)
+                        await Crypto.ShantaeSCurse.check_dec_ps(folderpath)
                     case "POPERSIA":
-                        await Crypto.PoPersia.check_dec_ps(destination_directory)
+                        await Crypto.PoPersia.check_dec_ps(folderpath)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -144,7 +144,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+                    await Crypto.Rstar.check_dec_ps(folderpath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -156,7 +156,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Rstar.check_dec_ps(destination_directory, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+                    await Crypto.Rstar.check_dec_ps(folderpath, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -168,7 +168,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Xeno2.check_dec_ps(destination_directory)
+                    await Crypto.Xeno2.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -180,7 +180,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.BL3.check_dec_ps(destination_directory)
+                    await Crypto.BL3.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -192,7 +192,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.BL3.check_dec_ps(destination_directory, True)
+                    await Crypto.BL3.check_dec_ps(folderpath, True)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -204,7 +204,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET)
+                    await Crypto.Ndog.check_dec_ps(folderpath, Crypto.Ndog.START_OFFSET)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -216,7 +216,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_COL)
+                    await Crypto.Ndog.check_dec_ps(folderpath, Crypto.Ndog.START_OFFSET_COL)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -228,7 +228,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Ndog.check_dec_ps(destination_directory, Crypto.Ndog.START_OFFSET_TLOU2)
+                    await Crypto.Ndog.check_dec_ps(folderpath, Crypto.Ndog.START_OFFSET_TLOU2)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -240,7 +240,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.MGSV.check_dec_ps(destination_directory, title_id, savepairname)
+                    await Crypto.MGSV.check_dec_ps(folderpath, title_id, savepairname)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -252,7 +252,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Rev2.check_dec_ps(destination_directory)
+                    await Crypto.Rev2.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -264,7 +264,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DL.check_dec_ps(destination_directory)
+                    await Crypto.DL.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -276,7 +276,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DL2.check_dec_ps(destination_directory)
+                    await Crypto.DL2.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -288,7 +288,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.RGG.check_dec_ps(destination_directory)
+                    await Crypto.RGG.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -300,7 +300,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DL.check_dec_ps(destination_directory)
+                    await Crypto.DL.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -312,7 +312,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DI2.check_dec_ps(destination_directory)
+                    await Crypto.DI2.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -324,7 +324,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.NMS.check_dec_ps(destination_directory)
+                    await Crypto.NMS.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -336,7 +336,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.TERRARIA.check_dec_ps(destination_directory)
+                    await Crypto.TERRARIA.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -348,7 +348,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.SMT5.check_dec_ps(destination_directory)
+                    await Crypto.SMT5.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -360,7 +360,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.RCube.check_dec_ps(destination_directory)
+                    await Crypto.RCube.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -372,7 +372,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.DSR.check_dec_ps(destination_directory)
+                    await Crypto.DSR.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -384,7 +384,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.RE4R.check_dec_ps(destination_directory)
+                    await Crypto.RE4R.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -396,7 +396,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.RE4R.check_dec_ps(destination_directory, True)
+                    await Crypto.RE4R.check_dec_ps(folderpath, True)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -408,7 +408,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Sdew.check_dec_ps(destination_directory)
+                    await Crypto.Sdew.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -420,7 +420,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Nioh2.check_dec_ps(destination_directory)
+                    await Crypto.Nioh2.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -432,7 +432,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Mhwi.check_dec_ps(destination_directory)
+                    await Crypto.Mhwi.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -444,7 +444,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.LaNoire.check_dec_ps(destination_directory, savepairname)
+                    await Crypto.LaNoire.check_dec_ps(folderpath, savepairname)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -456,7 +456,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.LoHTrails.check_dec_ps(destination_directory)
+                    await Crypto.LoHTrails.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -468,7 +468,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.FF7CC.check_dec_ps(destination_directory)
+                    await Crypto.FF7CC.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -480,7 +480,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.CCR.check_dec_ps(destination_directory)
+                    await Crypto.CCR.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -492,7 +492,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.ToB.check_dec_ps(destination_directory)
+                    await Crypto.ToB.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -504,7 +504,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.TR6R.check_dec_ps(destination_directory)
+                    await Crypto.TR6R.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -516,7 +516,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.Diablo3.check_dec_ps(destination_directory)
+                    await Crypto.Diablo3.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -528,7 +528,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.ShantaeSCurse.check_dec_ps(destination_directory)
+                    await Crypto.ShantaeSCurse.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -540,7 +540,7 @@ async def extra_decrypt(
         if choice is not None:
             if choice:
                 try:
-                    await Crypto.PoPersia.check_dec_ps(destination_directory)
+                    await Crypto.PoPersia.check_dec_ps(folderpath)
                 except (ValueError, IOError, IndexError):
                     raise CryptoError("Invalid save!")
             return
@@ -548,145 +548,145 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("POPERSIA"))
         await helper.await_done()
 
-async def extra_import(title_id: str, filepath: str, savepairname: str) -> None:
+async def extra_import(title_id: str, folderpath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
-            await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
+            await Crypto.Rstar.check_enc_ps(folderpath, Crypto.Rstar.GTAV_PS_HEADER_OFFSET)
 
         elif title_id in RDR2_TITLEID:
-            await Crypto.Rstar.check_enc_ps(filepath, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
+            await Crypto.Rstar.check_enc_ps(folderpath, Crypto.Rstar.RDR2_PS_HEADER_OFFSET)
 
         elif title_id in XENO2_TITLEID:
-            await Crypto.Xeno2.check_enc_ps(filepath)
+            await Crypto.Xeno2.check_enc_ps(folderpath)
 
         elif title_id in BL3_TITLEID:
-            await Crypto.BL3.check_enc_ps(filepath)
+            await Crypto.BL3.check_enc_ps(folderpath)
 
         elif title_id in WONDERLANDS_TITLEID:
-            await Crypto.BL3.check_enc_ps(filepath, True)
+            await Crypto.BL3.check_enc_ps(folderpath, True)
 
         elif title_id in NDOG_TITLEID:
-            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET)
+            await Crypto.Ndog.check_enc_ps(folderpath, Crypto.Ndog.START_OFFSET)
 
         elif title_id in NDOG_COL_TITLEID:
-            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET_COL)
+            await Crypto.Ndog.check_enc_ps(folderpath, Crypto.Ndog.START_OFFSET_COL)
 
         elif title_id in NDOG_TLOU2_TITLEID:
-            await Crypto.Ndog.check_enc_ps(filepath, Crypto.Ndog.START_OFFSET_TLOU2)
+            await Crypto.Ndog.check_enc_ps(folderpath, Crypto.Ndog.START_OFFSET_TLOU2)
 
         elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
-            await Crypto.MGSV.check_enc_ps(filepath, title_id, savepairname)
+            await Crypto.MGSV.check_enc_ps(folderpath, title_id, savepairname)
 
         elif title_id in REV2_TITLEID:
-            await Crypto.Rev2.check_enc_ps(filepath)
+            await Crypto.Rev2.check_enc_ps(folderpath)
 
         elif title_id in frozenset.union(RE7_TITLEID, RERES_TITLEID, RE3R_TITLEID, RE_VILLAGE_TITLEID):
-            await Crypto.RE7.check_enc_ps(filepath)
+            await Crypto.RE7.check_enc_ps(folderpath)
 
         elif title_id in DL1_TITLEID:
-            await Crypto.DL.check_enc_ps(filepath, "DL1")
+            await Crypto.DL.check_enc_ps(folderpath, "DL1")
 
         elif title_id in DL2_TITLEID:
-            await Crypto.DL2.check_enc_ps(filepath)
+            await Crypto.DL2.check_enc_ps(folderpath)
 
         elif title_id in RGG_TITLEID:
-            await Crypto.RGG.check_enc_ps(filepath)
+            await Crypto.RGG.check_enc_ps(folderpath)
 
         elif title_id in DI1_TITLEID:
-            await Crypto.DL.check_enc_ps(filepath, "DI1")
+            await Crypto.DL.check_enc_ps(folderpath, "DI1")
 
         elif title_id in DI2_TITLEID:
-            await Crypto.DI2.check_enc_ps(filepath)
+            await Crypto.DI2.check_enc_ps(folderpath)
 
         elif title_id in NMS_TITLEID:
-            await Crypto.NMS.check_enc_ps(filepath)
+            await Crypto.NMS.check_enc_ps(folderpath)
 
         elif title_id in TERRARIA_TITLEID:
-            await Crypto.TERRARIA.check_enc_ps(filepath)
+            await Crypto.TERRARIA.check_enc_ps(folderpath)
 
         elif title_id in SMT5_TITLEID:
-            await Crypto.SMT5.check_enc_ps(filepath)
+            await Crypto.SMT5.check_enc_ps(folderpath)
 
         elif title_id in RCUBE_TITLEID:
-            await Crypto.RCube.check_enc_ps(filepath)
+            await Crypto.RCube.check_enc_ps(folderpath)
 
         elif title_id in DSR_TITLEID:
-            await Crypto.DSR.check_enc_ps(filepath)
+            await Crypto.DSR.check_enc_ps(folderpath)
 
         elif title_id in RE4R_TITLEID:
-            await Crypto.RE4R.check_enc_ps(filepath)
+            await Crypto.RE4R.check_enc_ps(folderpath)
 
         elif title_id in RE2R_TITLEID:
-            await Crypto.RE4R.check_enc_ps(filepath, True)
+            await Crypto.RE4R.check_enc_ps(folderpath, True)
 
         elif title_id in DIGIMON_TITLEID:
-            await Crypto.Digimon.check_enc_ps(filepath)
+            await Crypto.Digimon.check_enc_ps(folderpath)
 
         elif title_id in SDEW_TITLEID:
-            await Crypto.Sdew.check_enc_ps(filepath)
+            await Crypto.Sdew.check_enc_ps(folderpath)
 
         elif title_id in NIOH2_TITLEID:
-            await Crypto.Nioh2.check_enc_ps(filepath)
+            await Crypto.Nioh2.check_enc_ps(folderpath)
 
         elif title_id in MHWI_TITLEID:
-            await Crypto.Mhwi.check_enc_ps(filepath)
+            await Crypto.Mhwi.check_enc_ps(folderpath)
 
         elif title_id in LA_NOIRE_TITLEID:
-            await Crypto.LaNoire.check_enc_ps(filepath, savepairname)
+            await Crypto.LaNoire.check_enc_ps(folderpath, savepairname)
 
         elif title_id in frozenset.union(LOH_TRAILS_CS4_TITLEID, LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE):
-            await Crypto.LoHTrails.check_enc_ps(filepath, title_id)
+            await Crypto.LoHTrails.check_enc_ps(folderpath, title_id)
 
         elif title_id in FF7CC_TITLEID:
-            await Crypto.FF7CC.check_enc_ps(filepath)
+            await Crypto.FF7CC.check_enc_ps(folderpath)
 
         elif title_id in TOSR_TITLEID:
-            await Crypto.ToSR.check_enc_ps(filepath)
+            await Crypto.ToSR.check_enc_ps(folderpath)
 
         elif title_id in RE5_TITLEID:
-            await Crypto.RE5.check_enc_ps(filepath)
+            await Crypto.RE5.check_enc_ps(folderpath)
 
         elif title_id in CCR_TITLEID:
-            await Crypto.CCR.check_enc_ps(filepath)
+            await Crypto.CCR.check_enc_ps(folderpath)
 
         elif title_id in TOB_TITLEID:
-            await Crypto.ToB.check_enc_ps(filepath)
+            await Crypto.ToB.check_enc_ps(folderpath)
 
         elif title_id in TR6R_TITLEID:
-            await Crypto.TR6R.check_enc_ps(filepath)
+            await Crypto.TR6R.check_enc_ps(folderpath)
 
         elif title_id in STRIDER_TITLEID:
-            await Crypto.Strider.check_enc_ps(filepath)
+            await Crypto.Strider.check_enc_ps(folderpath)
 
         elif title_id in DIABLO3_TITLEID:
-            await Crypto.Diablo3.check_enc_ps(filepath)
+            await Crypto.Diablo3.check_enc_ps(folderpath)
 
         elif title_id in ALIEN_ISO_TITLEID:
-            await Crypto.AlienIso.check_enc_ps(filepath)
+            await Crypto.AlienIso.check_enc_ps(folderpath)
 
         elif title_id in SHANTAE_SCURSE_TITLEID:
-            await Crypto.ShantaeSCurse.check_enc_ps(filepath)
+            await Crypto.ShantaeSCurse.check_enc_ps(folderpath)
 
         elif title_id in MAFIA3_TITLEID:
-            await Crypto.Mafia3.check_enc_ps(filepath)
+            await Crypto.Mafia3.check_enc_ps(folderpath)
 
         elif title_id in DEADRISING_TITLEID:
-            await Crypto.DeadRising.check_enc_ps(filepath)
+            await Crypto.DeadRising.check_enc_ps(folderpath)
 
         elif title_id in KH3_TITLEID:
-            await Crypto.KH3.check_enc_ps(filepath)
+            await Crypto.KH3.check_enc_ps(folderpath)
 
         elif title_id in PO_PERSIA_TITLEID:
-            await Crypto.PoPersia.check_enc_ps(filepath)
+            await Crypto.PoPersia.check_enc_ps(folderpath)
 
         elif title_id in LUNAR_R_TITLEID:
-            await Crypto.LunarR.check_enc_ps(filepath, savepairname)
+            await Crypto.LunarR.check_enc_ps(folderpath, savepairname)
 
         elif title_id in DSTRANDING_TITLEID:
-            await Crypto.DStranding.check_enc_ps(filepath)
+            await Crypto.DStranding.check_enc_ps(folderpath)
 
         elif title_id in FC5_TITLEID:
-            await Crypto.FC5.check_enc_ps(filepath)
+            await Crypto.FC5.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 

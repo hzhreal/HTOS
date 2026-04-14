@@ -199,9 +199,11 @@ class Crypt_Nioh2:
                 await Crypt_Nioh2.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with aiofiles.open(filepath, "rb") as savegame:
-            d = await savegame.read(4)
-        if d == b"\x00\x00\x00\x00":
-            await Crypt_Nioh2.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                d = await savegame.read(4)
+            if d == b"\x00\x00\x00\x00":
+                await Crypt_Nioh2.encrypt_file(filepath)
 

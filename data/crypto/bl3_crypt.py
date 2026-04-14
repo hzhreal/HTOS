@@ -217,9 +217,11 @@ class Crypt_BL3:
                 await Crypt_BL3.decrypt_file(filepath, "ps4", ttwl)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, ttwl: bool = False) -> None:
-        async with CC(filepath) as cc:
-            s = await cc.find(Crypt_BL3.COMMON)
-        if s != -1:
-            await Crypt_BL3.encrypt_file(filepath, "ps4", ttwl)
+    async def check_enc_ps(folderpath: str, ttwl: bool = False) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                s = await cc.find(Crypt_BL3.COMMON)
+            if s != -1:
+                await Crypt_BL3.encrypt_file(filepath, "ps4", ttwl)
 

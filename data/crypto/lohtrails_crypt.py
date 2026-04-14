@@ -352,12 +352,14 @@ class Crypt_LoHTrails:
                 await Crypt_LoHTrails.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, title_id: str) -> None:
-        if title_id in LOH_TRAILS_CS4_TITLEID:
-            async with CC(filepath) as cc:
-                is_dec = await cc.fraction_byte()
-            if is_dec:
+    async def check_enc_ps(folderpath: str, title_id: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if title_id in LOH_TRAILS_CS4_TITLEID:
+                async with CC(filepath) as cc:
+                    is_dec = await cc.fraction_byte()
+                if is_dec:
+                    await Crypt_LoHTrails.encrypt_file(filepath, title_id)
+            else:
                 await Crypt_LoHTrails.encrypt_file(filepath, title_id)
-        else:
-            await Crypt_LoHTrails.encrypt_file(filepath, title_id)
 

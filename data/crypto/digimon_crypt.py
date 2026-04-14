@@ -14,6 +14,8 @@ class Crypt_Digimon:
             await cc.w_stream.write(chks.as_bytes)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_Digimon.check_enc_ps(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_Digimon.check_enc_ps(filepath)
 

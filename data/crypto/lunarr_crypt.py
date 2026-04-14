@@ -25,11 +25,13 @@ class Crypt_LunarR:
                 await cc.w_stream.write(checksum.as_bytes)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, savepairname: str) -> None:
+    async def check_enc_ps(folderpath: str, savepairname: str) -> None:
         if not Crypt_LunarR.savepairname_check(savepairname):
             return
 
-        await Crypt_LunarR.encrypt_file(filepath, savepairname)
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_LunarR.encrypt_file(filepath, savepairname)
 
     @staticmethod
     def savepairname_check(savepairname: str) -> bool:

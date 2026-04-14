@@ -76,9 +76,11 @@ class Crypt_DI2:
                 await Crypt_DI2.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with CC(filepath) as cc:
-            off = await cc.find(Crypt_DI2.DI2.ZSTD_MAGIC)
-        if off == -1:
-            await Crypt_DI2.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                off = await cc.find(Crypt_DI2.DI2.ZSTD_MAGIC)
+            if off == -1:
+                await Crypt_DI2.encrypt_file(filepath)
 

@@ -107,9 +107,11 @@ class Crypt_ToB:
                 await Crypt_ToB.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with CC(filepath) as cc:
-            is_dec = await cc.fraction_byte()
-        if is_dec:
-            await Crypt_ToB.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                is_dec = await cc.fraction_byte()
+            if is_dec:
+                await Crypt_ToB.encrypt_file(filepath)
 
