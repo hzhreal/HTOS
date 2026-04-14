@@ -12,7 +12,7 @@ from network.ftp_functions import FTPps
 from network.exceptions import SocketError, FTPError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, RANDOMSTRING_LENGTH, MAX_FILENAME_LEN, MAX_PATH_LEN,
-    SCE_SYS_NAME, PARAM_NAME, CREATESAVE_ENC_CHECK_LIMIT, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
+    SCE_SYS_NAME, PARAM_NAME, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
 )
 from utils.workspace import cleanup
 from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA
@@ -120,7 +120,7 @@ class Createsave(TabBase):
             title_id = obtainCUSA(sfo_ctx)
             await sfo_ctx_write(sfo_ctx, sfo_path)
 
-            if len(files) <= CREATESAVE_ENC_CHECK_LIMIT and not ignore_secondlayer_checks: # dont want to create unnecessary overhead
+            if not ignore_secondlayer_checks:
                 self.logger.info("Doing second layer checks...")
                 for gamesave in files:
                     if os.path.basename(gamesave) in SCE_SYS_CONTENTS:

@@ -323,13 +323,6 @@ embgs = discord.Embed(
 )
 embgs.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-embsl = discord.Embed(
-    title="Gamesaves: Second layer\n{displaysave}",
-    description="Checking for supported second layer encryption/compression...",
-    colour=Color.DEFAULT.value
-)
-embsl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 embc = discord.Embed(
     title="Processing",
     description="Creating {savename}...",

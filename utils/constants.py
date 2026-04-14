@@ -276,7 +276,6 @@ COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(10) # 10 mb maximum when not considering boost levels
 ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
 ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
-CREATESAVE_ENC_CHECK_LIMIT = 20 # if the amount of gamesaves uploaded in createsave command is less or equal to this number we will perform a check on each of the files to see if we can add encryption to it
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."
