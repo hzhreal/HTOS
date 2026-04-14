@@ -592,7 +592,11 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         res = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
         if res.content == "EXIT":
             raise PSNIDError("EXITED!")
-        return res.content
+        if res.content.lower().startswith("0x"):
+            n = 2
+        else:
+            n = 0
+        return res.content[n:].lower()
 
     user_id = ""
     delmsg = True

@@ -411,10 +411,9 @@ def keyset_to_fw(keyset: int) -> str:
             return "?"
 
 def checkid(accid: str) -> bool:
-    if len(accid) != 16 or not bool(ACCID_RE.fullmatch(accid)):
-        return False
-    else:
-        return True
+    if accid.lower().startswith("0x"):
+        accid = accid[2:]
+    return len(accid) == 16 and bool(ACCID_RE.fullmatch(accid))
 
 def handle_accid(user_id: str) -> str:
     user_id = hex(int(user_id)) # convert decimal to hex
