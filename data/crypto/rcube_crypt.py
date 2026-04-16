@@ -40,15 +40,15 @@ class Crypt_RCube:
                 await Crypt_RCube.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if not Crypt_RCube.file_check(filepath):
-            return
-
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(0xC)
-            header = await savegame.read(2)
-        if not CC.is_valid_zlib_header(header):
-            await Crypt_RCube.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_RCube.files_check(files)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0xC)
+                header = await savegame.read(2)
+            if not CC.is_valid_zlib_header(header):
+                await Crypt_RCube.encrypt_file(filepath)
 
     @staticmethod
     def file_check(filepath: str) -> bool:

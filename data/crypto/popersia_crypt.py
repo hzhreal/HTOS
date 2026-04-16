@@ -53,14 +53,14 @@ class Crypt_PoPersia:
                 await Crypt_PoPersia.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if not Crypt_PoPersia.file_check(filepath):
-            return
-
-        async with CC(filepath) as cc:
-            is_dec = await cc.fraction_printable_chars()
-        if is_dec:
-            await Crypt_PoPersia.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        files = Crypt_PoPersia.files_check(files)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                is_dec = await cc.fraction_printable_chars()
+            if is_dec:
+                await Crypt_PoPersia.encrypt_file(filepath)
 
     @staticmethod
     def file_check(filepath: str) -> bool:

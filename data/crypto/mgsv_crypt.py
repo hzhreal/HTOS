@@ -127,9 +127,11 @@ class Crypt_MGSV:
                 await Crypt_MGSV.decrypt_file(filepath, title_id, savepairname)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, title_id: str, savepairname: str) -> None:
-        if await Crypt_MGSV.header_check(filepath):
-            await Crypt_MGSV.encrypt_file(filepath, title_id, savepairname)
+    async def check_enc_ps(folderpath: str, title_id: str, savepairname: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if await Crypt_MGSV.header_check(filepath):
+                await Crypt_MGSV.encrypt_file(filepath, title_id, savepairname)
 
     @staticmethod
     async def header_check(filepath: str | None, header: bytes | None = None) -> bool:

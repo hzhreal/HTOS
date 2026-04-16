@@ -13,6 +13,8 @@ class Crypt_Strider:
             await cc.write_checksum(crc, 0x7800)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_Strider.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_Strider.encrypt_file(filepath)
 

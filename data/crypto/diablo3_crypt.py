@@ -59,12 +59,11 @@ class Crypt_Diablo3:
                 await Crypt_Diablo3.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if basename(filepath) in Crypt_Diablo3.IGNORE:
-            return
-
-        async with CC(filepath) as cc:
-            is_dec = await cc.fraction_non_printable_chars(3)
-        if is_dec:
-            await Crypt_Diablo3.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath, exclude=list(Crypt_Diablo3.IGNORE))
+        for filepath in files:
+            async with CC(filepath) as cc:
+                is_dec = await cc.fraction_non_printable_chars(3)
+            if is_dec:
+                await Crypt_Diablo3.encrypt_file(filepath)
 

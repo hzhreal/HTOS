@@ -9,6 +9,8 @@ class Crypt_Mafia3:
             await cc.write_checksum(crc, cc.size - 4)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_Mafia3.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_Mafia3.encrypt_file(filepath)
 

@@ -730,7 +730,12 @@ async def replace_decrypted(
             await send_chunk(msg_container, current_chunk)
 
         opt = UploadOpt(UploadGoogleDriveChoice.SPECIAL, False)
-        uploaded_file_paths = (await upload2(d_ctx, local_download_path, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, savesize=savesize, opt=opt))[0]
+        uploaded_file_paths = (
+            await upload2(
+                d_ctx, local_download_path,
+                max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True,
+                savesize=savesize, opt=opt)
+        )[0]
 
         for msg in msg_container:
             await msg.delete(delay=0.5)
@@ -771,6 +776,8 @@ async def replace_decrypted(
                             completed.append(last_N)
                             await aiofiles.os.remove(new_path) # remove to decrease chance of collison
         else:
+            if not ignore_secondlayer_checks:
+                await extra_import(titleid, local_download_path, savepairname)
             task = [lambda: fInstance.upload_folder(mount_location, local_download_path)]
             await task_handler(d_ctx, task, [])
             idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)

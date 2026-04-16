@@ -28,9 +28,11 @@ class Crypt_DeadRising:
                 await cc.write()
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if basename(filepath) != "deadrising":
-            return
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if basename(filepath) != "deadrising":
+                continue
 
-        await Crypt_DeadRising.encrypt_file(filepath)
+            await Crypt_DeadRising.encrypt_file(filepath)
 

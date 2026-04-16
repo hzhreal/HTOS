@@ -156,7 +156,7 @@ class Encrypt(TabBase):
 
                     await savefile.download_sys_elements([savefile.ElementChoice.SFO])
                     await savefile.resign()
-                    self.logger.info(f"Encrypted {dec_print} into **{savefile.basename}** for {p}, {info}.")
+                    self.logger.info(f"Encrypted `{dec_print}` into **{savefile.basename}** for {p}, {info}.")
                 except (SocketError, FTPError, OrbisError, FileError, CryptoError, OSError) as e:
                     await cleanup(C1ftp, workspace_folders, batch.entry, mount_paths)
                     self.logger.error(f"`{str(e)}` Stopping...")

@@ -12,6 +12,8 @@ class Crypt_RE7:
             await cc.write_checksum(mmh3, cc.size - 4)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        await Crypt_RE7.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            await Crypt_RE7.encrypt_file(filepath)
 

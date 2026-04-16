@@ -28,9 +28,11 @@ class Crypt_DL:
                 await Crypt_DL.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, _version: Literal["DL1", "DI1"]) -> None:
-        async with aiofiles.open(filepath, "rb") as savegame:
-            magic = await savegame.read(3)
-        if magic != b"\x1F\x8B\x08":
-            await Crypt_DL.encrypt_file(filepath, _version)
+    async def check_enc_ps(folderpath: str, _version: Literal["DL1", "DI1"]) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                magic = await savegame.read(3)
+            if magic != b"\x1F\x8B\x08":
+                await Crypt_DL.encrypt_file(filepath, _version)
 

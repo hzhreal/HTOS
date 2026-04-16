@@ -15,7 +15,9 @@ class Crypt_ToSR:
             await cc.w_stream.write(chks.as_bytes)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if basename(filepath).startswith("TOSSaveData"):
-            await Crypt_ToSR.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            if basename(filepath).startswith("TOSSaveData"):
+                await Crypt_ToSR.encrypt_file(filepath)
 

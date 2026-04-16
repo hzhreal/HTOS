@@ -35,11 +35,11 @@ class Crypt_Sdew:
                 await Crypt_Sdew.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if basename(filepath) in Crypt_Sdew.EXCLUDE:
-            return
-        async with aiofiles.open(filepath, "rb") as savegame:
-            header = await savegame.read(2)
-        if not CC.is_valid_zlib_header(header):
-            await Crypt_Sdew.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath, Crypt_Sdew.EXCLUDE)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                header = await savegame.read(2)
+            if not CC.is_valid_zlib_header(header):
+                await Crypt_Sdew.encrypt_file(filepath)
 

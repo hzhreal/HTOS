@@ -53,14 +53,16 @@ class Crypt_LaNoire:
                 await Crypt_LaNoire.decrypt_file(filepath, savepairname)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, savepairname: str) -> None:
+    async def check_enc_ps(folderpath: str, savepairname: str) -> None:
         if not Crypt_LaNoire.savepairname_check(savepairname):
             return
 
-        async with aiofiles.open(filepath, "rb") as savegame:
-            magic = await savegame.read(len(Crypt_LaNoire.DEC_MAGIC))
-        if magic == Crypt_LaNoire.DEC_MAGIC:
-            await Crypt_LaNoire.encrypt_file(filepath, savepairname)
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                magic = await savegame.read(len(Crypt_LaNoire.DEC_MAGIC))
+            if magic == Crypt_LaNoire.DEC_MAGIC:
+                await Crypt_LaNoire.encrypt_file(filepath, savepairname)
 
     @staticmethod
     def savepairname_check(savepairname: str) -> bool:

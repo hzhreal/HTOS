@@ -63,15 +63,15 @@ class Crypt_Terraria:
                 await Crypt_Terraria.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if not Crypt_Terraria.file_check(filepath):
-            return
-
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(0x04)
-            magic = await savegame.read(len(Crypt_Terraria.DEC_MAGIC))
-        if magic == Crypt_Terraria.DEC_MAGIC:
-            await Crypt_Terraria.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        unfiltered_files = await CC.obtain_files(folderpath)
+        filtered_files = Crypt_Terraria.files_check(unfiltered_files)
+        for filepath in filtered_files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x04)
+                magic = await savegame.read(len(Crypt_Terraria.DEC_MAGIC))
+            if magic == Crypt_Terraria.DEC_MAGIC:
+                await Crypt_Terraria.encrypt_file(filepath)
 
     @staticmethod
     def files_check(files: list[str]) -> list[str]:

@@ -54,9 +54,11 @@ class Crypt_CCR:
                 await Crypt_CCR.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with CC(filepath) as cc:
-            dec = await cc.fraction_byte()
-        if dec:
-            await Crypt_CCR.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with CC(filepath) as cc:
+                dec = await cc.fraction_byte()
+            if dec:
+                await Crypt_CCR.encrypt_file(filepath)
 

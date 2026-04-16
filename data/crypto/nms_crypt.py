@@ -115,14 +115,14 @@ class Crypt_NMS:
                 await Crypt_NMS.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        if not Crypt_NMS.file_check(filepath):
-            return
-
-        async with CC(filepath) as cc:
-            off = await cc.find(Crypt_NMS.LZ4_MAGIC)
-        if off == -1:
-            await Crypt_NMS.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        unfiltered_files = await CC.obtain_files(folderpath)
+        filtered_files = Crypt_NMS.files_check(unfiltered_files)
+        for filepath in filtered_files:
+            async with CC(filepath) as cc:
+                off = await cc.find(Crypt_NMS.LZ4_MAGIC)
+            if off == -1:
+                await Crypt_NMS.encrypt_file(filepath)
 
     @staticmethod
     def files_check(files: list[str]) -> list[str]:

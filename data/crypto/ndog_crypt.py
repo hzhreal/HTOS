@@ -113,17 +113,16 @@ class Crypt_Ndog:
                 await Crypt_Ndog.decrypt_file(filepath, start_off)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, start_off: int) -> None:
-        if os.path.basename(filepath) in Crypt_Ndog.EXCLUDE:
-            return
+    async def check_enc_ps(folderpath: str, start_off: int) -> None:
+        files = await CC.obtain_files(folderpath, Crypt_Ndog.EXCLUDE)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(start_off)
+                header = await savegame.read(len(Crypt_Ndog.HEADER_TLOU))
 
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(start_off)
-            header = await savegame.read(len(Crypt_Ndog.HEADER_TLOU))
+                await savegame.seek(start_off)
+                header1 = await savegame.read(len(Crypt_Ndog.HEADER_UNCHARTED))
 
-            await savegame.seek(start_off)
-            header1 = await savegame.read(len(Crypt_Ndog.HEADER_UNCHARTED))
-
-        if header in Crypt_Ndog.HEADERS or header1 in Crypt_Ndog.HEADERS:
-            await Crypt_Ndog.encrypt_file(filepath, start_off)
+            if header in Crypt_Ndog.HEADERS or header1 in Crypt_Ndog.HEADERS:
+                await Crypt_Ndog.encrypt_file(filepath, start_off)
 

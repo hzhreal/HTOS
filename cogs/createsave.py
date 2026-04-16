@@ -15,11 +15,11 @@ from data.crypto.helpers import extra_import
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MOUNT_LOCATION, PARAM_NAME, COMMAND_COOLDOWN, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, SCE_SYS_NAME,
     SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, SCE_SYS_CONTENTS, BASE_ERROR_MSG, PS_ID_DESC, ZIPOUT_NAME, SHARED_GD_LINK_DESC,
-    IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN, CREATESAVE_ENC_CHECK_LIMIT,
+    IGNORE_SECONDLAYER_DESC, RANDOMSTRING_LENGTH, MAX_FILES, CON_FAIL_MSG, CON_FAIL, MAX_FILENAME_LEN, MAX_PATH_LEN,
     logger
 )
 from utils.embeds import (
-    embSceSys, embgs, embsl, embc, embCRdone
+    embSceSys, embgs, embc, embCRdone
 )
 from utils.workspace import make_workspace, init_workspace, cleanup
 from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
@@ -113,7 +113,7 @@ class CreateSave(commands.Cog):
 
             # next, other files (gamesaves)
             await msg.edit(embed=emb2)
-            uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
+            _ = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
@@ -139,15 +139,8 @@ class CreateSave(commands.Cog):
             title_id = obtainCUSA(sfo_ctx)
             await sfo_ctx_write(sfo_ctx, sfo_path)
 
-            if len(uploaded_file_paths_special) <= CREATESAVE_ENC_CHECK_LIMIT and not ignore_secondlayer_checks: # dont want to create unnecessary overhead
-                path_idx = len(newUPLOAD_DECRYPTED) + (newUPLOAD_DECRYPTED[-1] != os.path.sep)
-                for gamesave in uploaded_file_paths_special:
-                    displaysave = gamesave[path_idx:]
-                    emb = embsl.copy()
-                    emb.title = emb.title.format(displaysave=displaysave)
-                    await msg.edit(embed=emb)
-                    await asyncio.sleep(0.5)
-                    await extra_import(title_id, gamesave, savename)
+            if not ignore_secondlayer_checks:
+                await extra_import(title_id, newUPLOAD_DECRYPTED, savename)
 
             emb = embc.copy()
             emb.description = emb.description.format(savename=savename)

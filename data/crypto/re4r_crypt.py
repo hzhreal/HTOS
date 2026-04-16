@@ -81,10 +81,12 @@ class Crypt_RE4R:
                 await Crypt_RE4R.decrypt_file(filepath, re2r)
 
     @staticmethod
-    async def check_enc_ps(filepath: str, re2r: bool = False) -> None:
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(0x10)
-            header = await savegame.read(len(Crypt_RE4R.HEADER))
-        if header == Crypt_RE4R.HEADER:
-            await Crypt_RE4R.encrypt_file(filepath, re2r)
+    async def check_enc_ps(folderpath: str, re2r: bool = False) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x10)
+                header = await savegame.read(len(Crypt_RE4R.HEADER))
+            if header == Crypt_RE4R.HEADER:
+                await Crypt_RE4R.encrypt_file(filepath, re2r)
 

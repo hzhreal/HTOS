@@ -169,7 +169,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
                 await fInstance.delete_list(PS_UPLOADDIR, remote_savelist)
         except TimeoutError:
             logger.info("Timed out!")
-        except FTPError as e:
+        except (FTPError, OSError) as e:
             logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
     if remote_mount_paths is not None and len(remote_mount_paths) > 0:
@@ -180,7 +180,7 @@ async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_save
                 remote_mount_paths.remove(mountlocation)
             except TimeoutError:
                 logger.info("Timed out!")
-            except FTPError as e:
+            except (FTPError, OSError) as e:
                 logger.error(f"An error occurred when cleaning up (FTP): {e}")
 
 async def cleanup_simple(clean_list: list[str] | None) -> None:

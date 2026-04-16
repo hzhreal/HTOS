@@ -425,12 +425,14 @@ class Crypt_FF7CC:
                 await Crypt_FF7CC.decrypt_file(filepath)
 
     @staticmethod
-    async def check_enc_ps(filepath: str) -> None:
-        async with aiofiles.open(filepath, "rb") as savegame:
-            await savegame.seek(0x55C + 4)
-            header = await savegame.read(4)
-            await savegame.seek(0x568)
-            magic = await savegame.read(4)
-        if header == Crypt_FF7CC.HEADER and magic == Crypt_FF7CC.DEC_MAGIC:
-            await Crypt_FF7CC.encrypt_file(filepath)
+    async def check_enc_ps(folderpath: str) -> None:
+        files = await CC.obtain_files(folderpath)
+        for filepath in files:
+            async with aiofiles.open(filepath, "rb") as savegame:
+                await savegame.seek(0x55C + 4)
+                header = await savegame.read(4)
+                await savegame.seek(0x568)
+                magic = await savegame.read(4)
+            if header == Crypt_FF7CC.HEADER and magic == Crypt_FF7CC.DEC_MAGIC:
+                await Crypt_FF7CC.encrypt_file(filepath)
 
