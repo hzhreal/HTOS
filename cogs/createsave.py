@@ -113,7 +113,7 @@ class CreateSave(commands.Cog):
 
             # next, other files (gamesaves)
             await msg.edit(embed=emb2)
-            uploaded_file_paths_special = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
+            _ = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
             err = gdapi.getErrStr_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
