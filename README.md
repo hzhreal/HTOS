@@ -11,7 +11,7 @@ A Discord bot and app to manage external PS4 saves using a jailbroken PS4.
 * Quickly resign pre stored saves.
 * Convert gamesaves from PS4 to PC or vice versa (some games require extra implementation, see table below).
 * Add quick cheats to your games (available games are in table below).
-* Apply save wizard quick codes to your saves.
+* Apply Save Wizard quick codes to your saves.
 * Create saves from scratch.
 * Edit `param.sfo` files
 * Library of games supported that need extra implementation (see table below).
