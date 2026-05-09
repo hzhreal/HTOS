@@ -540,12 +540,21 @@ async def fix_pfs_hdr_hash2(path: str) -> None:
     AUTH_CODE_OFF           = 0x7F90
     AUTH_CODE_HDR_HASH2_OFF = AUTH_CODE_OFF + 0x40
     AUTH_CODE_SIZE          = 0x70
+
+    AUTH_CODE_MAGIC = bytes([
+        0x79, 0x2B, 0x1A, 0xC1, 0xBB, 0x9B, 0x9A, 0x45
+    ])
     KEY = bytes([
         0x2B, 0xCF, 0x69, 0x8E, 0x79, 0xCF, 0xDD, 0xFA,
         0xC2, 0x4D, 0x4C, 0x25, 0xBF, 0x35, 0x1E, 0x62
     ])
 
-    async with aiofiles.open(path) as pfs:
+    async with aiofiles.open(path, "r+b") as pfs:
+        await pfs.seek(AUTH_CODE_OFF)
+        magic = await pfs.read(len(AUTH_CODE_MAGIC))
+        if magic != AUTH_CODE_MAGIC:
+            return
+
         await pfs.seek(HDR_HASH_OFF)
         hash = await pfs.read(HDR_HASH_SIZE)
 
@@ -557,6 +566,8 @@ async def fix_pfs_hdr_hash2(path: str) -> None:
 
         AES.new(KEY, AES.MODE_CBC, iv).decrypt(chunk, chunk)
         chunk[:HDR_HASH_SIZE] = hash
+        if chunk[HDR_HASH_SIZE:HDR_HASH_SIZE + 8] == bytes(8):
+            chunk[HDR_HASH_SIZE:HDR_HASH_SIZE + 8] = b"\x01\x00\x00\x00\x00\x00\x00\x00"
         AES.new(KEY, AES.MODE_CBC, iv).encrypt(chunk, chunk)
 
         await pfs.seek(AUTH_CODE_HDR_HASH2_OFF)
