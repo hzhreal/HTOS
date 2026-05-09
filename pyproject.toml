@@ -1,6 +1,6 @@
 [project]
 name = "HTOS"
-version = "2.1.0"
+version = "3.2.0"
 description = "A discord bot and app with tons of functionalities that can handle PS4 saves using a jailbroken PS4."
 readme = "README.md"
 license = "GPL-3.0-or-later"
