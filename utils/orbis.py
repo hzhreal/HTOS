@@ -129,7 +129,7 @@ class SaveFile:
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
         await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
         savepath = await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
-        await fix_pfs_hdr_hash2(savepath)
+        await fix_pfs_auth_code_info(savepath)
 
     async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
         for element in elements:
@@ -532,7 +532,7 @@ def sys_files_validator(sys_files: list[str]) -> None:
     if n != n_mandatory:
         raise OrbisError("All mandatory sce_sys files are not present!")
 
-async def fix_pfs_hdr_hash2(path: str) -> None:
+async def fix_pfs_auth_code_info(path: str) -> None:
     # we may assume that the savefile is valid (it has been processed by the console)
     HDR_HASH_OFF            = 0x380
     HDR_HASH_SIZE           = 0x20
@@ -565,7 +565,9 @@ async def fix_pfs_hdr_hash2(path: str) -> None:
         chunk = bytearray(chunk[16:])
 
         AES.new(KEY, AES.MODE_CBC, iv).decrypt(chunk, chunk)
+        # fix pfs_hdr_hash2
         chunk[:HDR_HASH_SIZE] = hash
+        # make sure copy_ctr is nonzero
         if chunk[HDR_HASH_SIZE:HDR_HASH_SIZE + 8] == bytes(8):
             chunk[HDR_HASH_SIZE:HDR_HASH_SIZE + 8] = b"\x01\x00\x00\x00\x00\x00\x00\x00"
         AES.new(KEY, AES.MODE_CBC, iv).encrypt(chunk, chunk)

@@ -15,7 +15,7 @@ from utils.constants import (
     SCE_SYS_NAME, PARAM_NAME, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
 )
 from utils.workspace import cleanup
-from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA, fix_pfs_hdr_hash2
+from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA, fix_pfs_auth_code_info
 from utils.exceptions import OrbisError
 from utils.conversions import mb_to_saveblocks, saveblocks_to_bytes, bytes_to_mb
 from utils.extras import generate_random_string
@@ -162,7 +162,7 @@ class Createsave(TabBase):
             await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, savepath),
             await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", savepath + ".bin")
             await C1ftp.free_ctx(ftp_ctx)
-            await fix_pfs_hdr_hash2(savepath)
+            await fix_pfs_auth_code_info(savepath)
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, None, save, mount_paths)
             self.logger.error(f"`{str(e)}` Stopping...")
