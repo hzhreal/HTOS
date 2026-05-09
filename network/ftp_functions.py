@@ -256,6 +256,8 @@ class FTPps:
             logger.error("Failed to connect to FTP!")
             raise FTPError("FTP ERROR!")
 
+        return new_savepath
+
     async def uploadencrypted_bulk(self, savename: str) -> None:
         savefiles = [os.path.join(self.upload_encrypted_path, savename), os.path.join(self.upload_encrypted_path, savename + ".bin")]
 

@@ -6,6 +6,7 @@ import struct
 import shutil
 from enum import Enum
 from dataclasses import dataclass
+from Crypto.Cipher import AES
 
 from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_folder
 from network.ftp_functions import FTPps
@@ -127,7 +128,8 @@ class SaveFile:
         await sfo_ctx_write(self.sfo_ctx, self.batch.fInstance.sfo_file_path)
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
         await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
-        await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
+        savepath = await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
+        await fix_pfs_hdr_hash2(savepath)
 
     async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
         for element in elements:
@@ -529,4 +531,34 @@ def sys_files_validator(sys_files: list[str]) -> None:
             n += 1
     if n != n_mandatory:
         raise OrbisError("All mandatory sce_sys files are not present!")
+
+async def fix_pfs_hdr_hash2(path: str) -> None:
+    # we may assume that the savefile is valid (it has been processed by the console)
+    HDR_HASH_OFF            = 0x380
+    HDR_HASH_SIZE           = 0x20
+
+    AUTH_CODE_OFF           = 0x7F90
+    AUTH_CODE_HDR_HASH2_OFF = AUTH_CODE_OFF + 0x40
+    AUTH_CODE_SIZE          = 0x70
+    KEY = bytes([
+        0x2B, 0xCF, 0x69, 0x8E, 0x79, 0xCF, 0xDD, 0xFA,
+        0xC2, 0x4D, 0x4C, 0x25, 0xBF, 0x35, 0x1E, 0x62
+    ])
+
+    async with aiofiles.open(path) as pfs:
+        await pfs.seek(HDR_HASH_OFF)
+        hash = await pfs.read(HDR_HASH_SIZE)
+
+        # we can start in the middle of the ciphertext
+        await pfs.seek(AUTH_CODE_HDR_HASH2_OFF - 16)
+        chunk = await pfs.read(16 + AUTH_CODE_SIZE - (AUTH_CODE_HDR_HASH2_OFF - AUTH_CODE_OFF))
+        iv = chunk[:16]
+        chunk = bytearray(chunk[16:])
+
+        AES.new(KEY, AES.MODE_CBC, iv).decrypt(chunk, chunk)
+        chunk[:HDR_HASH_SIZE] = hash
+        AES.new(KEY, AES.MODE_CBC, iv).encrypt(chunk, chunk)
+
+        await pfs.seek(AUTH_CODE_HDR_HASH2_OFF)
+        await pfs.write(chunk)
 

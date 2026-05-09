@@ -23,7 +23,7 @@ from utils.embeds import (
 )
 from utils.workspace import make_workspace, init_workspace, cleanup
 from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
-from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator
+from utils.orbis import sfo_ctx_patch_parameters, obtainCUSA, validate_savedirname, sfo_ctx_create, sfo_ctx_write, sys_files_validator, fix_pfs_hdr_hash2
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks
@@ -178,12 +178,14 @@ class CreateSave(commands.Cog):
 
             # download save at real filename path
             ftp_ctx = await C1ftp.create_ctx()
+            savepath = os.path.join(save_dirs, savename)
             tasks = [
-                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, os.path.join(save_dirs, savename)),
-                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", os.path.join(save_dirs, savename + ".bin"))
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, savepath),
+                lambda: C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", savepath + ".bin")
             ]
             await task_handler(d_ctx, tasks, [])
             await C1ftp.free_ctx(ftp_ctx)
+            await fix_pfs_hdr_hash2(savepath)
         except (SocketError, FTPError, OSError, OrbisError, TaskCancelledError) as e:
             status = "expected"
             if isinstance(e, OSError) and e.errno in CON_FAIL:
