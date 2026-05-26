@@ -17,5 +17,5 @@ class Crypt_Digimon:
     async def check_enc_ps(folderpath: str) -> None:
         files = await CC.obtain_files(folderpath)
         for filepath in files:
-            await Crypt_Digimon.check_enc_ps(filepath)
+            await Crypt_Digimon.encrypt_file(filepath)
 
