@@ -1,6 +1,5 @@
 import aiofiles
 from data.crypto.common import CustomCrypto as CC
-from data.crypto.exceptions import CryptoError
 
 class Crypt_Nioh2:
     SECRET_KEY = bytearray([
@@ -128,16 +127,15 @@ class Crypt_Nioh2:
             off3 = 0x7B7E4 + 0x10
             off4 = 0xECF4A + 0x10
             offs = frozenset([off1, off2, off3, off4])
-            for off in offs:
-                if off >= cc.size:
-                    raise CryptoError("Unsupported save!")
-                await cc.r_stream.seek(off)
-                if await cc.r_stream.read(1) != b"\x01":
-                    break
-            else:
+            if max(offs) >= cc.size:
                 for off in offs:
-                    await cc.w_stream.seek(off)
-                    await cc.w_stream.write(b"\x00")
+                    await cc.r_stream.seek(off)
+                    if await cc.r_stream.read(1) != b"\x01":
+                        break
+                else:
+                    for off in offs:
+                        await cc.w_stream.seek(off)
+                        await cc.w_stream.write(b"\x00")
 
             # now encrypt
             aes = cc.create_ctx_rijndael(
