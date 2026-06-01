@@ -742,7 +742,6 @@ dependencies = [
     { name = "pillow" },
     { name = "psnawp" },
     { name = "py-cord" },
-    { name = "pyaes" },
     { name = "pycryptodome" },
     { name = "python-dateutil" },
     { name = "python-dotenv" },
@@ -771,7 +770,6 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.3.0" },
     { name = "psnawp", specifier = ">=3.0.0" },
     { name = "py-cord", specifier = ">=2.6.1" },
-    { name = "pyaes", specifier = ">=1.6.1" },
     { name = "pycryptodome", specifier = ">=3.23.0" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
@@ -1470,12 +1468,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/0b/56/74d5a2c9e9c23c449
 wheels = [
     { url = "https://files.pythonhosted.org/packages/25/ee/38f9707fd4d7381dea3257a5278de9d23f62d3b2781702b293ead12c0671/py_cord-2.7.1-py3-none-any.whl", hash = "sha256:d95301226f0642f6f3b23e21c31987ebbe23fdb7007cbc8143b010eb6780dec1", size = 1207918, upload-time = "2026-02-09T08:54:58.428Z" },
 ]
-
-[[package]]
-name = "pyaes"
-version = "1.6.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/44/66/2c17bae31c906613795711fc78045c285048168919ace2220daa372c7d72/pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f", size = 28536, upload-time = "2017-09-20T21:17:54.23Z" }
 
 [[package]]
 name = "pyasn1"
