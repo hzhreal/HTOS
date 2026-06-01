@@ -1,6 +1,11 @@
+import sys
+from os.path import dirname as dn
+rootdir = dn(dn(dn(dn(dn(__file__)))))
+sys.path.append(rootdir)
+
 from os import urandom
 from Crypto.Cipher import AES
-from rijndael import Rijndael
+from data.crypto.algorithms.rijndael.rijndael import Rijndael
 
 def test() -> None:
     for keysize in (16, 24, 32):

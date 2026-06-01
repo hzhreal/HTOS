@@ -1,4 +1,4 @@
-from nat import Nat
+from data.crypto.algorithms.rijndael.nat import Nat
 from typing import Final, override
 
 # Let $n$ be a nonnegative integer.

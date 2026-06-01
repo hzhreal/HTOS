@@ -1,9 +1,11 @@
-# from data.crypto.algorithms.rijndael.writer import Writer
-# from data.crypto.algorithms.rijndael.nat import Nat
-# from data.crypto.algorithms.rijndael.gf2x import GF2x, GF2x_MOD_f
-from writer import Writer
-from nat import Nat
-from gf2x import GF2x, GF2x_MOD_f
+import sys
+from os.path import dirname as dn
+rootdir = dn(dn(dn(dn(dn(__file__)))))
+sys.path.append(rootdir)
+
+from data.crypto.algorithms.rijndael.writer import Writer
+from data.crypto.algorithms.rijndael.nat import Nat
+from data.crypto.algorithms.rijndael.gf2x import GF2x, GF2x_MOD_f
 
 def main(path: str) -> None:
     writer = Writer(path)

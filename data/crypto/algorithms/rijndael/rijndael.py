@@ -1,4 +1,4 @@
-from tables import S, Si, Rcon, T0, T1, T2, T3, T4, T5, T6, T7, U0, U1, U2, U3
+from data.crypto.algorithms.rijndael.tables import S, Si, Rcon, T0, T1, T2, T3, T4, T5, T6, T7, U0, U1, U2, U3
 
 class Rijndael:
     MODE_ECB = 1
