@@ -1,5 +1,4 @@
 import aiofiles
-import aiofiles.ospath
 import orjson
 import lz4.block
 import os
@@ -7,7 +6,6 @@ import os
 from data.crypto.common import CustomCrypto as CC
 from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32
-from utils.conversions import mb_to_bytes
 
 from typing import Literal, Any
 
@@ -22,7 +20,7 @@ class Crypt_NMS:
 
     # The JSON handling will be memory heavy and is not chunked
     # Unsure about how we should do that
-    MAX_JSON_FILESIZE = mb_to_bytes(10)
+    JSON_ENABLE = True
     MAX_JSON_NESTING_DEPTH = 10
 
     class NMS(CC):
@@ -78,8 +76,7 @@ class Crypt_NMS:
         async with Crypt_NMS.NMS(filepath) as cc:
             await cc.decompress()
 
-        filesize = await aiofiles.ospath.getsize(filepath)
-        if filesize > Crypt_NMS.MAX_JSON_FILESIZE:
+        if not Crypt_NMS.JSON_ENABLE:
             return
 
         async with aiofiles.open(filepath, "rb") as savegame:
@@ -93,8 +90,7 @@ class Crypt_NMS:
         if not Crypt_NMS.file_check(filepath):
             return
 
-        filesize = await aiofiles.ospath.getsize(filepath)
-        if filesize <= Crypt_NMS.MAX_JSON_FILESIZE:
+        if Crypt_NMS.JSON_ENABLE:
             async with aiofiles.open(filepath, "rb") as savegame:
                 uncompressed_data = await savegame.read()
             obfuscated_data = Crypt_NMS.obfuscate(uncompressed_data)
