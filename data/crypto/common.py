@@ -533,8 +533,7 @@ class CustomCrypto:
 
     def create_ctx_rijndael(self, key: bytes | bytearray, mode: int, blocksize: int, **kwargs) -> int:
         cipher = Rijndael(key, mode, blocksize, **kwargs)
-        streaming_modes = (Rijndael.MODE_CTR, )
-        if mode in streaming_modes:
+        if cipher.is_streaming:
             bl = 0
         else:
             bl = blocksize
