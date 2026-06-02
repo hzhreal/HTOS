@@ -47,9 +47,9 @@ def main(path: str) -> None:
     # https://en.wikipedia.org/wiki/AES_key_schedule
     rcon = [0] * 30
     x = GF2x_MOD_f(g, GF2x(Nat(0b10)))
-    for a in range(1, len(rcon), 1):
-        rc_i = (x ** (a - 1)).repr.repr.n
-        rcon[a] = construct_word((rc_i, 0, 0, 0))
+    for i in range(1, 30, 1):
+        rc_i = (x ** (i - 1)).repr.repr.n
+        rcon[i] = construct_word((rc_i, 0, 0, 0))
     writer.write("Rcon", rcon, 6, 8)
 
     # https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf#%5B%7B%22num%22%3A52%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22FitH%22%7D%2C549%5D
@@ -85,7 +85,7 @@ def main(path: str) -> None:
 
     # tables for the inverse cipher, similar to the previous t-tables
     # the multiplication polynomial for InvMixColumn is given by
-    # d(x) = '0B' x^3 + '0D' x^2 + '09' x + '0E' in GF(2^8)[x]/M(x)
+    # d(x) = '0B' x^3 + '0D' x^2 + '09' x + '0E' in GF(2^8)[x]/((M(x))
     # we just swap out the MixColumns polynomial with the InverseMixColumns polynomial
     # and generate the tables in the same way
     # https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf#%5B%7B%22num%22%3A19%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22FitH%22%7D%2C492%5D
@@ -128,7 +128,7 @@ def main(path: str) -> None:
     writer.write("T7", t7, 8, 8)
 
     # InvMixColumn tables
-    # recall the polynomial d(x) = '0B' x^3 + '0D' x^2 + '09' x + '0E' in GF(2^8)[x]/M(x)
+    # recall the polynomial d(x) = '0B' x^3 + '0D' x^2 + '09' x + '0E' in GF(2^8)[x]/(M(x))
     #
     # suppose we have a state column
     # a_0
