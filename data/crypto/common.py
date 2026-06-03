@@ -445,7 +445,7 @@ class CustomCrypto:
         else:
             assert 0
 
-    async def decompress(self, ctx: int) -> None | int:
+    async def decompress(self, ctx: int) -> None:
         """No need to call `write` after."""
         self._prepare_write()
         self._prepare_compression()
@@ -453,7 +453,7 @@ class CustomCrypto:
 
         if type(ctx.obj) is type(zlib.decompressobj()):
             try:
-                return await self._zlib_decompress(ctx.obj)
+                await self._zlib_decompress(ctx.obj)
             except zlib.error as e:
                 raise CryptoError("Invalid save!") from e
         else:
@@ -658,12 +658,16 @@ class CustomCrypto:
         if size + inc > SAVESIZE_MAX:
             raise CryptoError("Max size reached while decompressing!")
 
-    async def _zlib_decompress(self, obj: zlib._Decompress) -> None | int:
+    async def _zlib_decompress(self, obj: zlib._Decompress) -> None:
+        if obj.eof:
+            return
+
         size = await self.w_stream.seek(0, 2)
 
         decomp = obj.decompress(self.chunk, self.CHUNKSIZE)
         if obj.unused_data:
-            raise CryptoError("Invalid!")
+            assert obj.eof
+            assert not obj.unconsumed_tail
         if decomp:
             self._decomp_max_size_calc(size, len(decomp))
             await self.w_stream.write(decomp)
@@ -675,21 +679,17 @@ class CustomCrypto:
                     break
                 decomp = obj.decompress(comp, self.CHUNKSIZE)
                 if obj.unused_data:
-                    raise CryptoError("Invalid!")
+                    assert obj.eof
                 if not decomp:
                     break
                 self._decomp_max_size_calc(size, len(decomp))
                 await self.w_stream.write(decomp)
 
         if obj.eof:
-            eof_off = self.chunk_start + len(self.chunk)
-            while True:
-                decomp = obj.flush(self.CHUNKSIZE)
-                if not decomp:
-                    break
+            decomp = obj.flush()
+            if decomp:
                 self._decomp_max_size_calc(size, len(decomp))
                 await self.w_stream.write(decomp)
-            return eof_off # in r_stream
 
     @staticmethod
     def is_valid_zlib_header(header: bytes) -> bool:
