@@ -35,6 +35,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Dying Light 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dying Light 2                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Far Cry 5                                           | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| FINAL FANTASY I-VI Pixel Remaster                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
 | Kingdom Hearts III                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
