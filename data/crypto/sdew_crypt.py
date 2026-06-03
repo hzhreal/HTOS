@@ -24,6 +24,7 @@ class Crypt_Sdew:
             zlib = cc.create_ctx_zlib_compress()
             while await cc.read():
                 await cc.compress(zlib)
+            await cc.compress_post(zlib)
 
     @staticmethod
     async def check_dec_ps(folderpath: str) -> None:

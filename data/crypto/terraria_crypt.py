@@ -50,6 +50,7 @@ class Crypt_Terraria:
                     await cc.w_stream.write(size)
                     while await cc.read():
                         await cc.compress(zlib)
+                    await cc.compress_post(zlib)
 
     @staticmethod
     async def check_dec_ps(folderpath: str) -> None:

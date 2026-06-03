@@ -36,6 +36,7 @@ class Crypt_PoPersia:
             cc.set_ptr(0x43C)
             while await cc.read(stop_off=cc.size - 8):
                 await cc.compress(zlib)
+            await cc.compress_post(zlib)
             await cc.copy(cc.size - 8, cc.size)
             size = await cc.w_stream.tell()
             comp_len = uint32(size - 0x43C + 0xA, "little").as_bytes

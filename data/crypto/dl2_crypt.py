@@ -64,6 +64,7 @@ class Crypt_DL2:
             gzip = cc.create_ctx_gzip_compress()
             while await cc.read():
                 await cc.compress(gzip)
+            await cc.compress_post(gzip)
 
     @staticmethod
     async def check_dec_ps(folderpath: str) -> None:

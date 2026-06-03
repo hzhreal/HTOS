@@ -27,6 +27,7 @@ class Crypt_RCube:
             cc.set_ptr(0xC)
             while await cc.read():
                 await cc.compress(zlib)
+            await cc.compress_post(zlib)
 
     @staticmethod
     async def check_dec_ps(folderpath: str) -> None:

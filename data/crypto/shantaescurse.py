@@ -19,6 +19,7 @@ class Crypt_ShantaeSCurse:
             cc.set_ptr(4)
             while await cc.read():
                 await cc.compress(zlib)
+            await cc.compress_post(zlib)
         async with CC(filepath) as cc:
             jhash = cc.create_ctx_jhash_lookup2()
             await cc.checksum(jhash, 4, cc.size)
