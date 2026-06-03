@@ -434,6 +434,17 @@ class CustomCrypto:
         else:
             assert 0
 
+    async def compress_post(self, ctx: int) -> None:
+        """No need to call `write` after."""
+        self._prepare_write()
+        self._prepare_compression()
+        ctx = self._get_ctx(ctx)
+
+        if type(ctx.obj) is type(zlib.compressobj()):
+            await self._zlib_compress_post(ctx.obj)
+        else:
+            assert 0
+
     async def decompress(self, ctx: int) -> None | int:
         """No need to call `write` after."""
         self._prepare_write()
@@ -633,6 +644,12 @@ class CustomCrypto:
         size += len(comp)
 
         comp = obj.flush(zlib.Z_SYNC_FLUSH)
+        self._comp_max_size_calc(size, len(comp))
+        await self.w_stream.write(comp)
+
+    async def _zlib_compress_post(self, obj: zlib._Compress) -> None:
+        size = await self.w_stream.seek(0, 2)
+        comp = obj.flush(zlib.Z_FINISH)
         self._comp_max_size_calc(size, len(comp))
         await self.w_stream.write(comp)
 
