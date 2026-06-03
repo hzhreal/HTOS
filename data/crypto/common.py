@@ -12,6 +12,7 @@ import anycrc
 from types import TracebackType
 
 from data.crypto.algorithms.jhash.lookup2 import JHashLookup2
+from data.crypto.algorithms.rijndael.rijndael import Rijndael
 
 from data.crypto.exceptions import CryptoError
 
@@ -20,7 +21,8 @@ from Crypto.Cipher import AES, Blowfish
 from typing import Literal, Any, Self
 
 from utils.constants import SCE_SYS_NAME, RANDOMSTRING_LENGTH, SAVESIZE_MAX
-from utils.conversions import mb_to_bytes
+# from utils.constants import SAVESIZE_MAX
+from utils.conversions import mb_to_bytes, bytes_to_mb
 from utils.type_helpers import Cint, uint8, uint32, uint64
 from utils.extras import generate_random_string
 
@@ -35,7 +37,7 @@ class CustomCryptoCtx:
 
 class CustomCrypto:
     CHUNKSIZE = mb_to_bytes(1)
-    SAVESIZE_MAX = SAVESIZE_MAX
+    SAVESIZE_MAX = mb_to_bytes(25) # some implementations are in pure python, can be too slow
     AES = AES
     Blowfish = Blowfish
     zlib = zlib
@@ -44,6 +46,8 @@ class CustomCrypto:
     hashlib = hashlib
     hmac = hmac
     anycrc = anycrc
+    JHashLookup2 = JHashLookup2
+    Rijndael = Rijndael
 
     def __init__(
         self,
@@ -91,6 +95,10 @@ class CustomCrypto:
 
     async def get_size(self) -> None:
         self.size = await self.r_stream.seek(0, 2)
+        if self.size > self.SAVESIZE_MAX:
+            raise CryptoError(
+                f"File exceeds the maximum processing size limit ({bytes_to_mb(self.SAVESIZE_MAX)})."
+            )
 
     async def read(self, stop_off: int = -1, backwards: bool = False) -> int:
         if not backwards:
@@ -498,12 +506,38 @@ class CustomCrypto:
 
     def create_ctx_aes(self, key: bytes | bytearray, mode: int, **kwargs) -> int:
         cipher = AES.new(key, mode, **kwargs)
-        blocksize = uint8(AES.block_size, const=True)
+        streaming_modes = (
+            AES.MODE_CFB, AES.MODE_OFB, AES.MODE_CTR, AES.MODE_OPENPGP,
+            AES.MODE_CCM, AES.MODE_EAX, AES.MODE_SIV, AES.MODE_GCM,
+            AES.MODE_OCB
+        ) # some of these are not properly interfaced
+        if mode in streaming_modes:
+            bl = 0
+        else:
+            bl = AES.block_size
+        blocksize = uint8(bl, const=True)
         return self._create_ctx(cipher, blocksize)
 
     def create_ctx_blowfish(self, key: bytes | bytearray, mode: int, **kwargs) -> int:
         cipher = Blowfish.new(key, mode, **kwargs)
-        blocksize = uint8(Blowfish.block_size, const=True)
+        streaming_modes = (
+            Blowfish.MODE_CFB, Blowfish.MODE_OFB, Blowfish.MODE_CTR, Blowfish.MODE_OPENPGP,
+            Blowfish.MODE_EAX
+        ) # some of these are not properly interfaced
+        if mode in streaming_modes:
+            bl = 0
+        else:
+            bl = Blowfish.block_size
+        blocksize = uint8(bl, const=True)
+        return self._create_ctx(cipher, blocksize)
+
+    def create_ctx_rijndael(self, key: bytes | bytearray, mode: int, blocksize: int, **kwargs) -> int:
+        cipher = Rijndael(key, mode, blocksize, **kwargs)
+        if cipher.is_streaming:
+            bl = 0
+        else:
+            bl = blocksize
+        blocksize = uint8(bl, const=True)
         return self._create_ctx(cipher, blocksize)
 
     def create_ctx_zlib_compress(self, wbits: int | None = None) -> int:

@@ -1,8 +1,5 @@
 import aiofiles
-from pyaes import AES
 from data.crypto.common import CustomCrypto as CC
-from data.crypto.exceptions import CryptoError
-from utils.type_helpers import uint8
 
 class Crypt_Nioh2:
     SECRET_KEY = bytearray([
@@ -34,7 +31,9 @@ class Crypt_Nioh2:
         0x40, 0x64, 0x87, 0x55, 0xBB, 0x7F, 0xF2, 0x10, 0xC9, 0x03, 0x14, 0xB5, 0x80, 0x66, 0xCB, 0x91,
         0xF6, 0x1F, 0x79, 0x58, 0x88, 0xBC, 0x95, 0xC2, 0x06, 0x5F, 0xE9, 0x09, 0x32, 0xED, 0x9B, 0x85
     ]
-    TE0 = [
+    # to see how the T-tables are generated, see https://go.dev/src/crypto/internal/fips140/aes/aes_test.go
+    # or check the htos rijndael implementation
+    T0 = [
         0x381C1C24, 0x5E2F2F71, 0x06030305, 0xA65353F5, 0x5DA3A3FE, 0x02010103, 0x924949DB, 0xAFDADA75, 0x57A6A6F1, 0x81CDCD4C, 0xDBE0E03B, 0x0F8A8A85, 0x3219192B, 0x55A7A7F2, 0x0804040C, 0xB3D4D467,
         0x0C06060A, 0x341A1A2E, 0xAFDADA75, 0x924949DB, 0x10080818, 0xDFE2E23D, 0xF7F6F601, 0x7FB2B2CD, 0x279E9EB9, 0xD9E1E138, 0x44222266, 0x924949DB, 0x87CECE49, 0xF67B7B8D, 0xFC7E7E82, 0xBC5E5EE2,
         0x5BA0A0FB, 0x1209091B, 0x542A2A7E, 0xC66363A5, 0x45AFAFEA, 0x924949DB, 0x87CECE49, 0xE0707090, 0xF67B7B8D, 0x783C3C44, 0x46232365, 0x1B80809B, 0xEFFAFA15, 0x2E171739, 0x8E4747C9, 0xFFF2F20D,
@@ -52,7 +51,7 @@ class Crypt_Nioh2:
         0x804040C0, 0xC86464AC, 0x15878792, 0xAA5555FF, 0x6DBBBBD6, 0xFE7F7F81, 0xFFF2F20D, 0x20101030, 0x89C9C940, 0x06030305, 0x2814143C, 0x71B5B5C4, 0x1B80809B, 0xCC6666AA, 0x8DCBCB46, 0x399191A8,
         0xF7F6F601, 0x3E1F1F21, 0xF279798B, 0xB05858E8, 0x0B888883, 0x63BCBCDF, 0x319595A4, 0x9FC2C25D, 0x0C06060A, 0xBE5F5FE1, 0xC9E9E920, 0x1209091B, 0x64323256, 0xC1EDED2C, 0x2D9B9BB6, 0x11858594
     ]
-    TE1 = [
+    T1 = [
         0x24381C1C, 0x715E2F2F, 0x05060303, 0xF5A65353, 0xFE5DA3A3, 0x03020101, 0xDB924949, 0x75AFDADA, 0xF157A6A6, 0x4C81CDCD, 0x3BDBE0E0, 0x850F8A8A, 0x2B321919, 0xF255A7A7, 0x0C080404, 0x67B3D4D4,
         0x0A0C0606, 0x2E341A1A, 0x75AFDADA, 0xDB924949, 0x18100808, 0x3DDFE2E2, 0x01F7F6F6, 0xCD7FB2B2, 0xB9279E9E, 0x38D9E1E1, 0x66442222, 0xDB924949, 0x4987CECE, 0x8DF67B7B, 0x82FC7E7E, 0xE2BC5E5E,
         0xFB5BA0A0, 0x1B120909, 0x7E542A2A, 0xA5C66363, 0xEA45AFAF, 0xDB924949, 0x4987CECE, 0x90E07070, 0x8DF67B7B, 0x44783C3C, 0x65462323, 0x9B1B8080, 0x15EFFAFA, 0x392E1717, 0xC98E4747, 0x0DFFF2F2,
@@ -70,7 +69,7 @@ class Crypt_Nioh2:
         0xC0804040, 0xACC86464, 0x92158787, 0xFFAA5555, 0xD66DBBBB, 0x81FE7F7F, 0x0DFFF2F2, 0x30201010, 0x4089C9C9, 0x05060303, 0x3C281414, 0xC471B5B5, 0x9B1B8080, 0xAACC6666, 0x468DCBCB, 0xA8399191,
         0x01F7F6F6, 0x213E1F1F, 0x8BF27979, 0xE8B05858, 0x830B8888, 0xDF63BCBC, 0xA4319595, 0x5D9FC2C2, 0x0A0C0606, 0xE1BE5F5F, 0x20C9E9E9, 0x1B120909, 0x56643232, 0x2CC1EDED, 0xB62D9B9B, 0x94118585
     ]
-    TE2 = [
+    T2 = [
         0x1C24381C, 0x2F715E2F, 0x03050603, 0x53F5A653, 0xA3FE5DA3, 0x01030201, 0x49DB9249, 0xDA75AFDA, 0xA6F157A6, 0xCD4C81CD, 0xE03BDBE0, 0x8A850F8A, 0x192B3219, 0xA7F255A7, 0x040C0804, 0xD467B3D4,
         0x060A0C06, 0x1A2E341A, 0xDA75AFDA, 0x49DB9249, 0x08181008, 0xE23DDFE2, 0xF601F7F6, 0xB2CD7FB2, 0x9EB9279E, 0xE138D9E1, 0x22664422, 0x49DB9249, 0xCE4987CE, 0x7B8DF67B, 0x7E82FC7E, 0x5EE2BC5E,
         0xA0FB5BA0, 0x091B1209, 0x2A7E542A, 0x63A5C663, 0xAFEA45AF, 0x49DB9249, 0xCE4987CE, 0x7090E070, 0x7B8DF67B, 0x3C44783C, 0x23654623, 0x809B1B80, 0xFA15EFFA, 0x17392E17, 0x47C98E47, 0xF20DFFF2,
@@ -88,7 +87,7 @@ class Crypt_Nioh2:
         0x40C08040, 0x64ACC864, 0x87921587, 0x55FFAA55, 0xBBD66DBB, 0x7F81FE7F, 0xF20DFFF2, 0x10302010, 0xC94089C9, 0x03050603, 0x143C2814, 0xB5C471B5, 0x809B1B80, 0x66AACC66, 0xCB468DCB, 0x91A83991,
         0xF601F7F6, 0x1F213E1F, 0x798BF279, 0x58E8B058, 0x88830B88, 0xBCDF63BC, 0x95A43195, 0xC25D9FC2, 0x060A0C06, 0x5FE1BE5F, 0xE920C9E9, 0x091B1209, 0x32566432, 0xED2CC1ED, 0x9BB62D9B, 0x85941185
     ]
-    TE3 = [
+    T3 = [
         0x1C1C2438, 0x2F2F715E, 0x03030506, 0x5353F5A6, 0xA3A3FE5D, 0x01010302, 0x4949DB92, 0xDADA75AF, 0xA6A6F157, 0xCDCD4C81, 0xE0E03BDB, 0x8A8A850F, 0x19192B32, 0xA7A7F255, 0x04040C08, 0xD4D467B3,
         0x06060A0C, 0x1A1A2E34, 0xDADA75AF, 0x4949DB92, 0x08081810, 0xE2E23DDF, 0xF6F601F7, 0xB2B2CD7F, 0x9E9EB927, 0xE1E138D9, 0x22226644, 0x4949DB92, 0xCECE4987, 0x7B7B8DF6, 0x7E7E82FC, 0x5E5EE2BC,
         0xA0A0FB5B, 0x09091B12, 0x2A2A7E54, 0x6363A5C6, 0xAFAFEA45, 0x4949DB92, 0xCECE4987, 0x707090E0, 0x7B7B8DF6, 0x3C3C4478, 0x23236546, 0x80809B1B, 0xFAFA15EF, 0x1717392E, 0x4747C98E, 0xF2F20DFF,
@@ -106,85 +105,44 @@ class Crypt_Nioh2:
         0x4040C080, 0x6464ACC8, 0x87879215, 0x5555FFAA, 0xBBBBD66D, 0x7F7F81FE, 0xF2F20DFF, 0x10103020, 0xC9C94089, 0x03030506, 0x14143C28, 0xB5B5C471, 0x80809B1B, 0x6666AACC, 0xCBCB468D, 0x9191A839,
         0xF6F601F7, 0x1F1F213E, 0x79798BF2, 0x5858E8B0, 0x8888830B, 0xBCBCDF63, 0x9595A431, 0xC2C25D9F, 0x06060A0C, 0x5F5FE1BE, 0xE9E920C9, 0x09091B12, 0x32325664, 0xEDED2CC1, 0x9B9BB62D, 0x85859411
     ]
-    # patch sbox and the transformation tables that depend on it (CTR only needs ECB encrypt)
-    # to see how the T-tables are generated, see https://go.dev/src/crypto/internal/fips140/aes/aes_test.go
-    _AES = AES.__new__(AES)
-    _AES.S = SBOX
-    _AES.T1 = TE0
-    _AES.T2 = TE1
-    _AES.T3 = TE2
-    _AES.T4 = TE3
-    _AES.__init__(SECRET_KEY)
-    class Nioh2(CC):
-        class _AES:
-            def __init__(self) -> None:
-                self.AES = Crypt_Nioh2._AES
-                self.counter = bytearray(Crypt_Nioh2.NONCE_COUNTER)
-                self.ks = list()
-
-            def custom_aes_ctr(self, chunk: bytearray) -> None:
-                size = len(chunk)
-                assert size <= CC.CHUNKSIZE
-                # fill keystream with enough bytes for the whole chunk
-                while len(self.ks) < size:
-                    self.ks.extend(self.AES.encrypt(self.counter))
-                    # increment counter
-                    for i in range(len(self.counter) - 1, -1, -1):
-                        b = self.counter[i]
-                        b += 1
-                        b &= 0xFF
-                        self.counter[i] = b
-                        if self.counter[i] != 0:
-                            break
-
-                for i in range(size):
-                    chunk[i] ^= self.ks[i]
-                del self.ks[:size]
-
-            def decrypt(self, chunk: bytearray, _: bytearray) -> None:
-                self.custom_aes_ctr(chunk)
-
-            def encrypt(self, chunk: bytearray, _: bytearray) -> None:
-                self.custom_aes_ctr(chunk)
-
-        def __init__(self, filepath: str) -> None:
-            super().__init__(filepath)
-
-        def create_ctx_aes_nioh2(self) -> int:
-            cipher = self._AES()
-            blocksize = uint8(0, const=True) # streaming mode
-            return self._create_ctx(cipher, blocksize)
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
-        async with Crypt_Nioh2.Nioh2(filepath) as cc:
-            aes = cc.create_ctx_aes_nioh2()
+        async with CC(filepath) as cc:
+            aes = cc.create_ctx_rijndael(
+                Crypt_Nioh2.SECRET_KEY, CC.Rijndael.MODE_CTR, 16, iv=Crypt_Nioh2.NONCE_COUNTER,
+                S=Crypt_Nioh2.SBOX,
+                T0=Crypt_Nioh2.T0, T1=Crypt_Nioh2.T1, T2=Crypt_Nioh2.T2, T3=Crypt_Nioh2.T3
+            )
             while await cc.read():
                 cc.decrypt(aes)
                 await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
-        async with Crypt_Nioh2.Nioh2(filepath) as cc:
+        async with CC(filepath) as cc:
             # disable integrity checks
             off1 = 0x7B882 + 0x10
             off2 = 0x7B884 + 0x10
             off3 = 0x7B7E4 + 0x10
             off4 = 0xECF4A + 0x10
             offs = frozenset([off1, off2, off3, off4])
-            for off in offs:
-                if off >= cc.size:
-                    raise CryptoError("Unsupported save!")
-                await cc.r_stream.seek(off)
-                if await cc.r_stream.read(1) != b"\x01":
-                    break
-            else:
+            if max(offs) < cc.size:
                 for off in offs:
-                    await cc.w_stream.seek(off)
-                    await cc.w_stream.write(b"\x00")
+                    await cc.r_stream.seek(off)
+                    if await cc.r_stream.read(1) != b"\x01":
+                        break
+                else:
+                    for off in offs:
+                        await cc.w_stream.seek(off)
+                        await cc.w_stream.write(b"\x00")
 
             # now encrypt
-            aes = cc.create_ctx_aes_nioh2()
+            aes = cc.create_ctx_rijndael(
+                Crypt_Nioh2.SECRET_KEY, CC.Rijndael.MODE_CTR, 16, iv=Crypt_Nioh2.NONCE_COUNTER,
+                S=Crypt_Nioh2.SBOX,
+                T0=Crypt_Nioh2.T0, T1=Crypt_Nioh2.T1, T2=Crypt_Nioh2.T2, T3=Crypt_Nioh2.T3
+            )
             while await cc.read():
                 cc.encrypt(aes)
                 await cc.write()
