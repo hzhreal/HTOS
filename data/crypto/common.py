@@ -620,11 +620,20 @@ class CustomCrypto:
         update_obj = hmac.new(key, digestmod=digestmod)
         return self._create_ctx(update_obj)
 
+    @staticmethod
+    def _comp_max_size_calc(size: int, inc: int) -> None:
+        if size + inc > SAVESIZE_MAX:
+            raise CryptoError("Max size reached while compressing!")
+
     async def _zlib_compress(self, obj: zlib._Compress) -> None:
-        await self.w_stream.seek(0, 2)
+        size = await self.w_stream.seek(0, 2)
         comp = obj.compress(self.chunk)
+        self._comp_max_size_calc(size, len(comp))
         await self.w_stream.write(comp)
+        size += len(comp)
+
         comp = obj.flush(zlib.Z_SYNC_FLUSH)
+        self._comp_max_size_calc(size, len(comp))
         await self.w_stream.write(comp)
 
     @staticmethod
