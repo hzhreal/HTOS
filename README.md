@@ -46,7 +46,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Metal Gear Solid V: The Definitive Experience       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Metal Gear Solid V: The Phantom Pain                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Minecraft: Legacy Edition                           | :white_circle:          | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
-| Monster Hunter Rise                                 | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
+| Monster Hunter Rise                                 | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Nioh 2                                              | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                                        | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
