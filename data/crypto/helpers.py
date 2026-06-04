@@ -18,7 +18,7 @@ from utils.constants import (
     DIGIMON_TITLEID, SDEW_TITLEID, NIOH2_TITLEID, MHWI_TITLEID, RE_VILLAGE_TITLEID, LA_NOIRE_TITLEID, LOH_TRAILS_CS4_TITLEID,
     LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID,
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
-    KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID
+    KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID, SWAO_FB_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -704,6 +704,9 @@ async def extra_import(title_id: str, folderpath: str, savepairname: str) -> Non
 
         elif title_id in FF_PIXEL_TITLEID:
             await Crypto.FFPixel.check_enc_ps(folderpath)
+
+        elif title_id in SWAO_FB_TITLEID:
+            await Crypto.SWAOFB.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
