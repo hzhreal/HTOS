@@ -1,4 +1,5 @@
 from data.crypto.common import CustomCrypto as CC
+from utils.type_helpers import uint32
 
 class Crypt_MHR:
     SEED = uint32(0xFF_FF_FF_FF, "little", const=True)
