@@ -49,6 +49,7 @@ from data.crypto.dl2_crypt import Crypt_DL2
 from data.crypto.ffpixel_crypt import Crypt_FFPixel
 from data.crypto.saofb_crypt import Crypt_SAOFB
 from data.crypto.mhr_crypt import Crypt_MHR
+from data.crypto.doa5lr_crypt import Crypt_DoA5LR
 
 from types import SimpleNamespace
 
@@ -70,6 +71,6 @@ Crypto = SimpleNamespace(
     Mafia3=Crypt_Mafia3, DeadRising=Crypt_DeadRising, KH3=Crypt_KH3,
     PoPersia=Crypt_PoPersia, LunarR=Crypt_LunarR, DStranding=Crypt_DStranding,
     FC5=Crypt_FC5, DL2=Crypt_DL2, FFPixel=Crypt_FFPixel,
-    SAOFB=Crypt_SAOFB, MHR=Crypt_MHR
+    SAOFB=Crypt_SAOFB, MHR=Crypt_MHR, DoA5LR=Crypt_DoA5LR
 )
 
