@@ -98,41 +98,21 @@ class Crypt_BL3:
         def __init__(self, filepath: str) -> None:
             super().__init__(filepath)
             self.state = bytearray()
-            self.off = -1
-            self.length_idx = -1
             self.idx = -1
 
-        def prepare_down(self, off: int, length: int) -> None:
-            if off >= self.size or length < 1:
-                raise CryptoError("Invalid save!")
-            self.set_ptr(off + length)
-            self.off = off
-            self.length_idx = length - 1
-            self.state = bytearray()
-
-        def prepare_up(self, off: int) -> None:
+        def prepare(self, off: int) -> None:
             self.set_ptr(off)
             self.idx = 0
-            self.state = bytearray()
 
-        async def xor_down(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
-            for i in range(len(self.chunk) - 1, -1, -1):
-                if self.length_idx < 32:
-                    b = pre[self.length_idx]
-                else:
-                    if i < 32:
-                        await self.r_stream.seek(self.off + self.length_idx - 32)
-                        b = (await self.r_stream.read(1))[0]
-                    else:
-                        b = self.chunk[i - 32]
-
-                b ^= xor[self.length_idx % 32]
-                self.chunk[i] ^= b
-
-                self.length_idx -= 1
-
-        def xor_up(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
+        def xor_down(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
+            # C_0, ..., C_31 in pre
+            # for i >= 32: P_i = C_i ^ (C_{i-32} ^ xor_{i % 32})
             for i in range(len(self.chunk)):
+                # keep last 32 C_i
+                x = self.chunk[i]
+                if len(self.state) > 32:
+                    del self.state[:-32]
+
                 if self.idx < 32:
                     b = pre[self.idx]
                 else:
@@ -141,6 +121,21 @@ class Crypt_BL3:
                 b ^= xor[self.idx % 32]
                 self.chunk[i] ^= b
 
+                self.idx += 1
+                self.state.append(x)
+
+        def xor_up(self, pre: bytes | bytearray, xor: bytes | bytearray) -> None:
+            # C_0, ..., C_31 in pre
+            # for i >= 32: C_i = P_i ^ (C_{i-32} ^ xor_{i % 32})
+            for i in range(len(self.chunk)):
+                if self.idx < 32:
+                    b = pre[self.idx]
+                else:
+                    b = self.state[0]
+
+                b ^= xor[self.idx % 32]
+                self.chunk[i] ^= b
+                # keep last 32 C_i
                 self.state.append(self.chunk[i])
                 if len(self.state) > 32:
                     del self.state[:-32]
@@ -171,10 +166,10 @@ class Crypt_BL3:
             await cc.r_stream.seek(offset)
             size = uint32(await cc.r_stream.read(4), "little").value
             offset += 4
-            cc.prepare_down(offset, size)
+            cc.prepare(offset)
 
-            while await cc.read(stop_off=offset, backwards=True):
-                await cc.xor_down(pre, xor)
+            while await cc.read(stop_off=offset + size):
+                cc.xor_down(pre, xor)
                 await cc.write()
 
     @staticmethod
@@ -201,7 +196,7 @@ class Crypt_BL3:
             await cc.r_stream.seek(offset)
             size = uint32(await cc.r_stream.read(4), "little").value
             offset += 4
-            cc.prepare_up(offset)
+            cc.prepare(offset)
 
             while await cc.read(stop_off=offset + size):
                 cc.xor_up(pre, xor)
