@@ -91,8 +91,10 @@ class ThreadButton(discord.ui.View):
             await thread.send(interaction.user.mention)
             await thread.send(embed=emb)
             ids_to_remove = await write_threadid_db(interaction.user.id, thread.id)
+            await interaction.edit_original_response(content=f"Thread created. Head over to {thread.mention}.")
         except (WorkspaceError, discord.Forbidden) as e:
             logger.error(f"Cannot create thread: {e}")
+            await interaction.edit_original_response(content="Failed to create thread!")
 
         try:
             for thread_id in ids_to_remove:
