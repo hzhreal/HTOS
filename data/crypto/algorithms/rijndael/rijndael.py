@@ -84,7 +84,7 @@ class Rijndael:
         Nk = kl // 4 # key columns
         Nb = block_size // 4 # state columns
         Nr = max(Nk, Nb) + 6 # number of rounds
-        # for MixColumns
+        # ShiftRow offsets
         C1 = {
             4: 1, 5: 1, 6: 1, 7: 1, 8: 1
         }[Nb]
