@@ -140,7 +140,7 @@ class CustomCrypto:
         await self.r_stream.seek(off)
         r = await self.r_stream.read(n)
         if len(r) != n:
-            raise CryptoError("Invalid")
+            raise CryptoError("Invalid!")
         return r
 
     def _get_ctx(self, ctx: int) -> CustomCryptoCtx:
