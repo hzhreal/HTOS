@@ -58,6 +58,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil 3 Remake                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 4 Remake                              | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 5                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Resident Evil 6                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil 7: Biohazard                          | :white_check_mark:      | :black_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Resistance                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Revelations 2                        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
