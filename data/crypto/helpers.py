@@ -19,7 +19,7 @@ from utils.constants import (
     LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID,
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
     KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID, SAO_FB_TITLEID, MHR_TITLEID,
-    DOA5_LR_TITLEID, RE6_TITLEID
+    DOA5_LR_TITLEID, RE6_TITLEID, MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -731,6 +731,9 @@ async def extra_import(title_id: str, folderpath: str, savepairname: str) -> Non
 
         elif title_id in RE6_TITLEID:
             await Crypto.RE6.check_enc_ps(folderpath)
+
+        elif title_id in frozenset.union(MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID):
+            await Crypto.MEarth.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
