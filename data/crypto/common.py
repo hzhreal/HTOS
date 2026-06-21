@@ -423,29 +423,29 @@ class CustomCrypto:
 
         ctx.obj.decrypt(self.chunk, self.chunk)
 
-    async def compress(self, ctx: int) -> None:
+    async def compress(self, ctx: int) -> int:
         """No need to call `write` after."""
         self._prepare_write()
         self._prepare_compression()
         ctx = self._get_ctx(ctx)
 
         if type(ctx.obj) is type(zlib.compressobj()):
-            await self._zlib_compress(ctx.obj)
+            return await self._zlib_compress(ctx.obj)
         else:
             assert 0
 
-    async def compress_post(self, ctx: int) -> None:
+    async def compress_post(self, ctx: int) -> int:
         """No need to call `write` after."""
         self._prepare_write()
         self._prepare_compression()
         ctx = self._get_ctx(ctx)
 
         if type(ctx.obj) is type(zlib.compressobj()):
-            await self._zlib_compress_post(ctx.obj)
+            return await self._zlib_compress_post(ctx.obj)
         else:
             assert 0
 
-    async def decompress(self, ctx: int) -> None:
+    async def decompress(self, ctx: int) -> int:
         """No need to call `write` after."""
         self._prepare_write()
         self._prepare_compression()
@@ -453,7 +453,7 @@ class CustomCrypto:
 
         if type(ctx.obj) is type(zlib.decompressobj()):
             try:
-                await self._zlib_decompress(ctx.obj)
+                return await self._zlib_decompress(ctx.obj)
             except zlib.error as e:
                 raise CryptoError("Invalid save!") from e
         else:
@@ -631,46 +631,53 @@ class CustomCrypto:
         update_obj = hmac.new(key, digestmod=digestmod)
         return self._create_ctx(update_obj)
 
-    @staticmethod
-    def _comp_max_size_calc(size: int, inc: int) -> None:
-        if size + inc > SAVESIZE_MAX:
+    async def _comp_write(self, w: bytes, size: int) -> int:
+        l = len(w)
+        if size + l > SAVESIZE_MAX:
             raise CryptoError("Max size reached while compressing!")
+        await self.w_stream.write(w)
+        return l
 
-    async def _zlib_compress(self, obj: zlib._Compress) -> None:
+    async def _zlib_compress(self, obj: zlib._Compress) -> int:
         size = await self.w_stream.seek(0, 2)
+        l = 0
+
         comp = obj.compress(self.chunk)
-        self._comp_max_size_calc(size, len(comp))
-        await self.w_stream.write(comp)
-        size += len(comp)
+        a = await self._comp_write(comp, size)
+        size += a
+        l += a
 
         comp = obj.flush(zlib.Z_SYNC_FLUSH)
-        self._comp_max_size_calc(size, len(comp))
-        await self.w_stream.write(comp)
+        l += await self._comp_write(comp, size) # end; not updating size
+        return l
 
-    async def _zlib_compress_post(self, obj: zlib._Compress) -> None:
+    async def _zlib_compress_post(self, obj: zlib._Compress) -> int:
         size = await self.w_stream.seek(0, 2)
         comp = obj.flush(zlib.Z_FINISH)
-        self._comp_max_size_calc(size, len(comp))
-        await self.w_stream.write(comp)
+        return await self._comp_write(comp, size)
 
-    @staticmethod
-    def _decomp_max_size_calc(size: int, inc: int) -> None:
-        if size + inc > SAVESIZE_MAX:
+    async def _decomp_write(self, w: bytes, size: int) -> int:
+        l = len(w)
+        if size + l > SAVESIZE_MAX:
             raise CryptoError("Max size reached while decompressing!")
+        await self.w_stream.write(w)
+        return l
 
-    async def _zlib_decompress(self, obj: zlib._Decompress) -> None:
+    async def _zlib_decompress(self, obj: zlib._Decompress) -> int:
         if obj.eof:
-            return
+            return 0
 
         size = await self.w_stream.seek(0, 2)
+        l = 0
 
         decomp = obj.decompress(self.chunk, self.CHUNKSIZE)
         if obj.unused_data:
             assert obj.eof
             assert not obj.unconsumed_tail
         if decomp:
-            self._decomp_max_size_calc(size, len(decomp))
-            await self.w_stream.write(decomp)
+            a = await self._decomp_write(decomp, size)
+            size += a
+            l += a
 
         if obj.unconsumed_tail:
             while True:
@@ -682,14 +689,18 @@ class CustomCrypto:
                     assert obj.eof
                 if not decomp:
                     break
-                self._decomp_max_size_calc(size, len(decomp))
-                await self.w_stream.write(decomp)
+                a = await self._decomp_write(decomp, size)
+                size += a
+                l += a
 
         if obj.eof:
             decomp = obj.flush()
             if decomp:
-                self._decomp_max_size_calc(size, len(decomp))
-                await self.w_stream.write(decomp)
+                a = await self._decomp_write(decomp, size)
+                # end; not updating size
+                l += a
+
+        return l
 
     @staticmethod
     def is_valid_zlib_header(header: bytes) -> bool:
