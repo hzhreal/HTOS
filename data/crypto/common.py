@@ -374,6 +374,40 @@ class CustomCrypto:
         b = id(object()) & 0xFF
         return bytes([b] * length)
 
+    async def pkcs7_pad_pre(self, n: int) -> None:
+        assert not self.in_place
+        assert 1 <= n <= 0xFF
+
+        size_1 = await self.w_stream.seek(0, 2)
+        size_2 = size_1 + (n - (size_1 % n))
+        if size_2 > self.SAVESIZE_MAX:
+            raise CryptoError("Invalid!")
+        p = size_2 - size_1
+        w = bytes([p] * p)
+        await self.w_stream.write(w)
+
+    async def pkcs7_pad_post(self, n: int) -> None:
+        assert not self.in_place
+        assert 1 <= n <= 0xFF
+
+        size = await self.w_stream.seek(0, 2)
+        if size == 0:
+            return
+        await self.w_stream.seek(size - 1)
+        p = (await self.w_stream.read(1))[0]
+
+        if not (1 <= p <= n):
+            raise CryptoError("Invalid!")
+        s = size - p
+        if s < 0:
+            raise CryptoError("Invalid!")
+        await self.w_stream.seek(s)
+        buf = await self.w_stream.read(p)
+        if buf != bytes([p] * p):
+            raise CryptoError("Invalid!")
+
+        await self.w_stream.truncate(s)
+
     def _trim_chunk(self, blocksize: int) -> bool:
         """
         Internal method to make `chunk` a multiple of `blocksize`.
