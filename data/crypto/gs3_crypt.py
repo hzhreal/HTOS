@@ -1,5 +1,3 @@
-from poplib import CR
-
 import aiofiles
 from data.crypto.common import CustomCrypto as CC
 from data.crypto.exceptions import CryptoError
