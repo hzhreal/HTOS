@@ -26,7 +26,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Castle Crashers Remastered                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dead Island 1                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dead Island 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead or Alive 5: Last Round                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Rising                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -106,7 +106,6 @@ That is, if you want to make modifications to the savegame without corrupting it
 :white_check_mark:: Assumed to be fully implemented.  
 
 :large_blue_circle:: Partially implemented:  
-Dead Island 1: There may be unimplemented checksums.  
 Dead Island 2: Unimplemented checksums.  
 Far Cry 5: Any compressed image data will not be decompressed.  
 Grand Theft Auto V: Only money quick cheat is implemented.  
