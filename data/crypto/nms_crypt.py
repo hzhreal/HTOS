@@ -74,8 +74,9 @@ class Crypt_NMS:
                     decomp = lz4.block.decompress(comp, uncompressed_size=decompsize)
                 except lz4.block.LZ4BlockError:
                     raise CryptoError("Invalid save!")
+                assert len(decomp) == decompsize
                 await self.w_stream.write(decomp)
-                size += len(decomp)
+                size += decompsize
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
