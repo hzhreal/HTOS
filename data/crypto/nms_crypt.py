@@ -146,26 +146,21 @@ class Crypt_NMS:
         return keys
 
     @staticmethod
-    def map_keys(node: Any, mapping: dict[str, str], depth: int = 0, result: dict[str, Any] | None = None) -> dict[str, Any]:
+    def map_keys(node: Any, mapping: dict[str, str], depth: int = 0) -> dict[str, Any] | list[Any]:
         """Replace the obfuscated keys with the value in the mapping parameter."""
         if depth > Crypt_NMS.MAX_JSON_NESTING_DEPTH:
             raise CryptoError("Unsupported save!")
-        if result is None:
-            result = {}
+        result = {}
 
         if isinstance(node, dict):
             for key, val in node.items():
                 # check if it exists in mapping first
-                if not mapping.get(key):
+                if key not in mapping:
                     result[key] = val
                     continue
 
-                if key in mapping:
-                    result[mapping[key]] = val
-
                 if isinstance(val, (dict, list)):
-                    new_result = {}
-                    result[mapping[key]] = Crypt_NMS.map_keys(val, mapping, depth + 1, new_result)
+                    result[mapping[key]] = Crypt_NMS.map_keys(val, mapping, depth + 1)
                 else:
                     result[mapping[key]] = val
 
@@ -173,8 +168,7 @@ class Crypt_NMS:
             result = []
             for item in node:
                 if isinstance(item, (dict, list)):
-                    new_result = {}
-                    result.append(Crypt_NMS.map_keys(item, mapping, depth + 1, new_result))
+                    result.append(Crypt_NMS.map_keys(item, mapping, depth + 1))
                 else:
                     result.append(item)
 
