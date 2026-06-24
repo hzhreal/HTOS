@@ -54,7 +54,7 @@ class Resign(commands.Cog):
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
-            err = gdapi.getErrStr_HTTPERROR(e)
+            err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
             logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)

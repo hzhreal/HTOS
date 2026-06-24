@@ -82,7 +82,7 @@ class GDapi:
             self.bot_folder_id = asyncio.run(self.get_bot_folder_id()) # Cached bot folder ID
         except HTTPError as e:
             logger.error(f"Failed to initialize bot folder: {e}")
-            raise GDapiError(self.get_err_str_HTPERROR(e))
+            raise GDapiError(self.get_err_str_HTTPERROR(e))
         logger.info("Google Drive bot folder initialized successfully")
 
     def is_available(self) -> bool:
@@ -217,7 +217,7 @@ class GDapi:
         return bool(GD_LINK_RE.match(text))
 
     @staticmethod
-    def get_err_str_HTPERROR(e: HTTPError) -> str:
+    def get_err_str_HTTPERROR(e: HTTPError) -> str:
         if e.res is None:
             return "HTTPError!"
 
@@ -593,7 +593,7 @@ class GDapi:
                 code, reason = self.parse_HTTPERROR_simple(e)
                 if code == 403 and reason == "insufficientFilePermissions":
                     return False
-                raise GDapiError(self.get_err_str_HTPERROR(e))
+                raise GDapiError(self.get_err_str_HTTPERROR(e))
 
         if res["permissions"][0]["role"] != "writer":
             return False
@@ -650,7 +650,7 @@ class GDapi:
                 res_init = await self.send_req(aiogoogle, req_init, full_res=True)
                 location = res_init.headers["Location"]
             except HTTPError as e:
-                raise GDapiError(self.get_err_str_HTPERROR(e))
+                raise GDapiError(self.get_err_str_HTTPERROR(e))
 
         # Upload in chunks
         file_id = None
@@ -732,7 +732,7 @@ class GDapi:
                 )
                 await self.send_req(aiogoogle, perm_req)
             except HTTPError as e:
-                raise GDapiError(self.get_err_str_HTPERROR(e))
+                raise GDapiError(self.get_err_str_HTTPERROR(e))
 
         file_url = f"https://drive.google.com/file/d/{file_id}"
         return file_url

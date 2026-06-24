@@ -115,7 +115,7 @@ class CreateSave(commands.Cog):
             await msg.edit(embed=emb2)
             _ = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
         except HTTPError as e:
-            err = gdapi.getErrStr_HTTPERROR(e)
+            err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
             logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
