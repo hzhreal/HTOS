@@ -12,6 +12,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "anycrc>=1.3.6",
     "audioop-lts>=0.2.2 ; python_full_version >= '3.13'",
+    "cityhash>=0.4.10",
     "crc32c>=2.7.1",
     "google-api-python-client>=2.179.0",
     "google-auth-httplib2>=0.2.0",

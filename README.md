@@ -27,7 +27,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dead Island 2                                       | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dead Island 2                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead or Alive 5: Last Round                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Rising                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Death Stranding                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -107,7 +107,6 @@ That is, if you want to make modifications to the savegame without corrupting it
 :white_check_mark:: Assumed to be fully implemented.  
 
 :large_blue_circle:: Partially implemented:  
-Dead Island 2: Unimplemented checksums.  
 Far Cry 5: Any compressed image data will not be decompressed.  
 Grand Theft Auto V: Only money quick cheat is implemented.  
 Nioh 2: Checksum fix is for version 01.27 only.  
@@ -138,6 +137,7 @@ Xenoverse 2: The conversion will only make the savegame work on the PC save edit
 * [AxrzZ](https://github.com/AxrzZ)
 * [Batang](https://github.com/B-a-t-a-n-g)
 * [Batang](https://github.com/B-a-t-a-n-g): [Dying_Light_2_Checksum](https://github.com/B-a-t-a-n-g/Dying_Light_2_Checksum)
+* [Bawsdeep](https://gitlab.com/BawsDeep): [di2-checksums](https://gitlab.com/BawsDeep/di2-checksums)
 * [Bawsdeep](https://gitlab.com/BawsDeep): [xenoverse2-crypt-checksum](https://gitlab.com/BawsDeep/xenoverse2-crypt-checksum)
 * [Bawsdeep](https://gitlab.com/BawsDeep): [xenoverse2-converter](https://gitlab.com/BawsDeep/xenoverse2-converter)
 * [Brotherguns](https://github.com/brotherguns)
