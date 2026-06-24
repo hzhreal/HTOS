@@ -28,21 +28,29 @@ class Crypt_NMS:
             super().__init__(filepath, in_place=False)
 
         async def compress(self) -> None:
+            assert not self.in_place
+
+            size = await self.w_stream.seek(0, 2)
             while await self.read():
-                await self.w_stream.seek(0, 2)
                 comp = lz4.block.compress(self.chunk, store_size=False)
                 compsize = uint32(len(comp), "little").as_bytes
                 decompsize = uint32(len(self.chunk), "little").as_bytes
+                l = len(Crypt_NMS.LZ4_MAGIC) + len(compsize) + len(decompsize) + 4 + len(comp)
+                if size + l > self.SAVESIZE_MAX:
+                    raise CryptoError("Unsupported save!")
                 await self.w_stream.write(Crypt_NMS.LZ4_MAGIC)
                 await self.w_stream.write(compsize)
                 await self.w_stream.write(decompsize)
                 await self.w_stream.write(bytes([0] * 4))
                 await self.w_stream.write(comp)
+                size += l
 
         async def decompress(self) -> None:
+            assert not self.in_place
+
+            size = await self.w_stream.seek(0, 2)
             ptr = 0
             while True:
-                size = await self.w_stream.seek(0, 2)
                 off = await self.find(Crypt_NMS.LZ4_MAGIC, ptr)
                 if off == -1:
                     break
@@ -67,6 +75,7 @@ class Crypt_NMS:
                 except lz4.block.LZ4BlockError:
                     raise CryptoError("Invalid save!")
                 await self.w_stream.write(decomp)
+                size += len(decomp)
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:

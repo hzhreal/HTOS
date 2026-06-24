@@ -12,13 +12,20 @@ class Crypt_DI2:
 
         async def compress(self) -> None:
             assert not self.in_place
-            await self.w_stream.seek(0, 2)
+
+            size = await self.w_stream.seek(0, 2)
             while await self.read():
                 comp = zstd.compress(self.chunk)
+                l = len(comp)
+                if size + l > self.SAVESIZE_MAX:
+                    raise CryptoError("Unsupported save!")
                 await self.w_stream.write(comp)
+                size += l
 
         async def decompress(self) -> None:
             assert not self.in_place
+
+            size = await self.w_stream.seek(0, 2)
             ctx = zstd.ZstdDecompressor()
             ptr = 0
             while True:
@@ -44,25 +51,24 @@ class Crypt_DI2:
                     decomp = ctx.decompress(comp, self.CHUNKSIZE, allow_extra_data=True)
                 except zstd.ZstdError:
                     raise CryptoError("Invalid save!")
-                size = await self.w_stream.seek(0, 2)
-                if size + len(decomp) > self.SAVESIZE_MAX:
+                l = len(decomp)
+                if size + l > self.SAVESIZE_MAX:
                     raise CryptoError("Unsupported save!")
                 await self.w_stream.write(decomp)
+                size += l
                 ptr = off + r_size
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
         async with Crypt_DI2.DI2(filepath) as cc:
-            header = await cc.r_stream.read(0x1D)
-            await cc.w_stream.write(header)
+            await cc.copy(0, 0x1D)
             cc.set_ptr(0x1D)
             await cc.decompress()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
         async with Crypt_DI2.DI2(filepath) as cc:
-            header = await cc.r_stream.read(0x1D)
-            await cc.w_stream.write(header)
+            await cc.copy(0, 0x1D)
             cc.set_ptr(0x1D)
             await cc.compress()
 
