@@ -24,7 +24,7 @@ class Crypt_NMS:
     MAX_JSON_NESTING_DEPTH = 10
 
     # Max blocks to decompress
-    MAX_BLOCKS = 100
+    MAX_BLOCKS = 200
 
     class NMS(CC):
         def __init__(self, filepath: str) -> None:
