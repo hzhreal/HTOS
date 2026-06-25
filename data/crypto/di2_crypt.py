@@ -8,6 +8,8 @@ from utils.type_helpers import uint32, uint64
 class Crypt_DI2:
     # CityHash cannot be streamed, whole message has to be in memory
     ENABLE_CITYHASH = True
+    # Max blocks to decompress
+    MAX_BLOCKS = 200
     class DI2(CC):
         ZSTD_MAGIC   = uint32(0xFD2FB528, "little").as_bytes
         START_MARKER = uint32(0x510ED901, "little").as_bytes
@@ -96,6 +98,7 @@ class Crypt_DI2:
             i = start
             size = start
 
+            blocks = 0
             dctx = zstd.ZstdDecompressor()
             while i < end:
                 buf = await self.ext_read(i, 8)
@@ -123,6 +126,9 @@ class Crypt_DI2:
                 await self.w_stream.write(d)
                 size += ds
                 i += 8 + cs
+                blocks += 1
+                if blocks > Crypt_DI2.MAX_BLOCKS:
+                    raise CryptoError("Unsupported save!")
             await self.copy(end, end + 12)
 
     @staticmethod

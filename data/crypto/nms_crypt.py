@@ -23,6 +23,9 @@ class Crypt_NMS:
     JSON_ENABLE = True
     MAX_JSON_NESTING_DEPTH = 10
 
+    # Max blocks to decompress
+    MAX_BLOCKS = 100
+
     class NMS(CC):
         def __init__(self, filepath: str) -> None:
             super().__init__(filepath, in_place=False)
@@ -50,6 +53,7 @@ class Crypt_NMS:
 
             size = await self.w_stream.seek(0, 2)
             ptr = 0
+            blocks = 0
             while True:
                 off = await self.find(Crypt_NMS.LZ4_MAGIC, ptr)
                 if off == -1:
@@ -77,6 +81,10 @@ class Crypt_NMS:
                 assert len(decomp) == decompsize
                 await self.w_stream.write(decomp)
                 size += decompsize
+
+                blocks += 1
+                if blocks > Crypt_NMS.MAX_BLOCKS:
+                    raise CryptoError("Unsupported save!")
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
