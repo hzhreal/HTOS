@@ -467,6 +467,20 @@ wheels = [
 ]
 
 [[package]]
+name = "cityhash"
+version = "0.4.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/29/06f572448a407cbcc6565b4568086da70552a74a850ef20c9c73f1cbbf81/cityhash-0.4.10.tar.gz", hash = "sha256:7e35da9aaf5fcf91da3fea23405874db55ffa58b1abc441d39cce0c8704a9c15", size = 274911, upload-time = "2025-10-09T21:57:51.795Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/20/6ef589058097c634b719b324aed5fcda8a0798ea01640560e13142c1f27b/cityhash-0.4.10-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:33c04b3bcebcada20c650ec0a5dc1c2933170c740b439595924791fa7c167107", size = 73344, upload-time = "2025-10-09T21:57:28.653Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/78/56c76732199800ffbc400df12667bd8c9f24d9e5f7b5b2e3feec06aba4f2/cityhash-0.4.10-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:38577d4b1965edfcc656f09813a3554572235f5e31de198cd44e6bc1f96323a2", size = 66853, upload-time = "2025-10-09T21:57:29.416Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/f1/3bdf7b449740c0eee7a8c593e1ac11a3b6154602e2c3de63ba8d3e38d34a/cityhash-0.4.10-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b1edcae23ebe925a4b309a6be4bf34c03577a6ef73a52c027e17ce324dd84745", size = 366702, upload-time = "2025-10-09T21:57:30.197Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/bd/a17d4ae773a4dce0185937b92b29da4ce584839cb69d9036d23505957dc4/cityhash-0.4.10-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:584adb2d108453eb486a252113addb5239c570d13b81302f198b94cdb5e16b36", size = 585208, upload-time = "2025-10-09T21:57:31.156Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/83/e750a34a43c59f51afc77de7554b5b3e77bec632a0e63090647798b9015c/cityhash-0.4.10-cp313-cp313-win32.whl", hash = "sha256:c5f14232a7ab12cb173ebe885c1a967a0e9a7ead7695bba7af58c6d2aea13970", size = 62818, upload-time = "2025-10-09T21:57:32.014Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/36/ba93514a5888b8139ee5ff4efef47cbf086d3433ce739f2d252faf5890d5/cityhash-0.4.10-cp313-cp313-win_amd64.whl", hash = "sha256:4182c95c2615a3f8d5ffd06c7204a1d2f9296f0f6abd4f34f8a6d6d199ed7a3f", size = 57387, upload-time = "2025-10-09T21:57:32.749Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -745,6 +759,7 @@ dependencies = [
     { name = "aiosqlite" },
     { name = "anycrc" },
     { name = "audioop-lts" },
+    { name = "cityhash" },
     { name = "crc32c" },
     { name = "google-api-python-client" },
     { name = "google-auth-httplib2" },
@@ -773,6 +788,7 @@ requires-dist = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "anycrc", specifier = ">=1.3.6" },
     { name = "audioop-lts", marker = "python_full_version >= '3.13'", specifier = ">=0.2.2" },
+    { name = "cityhash", specifier = ">=0.4.10" },
     { name = "crc32c", specifier = ">=2.7.1" },
     { name = "google-api-python-client", specifier = ">=2.179.0" },
     { name = "google-auth-httplib2", specifier = ">=0.2.0" },
