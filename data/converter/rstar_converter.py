@@ -44,7 +44,7 @@ class Converter_Rstar:
                     header = await file.read(len(crypt.GTAV_HEADER))
                 else: # pc if true or invalid
                     platform = "pc"
-                    header = await file.read(len(crypt.GTAV_HEADER))
+                    header = check_bytes
 
             if header == crypt.GTAV_HEADER and platform == "ps4":
                 async with Converter(filepath, False) as cv:
@@ -92,7 +92,7 @@ class Converter_Rstar:
                     header = await file.read(len(crypt.RDR2_HEADER))
                 else: # pc if true or invalid
                     platform = "pc"
-                    header = await file.read(len(crypt.RDR2_HEADER))
+                    header = check_bytes
 
             if header == crypt.RDR2_HEADER and platform == "ps4":
                 async with Converter(filepath, False) as cv:
