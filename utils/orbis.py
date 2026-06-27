@@ -241,9 +241,14 @@ class SFOContext:
                 index_table = SFOIndexTable(*index_data)
 
                 param_offset = header.key_table_offset + index_table.key_offset
-                param_key = sfo[param_offset:sfo.find(b"\x00", param_offset)].decode("utf-8")
+                key_end = sfo.find(b"\x00", param_offset)
+                if key_end == -1 or param_offset > key_end:
+                    raise OrbisError("")
+                param_key = sfo[param_offset:key_end].decode("utf-8")
 
                 param_data_offset = header.data_table_offset + index_table.data_offset
+                if param_data_offset + index_table.param_max_length > len(sfo):
+                    raise OrbisError("")
                 param_data = sfo[param_data_offset:param_data_offset + index_table.param_max_length]
 
                 param = SFOContextParam(key=param_key, format=index_table.param_format,
@@ -251,7 +256,7 @@ class SFOContext:
                                         value=param_data, actual_length=index_table.param_max_length)
 
                 self.params.append(param)
-        except (struct.error, UnicodeDecodeError, IndexError):
+        except (struct.error, UnicodeDecodeError, IndexError, OrbisError):
             raise OrbisError("Param.sfo could not be parsed!")
 
     def sfo_write(self) -> bytearray:
@@ -327,7 +332,7 @@ class SFOContext:
             case utf_8():
                 ctx = utf_8(new_data)
 
-        max_len = param.max_length | param.actual_length
+        max_len = param.max_length
 
         if ctx.CATEGORY == TypeCategory.CHARACTER:
             ctx: utf_8 | utf_8_s
@@ -498,7 +503,7 @@ async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> No
         return header
     header.basic_block_size = basic_block_size
     header.data_block_count = data_block_count
-    header.size = expected_file_size | actual_file_size
+    header.size = actual_file_size
 
 async def parse_sealedkey(keypath: str, key: PfsSKKey | None = None) -> None | PfsSKKey:
     async with aiofiles.open(keypath, "rb") as sealed_key:
