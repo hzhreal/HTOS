@@ -540,7 +540,9 @@ class CustomCrypto:
             max_size = self.size
         else:
             max_size = self.SAVESIZE_MAX
-        if not 0 <= off + len(chks) <= max_size:
+        if off < 0:
+            raise CryptoError("Invalid!")
+        if not off + len(chks) <= max_size:
             raise CryptoError("Invalid!")
 
         await self.w_stream.seek(off)
