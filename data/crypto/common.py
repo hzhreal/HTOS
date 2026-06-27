@@ -167,6 +167,8 @@ class CustomCrypto:
         Start from off and move backward, stop when a byte that differs from the given has been reached.
         Truncate data from the occurence offset if the minimum required amount of bytes moved backward has been reached.
         """
+        assert self.in_place
+
         if off < 0:
             off = self.size - 1
         if not (0 <= off < self.size):
