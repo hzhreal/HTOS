@@ -586,10 +586,14 @@ def semver_to_num(ver: str | int) -> int:
 async def check_version() -> str:
     from utils.constants import VERSION
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://api.github.com/repos/hzhreal/HTOS/releases/latest") as resp:
-            content = await resp.json()
-            latest_ver = content.get("tag_name", 0)
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            async with session.get("https://api.github.com/repos/hzhreal/HTOS/releases/latest") as resp:
+                content = await resp.json()
+                latest_ver = content.get("tag_name", 0)
+    except:
+        print("Failed to get latest version through Github.\n")
+        return ""
 
     latest_ver_num = semver_to_num(latest_ver)
     cur_ver_num = semver_to_num(VERSION)

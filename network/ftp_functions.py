@@ -63,8 +63,10 @@ class FTPps:
 
     @staticmethod
     async def free_ctx(ftp: aioftp.Client) -> None:
-        await ftp.quit()
-        ftp.close()
+        try:
+            await ftp.quit()
+        finally:
+            ftp.close()
 
     async def download_stream(self, ftp: aioftp.Client, file_to_download: str, receive_path: str) -> None:
         # Download the file
@@ -230,7 +232,7 @@ class FTPps:
             logger.error("Failed to connect to FTP!")
             raise FTPError("FTP ERROR!")
 
-    async def dlencrypted_bulk(self, account_id: str, savename: str, title_id: str, reregion: bool = False) -> None:
+    async def dlencrypted_bulk(self, account_id: str, savename: str, title_id: str, reregion: bool = False) -> str:
         savefilespath = os.path.join(self.download_encrypted_path, "PS4", "SAVEDATA", account_id, title_id)
         await aiofiles.os.makedirs(savefilespath, exist_ok=True)
 
@@ -318,7 +320,7 @@ class FTPps:
             str(file)
             for file, attributes in files
             if SCE_SYS_NAME not in file.parts
-            and file.name not in ".." and file.name not in "."
+            and file.name not in (".", "..")
             and attributes.get("type", "") != "dir"
             and attributes.get("type", "") != "cdir"
             and attributes.get("type", "") != "pdir"

@@ -18,6 +18,7 @@ class SocketPS:
         self.semaphore_alt = asyncio.Semaphore(maxConnections) # For operations that does not need a mount slot
     SUCCESS = "srOk"
     CONNECTION_TIMEOUT = 10 # seconds
+    READ_TIMEOUT = 30 # seconds
     async def send_tcp_message_with_response(self, message: bytes, semaphore: asyncio.Semaphore, deserialize: bool = True) -> str | bytes:
         writer = None
         try:
@@ -26,7 +27,7 @@ class SocketPS:
                 writer.write(message)
                 await writer.drain()
 
-                response = await reader.read(1024)
+                response = await asyncio.wait_for(reader.read(1024), timeout=self.READ_TIMEOUT)
 
                 logger.info(response)
                 if deserialize:
@@ -34,7 +35,7 @@ class SocketPS:
                 return response
 
         except TimeoutError:
-            logger.error("Timed out whiile connecting to socket (Cecie)!")
+            logger.error("Timed out while connecting to socket (Cecie)!")
             raise SocketError("Error communicating with socket.")
         except OSError as e:
             logger.error(f"An error occured while sending tcp message (Cecie): {e}")

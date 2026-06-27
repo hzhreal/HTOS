@@ -155,7 +155,7 @@ class QuickCodes(CustomCrypto):
                                 await self.ext_write(off, wv32.as_bytes)
 
                             case "3" | "B":
-                                wv64 = uint64(self.r_stream.read(8), "little")
+                                wv64 = uint64(await self.r_stream.read(8), "little")
                                 wv64.value += val
 
                                 await self.ext_write(off, wv64.as_bytes)
@@ -782,7 +782,7 @@ class QuickCodes(CustomCrypto):
 
                         match bit:
                             case "0":
-                                await self.r_streamm.seek(off)
+                                await self.r_stream.seek(off)
                                 src = uint16(await self.r_stream.read(2), "big").value
 
                             case "1":

@@ -130,6 +130,8 @@ class CustomCrypto:
 
     async def ext_write(self, off: int, w: bytes | bytearray) -> None:
         assert self.in_place
+        if off < 0:
+            raise CryptoError("Invalid!")
         if off + len(w) > self.size:
             raise CryptoError("Invalid!")
         await self.w_stream.seek(off)
@@ -165,6 +167,8 @@ class CustomCrypto:
         Start from off and move backward, stop when a byte that differs from the given has been reached.
         Truncate data from the occurence offset if the minimum required amount of bytes moved backward has been reached.
         """
+        assert self.in_place
+
         if off < 0:
             off = self.size - 1
         if not (0 <= off < self.size):
@@ -536,7 +540,9 @@ class CustomCrypto:
             max_size = self.size
         else:
             max_size = self.SAVESIZE_MAX
-        if not 0 <= off + len(chks) <= max_size:
+        if off < 0:
+            raise CryptoError("Invalid!")
+        if not off + len(chks) <= max_size:
             raise CryptoError("Invalid!")
 
         await self.w_stream.seek(off)

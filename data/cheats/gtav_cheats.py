@@ -164,6 +164,8 @@ class Cheats_GTAV:
             async with QuickCheats(filepath) as qc:
                 for key, value in Cheats_GTAV.MONEY_OFFSET_IDENTIFIER_BEFORE.items():
                     money_offset = await qc.find_off_with_identifier32(value, None, Cheats_GTAV.BYTES_BETWEEN_IDENTIFIER)
+                    if money_offset == -1:
+                        raise QuickCheatsError("File not supported!")
                     await qc.r_stream.seek(money_offset)
                     money = uint32(await qc.r_stream.read(4), "big") 
                     values[key + "_cash"] = money.value
