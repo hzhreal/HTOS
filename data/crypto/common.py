@@ -107,7 +107,7 @@ class CustomCrypto:
                 self.chunk = bytearray(await self.r_stream.read(self.CHUNKSIZE))
             else:
                 if stop_off < self.chunk_start or stop_off > self.size:
-                    raise CryptoError("Invalid")
+                    raise CryptoError("Invalid!")
                 r_len = min(self.CHUNKSIZE, stop_off - self.chunk_start)
                 self.chunk = bytearray(await self.r_stream.read(r_len))
             self.chunk_end = await self.r_stream.tell()
