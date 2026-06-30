@@ -636,7 +636,10 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
 
     # if `NPSSO_global.val` is falsy or `PSNAWPAuthenticationError` was raised
     if not user_id:
-        user_id = await on_fail("Account ID fetcher is unavailable")
+        user_id = await on_fail(
+            "Account ID fetcher is unavailable right now, so usernames can't be looked up automatically. "
+            "You'll need to enter your account ID manually"
+        )
 
     if delmsg:
         # an embed has already been sent, edit it
