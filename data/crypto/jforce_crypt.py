@@ -4,7 +4,7 @@ from data.crypto.common import CustomCrypto as CC
 from data.crypto.exceptions import CryptoError
 
 class Crypt_JForce:
-    SLOTS = {"JFSaveData": 0x0007CB61, "JFReplay": 0x443B294F}
+    SUPPORTED_FORMATS = {"JFSaveData": 0x0007CB61}
 
     class JForce(CC):
         FOOTER_LEN = 16
@@ -17,7 +17,7 @@ class Crypt_JForce:
 
         def __init__(self, filepath: str, in_place: bool = True) -> None:
             super().__init__(filepath, in_place)
-            self.seed = Crypt_JForce.SLOTS[basename(filepath)]
+            self.seed = Crypt_JForce.SUPPORTED_FORMATS[basename(filepath)]
             self.tag = bytearray(self.FOOTER_LEN)
 
         async def _encrypt(self) -> None:
@@ -172,14 +172,14 @@ class Crypt_JForce:
     @staticmethod
     def file_check(filepath: str) -> bool:
         filename = basename(filepath)
-        return filename in Crypt_JForce.SLOTS
+        return filename in Crypt_JForce.SUPPORTED_FORMATS
 
     @staticmethod
     def files_check(files: list[str]) -> list[str]:
         valid = []
         for path in files:
             filename = basename(path)
-            if filename in Crypt_JForce.SLOTS:
+            if filename in Crypt_JForce.SUPPORTED_FORMATS:
                 valid.append(path)
         return valid
 
