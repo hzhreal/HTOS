@@ -120,7 +120,6 @@ class Crypt_JForce:
                 cur += 1 + stride
             if out < body_len:
                 await self.copy(out, body_len)
-                out += (body_len - out)
             # body_len has been written to w_stream
             # we can be sure that body_len + FOOTER_LEN <= SAVESIZE_MAX
             await self.w_stream.write(self.tag)
