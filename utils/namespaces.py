@@ -53,6 +53,7 @@ from data.crypto.doa5lr_crypt import Crypt_DoA5LR
 from data.crypto.re6_crypt import Crypt_RE6
 from data.crypto.mearth_crypt import Crypt_MEarth
 from data.crypto.gs3_crypt import Crypt_GS3
+from data.crypto.jforce_crypt import Crypt_JForce
 
 from types import SimpleNamespace
 
@@ -75,6 +76,7 @@ Crypto = SimpleNamespace(
     PoPersia=Crypt_PoPersia, LunarR=Crypt_LunarR, DStranding=Crypt_DStranding,
     FC5=Crypt_FC5, DL2=Crypt_DL2, FFPixel=Crypt_FFPixel,
     SAOFB=Crypt_SAOFB, MHR=Crypt_MHR, DoA5LR=Crypt_DoA5LR,
-    RE6=Crypt_RE6, MEarth=Crypt_MEarth, GS3=Crypt_GS3
+    RE6=Crypt_RE6, MEarth=Crypt_MEarth, GS3=Crypt_GS3,
+    JForce=Crypt_JForce
 )
 

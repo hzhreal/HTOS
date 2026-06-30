@@ -19,7 +19,7 @@ from utils.constants import (
     LOH_TRAILS_DAYBREAK_TITLEID, LOH_TRAILS_ZERO_AZURE, MINECRAFT_TITLEID, FF7CC_TITLEID, TOSR_TITLEID, RE5_TITLEID, CCR_TITLEID,
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
     KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID, SAO_FB_TITLEID, MHR_TITLEID,
-    DOA5_LR_TITLEID, RE6_TITLEID, MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID, GS3_TITLEID
+    DOA5_LR_TITLEID, RE6_TITLEID, MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID, GS3_TITLEID, JFORCE_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -137,6 +137,8 @@ async def extra_decrypt(
                         await Crypto.DoA5LR.check_dec_ps(folderpath)
                     case "GS3":
                         await Crypto.GS3.check_dec_ps(folderpath)
+                    case "JFORCE":
+                        await Crypto.JForce.check_dec_ps(folderpath)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -591,6 +593,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GS3"))
         await helper.await_done()
 
+    elif title_id in JFORCE_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.JForce.check_dec_ps(folderpath)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("JFORCE"))
+        await helper.await_done()
+
 async def extra_import(title_id: str, folderpath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -751,6 +765,9 @@ async def extra_import(title_id: str, folderpath: str, savepairname: str) -> Non
 
         elif title_id in GS3_TITLEID:
             await Crypto.GS3.check_enc_ps(folderpath)
+
+        elif title_id in JFORCE_TITLEID:
+            await Crypto.JForce.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
