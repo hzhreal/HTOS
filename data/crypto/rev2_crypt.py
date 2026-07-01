@@ -68,3 +68,7 @@ class Crypt_Rev2:
             if is_dec:
                 await Crypt_Rev2.encrypt_file(filepath)
 
+    @staticmethod
+    def reregion_get_new_name(title_id: str) -> str:
+        return title_id
+

@@ -778,20 +778,23 @@ async def extra_reregion_pre(
         ) -> str:
     """On decrypted savepairs. Returns new savepairname or empty string."""
 
-    newname = ""
+    new_name = ""
     try:
         if title_id in XENO2_TITLEID:
-            newname = Crypto.Xeno2.reregion_get_new_name(title_id)
+            new_name = Crypto.Xeno2.reregion_get_new_name(title_id)
 
         elif title_id in frozenset.union(MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID):
             await Crypto.MGSV.reregion_change_crypt(folderpath, title_id, savepairname)
-            newname = Crypto.MGSV.reregion_get_new_name(title_id, savepairname)
+            new_name = Crypto.MGSV.reregion_get_new_name(title_id, savepairname)
 
         elif title_id in MINECRAFT_TITLEID:
-            newname = Crypto.Minecraft.reregion_get_new_name(title_id, savepairname)
+            new_name = Crypto.Minecraft.reregion_get_new_name(title_id, savepairname)
+
+        elif title_id in REV2_TITLEID:
+            new_name = Crypto.Rev2.reregion_get_new_name(title_id)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
-    return newname
+    return new_name
 
 def extra_reregion_pre_needs_folder(
           title_id: str,
@@ -821,6 +824,9 @@ async def extra_reregion_post(
 
     elif title_id in MINECRAFT_TITLEID:
         new_name = Crypto.Minecraft.reregion_get_new_name(title_id, savepairname)
+
+    elif title_id in REV2_TITLEID:
+        new_name = Crypto.Rev2.reregion_get_new_name(title_id)
 
     else:
         return
