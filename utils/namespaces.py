@@ -37,7 +37,7 @@ from data.crypto.tr6r_crypt import Crypt_TR6R
 from data.crypto.strider_crypt import Crypt_Strider
 from data.crypto.diablo3_crypt import Crypt_Diablo3
 from data.crypto.alieniso_crypt import Crypt_AlienIso
-from data.crypto.shantaescurse import Crypt_ShantaeSCurse
+from data.crypto.shantaescurse_crypt import Crypt_ShantaeSCurse
 from data.crypto.mafia3_crypt import Crypt_Mafia3
 from data.crypto.deadrising_crypt import Crypt_DeadRising
 from data.crypto.kh3_crypt import Crypt_KH3
