@@ -55,6 +55,7 @@ from data.crypto.mearth_crypt import Crypt_MEarth
 from data.crypto.gs3_crypt import Crypt_GS3
 from data.crypto.jforce_crypt import Crypt_JForce
 from data.crypto.balatro_crypt import Crypt_Balatro
+from data.crypto.wwe2k25_crypt import Crypt_WWE2K25
 
 from types import SimpleNamespace
 
@@ -78,6 +79,6 @@ Crypto = SimpleNamespace(
     FC5=Crypt_FC5, DL2=Crypt_DL2, FFPixel=Crypt_FFPixel,
     SAOFB=Crypt_SAOFB, MHR=Crypt_MHR, DoA5LR=Crypt_DoA5LR,
     RE6=Crypt_RE6, MEarth=Crypt_MEarth, GS3=Crypt_GS3,
-    JForce=Crypt_JForce, Balatro=Crypt_Balatro
+    JForce=Crypt_JForce, Balatro=Crypt_Balatro, WWE2K25=Crypt_WWE2K25
 )
 

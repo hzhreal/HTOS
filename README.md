@@ -91,6 +91,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Uncharted 4                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Lost Legacy                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Uncharted: The Nathan Drake Collection              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| WWE 2K25                                            | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Xenoverse 2                                         | :white_check_mark:      | :large_blue_circle:                 | :black_circle:           | :white_check_mark:                 |
 
 > [!NOTE]
