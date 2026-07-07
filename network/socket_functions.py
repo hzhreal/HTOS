@@ -11,11 +11,11 @@ from utils.constants import IP, PORT_CECIE, logger
 
 class SocketPS:
     """Async functions to mainly interact with cecie."""
-    def __init__(self, host: str, port: int, max_connection: int = 16) -> None:
+    def __init__(self, host: str, port: int, max_connections: int = 16) -> None:
         self.host = host
         self.port = port
-        self.semaphore = asyncio.Semaphore(max_connection) # Maximum 16 mounts at once
-        self.semaphore_alt = asyncio.Semaphore(max_connection) # For operations that does not need a mount slot
+        self.semaphore = asyncio.Semaphore(max_connections) # Maximum 16 mounts at once
+        self.semaphore_alt = asyncio.Semaphore(max_connections) # For operations that does not need a mount slot
     SUCCESS = "srOk"
     CONNECTION_TIMEOUT = 10 # seconds
     READ_TIMEOUT = 150 # seconds
