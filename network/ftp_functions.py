@@ -7,7 +7,6 @@ import aiofiles.os
 import asyncio
 from aioftp.errors import AIOFTPException
 
-from data.crypto.helpers import extra_reregion_post
 from network.exceptions import FTPError
 from utils.constants import GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
@@ -232,7 +231,7 @@ class FTPps:
             logger.error("Failed to connect to FTP!")
             raise FTPError("FTP ERROR!")
 
-    async def dlencrypted_bulk(self, account_id: str, savename: str, title_id: str, reregion: bool = False) -> str:
+    async def dlencrypted_bulk(self, account_id: str, savename: str, title_id: str) -> str:
         savefilespath = os.path.join(self.download_encrypted_path, "PS4", "SAVEDATA", account_id, title_id)
         await aiofiles.os.makedirs(savefilespath, exist_ok=True)
 
@@ -247,9 +246,6 @@ class FTPps:
                 new_savenames_bin = new_savename + ".bin"
                 new_savepath_bin = os.path.join(savefilespath, new_savenames_bin)
                 await self.download_stream(ftp, savename_bin, new_savepath_bin)
-
-            if reregion:
-                await extra_reregion_post(new_savepath, title_id)
 
         except AIOFTPException as e:
             logger.exception(f"[FTP ERROR]: {e}")

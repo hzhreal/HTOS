@@ -842,7 +842,7 @@ def extra_reregion_pre_needs_folder(
 async def extra_reregion_post(
           savepath: str,
           title_id: str,
-        ) -> None:
+        ) -> str | None:
     """
     On encrypted savepairs.
     Renames the save after re-regioning for the games that need it, random string is appended at the end for no overwriting.
@@ -876,4 +876,5 @@ async def extra_reregion_post(
         new_file = os.path.join(savefolder, new_name + f"_{rand_str}")
     await aiofiles.os.rename(savepath, new_file)
     await aiofiles.os.rename(savepath + ".bin", new_file + ".bin")
+    return new_file
 

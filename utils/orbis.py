@@ -8,7 +8,7 @@ from enum import Enum
 from dataclasses import dataclass
 from Crypto.Cipher import AES
 
-from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_folder
+from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_folder, extra_reregion_post
 from network.ftp_functions import FTPps
 from network.socket_functions import SocketPS
 from utils.constants import (
@@ -128,7 +128,11 @@ class SaveFile:
         await sfo_ctx_write(self.sfo_ctx, self.batch.fInstance.sfo_file_path)
         await self.batch.fInstance.upload_sfo(self.batch.location_to_scesys)
         await self.batch.sInstance.socket_update(self.batch.mount_location, self.realSave)
-        savepath = await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id, self.reregion_check)
+        savepath = await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id)
+        if self.reregion_check:
+            sp = await extra_reregion_post(savepath, self.title_id)
+            if sp is not None:
+                savepath = sp
         await fix_pfs_auth_code_info(savepath)
 
     async def download_sys_elements(self, elements: list[ElementChoice]) -> None:
