@@ -7,26 +7,17 @@ from utils.constants import ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL,
 from utils.exceptions import FileError
 
 def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
-
-    def get_all_file_paths(directory: str) -> list[tuple[str, str]]:
-        file_paths = []
-
+    dst = os.path.join(directory_to_zip, zip_file_name)
+    with zipfile.ZipFile(dst, "w", compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f:
         # crawling through directory and subdirectories
-        for root, _, files in os.walk(directory):
-            for filename in files:
-                filepath = os.path.join(root, filename)
-                file_paths.append((root, filepath))
-
-        return file_paths
-
-    file_paths = get_all_file_paths(directory_to_zip)
-    full_new_path = os.path.join(directory_to_zip, zip_file_name)
-
-    with zipfile.ZipFile(full_new_path, 'w', compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f:
-       # writing each file one by one without the top-level folder
-        for _, file in file_paths:
-            archive_name = os.path.relpath(file, directory_to_zip)
-            f.write(file, archive_name)
+        for dirpath, _, filenames in os.walk(directory_to_zip):
+            for filename in filenames:
+                filepath = os.path.join(dirpath, filename)
+                if os.path.abspath(filepath) == os.path.abspath(dst):
+                    continue
+                archive_path = os.path.relpath(filepath, directory_to_zip)
+                # writing each file one by one without the top-level folder
+                f.write(filepath, archive_path)
 
 def generate_random_string(length: int) -> str:
     characters = string.ascii_letters + string.digits

@@ -790,10 +790,10 @@ async def replace_decrypted(
 
     return completed
 
-async def send_final(d_ctx: DiscordContext, file_name: str, zipupPath: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
+async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
-    zipfiles(zipupPath, file_name)
-    final_file = os.path.join(zipupPath, file_name)
+    zipfiles(zip_dir, file_name)
+    final_file = os.path.join(zip_dir, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
