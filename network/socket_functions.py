@@ -26,25 +26,24 @@ class SocketPS:
                 reader, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), timeout=self.CONNECTION_TIMEOUT)
                 writer.write(message)
                 await writer.drain()
-
                 response = await asyncio.wait_for(reader.read(1024), timeout=self.READ_TIMEOUT)
 
-                logger.info(response)
-                if deserialize:
-                    response = orjson.loads(response)
-                return response
-
         except TimeoutError:
-            logger.error("Timed out while connecting to socket (Cecie)!")
+            logger.exception("Timed out while connecting to socket (Cecie)!")
             raise SocketError("Error communicating with socket.")
         except OSError as e:
-            logger.error(f"An error occured while sending tcp message (Cecie): {e}")
+            logger.exception(f"An error occured while sending tcp message (Cecie)!")
             raise SocketError("Error communicating with socket.")
 
         finally:
             if writer is not None:
                 writer.close()
                 await writer.wait_closed()
+
+        logger.info(response)
+        if deserialize:
+            response = orjson.loads(response)
+        return response
 
     async def test_connection(self) -> None:
         writer = None
