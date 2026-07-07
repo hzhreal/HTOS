@@ -11,14 +11,14 @@ from utils.constants import IP, PORT_CECIE, logger
 
 class SocketPS:
     """Async functions to mainly interact with cecie."""
-    def __init__(self, host: str, port: int, maxConnections: int = 16) -> None:
+    def __init__(self, host: str, port: int, max_connection: int = 16) -> None:
         self.host = host
         self.port = port
-        self.semaphore = asyncio.Semaphore(maxConnections) # Maximum 16 mounts at once
-        self.semaphore_alt = asyncio.Semaphore(maxConnections) # For operations that does not need a mount slot
+        self.semaphore = asyncio.Semaphore(max_connection) # Maximum 16 mounts at once
+        self.semaphore_alt = asyncio.Semaphore(max_connection) # For operations that does not need a mount slot
     SUCCESS = "srOk"
     CONNECTION_TIMEOUT = 10 # seconds
-    READ_TIMEOUT = 30 # seconds
+    READ_TIMEOUT = 150 # seconds
     async def send_tcp_message_with_response(self, message: bytes, semaphore: asyncio.Semaphore, deserialize: bool = True) -> str | bytes:
         writer = None
         try:
@@ -31,7 +31,7 @@ class SocketPS:
         except TimeoutError:
             logger.exception("Timed out while connecting to socket (Cecie)!")
             raise SocketError("Error communicating with socket.")
-        except OSError as e:
+        except OSError:
             logger.exception(f"An error occured while sending tcp message (Cecie)!")
             raise SocketError("Error communicating with socket.")
 
