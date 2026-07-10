@@ -229,7 +229,8 @@ class SFOContext:
         self.params: list[SFOContextParam] = []
 
     def sfo_read(self, sfo: bytearray) -> None:
-        if len(sfo) < 20:
+        sfo_len = len(sfo)
+        if sfo_len < 20:
             raise OrbisError("Invalid param.sfo size!")
 
         header_data = struct.unpack("<IIIII", sfo[:20])
@@ -238,6 +239,10 @@ class SFOContext:
         if header.magic != SFO_MAGIC:
             raise OrbisError("Invalid param.sfo header magic!")
 
+        if header.num_entries > 12:
+            raise OrbisError("The param.sfo has too many entries!")
+
+        total_entry_sizes = 0
         try:
             for i in range(header.num_entries):
                 index_offset = 20 + i * 16
@@ -251,7 +256,10 @@ class SFOContext:
                 param_key = sfo[param_offset:key_end].decode("utf-8")
 
                 param_data_offset = header.data_table_offset + index_table.data_offset
-                if param_data_offset + index_table.param_max_length > len(sfo):
+                if param_data_offset + index_table.param_max_length > sfo_len:
+                    raise OrbisError("")
+                total_entry_sizes += index_table.param_max_length
+                if total_entry_sizes > sfo_len:
                     raise OrbisError("")
                 param_data = sfo[param_data_offset:param_data_offset + index_table.param_max_length]
 
