@@ -4,12 +4,6 @@ import logging.config
 import re
 import errno
 import time
-from zipfile import (
-    #ZIP_BZIP2,
-    #ZIP_DEFLATED,
-    #ZIP_LZMA,
-    ZIP_STORED
-)
 from sys import argv
 from discord.ext import commands
 from psnawp_api import PSNAWP
@@ -310,8 +304,6 @@ MISC_TIMEOUT = minutes_to_seconds(1) # how long single operations like cleaning 
 GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
 BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(10) # 10 mb maximum when not considering boost levels
-ZIPFILE_COMPRESSION_MODE = ZIP_STORED # check the imports for all modes
-ZIPFILE_COMPRESSION_LEVEL = None # change this only if you know the range for the chosen mode
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."

@@ -793,7 +793,7 @@ async def replace_decrypted(
 
 async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
-    zipfiles(zip_dir, file_name)
+    await zip_pack(zip_dir, file_name)
     final_file = os.path.join(zip_dir, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 

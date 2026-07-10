@@ -1,23 +1,9 @@
 import os
-import zipfile
 import random
 import string
 from PIL import Image, UnidentifiedImageError
-from utils.constants import ZIPFILE_COMPRESSION_MODE, ZIPFILE_COMPRESSION_LEVEL, EMBED_DESC_LIM
+from utils.constants import EMBED_DESC_LIM
 from utils.exceptions import FileError
-
-def zipfiles(directory_to_zip: str, zip_file_name: str) -> None:
-    dst = os.path.join(directory_to_zip, zip_file_name)
-    with zipfile.ZipFile(dst, "w", compression=ZIPFILE_COMPRESSION_MODE, compresslevel=ZIPFILE_COMPRESSION_LEVEL) as f:
-        # crawling through directory and subdirectories
-        for dirpath, _, filenames in os.walk(directory_to_zip):
-            for filename in filenames:
-                filepath = os.path.join(dirpath, filename)
-                if os.path.abspath(filepath) == os.path.abspath(dst):
-                    continue
-                archive_path = os.path.relpath(filepath, directory_to_zip)
-                # writing each file one by one without the top-level folder
-                f.write(filepath, archive_path)
 
 def generate_random_string(length: int) -> str:
     characters = string.ascii_letters + string.digits
