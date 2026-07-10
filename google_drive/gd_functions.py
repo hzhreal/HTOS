@@ -8,7 +8,6 @@ import re
 import datetime
 import aiohttp
 import errno
-import pathlib
 
 from sys import argv
 from discord.ext import tasks
@@ -839,7 +838,7 @@ class GDapi:
         elif savesize is not None and total_filesize > savesize:
             raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
-        ld = pathlib.Path(dst_local_dir).resolve()
+        ld = os.path.realpath(dst_local_dir)
         uploaded_file_paths = []
         async with Aiogoogle(**self.creds) as aiogoogle:
             drive_v3 = await aiogoogle.discover("drive", "v3")
@@ -850,7 +849,8 @@ class GDapi:
                 file_id = file["fileid"]
 
                 download_path = os.path.join(dst_local_dir, file_path)
-                if not pathlib.Path(download_path).resolve().is_relative_to(ld):
+                dp = os.path.realpath(download_path)
+                if os.path.commonpath([ld, dp]) != ld:
                     raise GDapiError("Invalid file!")
                 try:
                     await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)

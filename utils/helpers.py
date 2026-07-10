@@ -5,7 +5,6 @@ import aiohttp
 import aiofiles
 import aiofiles.os
 import errno
-import pathlib
 
 from discord.ext import pages
 from dataclasses import dataclass
@@ -33,9 +32,10 @@ from utils.embeds import (
 )
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError, OrbisError
 from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
-from utils.extras import zipfiles, generate_random_string
+from utils.extras import generate_random_string
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
+from utils.zip_archive import zip_pack
 
 @dataclass
 class DiscordContext:
@@ -198,9 +198,9 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
         assert os.path.basename(filename) == filename
         filepath = os.path.join(folderpath, filename)
 
-    p = pathlib.Path(filepath).resolve()
-    fp = pathlib.Path(folderpath).resolve()
-    if not p.is_relative_to(fp):
+    fp = os.path.realpath(folderpath)
+    p = os.path.realpath(filepath)
+    if os.path.commonpath([fp, p]) != fp:
         raise FileError("Invalid file!")
 
     try:
@@ -526,7 +526,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         await asyncio.sleep(1)
 
         i = 1
-        sl = pathlib.Path(save_location).resolve()
+        sl = os.path.realpath(save_location)
         for attachment in valid_attachments:
             _, ext = os.path.splitext(attachment.filename)
             basename = attachment.title + ext if attachment.title is not None else attachment.filename
@@ -547,7 +547,8 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
                 raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
 
             dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
-            if not pathlib.Path(dir_path).resolve().is_relative_to(sl):
+            dp = os.path.realpath(dir_path)
+            if os.path.commonpath([sl, dp]) != sl:
                 raise FileError("Invalid file detected!")
             if await aiofiles.os.path.exists(os.path.join(dir_path, file_name)):
                 raise FileError("Duplicate file detected!")
