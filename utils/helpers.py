@@ -738,32 +738,36 @@ async def replace_decrypted(
                 file_constructed = "/".join(file_constructed)
 
                 if file_constructed not in files:
-                    await aiofiles.os.remove(path)
+                    raise FileError("A file uploaded has no match inside the savefile!")
 
-                else:
-                    for savefile in files:
-                        if file_constructed == savefile:
-                            last_N = os.path.basename(savefile)
-                            cwd_here = savefile.split("/")
-                            cwd_here = cwd_here[:-1]
-                            cwd_here = "/".join(cwd_here)
-                            cwd_here = mount_location + "/" + cwd_here
+            for path in uploaded_file_paths:
+                file = os.path.basename(path)
+                file_constructed = file.split(SPLITVALUE)
+                if file_constructed[0] == "":
+                    file_constructed = file_constructed[1:]
+                file_constructed = "/".join(file_constructed)
 
-                            new_path = os.path.join(local_download_path, last_N)
-                            # prevent collision
-                            if await aiofiles.os.path.exists(new_path):
-                                new_folder = os.path.join(local_download_path, generate_random_string(RANDOMSTRING_LENGTH))
-                                await aiofiles.os.mkdir(new_folder)
-                                new_path = os.path.join(new_folder, last_N)
-                            await aiofiles.os.rename(path, new_path)
+                last_N = os.path.basename(file_constructed)
+                cwd_here = file_constructed.split("/")
+                cwd_here = cwd_here[:-1]
+                cwd_here = "/".join(cwd_here)
+                cwd_here = mount_location + "/" + cwd_here
 
-                            if not ignore_secondlayer_checks:
-                                await extra_import(titleid, new_path, savepairname)
+                new_path = os.path.join(local_download_path, last_N)
+                # prevent collision
+                if await aiofiles.os.path.exists(new_path):
+                    new_folder = os.path.join(local_download_path, generate_random_string(RANDOMSTRING_LENGTH))
+                    await aiofiles.os.mkdir(new_folder)
+                    new_path = os.path.join(new_folder, last_N)
+                await aiofiles.os.rename(path, new_path)
 
-                            task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
-                            await task_handler(d_ctx, task, [])
-                            completed.append(last_N)
-                            await aiofiles.os.remove(new_path) # remove to decrease chance of collison
+                if not ignore_secondlayer_checks:
+                    await extra_import(titleid, new_path, savepairname)
+
+                task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
+                await task_handler(d_ctx, task, [])
+                completed.append(last_N)
+                await aiofiles.os.remove(new_path) # remove to decrease chance of collison
         else:
             if not ignore_secondlayer_checks:
                 await extra_import(titleid, local_download_path, savepairname)
@@ -772,9 +776,7 @@ async def replace_decrypted(
             idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)
             completed.extend([x[idx:] for x in uploaded_file_paths])
 
-    if len(completed) == 0:
-        raise FileError("Could not replace any files!")
-
+    assert len(completed) != 0
     return completed
 
 async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
