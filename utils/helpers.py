@@ -17,12 +17,15 @@ from google_drive.gd_functions import gdapi
 from google_drive.exceptions import GDapiError
 from data.crypto.helpers import extra_import
 from network.ftp_functions import FTPps
-from utils.orbis import parse_pfs_header, parse_sealedkey, checkid, handle_accid
+from utils.orbis import (
+    parse_pfs_header, parse_sealedkey, checkid, handle_accid,
+    get_savedirname_path_len, get_savedirname_filename_len, get_path_len
+)
 from utils.constants import (
     logger, blacklist_logger, bot, psnawp,
     NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, 
-    SYS_FILE_MAX, PS_UPLOADDIR, SEALED_KEY_ENC_SIZE
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM,
+    SYS_FILE_MAX, SEALED_KEY_ENC_SIZE
 )
 from utils.embeds import (
     embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
@@ -31,7 +34,10 @@ from utils.embeds import (
     embfn, embpn, embnvBin, embFileLarge, embnvSys
 )
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError, OrbisError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+from utils.workspace import (
+    fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple,
+    write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+)
 from utils.extras import generate_random_string
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -286,9 +292,8 @@ async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, att
     """Makes sure the save pair through discord upload is valid."""
     valid_attachments_check1 = []
     for attachment in attachments:
-        filename = attachment.filename + f"_{'X' * RANDOMSTRING_LENGTH}"
-        filename_len = len(filename)
-        path_len = len(PS_UPLOADDIR + "/" + filename + "/")
+        filename_len = get_savedirname_filename_len(attachment.filename)
+        path_len = get_savedirname_path_len(attachment.filename)
 
         if filename_len > MAX_FILENAME_LEN:
             emb = embfn.copy()
@@ -535,7 +540,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
             rel_file_path = basename.split(splitvalue)
             rel_file_path = "/".join(rel_file_path)
             rel_file_path = os.path.normpath(rel_file_path)
-            path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_file_path + "/")
+            path_len = get_path_len(rel_file_path)
 
             file_name = os.path.basename(rel_file_path)
             if not file_name:
@@ -543,7 +548,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
             if len(file_name) > MAX_FILENAME_LEN:
                 raise FileError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
 
-            elif path_len > MAX_PATH_LEN:
+            if path_len > MAX_PATH_LEN:
                 raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
 
             dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))

@@ -136,20 +136,17 @@ class Encrypt(TabBase):
                     if self.settings.recursivity.value:
                         await C1ftp.upload_folder(batch.mount_location, self.encrypt_folder)
                     else:
-                        ftp = await C1ftp.create_ctx()
-
                         for file in encrypt_files:
                             remote_path = os.path.join(batch.mount_location, os.path.basename(file))
-                            await C1ftp.upload_stream(ftp, file, remote_path)
+                            await C1ftp.upload_file_streamed(file, remote_path)
 
                         sys_folder = os.path.join(self.encrypt_folder, SCE_SYS_NAME)
                         if await isdir(sys_folder):
                             sys_files = await get_files_nonrecursive(sys_folder)
                             for sys_file in sys_files:
                                 remote_path = os.path.join(batch.location_to_scesys, os.path.basename(sys_file))
-                                await C1ftp.upload_stream(ftp, sys_file, remote_path)
+                                await C1ftp.upload_file_streamed(sys_file, remote_path)
                             encrypt_files.extend(sys_files)
-                        await C1ftp.free_ctx(ftp)
                     idx = len(self.encrypt_folder) + (self.encrypt_folder[-1] != os.path.sep)
                     completed = [x[idx:] for x in encrypt_files]
                     dec_print = completed_print(completed)

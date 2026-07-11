@@ -23,11 +23,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from google_drive.exceptions import GDapiError
-from utils.orbis import parse_pfs_header, parse_sealedkey
+from utils.orbis import (
+    parse_pfs_header, parse_sealedkey,
+    get_savedirname_filename_len, get_savedirname_path_len, get_path_len
+)
 from utils.extras import generate_random_string
 from utils.constants import (
     SYS_FILE_MAX, MAX_PATH_LEN, MAX_FILENAME_LEN, SEALED_KEY_ENC_SIZE, SAVESIZE_MAX, GENERAL_CHUNKSIZE,
-    MOUNT_LOCATION, RANDOMSTRING_LENGTH, PS_UPLOADDIR, SCE_SYS_CONTENTS, MAX_FILES, SCE_SYS_NAME,
+    RANDOMSTRING_LENGTH, SCE_SYS_CONTENTS, MAX_FILES, SCE_SYS_NAME,
     logger
 )
 from utils.embeds import (
@@ -327,9 +330,9 @@ class GDapi:
             file_size = file_info["filesize"]
             file_id = file_info["fileid"]
 
-            file_name = os.path.basename(file_path) + f"_{'X' * RANDOMSTRING_LENGTH}"
-            file_name_len = len(file_name)
-            path_len = len(PS_UPLOADDIR + "/" + file_name + "/")
+            file_name = os.path.basename(file_path)
+            file_name_len = get_savedirname_filename_len(file_name)
+            path_len = get_savedirname_path_len(file_name)
 
             if file_name_len > MAX_FILENAME_LEN:
                 emb = embfn.copy()
@@ -456,7 +459,7 @@ class GDapi:
                     rel_path = os.path.join(rel_path, folder_name)
                     rel_path = os.path.normpath(rel_path)
                     if mounted_len_checks:
-                        path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_path + "/")
+                        path_len = get_path_len(rel_path)
                         if path_len > MAX_PATH_LEN:
                             raise GDapiError(f"Path: {rel_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
                 else:
@@ -478,7 +481,7 @@ class GDapi:
                     file_path = os.path.join(rel_path, file_name)
                     file_path = os.path.normpath(file_path)
                     if mounted_len_checks:
-                        path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + file_path + "/")
+                        path_len = get_path_len(file_path)
                         if len(file_name) > MAX_FILENAME_LEN:
                             raise GDapiError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
                         elif path_len > MAX_PATH_LEN:

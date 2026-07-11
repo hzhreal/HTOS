@@ -12,12 +12,14 @@ from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_fol
 from network.ftp_functions import FTPps
 from network.socket_functions import SocketPS
 from utils.constants import (
-    MOUNT_LOCATION, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME
+    MOUNT_LOCATION, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME, MAX_FILENAME_LEN, MAX_PATH_LEN,
+    RANDOMSTRING_LENGTH, PS_UPLOADDIR
 )
 from utils.extras import obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
+from utils.conversions import mb_to_bytes, saveblocks_to_bytes, round_half_up
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -334,6 +336,11 @@ class SFOContext:
         if not param_type:
             raise OrbisError(f"Unsupported parameter: {parameter}!")
 
+        if param_type.CATEGORY == TypeCategory.INTEGER:
+            ctx = type(param_type)(new_data, "little")
+        else:
+            ctx = type(param_type)(new_data)
+
         match param_type:
             case uint32():
                 ctx = uint32(new_data, "little")
@@ -364,11 +371,22 @@ class SFOContext:
         param.length = l
         param.value = v
 
-    def sfo_get_param_value(self, parameter: str) -> bytearray:
+    def sfo_get_param_value(self, parameter: str) -> int | str:
+        assert parameter in SFO_TYPES
+
         param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
         if not param:
-            raise OrbisError(f"Invalid parameter: {parameter}!")
-        return param.value
+            raise OrbisError(f"Missing sfo parameter: {parameter}!")
+
+        param_type: uint32 | uint64 | utf_8 | utf_8_s | None = SFO_TYPES.get(parameter)
+        try:
+            if param_type.CATEGORY == TypeCategory.INTEGER:
+                v = type(param_type)(param.value, "little").value
+            else:
+                v = type(param_type)(param.value).to_str()
+        except ValueError:
+            raise OrbisError(f"Invalid sfo parameter value for {parameter}!")
+        return v
 
     def sfo_get_param_data(self) -> list[dict[str, str | int | bytearray]]:
         param_data = []
@@ -462,13 +480,8 @@ def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: int | str) -> None:
 
 def obtainCUSA(ctx: SFOContext) -> str:
     """Obtains TITLE_ID from sfo file."""
-    data_title_id = ctx.sfo_get_param_value("TITLE_ID")
 
-    try:
-        title_id = utf_8(data_title_id).to_str()
-    except UnicodeDecodeError:
-        raise OrbisError("Invalid title ID in param.sfo!")
-
+    title_id = ctx.sfo_get_param_value("TITLE_ID")
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
 
@@ -485,13 +498,39 @@ async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) 
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
 
     ctx.sfo_patch_parameter("TITLE_ID", title_id)
-    savepairname = utf_8(ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")).to_str()
+    savepairname = ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")
     new_name = await extra_reregion_pre(dec_files_folder, title_id, savepairname)
     if new_name:
         ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", new_name)
 
-def validate_savedirname(savename: str) -> bool:
+def is_valid_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))
+
+def validate_savedirname(savename: str) -> None:
+    if not bool(SAVEDIR_RE.fullmatch(savename)):
+        raise OrbisError("Invalid savename!")
+
+def get_savedirname_filename_len(savename: str) -> int:
+    filename_bin = f"{savename}.bin_{'X' * RANDOMSTRING_LENGTH}"
+    return len(filename_bin)
+
+def get_savedirname_path_len(savename: str) -> int:
+    filename_bin = f"{savename}.bin_{'X' * RANDOMSTRING_LENGTH}"
+    path = PS_UPLOADDIR + "/" + filename_bin + "/"
+    return len(path)
+
+def get_path_len(rel_path: str) -> int:
+    path = MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_path + "/"
+    return len(path)
+
+def validate_savedirname_path(savename: str) -> None:
+    filename_bin_len = get_savedirname_filename_len(savename)
+    path_len = get_savedirname_path_len(savename)
+
+    if filename_bin_len > MAX_FILENAME_LEN:
+        raise OrbisError(f"The length of the savename will exceed {MAX_FILENAME_LEN}!")
+    if path_len > MAX_PATH_LEN:
+        raise OrbisError(f"The length of the path the save creates will exceed {MAX_PATH_LEN}!")
 
 async def parse_pfs_header(pfs_path: str, header: PFSHeader | None = None) -> None | PFSHeader:
     async with aiofiles.open(pfs_path, "rb") as pfs:
@@ -591,4 +630,17 @@ async def fix_pfs_auth_code_info(path: str) -> None:
 
         await pfs.seek(AUTH_CODE_HDR_HASH2_OFF)
         await pfs.write(chunk)
+
+def compute_saveblocks(total_folder_size: int) -> int:
+    n = total_folder_size
+
+    n = max(n, mb_to_bytes(3))
+
+    n = round_half_up(n * 1.1) + mb_to_bytes(2)
+    block = saveblocks_to_bytes(1)
+    r = block - n % block
+    if r != 0:
+        n += r
+
+    return n
 

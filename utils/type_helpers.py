@@ -193,10 +193,16 @@ class utf_8:
         return self.as_bytes.rstrip(b"\x00") + b"\x00"
 
     def to_bytes(self) -> bytes:
-        return self._value.encode("utf-8")
+        try:
+            return self._value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("Invalid value provided!")
 
     def from_bytes(self) -> str:
-        return self.as_bytes.decode("utf-8")
+        try:
+            return self.as_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            raise ValueError("Invalid value provided!")
 
 class utf_8_s(utf_8):
     def __init__(self, value: str | bytes | bytearray = "", const: bool = False) -> None:

@@ -37,7 +37,11 @@ class FTPps:
         self.png_file_path = os.path.join(self.png_path, ICON0_NAME)
 
     CHUNKSIZE = GENERAL_CHUNKSIZE
-    CONNECTION_TIMEOUT = 10 # seconds
+    TIMEOUTS = dict(
+        connection_timeout=10,
+        path_timeout=10,
+        socket_timeout=30
+    )
 
     @staticmethod
     async def check_sys_filesize(ftp: aioftp.Client, file: str, keystone: bool) -> bool:
@@ -60,13 +64,6 @@ class FTPps:
             return False
         return True
 
-    @staticmethod
-    async def free_ctx(ftp: aioftp.Client) -> None:
-        try:
-            await ftp.quit()
-        finally:
-            ftp.close()
-
     async def download_stream(self, ftp: aioftp.Client, file_to_download: str, receive_path: str) -> None:
         # Download the file
         async with ftp.download_stream(file_to_download) as stream:
@@ -87,9 +84,33 @@ class FTPps:
             await stream.finish()
         logger.info(f"Uploaded {file_to_upload} to {receive_path}")
 
+    async def download_file_streamed(self, file_to_download: str, receive_path: str) -> None:
+        try:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
+                await self.download_stream(ftp, file_to_download, receive_path)
+
+        except AIOFTPException as e:
+            logger.exception(f"[FTP ERROR]: {e}")
+            raise FTPError("FTP ERROR!")
+        except TimeoutError:
+            logger.error("Failed to connect to FTP!")
+            raise FTPError("FTP ERROR!")
+
+    async def upload_file_streamed(self, file_to_upload: str, receive_path: str) -> None:
+        try:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
+                await self.upload_stream(ftp, file_to_upload, receive_path)
+
+        except AIOFTPException as e:
+            logger.exception(f"[FTP ERROR]: {e}")
+            raise FTPError("FTP ERROR!")
+        except TimeoutError:
+            logger.error("Failed to connect to FTP!")
+            raise FTPError("FTP ERROR!")
+
     async def replacer(self, local_filepath: str, remote_folderpath: str, remote_filename: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(remote_folderpath)
                 await self.upload_stream(ftp, local_filepath, remote_filename)
 
@@ -102,7 +123,7 @@ class FTPps:
 
     async def retrieve_keystone(self, location_to_scesys: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(location_to_scesys)
 
                 if not await FTPps.check_sys_filesize(ftp, KEYSTONE_NAME, keystone=True):
@@ -119,7 +140,7 @@ class FTPps:
 
     async def upload_keystone(self, location_to_scesys: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(location_to_scesys)
                 await self.upload_stream(ftp, self.keystone_file_path, KEYSTONE_NAME)
 
@@ -132,7 +153,7 @@ class FTPps:
 
     async def download_sfo(self, location_to_scesys: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(location_to_scesys)
                 if not await FTPps.check_sys_filesize(ftp, PARAM_NAME, keystone=False):
                     raise FTPError("Invalid param.sfo size!")
@@ -148,7 +169,7 @@ class FTPps:
 
     async def upload_sfo(self, location_to_scesys: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(location_to_scesys)
                 await self.upload_stream(ftp, self.sfo_file_path, PARAM_NAME)
         except AIOFTPException as e:
@@ -160,7 +181,7 @@ class FTPps:
 
     async def delete_folder_contents(self, folder_path: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 if await ftp.exists(folder_path):
                     await ftp.remove(folder_path)
 
@@ -173,7 +194,7 @@ class FTPps:
 
     async def make1(self, path: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 if await ftp.exists(path):
                     await ftp.remove(path)
                 await ftp.make_directory(path)
@@ -187,7 +208,7 @@ class FTPps:
 
     async def swap_png(self, location_to_scesys: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(location_to_scesys)
                 await self.upload_stream(ftp, self.png_file_path, ICON0_NAME)
 
@@ -198,9 +219,9 @@ class FTPps:
             logger.error("Failed to connect to FTP!")
             raise FTPError("FTP ERROR!")
 
-    async def download_folder(self, folder_path: str, downloadpath: str, ignoreSceSys: bool) -> None:
+    async def download_folder(self, folder_path: str, downloadpath: str, ignore_scesys: bool) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.download(folder_path, downloadpath, write_into=True)
 
             logger.info(f"Downloaded {folder_path} to {downloadpath}")
@@ -213,12 +234,12 @@ class FTPps:
 
         logger.info(f"Downloaded {folder_path} to {downloadpath}")
 
-        if ignoreSceSys:
+        if ignore_scesys:
             shutil.rmtree(os.path.join(downloadpath, SCE_SYS_NAME))
 
     async def upload_folder(self, folderpath: str, local_path: str) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(folderpath)
                 await ftp.upload(local_path, write_into=True)
 
@@ -236,7 +257,7 @@ class FTPps:
         await aiofiles.os.makedirs(savefilespath, exist_ok=True)
 
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(self.savepair_remote_path)
                 new_savename = savename.rsplit("_", 1)[0]
                 new_savepath = os.path.join(savefilespath, new_savename)
@@ -260,7 +281,7 @@ class FTPps:
         savefiles = [os.path.join(self.upload_encrypted_path, savename), os.path.join(self.upload_encrypted_path, savename + ".bin")]
 
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(self.savepair_remote_path)
 
                 for file in savefiles:
@@ -278,7 +299,7 @@ class FTPps:
         n = len(filepaths)
         i = 1
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(sce_sys_path)
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
@@ -299,7 +320,7 @@ class FTPps:
     async def list_files(self, target_path: str, recursive: bool = True) -> list[str]:
         files = []
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 if await ftp.exists(target_path):
                     await ftp.change_directory(target_path)
                     async for path in ftp.list(recursive=recursive):
@@ -325,7 +346,7 @@ class FTPps:
 
     async def delete_list(self, upload_dir: str, file_list: list[str]) -> None:
         try:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT) as ftp:
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.change_directory(upload_dir)
                 for filename in file_list:
                     if await ftp.exists(filename):
@@ -340,19 +361,6 @@ class FTPps:
 
     async def test_connection(self) -> None:
         async with FTP_SEMAPHORE_ALT:
-            async with aioftp.Client.context(self.ip, self.port, connection_timeout=self.CONNECTION_TIMEOUT):
+            async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS):
                 pass
-
-    async def create_ctx(self) -> aioftp.Client:
-        try:
-            ctx = aioftp.Client(connection_timeout=self.CONNECTION_TIMEOUT)
-            await ctx.connect(self.ip, self.port)
-        except AIOFTPException as e:
-            logger.exception(f"[FTP ERROR]: {e}")
-            raise FTPError("FTP ERROR: CONNECTION FAIL!")
-        except TimeoutError:
-            logger.error("Failed to connect to FTP!")
-            raise FTPError("FTP ERROR!")
-
-        return ctx
 
