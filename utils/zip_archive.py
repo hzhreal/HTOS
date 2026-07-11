@@ -7,6 +7,7 @@ from zipfile import (
     #ZIP_LZMA,
     ZIP_STORED
 )
+from zipfile import _EndRecData, _ECD_ENTRIES_TOTAL
 from utils.constants import (
     MAX_FILES, GENERAL_CHUNKSIZE, SAVESIZE_MAX,
     MAX_FILENAME_LEN, MAX_PATH_LEN,
@@ -14,7 +15,7 @@ from utils.constants import (
 )
 from utils.orbis import get_path_len, compute_saveblocks
 from utils.conversions import gb_to_bytes, bytes_to_mb
-from utils.exceptions import FileError 
+from utils.exceptions import FileError
 
 ZIP_COMPRESSION_MODE = ZIP_STORED
 ZIP_COMPRESSION_LEVEL = None
@@ -41,16 +42,22 @@ ZIP_MAX_ENTRIES = MAX_FILES
 ZIP_MAX_NESTED_DIRS = 100
 ZIP_MANDATORY_SCE_SYS_FILES = frozenset([os.path.join(SCE_SYS_NAME, a) for a in MANDATORY_SCE_SYS_CONTENTS])
 def _zip_unpack(src_file: str, dst_dir: str) -> int:
+    # prevent loading metadata for over ZIP_MAX_ENTRIES entries
+    with open(src_file, "rb") as f:
+        endrec = _EndRecData(f)
+    if endrec is None:
+        raise FileError("Invalid archive!")
+    if endrec[_ECD_ENTRIES_TOTAL] > ZIP_MAX_ENTRIES:
+        raise FileError(
+                "The amount of entries in the archive excceds "
+                f"{ZIP_MAX_ENTRIES}!"
+            )
+
     dst_dir = os.path.realpath(dst_dir)
     total_size = 0
     mandatory_cnt = 0
     with ZipFile(src_file, "r") as zf:
         il = zf.infolist()
-        if len(il) > ZIP_MAX_ENTRIES:
-            raise FileError(
-                "The amount of entries in the archive excceds "
-                f"{ZIP_MAX_ENTRIES}!"
-            )
         for i in il:
             fn = i.filename
             fs = i.file_size
