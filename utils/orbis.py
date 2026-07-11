@@ -341,16 +341,6 @@ class SFOContext:
         else:
             ctx = type(param_type)(new_data)
 
-        match param_type:
-            case uint32():
-                ctx = uint32(new_data, "little")
-            case uint64():
-                ctx = uint64(new_data, "little")
-            case utf_8_s():
-                ctx = utf_8_s(new_data)
-            case utf_8():
-                ctx = utf_8(new_data)
-
         max_len = param.max_length
 
         if ctx.CATEGORY == TypeCategory.CHARACTER:
@@ -372,8 +362,6 @@ class SFOContext:
         param.value = v
 
     def sfo_get_param_value(self, parameter: str) -> int | str:
-        assert parameter in SFO_TYPES
-
         param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Missing sfo parameter: {parameter}!")
