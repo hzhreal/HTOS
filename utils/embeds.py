@@ -612,48 +612,6 @@ embchrdr2 = discord.Embed(
 )
 embchrdr2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-embfn = discord.Embed(
-    title="Upload alert: Error",
-    description="Sorry, the file name of '{filename}' ({len}) exceeds {max}.",
-    colour=Color.DEFAULT.value
-)
-embfn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embFileLarge = discord.Embed(
-    title="Upload alert: Error",
-    description="Sorry, the file size of '{filename}' exceeds the limit of {max} MB.",
-    colour=Color.DEFAULT.value
-)
-embFileLarge.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embnvSys = discord.Embed(
-    title="Upload alert: Error",
-    description="{filename} is not a valid sce_sys file!",
-    colour=Color.DEFAULT.value
-)
-embnvSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embpn = discord.Embed(
-    title="Upload alert: Error",
-    description="Sorry, the path '{filename}' ({len}) will create exceed ({max}).",
-    colour=Color.DEFAULT.value
-)
-embpn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embnvBin = discord.Embed(
-    title="Upload alert: Error",
-    description="Sorry, the file size of '{filename}' is not {size} bytes.",
-    colour=Color.DEFAULT.value
-)
-embnvBin.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
-embffn = discord.Embed(
-    title="Upload alert: Error",
-    description="Sorry, the amount of files/folders in {path} exceeds {max}.",
-    colour=Color.DEFAULT.value
-)
-embffn.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 embgddone = discord.Embed(
     title="Google drive upload: Retrieved file",
     description="{filename} has been uploaded and saved ({i}/{filecount}).",

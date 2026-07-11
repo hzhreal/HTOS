@@ -34,10 +34,9 @@ from utils.constants import (
     logger
 )
 from utils.embeds import (
-    gd_upl_progress_emb, embfn, embFileLarge, embnvSys, embpn, embnvBin,
-    embffn, embgddone
+    gd_upl_progress_emb, embgddone
 )
-from utils.exceptions import OrbisError, FileError
+from utils.exceptions import FileError
 from utils.conversions import gb_to_bytes, bytes_to_mb, round_half_up, minutes_to_seconds
 
 FOLDER_ID_RE = re.compile(r"/folders/([\w-]+)")
@@ -266,14 +265,13 @@ class GDapi:
         return err_code, err_reason
 
     @staticmethod
-    async def file_check(
-              ctx: discord.ApplicationContext | discord.Message,
-              file_data: list[dict[str, str | int]],
-              sys_files: frozenset[str] | None,
-              ps_save_pair_upload: bool,
-              ignore_filename_check: bool,
-              savesize: int | None = None
-            ) -> list[dict[str, str]]:
+    def file_check(
+        file_data: list[dict[str, str | int]],
+        sys_files: frozenset[str] | None,
+        ps_save_pair_upload: bool,
+        ignore_filename_check: bool,
+        savesize: int | None = None
+    ) -> list[dict[str, str]]:
 
         # check for duplicate files (doesnt seem to be possible), if found, then error
         paths = set()
@@ -287,7 +285,7 @@ class GDapi:
         total_size = 0
 
         if ps_save_pair_upload:
-            valid_files_data = await GDapi.save_pair_check(ctx, file_data)
+            valid_files_data = GDapi.save_pair_check(file_data)
             return valid_files_data
 
         for file_info in file_data:
@@ -296,25 +294,16 @@ class GDapi:
             file_size = file_info["filesize"]
 
             if len(filepath) > MAX_FILENAME_LEN and not ignore_filename_check:
-                emb = embfn.copy()
-                emb.description = emb.description(filename=filepath, len=len(filepath), max=MAX_FILENAME_LEN)
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError(f"The length of a file name exceeds {MAX_FILENAME_LEN}!")
 
             elif file_size > GDapi.SAVEGAME_MAX:
-                emb = embFileLarge.copy()
-                emb.description = emb.description.format(filename=filepath, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError(f"The size of a file exceeds {bytes_to_mb(GDapi.SAVEGAME_MAX)} MB!")
 
             elif (sys_files is not None) and (file_size > SYS_FILE_MAX or filepath not in sys_files): # sce_sys files are not that big
-                emb = embnvSys.copy()
-                emb.description = emb.description.format(filename=filepath)
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError("Invalid sce_sys file uploaded!")
 
             elif savesize is not None and total_size + file_size > savesize:
-                raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
+                raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
             else:
                 total_size += file_size
@@ -323,7 +312,7 @@ class GDapi:
         return valid_files_data
 
     @staticmethod
-    async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, file_data: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
+    def save_pair_check(file_data: list[dict[str, str | int]]) -> list[dict[str, str | int]]:
         valid_saves_check1 = []
         for file_info in file_data:
             file_path = file_info["filepath"]
@@ -335,33 +324,21 @@ class GDapi:
             path_len = get_savedirname_path_len(file_name)
 
             if file_name_len > MAX_FILENAME_LEN:
-                emb = embfn.copy()
-                emb.description = emb.description.format(filename=file_path, len=file_name_len, max=MAX_FILENAME_LEN)
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError(f"The length of a file name exceeds {MAX_FILENAME_LEN}!")
 
             elif path_len > MAX_PATH_LEN:
-                emb = embpn.copy()
-                emb.description = emb.description.format(filename=file_path, len=path_len, max=MAX_PATH_LEN)
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
 
             elif file_path.endswith(".bin"):
                 if file_size != SEALED_KEY_ENC_SIZE:
-                    emb = embnvBin.copy()
-                    emb.description = emb.description.format(filename=file_path, size=SEALED_KEY_ENC_SIZE)
-                    await ctx.edit(embed=emb)
-                    await asyncio.sleep(1)
+                    raise FileError(f"Invalid .bin file uploaded!")
 
                 else:
                     file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                     valid_saves_check1.append(file_data)
             else:
                 if file_size > GDapi.SAVEGAME_MAX:
-                    emb = embFileLarge.copy()
-                    emb.description = emb.description.format(filename=file_path, max=bytes_to_mb(GDapi.SAVEGAME_MAX))
-                    await ctx.edit(embed=embFileLarge)
-                    await asyncio.sleep(1)
+                    raise FileError(f"The size of a file exceeds {bytes_to_mb(GDapi.SAVEGAME_MAX)} MB!")
                 else:
                     file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                     valid_saves_check1.append(file_data)
@@ -390,7 +367,6 @@ class GDapi:
 
     async def list_dir(
               self,
-              ctx: discord.ApplicationContext | discord.Message,
               folder_id: str,
               sys_files: frozenset[str] | None,
               ps_save_pair_upload: bool,
@@ -403,19 +379,11 @@ class GDapi:
             ) -> tuple[list[dict[str, str | int]], int]:
         self.is_available_check()
 
-        async def warn_filecount(path: str | None) -> None:
-            if path is None:
-                path = "the root"
-            emb = embffn.copy()
-            emb.description = emb.description.format(path=path, max=self.MAX_FILES_IN_DIR)
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(3)
-
         if files is None:
             files = []
 
         if cur_nesting > self.MAX_USER_NESTING:
-            raise GDapiError(f"Max level nesting of {self.MAX_USER_NESTING} reached!")
+            raise FileError(f"Max level nesting of {self.MAX_USER_NESTING} reached!")
 
         entries = []
         next_page_token = ""
@@ -439,8 +407,7 @@ class GDapi:
                     break
 
         if next_page_token:
-            await warn_filecount(rel_path)
-            return files, total_filesize
+            raise FileError("Maximum entries of folder has been exceeded!")
 
         file_data_storage = []
 
@@ -461,11 +428,11 @@ class GDapi:
                     if mounted_len_checks:
                         path_len = get_path_len(rel_path)
                         if path_len > MAX_PATH_LEN:
-                            raise GDapiError(f"Path: {rel_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
+                            raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
                 else:
                     rel_path = folder_name
                 _, sub_size = await self.list_dir(
-                    ctx, folder_id, sys_files, ps_save_pair_upload, ignore_filename_check,
+                    folder_id, sys_files, ps_save_pair_upload, ignore_filename_check,
                     mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files
                 )
                 total_filesize += sub_size
@@ -483,16 +450,16 @@ class GDapi:
                     if mounted_len_checks:
                         path_len = get_path_len(file_path)
                         if len(file_name) > MAX_FILENAME_LEN:
-                            raise GDapiError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
+                            raise FileError(f"The length of a file name is exceeding {MAX_FILENAME_LEN}!")
                         elif path_len > MAX_PATH_LEN:
-                            raise GDapiError(f"Path: {file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
+                            raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
                 else:
                     file_path = file_name
 
                 file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                 file_data_storage.append(file_data)
 
-        valid_file_data = await GDapi.file_check(ctx, file_data_storage, sys_files, ps_save_pair_upload, ignore_filename_check)
+        valid_file_data = GDapi.file_check(file_data_storage, sys_files, ps_save_pair_upload, ignore_filename_check)
         for data in valid_file_data:
             file_path = data["filepath"]
             file_id = data["fileid"]
@@ -756,15 +723,15 @@ class GDapi:
         if ps_save_pair_upload:
             allow_duplicates = True
 
-        files, total_filesize = await self.list_dir(ctx, folder_id, sys_files, ps_save_pair_upload, ignore_filename_check)
+        files, total_filesize = await self.list_dir(folder_id, sys_files, ps_save_pair_upload, ignore_filename_check)
         filecount = len(files)
         uploaded_file_paths = []
         if filecount == 0:
-            raise GDapiError("Invalid files uploaded, or no files found!")
+            raise FileError("Invalid files uploaded, or no files found!")
         elif filecount > max_files:
-            raise GDapiError(f"Amount of files cannot exceed {max_files}!")
+            raise FileError(f"Amount of files cannot exceed {max_files}!")
         elif total_filesize > self.TOTAL_SIZE_LIMIT:
-            raise GDapiError(f"Total size cannot exceed: {bytes_to_mb(self.TOTAL_SIZE_LIMIT)} MB!")
+            raise FileError(f"Total size cannot exceed: {bytes_to_mb(self.TOTAL_SIZE_LIMIT)} MB!")
 
         if allow_duplicates:
             # enforce no files in root, only dirs
@@ -830,16 +797,16 @@ class GDapi:
         """For encrypt & createsave command."""
         self.is_available_check()
 
-        files, total_filesize = await self.list_dir(ctx, folder_id, None, False, True, mounted_len_checks=True)
+        files, total_filesize = await self.list_dir(folder_id, None, False, True, mounted_len_checks=True)
         filecount = len(files)
         if filecount == 0:
-            raise GDapiError("Invalid files uploaded, or no files found!")
+            raise FileError("Invalid files uploaded, or no files found!")
         elif filecount > max_files:
-            raise GDapiError(f"Amount of files cannot exceed {max_files}!")
+            raise FileError(f"Amount of files cannot exceed {max_files}!")
         elif total_filesize > self.TOTAL_SIZE_LIMIT:
-            raise GDapiError(f"Total size cannot exceed: {self.TOTAL_SIZE_LIMIT}!")
+            raise FileError(f"Total size cannot exceed: {self.TOTAL_SIZE_LIMIT}!")
         elif savesize is not None and total_filesize > savesize:
-            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
+            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         ld = os.path.realpath(dst_local_dir)
         uploaded_file_paths = []
@@ -854,7 +821,7 @@ class GDapi:
                 download_path = os.path.join(dst_local_dir, file_path)
                 dp = os.path.realpath(download_path)
                 if os.path.commonpath([ld, dp]) != ld:
-                    raise GDapiError("Invalid file!")
+                    raise FileError("Invalid file!")
                 try:
                     await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
                 except OSError as e:
