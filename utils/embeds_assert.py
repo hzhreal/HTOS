@@ -20,7 +20,7 @@ from utils.embeds import (
     embFileLarge, embnvSys, embpn, embnvBin, embffn,
     embgddone, embuplSuccess, embe, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame,
-    emb_il, embdecTimeout, embdecFormat, embwlcom
+    emb_il, embdecTimeout, embdecFormat, embwlcom, embzip1
 )
 
 _MAP_PLACEHOLDER = {
@@ -122,7 +122,8 @@ _MAP_PLACEHOLDER = {
     emb_il: {("description", frozenset({"error"}))},
     embdecTimeout: set(),
     embdecFormat: {("title", frozenset({"savename"}))},
-    embwlcom: {("description", frozenset({"user"}))}
+    embwlcom: {("description", frozenset({"user"}))},
+    embzip1: set()
 }
 
 for emb, v in _MAP_PLACEHOLDER.items():

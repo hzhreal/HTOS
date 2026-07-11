@@ -105,10 +105,10 @@ The platform will get automatically detected, if not you will be prompted.
 
 ---
 
-`/store_accountid`: Store your account ID in the database. Use this if obtaining your account ID with username does not work.
+`/store_accountid`: Store your account ID in the database. Use this if obtaining your account ID with username does not work.  
 
 **Arguments**:
-`account_id`: Your account ID in hexadecimal format, the `0x` prefix is optional.
+`account_id`: Your account ID in hexadecimal format, the `0x` prefix is optional.  
 
 ---
 
@@ -128,8 +128,15 @@ These are changed in the param.sfo file.
 
 ---
 
-`/quick resign`: Brings up a list with stored saves by the hoster, you can choose which one you want resigned.
-You will be prompted on which numbers to type in chat to choose save.  
+`/quick resign`: Brings up a list with stored saves by the hoster, you can then select which one you want resigned.
+You will be prompted on which numbers to type in the chat to choose a save.  
+
+---
+
+`/quick createsave`: Creates a save only using a supplied folder uploaded as a ZIP file.
+The folder needs to be sufficient to produce a valid savefile.
+That is, it needs to contain the mandatory `sce_sys` files.  
+This command will not do any second layer checks on the folder.  
 
 ---
 
@@ -158,7 +165,7 @@ However if there is a type of second layer that is not implemented in the bot, i
 
 ---
 
-`/sfo write`: Accepts a param.sfo file, you can patch the key-value pairs it contains  
+`/sfo write`: Accepts a param.sfo file, you can patch the key-value pairs it contains.  
 
 **Arguments**:  
 `sfo`: The `param.sfo` file.  

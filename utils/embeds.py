@@ -753,3 +753,10 @@ embwlcom = discord.Embed(
 )
 embwlcom.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
+embzip1 = discord.Embed(
+    title="Upload folder",
+    description="Please attach a ZIP file containing a sufficient folder to produce a valid savefile.",
+    colour=Color.DEFAULT.value
+)
+embzip1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
