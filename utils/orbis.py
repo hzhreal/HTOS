@@ -19,7 +19,7 @@ from utils.extras import obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
-from utils.conversions import mb_to_bytes, saveblocks_to_bytes, round_half_up
+from utils.conversions import bytes_to_saveblocks, mb_to_bytes, saveblocks_to_bytes, round_half_up
 
 SFO_MAGIC = 0x46535000
 SFO_VERSION = 0x0101
@@ -630,5 +630,5 @@ def compute_saveblocks(total_folder_size: int) -> int:
     if r != 0:
         n += r
 
-    return n
+    return bytes_to_saveblocks(n)
 

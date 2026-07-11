@@ -317,7 +317,7 @@ def save_pair_check(attachments: list[discord.message.Attachment]) -> list[disco
         filename = get_name_attachment(attachment)
         if filename.endswith(".bin"): # look for corresponding file
             for attachment_nested in valid_attachments_check1:
-                filename_nested = get_name_attachment(attachment_nested.filename)
+                filename_nested = get_name_attachment(attachment_nested)
                 if filename_nested == filename: continue
 
                 elif filename_nested == os.path.splitext(filename)[0]:

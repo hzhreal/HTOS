@@ -16,7 +16,7 @@ from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG,
     ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    SCE_SYS_NAME, PARAM_NAME,
+    SCE_SYS_NAME, PARAM_NAME, MOUNT_LOCATION,
     logger
 )
 from utils.embeds import (
@@ -214,7 +214,7 @@ class Quick(commands.Cog):
             sfo_path = os.path.join(newUPLOAD_DECRYPTED, SCE_SYS_NAME, PARAM_NAME)
             sfo = await sfo_ctx_create(sfo_path)
             # validate savename
-            savename = sfo_ctx_get_savename(sfo)
+            savename = sfo.sfo_get_param_value("SAVEDATA_DIRECTORY")
             validate_savedirname(savename)
             validate_savedirname_path(savename)
             # write finish sfo work

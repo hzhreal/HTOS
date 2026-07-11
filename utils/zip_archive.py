@@ -14,7 +14,7 @@ from utils.constants import (
 )
 from utils.orbis import get_path_len, compute_saveblocks
 from utils.conversions import gb_to_bytes, bytes_to_mb
-from utils.exceptions import FileError, OrbisError
+from utils.exceptions import FileError 
 
 ZIP_COMPRESSION_MODE = ZIP_STORED
 ZIP_COMPRESSION_LEVEL = None
@@ -39,14 +39,18 @@ ZIP_SAVEGAME_MAX = SAVESIZE_MAX
 ZIP_CHUNKSIZE = GENERAL_CHUNKSIZE
 ZIP_MAX_ENTRIES = MAX_FILES
 ZIP_MAX_NESTED_DIRS = 100
-ZIP_MANDATORY_SCE_SYS_FILES = frozenset([f"{SCE_SYS_NAME}/" + a for a in MANDATORY_SCE_SYS_CONTENTS])
+ZIP_MANDATORY_SCE_SYS_FILES = frozenset([os.path.join(SCE_SYS_NAME, a) for a in MANDATORY_SCE_SYS_CONTENTS])
 def _zip_unpack(src_file: str, dst_dir: str) -> int:
     dst_dir = os.path.realpath(dst_dir)
     total_size = 0
     mandatory_cnt = 0
     with ZipFile(src_file, "r") as zf:
         il = zf.infolist()
-        assert len(il) <= ZIP_MAX_ENTRIES
+        if len(il) > ZIP_MAX_ENTRIES:
+            raise FileError(
+                "The amount of entries in the archive excceds "
+                f"{ZIP_MAX_ENTRIES}!"
+            )
         for i in il:
             fn = i.filename
             fs = i.file_size
@@ -67,7 +71,7 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
 
                 path_len = get_path_len(out_rel_p)
                 if path_len > MAX_PATH_LEN:
-                    raise OrbisError(
+                    raise FileError(
                         "A directory in the archive will turn out to "
                         "exceed the path length limit!"
                     )
@@ -98,32 +102,32 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
 
             path_len = get_path_len(out_rel_p)
             if path_len > MAX_PATH_LEN:
-                raise OrbisError(
+                raise FileError(
                     "A file in the archive will turn out to exceed "
                     "the path length limit!"
                 )
 
             bn = os.path.basename(out_rel_p)
             if len(bn) > MAX_FILENAME_LEN:
-                raise OrbisError(
+                raise FileError(
                     "A file in the archive exceeds the maximum file name length of "
                     f"{MAX_FILENAME_LEN}!"
                 )
 
-            if out_rel_p in MANDATORY_SCE_SYS_CONTENTS:
+            if out_rel_p in ZIP_MANDATORY_SCE_SYS_FILES:
                 if fs > SYS_FILE_MAX:
-                    raise OrbisError(
+                    raise FileError(
                         "A sce_sys file in the archive exceeds the "
                         "respective max size!"
                     )
                 mandatory_cnt += 1
-        if mandatory_cnt != len(MANDATORY_SCE_SYS_CONTENTS):
-            raise OrbisError(
+        if mandatory_cnt != len(ZIP_MANDATORY_SCE_SYS_FILES):
+            raise FileError(
                 "Archive is missing mandatory sce_sys files!"
             )
         saveblocks = compute_saveblocks(total_size)
         if saveblocks > SAVEBLOCKS_MAX:
-            raise OrbisError(
+            raise FileError(
                 "Unpacked archive will exceed max size!"
             )
 
