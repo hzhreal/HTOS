@@ -1,5 +1,6 @@
 import asyncio
 import os
+from typing import Any
 from zipfile import ZipFile, BadZipFile
 from zipfile import (
     #ZIP_BZIP2,
@@ -7,7 +8,6 @@ from zipfile import (
     #ZIP_LZMA,
     ZIP_STORED
 )
-from zipfile import _EndRecData, _ECD_ENTRIES_TOTAL
 from utils.constants import (
     MAX_FILES, GENERAL_CHUNKSIZE, SAVESIZE_MAX,
     MAX_FILENAME_LEN, MAX_PATH_LEN,
@@ -41,22 +41,23 @@ ZIP_CHUNKSIZE = GENERAL_CHUNKSIZE
 ZIP_MAX_ENTRIES = MAX_FILES
 ZIP_MAX_NESTED_DIRS = 100
 ZIP_MANDATORY_SCE_SYS_FILES = frozenset([os.path.join(SCE_SYS_NAME, a) for a in MANDATORY_SCE_SYS_CONTENTS])
-def _zip_unpack(src_file: str, dst_dir: str) -> int:
-    # prevent loading metadata for over ZIP_MAX_ENTRIES entries
-    with open(src_file, "rb") as f:
-        endrec = _EndRecData(f)
-    if endrec is None:
-        raise FileError("Invalid archive!")
-    if endrec[_ECD_ENTRIES_TOTAL] > ZIP_MAX_ENTRIES:
-        raise FileError(
-                "The amount of entries in the archive excceds "
-                f"{ZIP_MAX_ENTRIES}!"
+class BoundedZipInfoCache(list):
+    def append(self, object: Any) -> None:
+        if len(self) >= ZIP_MAX_ENTRIES:
+            raise FileError(
+                f"Amount of entries in archive exceeds {ZIP_MAX_ENTRIES}!"
             )
-
+        super().append(object)
+class _ZipFile(ZipFile):
+    def _RealGetContents(self) -> None:
+        # prevent loading metadata for over ZIP_MAX_ENTRIES entries
+        self.filelist = BoundedZipInfoCache()
+        super()._RealGetContents()
+def _zip_unpack(src_file: str, dst_dir: str) -> int:
     dst_dir = os.path.realpath(dst_dir)
     total_size = 0
     mandatory_cnt = 0
-    with ZipFile(src_file, "r") as zf:
+    with _ZipFile(src_file, "r") as zf:
         il = zf.infolist()
         for i in il:
             fn = i.filename
