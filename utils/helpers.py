@@ -23,9 +23,9 @@ from utils.orbis import (
 )
 from utils.constants import (
     logger, blacklist_logger, bot, psnawp,
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
+    NPSSO_global, UPLOAD_TIMEOUT, DISCORD_SAVEGAME_MAX, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
     BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM,
-    SYS_FILE_MAX, SEALED_KEY_ENC_SIZE
+    SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, DISCORD_TOTAL_SIZE_LIMIT
 )
 from utils.embeds import (
     embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
@@ -307,8 +307,8 @@ def save_pair_check(attachments: list[discord.message.Attachment]) -> list[disco
             else:
                 valid_attachments_check1.append(attachment)
         else:
-            if attachment.size > FILE_LIMIT_DISCORD:
-                raise FileError(f"The size of a file exceeds {bytes_to_mb(FILE_LIMIT_DISCORD)} MB!")
+            if attachment.size > DISCORD_SAVEGAME_MAX:
+                raise FileError(f"The size of a file exceeds {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
             else:
                 valid_attachments_check1.append(attachment)
 
@@ -333,7 +333,7 @@ def check_saves(
     sys_files: bool,
     ignore_filename_check: bool,
     savesize: int | None = None
-) -> list[discord.message.Attachment]:
+) -> tuple[list[discord.message.Attachment], int]:
     """Handles file checks universally through discord upload."""
 
     # check for duplicate files, if found, then error
@@ -348,15 +348,17 @@ def check_saves(
     total_size = 0
     if ps_save_pair_upload:
         valid_files = save_pair_check(attachments)
-        return valid_files
+        for attachment in valid_files:
+            total_size += attachment.size
+        return valid_files, total_size
 
     for attachment in attachments:
         filename = get_name_attachment(attachment)
         if len(filename) > MAX_FILENAME_LEN and not ignore_filename_check:
             raise FileError(f"The length of a file name exceeds {MAX_FILENAME_LEN}!")
 
-        elif attachment.size > FILE_LIMIT_DISCORD:
-            raise FileError(f"The size of a file exceeds {bytes_to_mb(FILE_LIMIT_DISCORD)} MB!")
+        elif attachment.size > DISCORD_SAVEGAME_MAX:
+            raise FileError(f"The size of a file exceeds {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
 
         elif sys_files and (filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
             raise FileError("Invalid sce_sys file uploaded!")
@@ -368,7 +370,7 @@ def check_saves(
             total_size += attachment.size
             valid_files.append(attachment)
 
-    return valid_files
+    return valid_files, total_size
 
 async def upload2(
           d_ctx: DiscordContext,
@@ -394,10 +396,12 @@ async def upload2(
         uploaded_file_paths = []
         download_cycle = []
 
-        valid_attachments = check_saves(attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        valid_attachments, total_size = check_saves(attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded, or no files found!")
+        if total_size > DISCORD_TOTAL_SIZE_LIMIT:
+            raise FileError(f"Total size cannot exceed {bytes_to_mb(self.DISCORD_TOTAL_SIZE_LIMIT)} MB!")
 
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
@@ -460,9 +464,9 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
             await message.delete()
             raise FileError(f"File name length is exceeding {MAX_FILENAME_LEN}!")
 
-        elif attachment.size > FILE_LIMIT_DISCORD:
+        elif attachment.size > DISCORD_SAVEGAME_MAX:
             await message.delete()
-            raise FileError(f"File size is exceeding {bytes_to_mb(FILE_LIMIT_DISCORD)} MB!")
+            raise FileError(f"File size is exceeding {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
 
         else:
             task = [lambda: download_attachment(attachment, save_location)]
@@ -503,10 +507,12 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         attachments = message.attachments
         uploaded_file_paths = []
 
-        valid_attachments = check_saves(attachments, False, False, True, savesize)
+        valid_attachments, total_size = check_saves(attachments, False, False, True, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
+        if total_size > DISCORD_TOTAL_SIZE_LIMIT:
+            raise FileError(f"Total size cannot exceed {bytes_to_mb(self.DISCORD_TOTAL_SIZE_LIMIT)} MB!")
 
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)

@@ -731,7 +731,7 @@ class GDapi:
         elif filecount > max_files:
             raise FileError(f"Amount of files cannot exceed {max_files}!")
         elif total_filesize > self.TOTAL_SIZE_LIMIT:
-            raise FileError(f"Total size cannot exceed: {bytes_to_mb(self.TOTAL_SIZE_LIMIT)} MB!")
+            raise FileError(f"Total size cannot exceed {bytes_to_mb(self.TOTAL_SIZE_LIMIT)} MB!")
 
         if allow_duplicates:
             # enforce no files in root, only dirs
