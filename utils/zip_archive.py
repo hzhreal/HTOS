@@ -133,7 +133,7 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
             raise FileError(
                 "Archive is missing mandatory sce_sys files!"
             )
-        saveblocks = compute_saveblocks(total_size)
+        saveblocks = compute_saveblocks(total_size, len(il))
         if saveblocks > SAVEBLOCKS_MAX:
             raise FileError(
                 "Unpacked archive will exceed max size!"

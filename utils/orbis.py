@@ -12,8 +12,8 @@ from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_fol
 from network.ftp_functions import FTPps
 from network.socket_functions import SocketPS
 from utils.constants import (
-    MOUNT_LOCATION, MANDATORY_SCE_SYS_CONTENTS, SCE_SYS_NAME, MAX_FILENAME_LEN, MAX_PATH_LEN,
-    RANDOMSTRING_LENGTH, PS_UPLOADDIR
+    MOUNT_LOCATION, MANDATORY_SCE_SYS_CONTENTS, SAVEBLOCKS_MIN, SCE_SYS_NAME,
+    MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, PS_UPLOADDIR
 )
 from utils.extras import obtain_savenames, completed_print
 from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
@@ -619,16 +619,17 @@ async def fix_pfs_auth_code_info(path: str) -> None:
         await pfs.seek(AUTH_CODE_HDR_HASH2_OFF)
         await pfs.write(chunk)
 
-def compute_saveblocks(total_folder_size: int) -> int:
+def compute_saveblocks(total_folder_size: int, entry_count: int) -> int:
     n = total_folder_size
+    m = entry_count
 
-    n = max(n, mb_to_bytes(3))
+    n = max(n, saveblocks_to_bytes(SAVEBLOCKS_MIN))
 
     n = round_half_up(n * 1.1) + mb_to_bytes(2)
     block = saveblocks_to_bytes(1)
     r = block - n % block
-    if r != 0:
+    if r != block:
         n += r
 
-    return bytes_to_saveblocks(n)
+    return bytes_to_saveblocks(n) + m
 
