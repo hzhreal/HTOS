@@ -85,7 +85,7 @@ class Decrypt(commands.Cog):
             batch.entry = entry
             try:
                 await batch.construct()
-                destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str) 
+                destination_directory_outer = os.path.join(newDOWNLOAD_DECRYPTED, batch.rand_str)
                 await aiofiles.os.mkdir(destination_directory_outer)
             except OSError as e:
                 await error_handling(msg, BASE_ERROR_MSG, workspace_folders, None, mount_paths, C1ftp)
