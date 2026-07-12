@@ -206,7 +206,7 @@ class SFOContextParam:
                         if not checkid(accid.value):
                             raise OrbisError("Invalid!")
                     value = accid.value
-                except (UnicodeDecodeError, OrbisError):
+                except (ValueError, OrbisError):
                     accid = uint64(self.value, "little")
                     value = "0x" + hex(accid.value)[2:].zfill(16)
             case "SAVEDATA_BLOCKS":
@@ -362,6 +362,8 @@ class SFOContext:
         param.value = v
 
     def sfo_get_param_value(self, parameter: str) -> int | str:
+        assert parameter != "ACCOUNT_ID"
+
         param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Missing sfo parameter: {parameter}!")
@@ -382,7 +384,7 @@ class SFOContext:
             param: SFOContextParam
             try:
                 param_data.append(param.as_dict())
-            except (struct.error, UnicodeDecodeError):
+            except ValueError:
                 raise OrbisError("Failed to get param data!")
         return param_data
 
