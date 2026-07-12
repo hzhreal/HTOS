@@ -1,7 +1,7 @@
 import string
 
 from utils.embeds import (
-    embUtimeout, embgdt, embhttp, embEncrypted1, embDecrypt1,
+    embUtimeout, embhttp, embEncrypted1, embDecrypt1,
     emb14, emb20, emb21, embpng, emb8,
     embnt, embvalidpsn, embinit, embTitleChange, embTitleErr,
     embTimedOut, embDone_G, emb_upl_savegame, loadSFO_emb, finished_emb,
@@ -24,7 +24,6 @@ from utils.embeds import (
 
 _MAP_PLACEHOLDER = {
     embUtimeout: set(),
-    embgdt: set(),
     embhttp: set(),
     embEncrypted1: set(),
     embDecrypt1: set(),

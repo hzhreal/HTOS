@@ -14,7 +14,6 @@ from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
 
 from google_drive.gd_functions import gdapi
-from google_drive.exceptions import GDapiError
 from data.crypto.helpers import extra_import
 from network.ftp_functions import FTPps
 from utils.orbis import (
@@ -28,7 +27,7 @@ from utils.constants import (
     SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, DISCORD_TOTAL_SIZE_LIMIT
 )
 from utils.embeds import (
-    embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
+    embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
     embe, embuplSuccess, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame, embwlcom,
 )
@@ -218,7 +217,7 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
         raise FileError("Failed to download file.")
     except OSError as e:
         if e.errno == errno.EINVAL:
-            raise FileError(f"The filename {os.path.basename(filepath)} is unsupported!")
+            raise FileError(f"A filename is unsupported!")
         raise
     logger.info(f"Saved {attachment.filename} to {filepath}")
     return filepath
@@ -431,24 +430,23 @@ async def upload2(
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
+            task = [lambda: gdapi.downloadsaves_recursive(
+                d_ctx.msg, folder_id, save_location,
+                max_files, SCE_SYS_CONTENTS if sys_files else None,
+                ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates
+            )]
+        else:
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, save_location, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
-            else:
-                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
-            await d_ctx.msg.edit(embed=cancel_notify_emb)
-            await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0]
-
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-
         opt.method = UploadMethod.GOOGLE_DRIVE
 
     return uploaded_file_paths
@@ -481,19 +479,15 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
             files = await task_handler(d_ctx, task, [])
-            file_path = files[0][0][0]
-
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
+        file_path = files[0][0][0]
 
     return file_path
 
@@ -562,18 +556,15 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
-            await d_ctx.msg.edit(embed=cancel_notify_emb)
-            await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0][0]
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
 
     return uploaded_file_paths
@@ -787,8 +778,7 @@ async def replace_decrypted(
 
 async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
-    await zip_pack(zip_dir, file_name)
-    final_file = os.path.join(zip_dir, file_name)
+    final_file = await zip_pack(zip_dir, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:

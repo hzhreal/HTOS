@@ -153,7 +153,12 @@ def startup(opt: WorkspaceOpt, lite: bool = False):
         logger.error(f"Error creating databases: {e}")
         sys.exit()
 
-async def cleanup(fInstance: FTPps, local_folders: list[str] | None, remote_savelist: list[str] | None, remote_mount_paths: list[str] | None) -> None:
+async def cleanup(
+          fInstance: FTPps,
+          local_folders: list[str] | None,
+          remote_savelist: list[str] | None,
+          remote_mount_paths: list[str] | None
+        ) -> None:
     """Used to cleanup after a command utilizing the ps4 (remote)."""
     if local_folders is not None and len(local_folders) > 0:
         for folderpath in local_folders:

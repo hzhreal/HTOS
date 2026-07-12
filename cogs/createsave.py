@@ -103,7 +103,10 @@ class CreateSave(commands.Cog):
             # handle sce_sys first
             await aiofiles.os.mkdir(scesys_local)
             await asyncio.sleep(0.5)
-            uploaded_file_paths_sys = (await upload2(d_ctx, scesys_local, max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False))[0]
+            uploaded_file_paths_sys = (await upload2(
+                d_ctx, scesys_local,
+                max_files=len(SCE_SYS_CONTENTS), sys_files=True, ps_save_pair_upload=False, ignore_filename_check=False)
+            )[0]
             sys_files_validator(uploaded_file_paths_sys)
 
             # next, other files (gamesaves)

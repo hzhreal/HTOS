@@ -202,16 +202,14 @@ class GDapi:
                 return await aiogoogle.as_user(req, full_res=full_res)
 
     @staticmethod
-    def grabfolderid(folder_link: str) -> str:
+    def get_folderid(folder_link: str) -> str:
         if not folder_link:
-            return ""
-
+            raise GDapiError("Invalid folder link!")
         match = FOLDER_ID_RE.search(folder_link)
-
-        if match:
-            folder_id = match.group(1)
-            return folder_id
-        return ""
+        if not match:
+            raise GDapiError("Invalid folder link!")
+        folder_id = match.group(1)
+        return folder_id
 
     @staticmethod
     def is_google_drive_link(text: str) -> bool:
@@ -571,11 +569,7 @@ class GDapi:
     async def parse_sharedfolder_link(self, link: str) -> str:
         if not link:
             return ""
-
-        folderid = self.grabfolderid(link)
-        if not folderid:
-            raise GDapiError("Invalid shared folder ID!")
-
+        folderid = self.get_folderid(link)
         writeperm = await self.check_writeperm(folderid)
         if not writeperm:
             raise GDapiError("Shared folder has insufficent permissions! Enable write permission.")
@@ -767,7 +761,7 @@ class GDapi:
                         await self.send_req(aiogoogle, req)
                 except OSError as e:
                     if e.errno == errno.EINVAL:
-                        raise FileError(f"The filename {file_name} is unsupported!")
+                        raise FileError(f"A filename is unsupported!")
                     raise
                 logger.info(f"Saved {file_name} to {download_path}")
 

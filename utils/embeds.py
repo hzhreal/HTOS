@@ -20,13 +20,6 @@ embUtimeout = discord.Embed(
 )
 embUtimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
-embgdt = discord.Embed(
-    title="Google drive upload: Error",
-    description="You did not respond with the link in time!",
-    colour=Color.DEFAULT.value
-)
-embgdt.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
-
 embhttp = discord.Embed(
     title="HttpError",
     description="Are you sure that you uploaded binary content?",
@@ -713,7 +706,7 @@ embwlcom.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embzip1 = discord.Embed(
     title="Upload folder",
-    description="Please attach a ZIP file containing a sufficient folder to produce a valid savefile.",
+    description="Please attach one or more ZIP files each containing a sufficient folder to produce a valid savefile.",
     colour=Color.DEFAULT.value
 )
 embzip1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
