@@ -271,20 +271,32 @@ class GDapi:
         savesize: int | None = None
     ) -> list[dict[str, str]]:
 
-        # check for duplicate files (doesnt seem to be possible), if found, then error
-        paths = set()
-        for file_info in file_data:
-            path = file_info["filepath"]
-            if path in paths:
-                raise FileError("Duplicate file detected!")
-            paths.add(path)
-
         valid_files_data = []
         total_size = 0
 
         if ps_save_pair_upload:
+            # assume the normal orbis filesystem is case sensitive
+            # this should be a case sensitive check
+            # that works on both case sensitive and case insensitive filesystems
+            # that is because of batch logic (new batch is made if dupe exists on filesystem)
+            paths = set()
+            for file_info in file_data:
+                path = file_info["filepath"]
+                if path in paths:
+                    raise FileError("Duplicate file detected (case-sensitive check)!")
+                paths.add(path)
             valid_files_data = GDapi.save_pair_check(file_data)
             return valid_files_data
+
+        # assume files inside save containers are case insensitive by default (which is the scope of this branch)
+        # this should be a case insensitive check
+        # that works on both case sensitive and case insensitive filesystems
+        paths = set()
+        for file_info in file_data:
+            path = file_info["filepath"]
+            if path.lower() in paths:
+                raise FileError("Duplicate file detected (case-insensitive check)!")
+            paths.add(path.lower())
 
         for file_info in file_data:
             filepath = file_info["filepath"]
@@ -418,17 +430,19 @@ class GDapi:
             if mimetype == "application/vnd.google-apps.folder":
                 folder_name = name
                 folder_id = id_
-                if folder_name == "." or folder_name == ".." or folder_name == SCE_SYS_NAME:
+                if folder_name in (".", "..") or folder_name == SCE_SYS_NAME:
                     continue
+
                 if rel_path is not None:
                     rel_path = os.path.join(rel_path, folder_name)
-                    rel_path = os.path.normpath(rel_path)
-                    if mounted_len_checks:
-                        path_len = get_path_len(rel_path)
-                        if path_len > MAX_PATH_LEN:
-                            raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
                 else:
                     rel_path = folder_name
+                rel_path = os.path.normpath(rel_path)
+                if mounted_len_checks:
+                    path_len = get_path_len(rel_path)
+                    if path_len > MAX_PATH_LEN:
+                        raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
+
                 _, sub_size = await self.list_dir(
                     folder_id, sys_files, ps_save_pair_upload, ignore_filename_check,
                     mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files
@@ -439,20 +453,20 @@ class GDapi:
             else:
                 file_name = name
                 file_id = id_
-                if file_size == 0 or (file_name in SCE_SYS_CONTENTS and sys_files is None):
+                if file_size == 0 or file_name in (".", "..") or (file_name in SCE_SYS_CONTENTS and sys_files is None):
                     continue
 
                 if rel_path is not None:
                     file_path = os.path.join(rel_path, file_name)
-                    file_path = os.path.normpath(file_path)
-                    if mounted_len_checks:
-                        path_len = get_path_len(file_path)
-                        if len(file_name) > MAX_FILENAME_LEN:
-                            raise FileError(f"The length of a file name is exceeding {MAX_FILENAME_LEN}!")
-                        elif path_len > MAX_PATH_LEN:
-                            raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
                 else:
                     file_path = file_name
+                file_path = os.path.normpath(file_path)
+                if mounted_len_checks:
+                    path_len = get_path_len(file_path)
+                    if len(file_name) > MAX_FILENAME_LEN:
+                        raise FileError(f"The length of a file name is exceeding {MAX_FILENAME_LEN}!")
+                    elif path_len > MAX_PATH_LEN:
+                        raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
 
                 file_data = {"filepath": file_path, "fileid": file_id, "filesize": file_size}
                 file_data_storage.append(file_data)
@@ -741,6 +755,8 @@ class GDapi:
 
             for file in files:
                 file_name = os.path.basename(file["filepath"])
+                if not file_name or file_name in (".", ".."):
+                    raise FileError("Invalid file uploaded!")
                 file_id = file["fileid"]
 
                 download_path = os.path.join(cur_download_dir, file_name)
@@ -815,14 +831,15 @@ class GDapi:
                 download_path = os.path.join(dst_local_dir, file_path)
                 dp = os.path.realpath(download_path)
                 if os.path.commonpath([ld, dp]) != ld:
-                    raise FileError("Invalid file!")
+                    raise FileError("Invalid file uploaded!")
                 try:
                     await aiofiles.os.makedirs(os.path.dirname(download_path), exist_ok=True)
                 except OSError as e:
                     if hasattr(e, "winerror") and e.winerror == 123:
                         raise FileError(f"The folderpath {os.path.dirname(file_path)} is unsupported!")
                     raise
-
+                if await aiofiles.os.path.isdir(download_path):
+                    raise FileError("Invalid file uploaded!")
                 try:
                     async with aiofiles.open(download_path, "wb") as file:
                         req = drive_v3.files.get(

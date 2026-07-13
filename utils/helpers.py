@@ -192,11 +192,15 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
 
 def get_name_attachment(attachment: discord.Attachment) -> str:
     _, ext = os.path.splitext(attachment.filename)
-    return attachment.title + ext if attachment.title is not None else attachment.filename
+    name = attachment.title + ext if attachment.title is not None else attachment.filename
+    basename = os.path.basename(name)
+    if not basename or basename in (".", ".."):
+        raise FileError("Invalid filename!")
+    return basename
 
 async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> str:
     if filename is None:
-        basename = os.path.basename(get_name_attachment(attachment))
+        basename = get_name_attachment(attachment)
         filepath = os.path.join(folderpath, basename)
     else:
         assert os.path.basename(filename) == filename
@@ -205,6 +209,8 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
     fp = os.path.realpath(folderpath)
     p = os.path.realpath(filepath)
     if os.path.commonpath([fp, p]) != fp:
+        raise FileError("Invalid file!")
+    if await aiofiles.os.path.isdir(filepath):
         raise FileError("Invalid file!")
 
     try:
@@ -331,25 +337,45 @@ def check_saves(
     ps_save_pair_upload: bool,
     sys_files: bool,
     ignore_filename_check: bool,
+    ignore_dupe_check: bool,
     savesize: int | None = None
 ) -> tuple[list[discord.message.Attachment], int]:
     """Handles file checks universally through discord upload."""
 
-    # check for duplicate files, if found, then error
-    basenames = set()
-    for attachment in attachments:
-        basename = get_name_attachment(attachment)
-        if basename in basenames:
-            raise FileError("Duplicate file detected!")
-        basenames.add(basename)
+    if ps_save_pair_upload:
+        ignore_dupe_check = False
 
     valid_files = []
     total_size = 0
+
     if ps_save_pair_upload:
+        # assume the normal orbis filesystem is case sensitive
+        # this should be a case sensitive check
+        # that works on both case sensitive and case insensitive filesystems
+        # that is because of batch logic (new batch is made if dupe exists on filesystem)
+        if not ignore_dupe_check:
+            basenames = set()
+            for attachment in attachments:
+                basename = get_name_attachment(attachment)
+                if basename in basenames:
+                    raise FileError("Duplicate file detected (case-sensitive check)!")
+                basenames.add(basename)
+
         valid_files = save_pair_check(attachments)
         for attachment in valid_files:
             total_size += attachment.size
         return valid_files, total_size
+
+    # assume files inside save containers are case insensitive by default (which is the scope of this branch)
+    # this should be a case insensitive check
+    # that works on both case sensitive and case insensitive filesystems
+    if not ignore_dupe_check:
+        basenames = set()
+        for attachment in attachments:
+            basename = get_name_attachment(attachment)
+            if basename.lower() in basenames:
+                raise FileError("Duplicate file detected (case-insensitive check)!")
+            basenames.add(basename.lower())
 
     for attachment in attachments:
         filename = get_name_attachment(attachment)
@@ -395,7 +421,9 @@ async def upload2(
         uploaded_file_paths = []
         download_cycle = []
 
-        valid_attachments, total_size = check_saves(attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        valid_attachments, total_size = check_saves(
+            attachments, ps_save_pair_upload, sys_files, ignore_filename_check, False, savesize
+        )
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded, or no files found!")
@@ -501,7 +529,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         attachments = message.attachments
         uploaded_file_paths = []
 
-        valid_attachments, total_size = check_saves(attachments, False, False, True, savesize)
+        valid_attachments, total_size = check_saves(attachments, False, False, True, True, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
@@ -511,20 +539,17 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
 
-        i = 1
+        out_fpaths = set()
         sl = os.path.realpath(save_location)
         for attachment in valid_attachments:
-            _, ext = os.path.splitext(attachment.filename)
-            basename = attachment.title + ext if attachment.title is not None else attachment.filename
-            basename = os.path.basename(basename)
-
+            basename = get_name_attachment(attachment)
             rel_file_path = basename.split(splitvalue)
             rel_file_path = "/".join(rel_file_path)
             rel_file_path = os.path.normpath(rel_file_path)
             path_len = get_path_len(rel_file_path)
 
             file_name = os.path.basename(rel_file_path)
-            if not file_name:
+            if not file_name or file_name in (".", ".."):
                 raise FileError("Invalid file detected!")
             if len(file_name) > MAX_FILENAME_LEN:
                 raise FileError(f"The length of a file name is exceeding {MAX_FILENAME_LEN}!")
@@ -532,12 +557,24 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
             if path_len > MAX_PATH_LEN:
                 raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
 
-            dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
-            dp = os.path.realpath(dir_path)
-            if os.path.commonpath([sl, dp]) != sl:
+            fp = os.path.join(save_location, rel_file_path)
+            fp = os.path.realpath(fp)
+            if os.path.commonpath([sl, fp]) != sl:
                 raise FileError("Invalid file detected!")
-            if await aiofiles.os.path.exists(os.path.join(dir_path, file_name)):
-                raise FileError("Duplicate file detected!")
+            # assume files inside save containers are case insensitive by default (which is the scope of this method)
+            # this should be a case insensitive check
+            # that works on both case sensitive and case insensitive filesystems
+            if rel_file_path.lower() in out_fpaths:
+                raise FileError("Duplicate file detected (case-insensitive check)!")
+            out_fpaths.add(rel_file_path.lower())
+        i = 1
+        for attachment in valid_attachments:
+            basename = get_name_attachment(attachment)
+            rel_file_path = basename.split(splitvalue)
+            rel_file_path = "/".join(rel_file_path)
+            rel_file_path = os.path.normpath(rel_file_path)
+            file_name = os.path.basename(rel_file_path)
+            dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
 
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             task = [lambda: download_attachment(attachment, dir_path, file_name)]
