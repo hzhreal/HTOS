@@ -9,9 +9,9 @@ from zipfile import (
     ZIP_STORED
 )
 from utils.constants import (
-    MAX_FILES, GENERAL_CHUNKSIZE, SAVESIZE_MAX,
-    MAX_FILENAME_LEN, MAX_PATH_LEN,
-    MANDATORY_SCE_SYS_CONTENTS, SYS_FILE_MAX, SCE_SYS_NAME, SAVEBLOCKS_MAX
+    MAX_FILES, GENERAL_CHUNKSIZE, SAVESIZE_MAX, SAVEBLOCKS_MAX,
+    MAX_FILENAME_LEN, MAX_PATH_LEN, PARAM_NAME, SCE_SYS_NAME,
+    MANDATORY_SCE_SYS_CONTENTS, SYS_FILE_MAX
 )
 from utils.orbis import get_path_len, compute_saveblocks
 from utils.conversions import gb_to_bytes, bytes_to_mb
@@ -19,7 +19,7 @@ from utils.exceptions import FileError
 
 ZIP_COMPRESSION_MODE = ZIP_STORED
 ZIP_COMPRESSION_LEVEL = None
-def _zip_pack(src_dir: str, dst_name: str) -> None:
+def _zip_pack(src_dir: str, dst_name: str) -> str:
     dst = os.path.join(src_dir, dst_name)
     with ZipFile(dst, "w", compression=ZIP_COMPRESSION_MODE, compresslevel=ZIP_COMPRESSION_LEVEL) as zf:
         # crawling through directory and subdirectories
@@ -31,9 +31,9 @@ def _zip_pack(src_dir: str, dst_name: str) -> None:
                 archive_path = os.path.relpath(filepath, src_dir)
                 # writing each file one by one without the top-level folder
                 zf.write(filepath, archive_path)
-
-async def zip_pack(src_dir: str, dst_name: str) -> None:
-    await asyncio.to_thread(_zip_pack, src_dir, dst_name)
+    return dst
+async def zip_pack(src_dir: str, dst_name: str) -> str:
+    return await asyncio.to_thread(_zip_pack, src_dir, dst_name)
 
 ZIP_TOTAL_SIZE_LIMIT = gb_to_bytes(2)
 ZIP_SAVEGAME_MAX = SAVESIZE_MAX
@@ -41,6 +41,7 @@ ZIP_CHUNKSIZE = GENERAL_CHUNKSIZE
 ZIP_MAX_ENTRIES = MAX_FILES
 ZIP_MAX_NESTED_DIRS = 100
 ZIP_MANDATORY_SCE_SYS_FILES = frozenset([os.path.join(SCE_SYS_NAME, a) for a in MANDATORY_SCE_SYS_CONTENTS])
+ZIP_SFO_PATH = SCE_SYS_NAME + "/" + PARAM_NAME
 class BoundedZipInfoCache(list):
     def append(self, object: Any) -> None:
         if len(self) >= ZIP_MAX_ENTRIES:
@@ -57,6 +58,7 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
     dst_dir = os.path.realpath(dst_dir)
     total_size = 0
     mandatory_cnt = 0
+    out_fpaths = set()
     with _ZipFile(src_file, "r") as zf:
         il = zf.infolist()
         for i in il:
@@ -83,8 +85,19 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
                         "A directory in the archive will turn out to "
                         "exceed the path length limit!"
                     )
-
+                # assume directories inside save containers are case insensitive by default (which is the scope of this branch)
+                # this should be a case insensitive check
+                # that works on both case sensitive and case insensitive filesystems
+                if out_rel_p.lower() in out_fpaths:
+                    raise FileError("Duplicate entry found inside archive (case-insensitive check)!")
+                out_fpaths.add(out_rel_p.lower())
                 continue
+
+            # assume files inside save containers are case insensitive by default (which is the scope of this branch)
+            # this should be a case insensitive check
+            # that works on both case sensitive and case insensitive filesystems
+            if out_rel_p.lower() in out_fpaths:
+                raise FileError("Duplicate entry found inside archive (case-insensitive check)!")
 
             if fs > ZIP_SAVEGAME_MAX:
                 raise FileError(
@@ -129,6 +142,8 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
                         "respective max size!"
                     )
                 mandatory_cnt += 1
+
+            out_fpaths.add(out_rel_p.lower())
         if mandatory_cnt != len(ZIP_MANDATORY_SCE_SYS_FILES):
             raise FileError(
                 "Archive is missing mandatory sce_sys files!"
@@ -170,10 +185,39 @@ def _zip_unpack(src_file: str, dst_dir: str) -> int:
                     dst.write(chunk)
 
     return saveblocks
+def _zip_unpack_sfo(src_file: str, dst_dir: str) -> str:
+    out = os.path.join(dst_dir, PARAM_NAME)
+    with _ZipFile(src_file, "r") as zf:
+        try:
+            sfo_info = zf.getinfo(ZIP_SFO_PATH)
+        except KeyError:
+            raise FileError("Invalid archive!")
+        fs = sfo_info.file_size
+        if fs > SYS_FILE_MAX or sfo_info.is_dir():
+            raise FileError("Invalid archive!")
+        entry_size = 0
+        with zf.open(sfo_info, "r") as src, open(out, "wb") as dst:
+            while True:
+                chunk = src.read(ZIP_CHUNKSIZE)
+                if not chunk:
+                    break
+                l = len(chunk)
+
+                entry_size += l
+                if entry_size > fs:
+                    raise FileError("Invalid archive!")
+
+                dst.write(chunk)
+    return out
 
 async def zip_unpack(src_file: str, dst_dir: str) -> int:
     try:
         return await asyncio.to_thread(_zip_unpack, src_file, dst_dir)
+    except BadZipFile:
+        raise FileError("Invalid archive!")
+async def zip_unpack_sfo(src_file: str, dst_dir: str) -> str:
+    try:
+        return await asyncio.to_thread(_zip_unpack_sfo, src_file, dst_dir)
     except BadZipFile:
         raise FileError("Invalid archive!")
 

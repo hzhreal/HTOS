@@ -133,9 +133,9 @@ You will be prompted on which numbers to type in the chat to choose a save.
 
 ---
 
-`/quick createsave`: Creates a save only using a supplied folder uploaded as a ZIP file.
-The folder needs to be sufficient to produce a valid savefile.
-That is, it needs to contain the mandatory `sce_sys` files.  
+`/quick createsave`: Creates one save for each supplied folder uploaded as a ZIP file.
+Each folder need to be sufficient to produce a valid savefile.
+That is, they each need to contain the mandatory `sce_sys` files.  
 This command will not do any second layer checks on the folder.  
 
 ---
