@@ -197,30 +197,20 @@ class SFOContextParam:
 
         match self.key:
             case "ACCOUNT_ID":
-                try:
-                    accid = utf_8(self.value)
-                    if accid.value.startswith("0x"):
-                        if not checkid(accid.value[2:]):
-                            raise OrbisError("Invalid!")
-                    else:
-                        if not checkid(accid.value):
-                            raise OrbisError("Invalid!")
-                    value = accid.value
-                except (ValueError, OrbisError):
-                    accid = uint64(self.value, "little")
-                    value = "0x" + hex(accid.value)[2:].zfill(16)
+                accid = uint64(self.value, "little")
+                value = "0x" + hex(accid.value)[2:].zfill(16)
             case "SAVEDATA_BLOCKS":
                 blocks = uint64(self.value, "little")
                 value = hex(blocks.value)
             case "CATEGORY" | "DETAIL" | "FORMAT" | "MAINTITLE" | "SAVEDATA_DIRECTORY" | "SUBTITLE" | "TITLE_ID":
-                ctx = utf_8(self.value)
-                value = ctx.to_str()
+                t = utf_8(self.value)
+                value = t.to_str()
             case "ATTRIBUTE" | "SAVEDATA_LIST_PARAM":
-                ctx = uint32(self.value, "little")
-                value = hex(ctx.value)
+                t = uint32(self.value, "little")
+                value = hex(t.value)
             case "PARAMS":
                 params = utf_8_s(self.value)
-                value = params.value
+                value = params.to_str()
 
         info["converted_value"] = value
         return info
@@ -337,33 +327,32 @@ class SFOContext:
             raise OrbisError(f"Unsupported parameter: {parameter}!")
 
         if param_type.CATEGORY == TypeCategory.INTEGER:
-            ctx = type(param_type)(new_data, "little")
+            t = type(param_type)(new_data, "little")
         else:
-            ctx = type(param_type)(new_data)
+            t = type(param_type)(new_data)
 
         max_len = param.max_length
 
-        if ctx.CATEGORY == TypeCategory.CHARACTER:
-            ctx: utf_8 | utf_8_s
-            if ctx.bytelen >= max_len:
+        if t.CATEGORY == TypeCategory.CHARACTER:
+            t: utf_8 | utf_8_s
+            if t.bytelen >= max_len:
                raise OrbisError(
                     f"The parameter: {parameter} reached the max length it has of {max_len}! "
                     "Remember last byte is reserved for null termination for this parameter."
                 )
-            v = ctx.to_cstr()
+            v = t.to_cstr()
             l = len(v)
         else:
-            if ctx.bytelen > max_len:
+            t: uint32 | uint64 
+            if t.bytelen > max_len:
                 raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}!")
-            v = ctx.as_bytes
-            l = ctx.bytelen
+            v = t.as_bytes
+            l = t.bytelen
 
         param.length = l
         param.value = v
 
     def sfo_get_param_value(self, parameter: str) -> int | str:
-        assert parameter != "ACCOUNT_ID"
-
         param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
         if not param:
             raise OrbisError(f"Missing sfo parameter: {parameter}!")
