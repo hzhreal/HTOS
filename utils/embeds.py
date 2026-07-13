@@ -308,8 +308,8 @@ embgs = discord.Embed(
     description=(
         "Please attach the gamesave files you want to upload.\n"
         "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
-        "For **discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{splitvalue}'. For example the file 'savedata' inside the data directory would be called 'data{splitvalue}savedata'.\n\n"
-        "For **google drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
+        "For **Discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{splitvalue}'. For example the file 'savedata' inside the data directory would be called 'data{splitvalue}savedata'.\n\n"
+        "For **Google Drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
         "*Or type 'EXIT' to cancel command.*"
     ),
     colour=Color.DEFAULT.value
