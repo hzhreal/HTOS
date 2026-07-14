@@ -55,7 +55,11 @@ class Convert(commands.Cog):
             msg = await ctx.fetch_message(msg.id)
             d_ctx = DiscordContext(ctx, msg)
             shared_gd_folderid = await gdapi.parse_sharedfolder_link(shared_gd_link)
-            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_DECRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False, opt=opt)
+            uploaded_file_paths = await upload2(
+                d_ctx, newUPLOAD_DECRYPTED,
+                max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=False,
+                opt=opt
+            )
         except HTTPError as e:
             err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)

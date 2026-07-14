@@ -9,7 +9,7 @@ from discord.ext import commands
 from psnawp_api import PSNAWP
 from utils.conversions import mb_to_bytes, saveblocks_to_bytes, minutes_to_seconds, bytes_to_mb, hours_to_seconds
 
-VERSION = "v3.3.0"
+VERSION = "v4.0.0"
 
 # LOGGER
 def setup_logger(path: str, logger_type: str, level: str) -> logging.Logger:
@@ -294,7 +294,8 @@ def verify_titleids() -> None:
 SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID, MINECRAFT_TITLEID)
 
 # BOT CONFIG
-FILE_LIMIT_DISCORD = mb_to_bytes(500) # discord file limit for nitro users
+DISCORD_SAVEGAME_MAX = mb_to_bytes(500) # discord file limit for nitro users
+DISCORD_TOTAL_SIZE_LIMIT = mb_to_bytes(500) # discord file limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # how long the user has to upload files or send google drive folder link

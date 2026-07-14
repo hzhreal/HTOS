@@ -1,7 +1,7 @@
 import string
 
 from utils.embeds import (
-    embUtimeout, embgdt, embhttp, embEncrypted1, embDecrypt1,
+    embUtimeout, embhttp, embEncrypted1, embDecrypt1,
     emb14, emb20, emb21, embpng, emb8,
     embnt, embvalidpsn, embinit, embTitleChange, embTitleErr,
     embTimedOut, embDone_G, emb_upl_savegame, loadSFO_emb, finished_emb,
@@ -16,16 +16,15 @@ from utils.embeds import (
     embApplied, embqcCompleted, embchLoading, embkstone1, embkstone2,
     embrrp, embrrps, embrrdone, embres, embress,
     embRbdone, embLoad, embdec, paramEmb, embchErr,
-    embErrconv, embErrdec, embchgtav, embchrdr2, embfn,
-    embFileLarge, embnvSys, embpn, embnvBin, embffn,
+    embErrconv, embErrdec, embchgtav, embchrdr2,
     embgddone, embuplSuccess, embe, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame,
-    emb_il, embdecTimeout, embdecFormat, embwlcom
+    emb_il, embdecTimeout, embdecFormat, embwlcom, embzip1,
+    embc_bulk, embCRdone_bulk
 )
 
 _MAP_PLACEHOLDER = {
     embUtimeout: set(),
-    embgdt: set(),
     embhttp: set(),
     embEncrypted1: set(),
     embDecrypt1: set(),
@@ -103,12 +102,6 @@ _MAP_PLACEHOLDER = {
     embErrdec: {("description", frozenset({"error"}))},
     embchgtav: {("description", frozenset({"platform", "franklin_cash", "michael_cash", "trevor_cash"}))},
     embchrdr2: {("description", frozenset({"platform", "money"}))},
-    embfn: {("description", frozenset({"filename", "len", "max"}))},
-    embFileLarge: {("description", frozenset({"filename", "max"}))},
-    embnvSys: {("description", frozenset({"filename"}))},
-    embpn: {("description", frozenset({"filename", "len", "max"}))},
-    embnvBin: {("description", frozenset({"filename", "size"}))},
-    embffn: {("description", frozenset({"path", "max"}))},
     embgddone: {("description", frozenset({"filename", "i", "filecount"}))},
     embuplSuccess: {("description", frozenset({"filename", "i", "filecount"}))},
     embe: {("description", frozenset({"error"}))},
@@ -122,7 +115,10 @@ _MAP_PLACEHOLDER = {
     emb_il: {("description", frozenset({"error"}))},
     embdecTimeout: set(),
     embdecFormat: {("title", frozenset({"savename"}))},
-    embwlcom: {("description", frozenset({"user"}))}
+    embwlcom: {("description", frozenset({"user"}))},
+    embzip1: set(),
+    embc_bulk: {("description", frozenset({"savename", "j", "savecount", "i", "batches"}))},
+    embCRdone_bulk: {("description", frozenset({"printed", "id", "i", "batches"}))}
 }
 
 for emb, v in _MAP_PLACEHOLDER.items():

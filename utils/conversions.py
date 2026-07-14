@@ -9,6 +9,9 @@ def gb_to_bytes(n: int) -> int:
 def saveblocks_to_bytes(blocks: int) -> int:
     return blocks << 15
 
+def bytes_to_saveblocks(n: int) -> int:
+    return n >> 15
+
 def bytes_to_mb(n: int) -> int:
     return n >> 20
 

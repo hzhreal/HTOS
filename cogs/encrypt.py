@@ -123,11 +123,10 @@ class Encrypt(commands.Cog):
                         batch.mount_location, upload_individually,
                         newUPLOAD_DECRYPTED, savefile.basename, pfs_size, ignore_secondlayer_checks
                     )
+                    shutil.rmtree(newUPLOAD_DECRYPTED)
+                    await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
 
                     if include_sce_sys:
-                        shutil.rmtree(newUPLOAD_DECRYPTED)
-                        await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
-
                         emb = embSceSys.copy()
                         emb.title = emb.title.format(savename=savefile.basename)
                         await msg.edit(embed=emb)
@@ -142,6 +141,8 @@ class Encrypt(commands.Cog):
                             savesize=pfs_size)
                         )[0]
                         await C1ftp.upload_scesys_contents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
+                        shutil.rmtree(newUPLOAD_DECRYPTED)
+                        await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
 
                     tasks = [
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO]),

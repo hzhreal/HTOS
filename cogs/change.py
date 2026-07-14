@@ -62,8 +62,10 @@ class Change(commands.Cog):
             msg = await ctx.edit(embed=embpng)
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
-            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
-
+            uploaded_file_paths = await upload2(
+                d_ctx, newUPLOAD_ENCRYPTED,
+                max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False
+            )
             # png handling
             if picture.size > SYS_FILE_MAX:
                 raise FileError(f"Image is too big! Maximum for upload is ~{bytes_to_mb(SYS_FILE_MAX)} MB ({SYS_FILE_MAX} bytes).")
@@ -210,7 +212,10 @@ class Change(commands.Cog):
             msg = await ctx.edit(embed=embTitleChange)
             msg = await ctx.fetch_message(msg.id) # use message id instead of interaction token, this is so our command can last more than 15 min
             d_ctx = DiscordContext(ctx, msg) # this is for passing into functions that need both
-            uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
+            uploaded_file_paths = await upload2(
+                d_ctx, newUPLOAD_ENCRYPTED,
+                max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False
+            )
         except HTTPError as e:
             err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)

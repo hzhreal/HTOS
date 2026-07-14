@@ -11,11 +11,15 @@ from network.socket_functions import C1socket
 from network.ftp_functions import FTPps
 from network.exceptions import SocketError, FTPError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX, RANDOMSTRING_LENGTH, MAX_FILENAME_LEN, MAX_PATH_LEN,
+    IP, PORT_FTP, PS_UPLOADDIR, SAVEBLOCKS_MIN, SAVEBLOCKS_MAX, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX,
     SCE_SYS_NAME, PARAM_NAME, SCE_SYS_CONTENTS, RANDOMSTRING_LENGTH, MOUNT_LOCATION, PS_UPLOADDIR
 )
 from utils.workspace import cleanup
-from utils.orbis import validate_savedirname, sys_files_validator, sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters, obtainCUSA, fix_pfs_auth_code_info
+from utils.orbis import (
+    is_valid_savedirname, validate_savedirname_path, sys_files_validator,
+    sfo_ctx_create, sfo_ctx_write, sfo_ctx_patch_parameters,
+    obtainCUSA, fix_pfs_auth_code_info
+)
 from utils.exceptions import OrbisError
 from utils.conversions import mb_to_saveblocks, saveblocks_to_bytes, bytes_to_mb
 from utils.extras import generate_random_string
@@ -33,7 +37,7 @@ class Createsave(TabBase):
             self.out_label = ui.input(on_change=self.on_output_label, value=self.out_folder).props("clearable")
         self.savename = ui.input(
             "savename",
-            validation={"Invalid savename!": validate_savedirname}
+            validation={"Invalid savename!": is_valid_savedirname}
         ).classes("w-64").props("clearable")
         self.saveblocks = ui.input(
             "Savesize (saveblocks) (priority)",
@@ -66,7 +70,7 @@ class Createsave(TabBase):
         else:
             ui.notify("Savesize is not set!")
             return
-        if not validate_savedirname(self.savename.value):
+        if not is_valid_savedirname(self.savename.value):
             ui.notify("Arguments are not set!")
             return
         else:
@@ -100,14 +104,7 @@ class Createsave(TabBase):
                 raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
             # length checks
-            filename_bin = f"{savename}.bin_{'X' * RANDOMSTRING_LENGTH}"
-            filename_bin_len = len(filename_bin)
-            path_len = len(PS_UPLOADDIR + "/" + filename_bin + "/")
-
-            if filename_bin_len > MAX_FILENAME_LEN:
-                raise OrbisError(f"The length of the savename will exceed {MAX_FILENAME_LEN}!")
-            elif path_len > MAX_PATH_LEN:
-                raise OrbisError(f"The path the save creates will exceed {MAX_PATH_LEN}!")
+            validate_savedirname_path(savename)
 
             if not await isdir(sys_folder):
                 raise OrbisError("No sce_sys folder found!")
@@ -141,14 +138,12 @@ class Createsave(TabBase):
             if self.settings.recursivity.value:
                 await C1ftp.upload_folder(mount_location_new, self.in_folder)
             else:
-                ftp = await C1ftp.create_ctx()
                 for sys_file in sys_files:
                     remote_path = os.path.join(location_to_scesys, os.path.basename(sys_file))
-                    await C1ftp.upload_stream(ftp, sys_file, remote_path)
+                    await C1ftp.upload_file_streamed(sys_file, remote_path)
                 for file in files:
                     remote_path = os.path.join(mount_location_new, os.path.basename(file))
-                    await C1ftp.upload_stream(ftp, file, remote_path)
-                await C1ftp.free_ctx(ftp)
+                    await C1ftp.upload_file_streamed(file, remote_path)
             await C1socket.socket_update(mount_location_new, temp_savename)
 
             # make paths for save
@@ -157,11 +152,9 @@ class Createsave(TabBase):
             await makedirs(save_dirs)
 
             # download save at real filename path
-            ftp_ctx = await C1ftp.create_ctx()
             savepath = os.path.join(save_dirs, savename)
-            await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename, savepath),
-            await C1ftp.download_stream(ftp_ctx, PS_UPLOADDIR + "/" + temp_savename + ".bin", savepath + ".bin")
-            await C1ftp.free_ctx(ftp_ctx)
+            await C1ftp.download_file_streamed(PS_UPLOADDIR + "/" + temp_savename, savepath),
+            await C1ftp.download_file_streamed(PS_UPLOADDIR + "/" + temp_savename + ".bin", savepath + ".bin")
             await fix_pfs_auth_code_info(savepath)
         except (SocketError, FTPError, OrbisError, OSError) as e:
             await cleanup(C1ftp, None, save, mount_paths)

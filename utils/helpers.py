@@ -14,24 +14,28 @@ from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
 
 from google_drive.gd_functions import gdapi
-from google_drive.exceptions import GDapiError
 from data.crypto.helpers import extra_import
 from network.ftp_functions import FTPps
-from utils.orbis import parse_pfs_header, parse_sealedkey, checkid, handle_accid
+from utils.orbis import (
+    parse_pfs_header, parse_sealedkey, checkid, handle_accid,
+    get_savedirname_path_len, get_savedirname_filename_len, get_path_len
+)
 from utils.constants import (
     logger, blacklist_logger, bot, psnawp,
-    NPSSO_global, UPLOAD_TIMEOUT, FILE_LIMIT_DISCORD, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, MOUNT_LOCATION, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM, 
-    SYS_FILE_MAX, PS_UPLOADDIR, SEALED_KEY_ENC_SIZE
+    NPSSO_global, UPLOAD_TIMEOUT, DISCORD_SAVEGAME_MAX, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM,
+    SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, DISCORD_TOTAL_SIZE_LIMIT
 )
 from utils.embeds import (
-    embgdt, embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
+    embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
     embe, embuplSuccess, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame, embwlcom,
-    embfn, embpn, embnvBin, embFileLarge, embnvSys
 )
-from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError, OrbisError
-from utils.workspace import fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple, write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError 
+from utils.workspace import (
+    fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple,
+    write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+)
 from utils.extras import generate_random_string
 from utils.conversions import bytes_to_mb
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -188,11 +192,15 @@ async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord
 
 def get_name_attachment(attachment: discord.Attachment) -> str:
     _, ext = os.path.splitext(attachment.filename)
-    return attachment.title + ext if attachment.title is not None else attachment.filename
+    name = attachment.title + ext if attachment.title is not None else attachment.filename
+    basename = os.path.basename(name)
+    if not basename or basename in (".", ".."):
+        raise FileError("Invalid filename!")
+    return basename
 
 async def download_attachment(attachment: discord.Attachment, folderpath: str, filename: str | None = None) -> str:
     if filename is None:
-        basename = os.path.basename(get_name_attachment(attachment))
+        basename = get_name_attachment(attachment)
         filepath = os.path.join(folderpath, basename)
     else:
         assert os.path.basename(filename) == filename
@@ -201,6 +209,8 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
     fp = os.path.realpath(folderpath)
     p = os.path.realpath(filepath)
     if os.path.commonpath([fp, p]) != fp:
+        raise FileError("Invalid file!")
+    if await aiofiles.os.path.isdir(filepath):
         raise FileError("Invalid file!")
 
     try:
@@ -213,7 +223,7 @@ async def download_attachment(attachment: discord.Attachment, folderpath: str, f
         raise FileError("Failed to download file.")
     except OSError as e:
         if e.errno == errno.EINVAL:
-            raise FileError(f"The filename {os.path.basename(filepath)} is unsupported!")
+            raise FileError(f"A filename is unsupported!")
         raise
     logger.info(f"Saved {attachment.filename} to {filepath}")
     return filepath
@@ -282,108 +292,110 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
 
     return result
 
-async def save_pair_check(ctx: discord.ApplicationContext | discord.Message, attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
+def save_pair_check(attachments: list[discord.message.Attachment]) -> list[discord.message.Attachment]:
     """Makes sure the save pair through discord upload is valid."""
     valid_attachments_check1 = []
     for attachment in attachments:
-        filename = attachment.filename + f"_{'X' * RANDOMSTRING_LENGTH}"
-        filename_len = len(filename)
-        path_len = len(PS_UPLOADDIR + "/" + filename + "/")
+        filename = get_name_attachment(attachment)
+        filename_len = get_savedirname_filename_len(filename)
+        path_len = get_savedirname_path_len(filename)
 
         if filename_len > MAX_FILENAME_LEN:
-            emb = embfn.copy()
-            emb.description = emb.description.format(filename=attachment.filename, len=filename_len, max=MAX_FILENAME_LEN)
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(1)
+            raise FileError(f"The length of a file name exceeds {MAX_FILENAME_LEN}!")
 
         elif path_len > MAX_PATH_LEN:
-            emb = embpn.copy()
-            emb.description = emb.description.format(filename=attachment.filename, len=path_len, max=MAX_PATH_LEN)
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(1)
+            raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
 
-        elif attachment.filename.endswith(".bin"):
+        elif filename.endswith(".bin"):
             if attachment.size != SEALED_KEY_ENC_SIZE:
-                emb = embnvBin.copy()
-                emb.description = emb.description.format(filename=attachment.filename, size=SEALED_KEY_ENC_SIZE)
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+                raise FileError(f"Invalid .bin file uploaded!")
             else:
                 valid_attachments_check1.append(attachment)
         else:
-            if attachment.size > FILE_LIMIT_DISCORD:
-                emb = embFileLarge.copy()
-                emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
-                await ctx.edit(embed=emb)
-                await asyncio.sleep(1)
+            if attachment.size > DISCORD_SAVEGAME_MAX:
+                raise FileError(f"The size of a file exceeds {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
             else:
                 valid_attachments_check1.append(attachment)
 
     valid_attachments_final = []
     for attachment in valid_attachments_check1:
-        if attachment.filename.endswith(".bin"): # look for corresponding file
+        filename = get_name_attachment(attachment)
+        if filename.endswith(".bin"): # look for corresponding file
             for attachment_nested in valid_attachments_check1:
-                filename_nested = attachment_nested.filename
-                if filename_nested == attachment.filename: continue
+                filename_nested = get_name_attachment(attachment_nested)
+                if filename_nested == filename: continue
 
-                elif filename_nested == os.path.splitext(attachment.filename)[0]:
+                elif filename_nested == os.path.splitext(filename)[0]:
                     valid_attachments_final.append(attachment)
                     valid_attachments_final.append(attachment_nested)
                     break
 
     return valid_attachments_final
 
-async def check_saves(
-          ctx: discord.ApplicationContext | discord.Message,
-          attachments: list[discord.message.Attachment],
-          ps_save_pair_upload: bool,
-          sys_files: bool,
-          ignore_filename_check: bool,
-          savesize: int | None = None
-        ) -> list[discord.message.Attachment]:
+def check_saves(
+    attachments: list[discord.message.Attachment],
+    ps_save_pair_upload: bool,
+    sys_files: bool,
+    ignore_filename_check: bool,
+    ignore_dupe_check: bool,
+    savesize: int | None = None
+) -> tuple[list[discord.message.Attachment], int]:
     """Handles file checks universally through discord upload."""
 
-    # check for duplicate files, if found, then error
-    basenames = set()
-    for attachment in attachments:
-        basename = get_name_attachment(attachment)
-        if basename in basenames:
-            raise FileError("Duplicate file detected!")
-        basenames.add(basename)
+    if ps_save_pair_upload:
+        ignore_dupe_check = False
 
     valid_files = []
     total_size = 0
+
     if ps_save_pair_upload:
-        valid_files = await save_pair_check(ctx, attachments)
-        return valid_files
+        # assume the normal orbis filesystem is case sensitive
+        # this should be a case sensitive check
+        # that works on both case sensitive and case insensitive filesystems
+        # that is because of batch logic (new batch is made if dupe exists on filesystem)
+        if not ignore_dupe_check:
+            basenames = set()
+            for attachment in attachments:
+                basename = get_name_attachment(attachment)
+                if basename in basenames:
+                    raise FileError("Duplicate file detected (case-sensitive check)!")
+                basenames.add(basename)
+
+        valid_files = save_pair_check(attachments)
+        for attachment in valid_files:
+            total_size += attachment.size
+        return valid_files, total_size
+
+    # assume files inside save containers are case insensitive by default (which is the scope of this branch)
+    # this should be a case insensitive check
+    # that works on both case sensitive and case insensitive filesystems
+    if not ignore_dupe_check:
+        basenames = set()
+        for attachment in attachments:
+            basename = get_name_attachment(attachment)
+            if basename.lower() in basenames:
+                raise FileError("Duplicate file detected (case-insensitive check)!")
+            basenames.add(basename.lower())
 
     for attachment in attachments:
-        if len(attachment.filename) > MAX_FILENAME_LEN and not ignore_filename_check:
-            emb = embfn.copy()
-            emb.description = emb.description.format(filename=attachment.filename, len=len(attachment.filename), max=MAX_FILENAME_LEN)
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(1)
+        filename = get_name_attachment(attachment)
+        if len(filename) > MAX_FILENAME_LEN and not ignore_filename_check:
+            raise FileError(f"The length of a file name exceeds {MAX_FILENAME_LEN}!")
 
-        elif attachment.size > FILE_LIMIT_DISCORD:
-            emb = embFileLarge.copy()
-            emb.description = emb.description.format(filename=attachment.filename, max=bytes_to_mb(FILE_LIMIT_DISCORD))
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(1)
+        elif attachment.size > DISCORD_SAVEGAME_MAX:
+            raise FileError(f"The size of a file exceeds {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
 
-        elif sys_files and (attachment.filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
-            emb = embnvSys.copy()
-            emb.description = emb.description.format(filename=attachment.filename)
-            await ctx.edit(embed=emb)
-            await asyncio.sleep(1)
+        elif sys_files and (filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
+            raise FileError("Invalid sce_sys file uploaded!")
 
         elif savesize is not None and total_size + attachment.size > savesize:
-            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
+            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         else:
             total_size += attachment.size
             valid_files.append(attachment)
 
-    return valid_files
+    return valid_files, total_size
 
 async def upload2(
           d_ctx: DiscordContext,
@@ -409,10 +421,14 @@ async def upload2(
         uploaded_file_paths = []
         download_cycle = []
 
-        valid_attachments = await check_saves(d_ctx.msg, attachments, ps_save_pair_upload, sys_files, ignore_filename_check, savesize)
+        valid_attachments, total_size = check_saves(
+            attachments, ps_save_pair_upload, sys_files, ignore_filename_check, False, savesize
+        )
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded, or no files found!")
+        if total_size > DISCORD_TOTAL_SIZE_LIMIT:
+            raise FileError(f"Total size cannot exceed {bytes_to_mb(self.DISCORD_TOTAL_SIZE_LIMIT)} MB!")
 
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
@@ -442,24 +458,23 @@ async def upload2(
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
+            task = [lambda: gdapi.downloadsaves_recursive(
+                d_ctx.msg, folder_id, save_location,
+                max_files, SCE_SYS_CONTENTS if sys_files else None,
+                ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates
+            )]
+        else:
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            if opt.gd_choice == UploadGoogleDriveChoice.STANDARD:
-                task = [lambda: gdapi.downloadsaves_recursive(d_ctx.msg, folder_id, save_location, max_files, SCE_SYS_CONTENTS if sys_files else None, ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates)]
-            else:
-                task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
-            await d_ctx.msg.edit(embed=cancel_notify_emb)
-            await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0]
-
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
-
         opt.method = UploadMethod.GOOGLE_DRIVE
 
     return uploaded_file_paths
@@ -469,14 +484,15 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
 
     if len(message.attachments) == 1:
         attachment = message.attachments[0]
+        filename = get_name_attachment(attachment)
 
-        if len(attachment.filename) > MAX_FILENAME_LEN:
+        if len(filename) > MAX_FILENAME_LEN:
             await message.delete()
-            raise FileError(f"Filename: {attachment.filename} ({len(attachment.filename)}) is exceeding {MAX_FILENAME_LEN}!")
+            raise FileError(f"File name length is exceeding {MAX_FILENAME_LEN}!")
 
-        elif attachment.size > FILE_LIMIT_DISCORD:
+        elif attachment.size > DISCORD_SAVEGAME_MAX:
             await message.delete()
-            raise FileError(f"DISCORD UPLOAD ERROR: File size of '{attachment.filename}' exceeds the limit of {bytes_to_mb(FILE_LIMIT_DISCORD)} MB.")
+            raise FileError(f"File size is exceeding {bytes_to_mb(DISCORD_SAVEGAME_MAX)} MB!")
 
         else:
             task = [lambda: download_attachment(attachment, save_location)]
@@ -491,19 +507,15 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, 1)]
             files = await task_handler(d_ctx, task, [])
-            file_path = files[0][0][0]
-
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
+        file_path = files[0][0][0]
 
     return file_path
 
@@ -517,41 +529,52 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         attachments = message.attachments
         uploaded_file_paths = []
 
-        valid_attachments = await check_saves(d_ctx.msg, attachments, False, False, True, savesize)
+        valid_attachments, total_size = check_saves(attachments, False, False, True, True, savesize)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
+        if total_size > DISCORD_TOTAL_SIZE_LIMIT:
+            raise FileError(f"Total size cannot exceed {bytes_to_mb(self.DISCORD_TOTAL_SIZE_LIMIT)} MB!")
 
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
 
-        i = 1
+        out_fpaths = set()
         sl = os.path.realpath(save_location)
         for attachment in valid_attachments:
-            _, ext = os.path.splitext(attachment.filename)
-            basename = attachment.title + ext if attachment.title is not None else attachment.filename
-            basename = os.path.basename(basename)
-
+            basename = get_name_attachment(attachment)
             rel_file_path = basename.split(splitvalue)
             rel_file_path = "/".join(rel_file_path)
             rel_file_path = os.path.normpath(rel_file_path)
-            path_len = len(MOUNT_LOCATION + f"/{'X' * RANDOMSTRING_LENGTH}/" + rel_file_path + "/")
+            path_len = get_path_len(rel_file_path)
 
             file_name = os.path.basename(rel_file_path)
-            if not file_name:
+            if not file_name or file_name in (".", ".."):
                 raise FileError("Invalid file detected!")
             if len(file_name) > MAX_FILENAME_LEN:
-                raise FileError(f"File name ({file_name}) ({len(file_name)}) is exceeding {MAX_FILENAME_LEN}!")
+                raise FileError(f"The length of a file name is exceeding {MAX_FILENAME_LEN}!")
 
-            elif path_len > MAX_PATH_LEN:
-                raise FileError(f"Path: {rel_file_path} ({path_len}) is exceeding {MAX_PATH_LEN}!")
+            if path_len > MAX_PATH_LEN:
+                raise FileError(f"The length of a path is exceeding {MAX_PATH_LEN}!")
 
-            dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
-            dp = os.path.realpath(dir_path)
-            if os.path.commonpath([sl, dp]) != sl:
+            fp = os.path.join(save_location, rel_file_path)
+            fp = os.path.realpath(fp)
+            if os.path.commonpath([sl, fp]) != sl:
                 raise FileError("Invalid file detected!")
-            if await aiofiles.os.path.exists(os.path.join(dir_path, file_name)):
-                raise FileError("Duplicate file detected!")
+            # assume files inside save containers are case insensitive by default (which is the scope of this method)
+            # this should be a case insensitive check
+            # that works on both case sensitive and case insensitive filesystems
+            if rel_file_path.lower() in out_fpaths:
+                raise FileError("Duplicate file detected (case-insensitive check)!")
+            out_fpaths.add(rel_file_path.lower())
+        i = 1
+        for attachment in valid_attachments:
+            basename = get_name_attachment(attachment)
+            rel_file_path = basename.split(splitvalue)
+            rel_file_path = "/".join(rel_file_path)
+            rel_file_path = os.path.normpath(rel_file_path)
+            file_name = os.path.basename(rel_file_path)
+            dir_path = os.path.join(save_location, os.path.dirname(rel_file_path))
 
             await aiofiles.os.makedirs(dir_path, exist_ok=True)
             task = [lambda: download_attachment(attachment, dir_path, file_name)]
@@ -570,18 +593,15 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         raise TimeoutError("EXITED!")
 
     else:
+        google_drive_link = message.content
+        await message.delete()
+        folder_id = gdapi.get_folderid(google_drive_link)
+        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+        await d_ctx.msg.edit(embed=cancel_notify_emb)
+        await asyncio.sleep(1)
         try:
-            google_drive_link = message.content
-            await message.delete()
-            folder_id = gdapi.grabfolderid(google_drive_link)
-            if not folder_id:
-                raise GDapiError("Could not find the folder id!")
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
-            await d_ctx.msg.edit(embed=cancel_notify_emb)
-            await asyncio.sleep(1)
             uploaded_file_paths = (await task_handler(d_ctx, task, []))[0][0]
         except asyncio.TimeoutError:
-            await d_ctx.msg.edit(embed=embgdt)
             raise TimeoutError("TIMED OUT!")
 
     return uploaded_file_paths
@@ -700,7 +720,7 @@ async def replace_decrypted(
             completed.append(file)
             total_size += await aiofiles.os.path.getsize(new_path)
         if total_size > savesize:
-            raise OrbisError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
+            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
@@ -752,32 +772,36 @@ async def replace_decrypted(
                 file_constructed = "/".join(file_constructed)
 
                 if file_constructed not in files:
-                    await aiofiles.os.remove(path)
+                    raise FileError("A file uploaded has no match inside the savefile!")
 
-                else:
-                    for savefile in files:
-                        if file_constructed == savefile:
-                            last_N = os.path.basename(savefile)
-                            cwd_here = savefile.split("/")
-                            cwd_here = cwd_here[:-1]
-                            cwd_here = "/".join(cwd_here)
-                            cwd_here = mount_location + "/" + cwd_here
+            for path in uploaded_file_paths:
+                file = os.path.basename(path)
+                file_constructed = file.split(SPLITVALUE)
+                if file_constructed[0] == "":
+                    file_constructed = file_constructed[1:]
+                file_constructed = "/".join(file_constructed)
 
-                            new_path = os.path.join(local_download_path, last_N)
-                            # prevent collision
-                            if await aiofiles.os.path.exists(new_path):
-                                new_folder = os.path.join(local_download_path, generate_random_string(RANDOMSTRING_LENGTH))
-                                await aiofiles.os.mkdir(new_folder)
-                                new_path = os.path.join(new_folder, last_N)
-                            await aiofiles.os.rename(path, new_path)
+                last_N = os.path.basename(file_constructed)
+                cwd_here = file_constructed.split("/")
+                cwd_here = cwd_here[:-1]
+                cwd_here = "/".join(cwd_here)
+                cwd_here = mount_location + "/" + cwd_here
 
-                            if not ignore_secondlayer_checks:
-                                await extra_import(titleid, new_path, savepairname)
+                new_path = os.path.join(local_download_path, last_N)
+                # prevent collision
+                if await aiofiles.os.path.exists(new_path):
+                    new_folder = os.path.join(local_download_path, generate_random_string(RANDOMSTRING_LENGTH))
+                    await aiofiles.os.mkdir(new_folder)
+                    new_path = os.path.join(new_folder, last_N)
+                await aiofiles.os.rename(path, new_path)
 
-                            task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
-                            await task_handler(d_ctx, task, [])
-                            completed.append(last_N)
-                            await aiofiles.os.remove(new_path) # remove to decrease chance of collison
+                if not ignore_secondlayer_checks:
+                    await extra_import(titleid, new_path, savepairname)
+
+                task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
+                await task_handler(d_ctx, task, [])
+                completed.append(last_N)
+                await aiofiles.os.remove(new_path) # remove to decrease chance of collison
         else:
             if not ignore_secondlayer_checks:
                 await extra_import(titleid, local_download_path, savepairname)
@@ -786,15 +810,12 @@ async def replace_decrypted(
             idx = len(local_download_path) + (local_download_path[-1] != os.path.sep)
             completed.extend([x[idx:] for x in uploaded_file_paths])
 
-    if len(completed) == 0:
-        raise FileError("Could not replace any files!")
-
+    assert len(completed) != 0
     return completed
 
 async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared_gd_folderid: str = "", extra_msg: str = "") -> None:
     """Zips path and uploads file through discord or google drive depending on the size."""
-    await zip_pack(zip_dir, file_name)
-    final_file = os.path.join(zip_dir, file_name)
+    final_file = await zip_pack(zip_dir, file_name)
     final_size = await aiofiles.os.path.getsize(final_file)
 
     if final_size < BOT_DISCORD_UPLOAD_LIMIT and not shared_gd_folderid:
