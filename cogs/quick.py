@@ -22,7 +22,7 @@ from utils.constants import (
 from utils.embeds import (
     emb_upl_savegame, embTimedOut, working_emb, embExit,
     embresb, embresbs, embRdone, embLoading, embApplied,
-    embqcCompleted, embchLoading, embCRdone, embc, embzip1
+    embqcCompleted, embchLoading, embzip1, embc_bulk, embCRdone_bulk
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple, list_stored_saves
 from utils.helpers import (
@@ -271,13 +271,18 @@ class Quick(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
+        batches = len(archive_batches)
+        i = 1
         for batch in archive_batches:
             mount_paths = []
             uploaded_file_paths = []
             savenames = []
+
+            savecount = len(batch)
+            j = 1
             for archive, title_id, savename in batch:
+                savenames.append(savename)
                 try:
-                    savenames.append(savename)
                     # unzip archive
                     saveblocks = await zip_unpack(archive, newUPLOAD_DECRYPTED)
 
@@ -288,8 +293,12 @@ class Quick(commands.Cog):
                     await sfo_ctx_write(sfo, sfo_path)
 
                     # createsave
-                    emb = embc.copy()
-                    emb.description = emb.description.format(savename=savename)
+                    emb = embc_bulk.copy()
+                    emb.description = emb.description.format(
+                        savename=savename,
+                        j=j, savecount=savecount,
+                        i=i, batches=batches
+                    )
                     await msg.edit(embed=emb)
 
                     rand_str = os.path.basename(newUPLOAD_DECRYPTED)
@@ -330,6 +339,7 @@ class Quick(commands.Cog):
                     ]
                     await task_handler(d_ctx, tasks, [])
                     await fix_pfs_auth_code_info(savepath)
+                    j += 1
                 except (SocketError, FTPError, OSError, OrbisError, TaskCancelledError, FileError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -350,8 +360,11 @@ class Quick(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embCRdone.copy()
-            emb.description = emb.description.format(savename=completed_print(savenames), id=playstation_id or user_id)
+            emb = embCRdone_bulk.copy()
+            emb.description = emb.description.format(
+                printed=completed_print(savenames), id=playstation_id or user_id,
+                i=i, batches=batches
+            )
             try:
                 await msg.edit(embed=emb)
             except discord.HTTPException as e:
@@ -361,6 +374,10 @@ class Quick(commands.Cog):
 
             try:
                 await send_final(d_ctx, zipname, newDOWNLOAD_ENCRYPTED, shared_gd_folderid)
+
+                # clean output batch since we pass newDOWNLOAD_ENCRYPTED to send_final
+                shutil.rmtree(newDOWNLOAD_ENCRYPTED)
+                await aiofiles.os.mkdir(newDOWNLOAD_ENCRYPTED)
             except (GDapiError, discord.HTTPException, TaskCancelledError, FileError, TimeoutError) as e:
                 if isinstance(e, discord.HTTPException):
                     e = BASE_ERROR_MSG
@@ -374,12 +391,9 @@ class Quick(commands.Cog):
                 await INSTANCE_LOCK_global.release(ctx.author.id)
                 return
 
-            # clean output batch since we pass newDOWNLOAD_ENCRYPTED to send_final
-            shutil.rmtree(newUPLOAD_ENCRYPTED)
-            await aiofiles.os.mkdir(newUPLOAD_ENCRYPTED)
-
             await asyncio.sleep(1)
             await cleanup(C1ftp, None, uploaded_file_paths, mount_paths)
+            i += 1
         await cleanup_simple(workspace_folders)
         await INSTANCE_LOCK_global.release(ctx.author.id)
 

@@ -711,3 +711,21 @@ embzip1 = discord.Embed(
 )
 embzip1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
+embc_bulk = discord.Embed(
+    title="Processing",
+    description="Creating **{savename}**, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    colour=Color.DEFAULT.value
+)
+embc_bulk.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+
+embCRdone_bulk = discord.Embed(
+    title="Creation process: Successful",
+    description=(
+        "**{printed}** resigned to **{id}** (batch {i}/{batches}).\n"
+        "Uploading file...\n"
+        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+    ),
+    colour=Color.DEFAULT.value
+)
+embCRdone_bulk.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
+

@@ -19,7 +19,8 @@ from utils.embeds import (
     embErrconv, embErrdec, embchgtav, embchrdr2,
     embgddone, embuplSuccess, embe, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame,
-    emb_il, embdecTimeout, embdecFormat, embwlcom, embzip1
+    emb_il, embdecTimeout, embdecFormat, embwlcom, embzip1,
+    embc_bulk, embCRdone_bulk
 )
 
 _MAP_PLACEHOLDER = {
@@ -115,7 +116,9 @@ _MAP_PLACEHOLDER = {
     embdecTimeout: set(),
     embdecFormat: {("title", frozenset({"savename"}))},
     embwlcom: {("description", frozenset({"user"}))},
-    embzip1: set()
+    embzip1: set(),
+    embc_bulk: {("description", frozenset({"savename", "j", "savecount", "i", "batches"}))},
+    embCRdone_bulk: {("description", frozenset({"printed", "id", "i", "batches"}))}
 }
 
 for emb, v in _MAP_PLACEHOLDER.items():
