@@ -48,7 +48,7 @@ class Crypt_DL2:
                     await cc.write_checksum(crc, off + Crypt_DL2.CRC_FIELD_OFF)
                     cc.delete_ctx(crc)
 
-                search_off = off + 4
+                search_off = seg_end
 
     @staticmethod
     async def decrypt_file(filepath: str) -> None:
