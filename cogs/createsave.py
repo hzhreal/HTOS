@@ -22,7 +22,10 @@ from utils.embeds import (
     embSceSys, embgs, embc, embCRdone
 )
 from utils.workspace import make_workspace, init_workspace, cleanup
-from utils.helpers import DiscordContext, error_handling, upload2, send_final, psusername, upload2_special, task_handler
+from utils.helpers import (
+    DiscordContext, error_handling, upload2, send_final,
+    psusername, upload2_special, task_handler, embed_edit, embed_construct
+)
 from utils.orbis import (
     sfo_ctx_patch_parameters, obtainCUSA,
     validate_savedirname, validate_savedirname_path,
@@ -77,12 +80,20 @@ class CreateSave(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        emb1 = embSceSys.copy()
-        emb1.title = emb1.title.format(savename=savename)
-
-        emb2 = embgs.copy()
-        emb2.title = emb2.title.format(savename=savename)
-        emb2.description = emb2.description.format(splitvalue=self.DISC_UPL_SPLITVALUE)
+        emb1 = embed_construct(
+            embSceSys, title_kwargs=dict(
+                savename=savename
+            )
+        )
+        emb2 = embed_construct(
+            embgs,
+            title_kwargs=dict(
+                savename=savename
+            ),
+            description_kwargs=dict(
+                splitvalue=self.DISC_UPL_SPLITVALUE
+            )
+        )
 
         msg = ctx
 
@@ -140,9 +151,12 @@ class CreateSave(commands.Cog):
             if not ignore_secondlayer_checks:
                 await extra_import(title_id, newUPLOAD_DECRYPTED, savename)
 
-            emb = embc.copy()
-            emb.description = emb.description.format(savename=savename)
-            await msg.edit(embed=emb)
+            await embed_edit(
+                msg, embc,
+                description_kwargs=dict(
+                    savename=savename
+                ), ignore_exc=True
+            )
 
             temp_savename = savename + f"_{rand_str}"
             mount_location_new = MOUNT_LOCATION + "/" + rand_str
@@ -202,12 +216,12 @@ class CreateSave(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        emb = embCRdone.copy()
-        emb.description = emb.description.format(savename=savename, id=playstation_id or user_id)
-        try:
-            await msg.edit(embed=emb)
-        except discord.HTTPException as e:
-            logger.info(f"Error while editing msg: {e}", exc_info=True)
+        await embed_edit(
+            msg, embCRdone,
+            description_kwargs=dict(
+                savename=savename, id=playstation_id or user_id
+            )
+        )
 
         zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
 

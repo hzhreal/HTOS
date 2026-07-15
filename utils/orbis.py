@@ -1,3 +1,9 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from network.ftp_functions import FTPps
+    from network.socket_functions import SocketPS
+
 import re
 import aiofiles
 import aiofiles.os
@@ -9,8 +15,6 @@ from dataclasses import dataclass
 from Crypto.Cipher import AES
 
 from data.crypto.helpers import extra_reregion_pre, extra_reregion_pre_needs_folder, extra_reregion_post
-from network.ftp_functions import FTPps
-from network.socket_functions import SocketPS
 from utils.constants import (
     MOUNT_LOCATION, MANDATORY_SCE_SYS_CONTENTS, SAVEBLOCKS_MIN, SCE_SYS_NAME,
     MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, PS_UPLOADDIR

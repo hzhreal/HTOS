@@ -5,7 +5,7 @@ from io import BytesIO
 from network.socket_functions import C1socket
 from network.exceptions import SocketError
 from utils.workspace import make_workspace
-from utils.helpers import error_handling
+from utils.helpers import error_handling, embed_construct, embed_edit
 from utils.constants import logger, BASE_ERROR_MSG, SEALED_KEY_ENC_SIZE, COMMAND_COOLDOWN, MISC_TIMEOUT
 from utils.embeds import embLoad, embdec
 from utils.orbis import PfsSKKey
@@ -25,8 +25,11 @@ class Sealed_Key(commands.Cog):
         try: await make_workspace(ctx, workspace_folders, ctx.channel_id, skip_gd_check=True)
         except (WorkspaceError, discord.HTTPException): return
 
-        emb = embLoad.copy()
-        emb.description = emb.description.format(filename=sealed_key.filename)
+        emb = embed_construct(
+            embLoad, description_kwargs=dict(
+                filename=sealed_key.filename
+            )
+        )
         try:
             await ctx.respond(embed=emb)
         except discord.HTTPException as e:
@@ -53,9 +56,12 @@ class Sealed_Key(commands.Cog):
             async with asyncio.timeout(MISC_TIMEOUT):
                 await C1socket.socket_decryptsdkey(sealedkey_t)
 
-            emb = embdec.copy()
-            emb.description = emb.description.format(filename=sealed_key.filename)
-            await ctx.edit(embed=emb)
+            await embed_edit(
+                ctx, embdec,
+                description_kwargs=dict(
+                    filename=sealed_key.filename
+                ), ignore_exc=True
+            )
 
             await ctx.respond(file=discord.File(BytesIO(sealedkey_t.dec_key), filename=sealed_key.filename))
         except TimeoutError:

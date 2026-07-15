@@ -14,11 +14,14 @@ from utils.constants import (
     logger
 )
 from utils.embeds import (
-    embTimedOut, emb_conv_upl, emb_conv_choice, 
+    embTimedOut, emb_conv_upl, emb_conv_choice,
     embCDone1, embCDone2, embCDone3, embconvCompleted
 )
 from utils.workspace import init_workspace, make_workspace, cleanup_simple
-from utils.helpers import error_handling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice, upload2, send_final
+from utils.helpers import (
+    error_handling, TimeoutHelper, DiscordContext, UploadOpt, UploadGoogleDriveChoice,
+    upload2, send_final, embed_construct, embed_edit
+)
 from utils.extras import completed_print
 from utils.exceptions import FileError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -81,7 +84,7 @@ class Convert(commands.Cog):
 
         i = 1
         for entry in uploaded_file_paths:
-            count_entry = len(entry)
+            entry_count = len(entry)
             completed = []
             dname = os.path.dirname(entry[0])
             out_path = dname
@@ -90,9 +93,16 @@ class Convert(commands.Cog):
             j = 1
             for savegame in entry:
                 basename = os.path.basename(savegame)
-                emb = emb_conv_choice.copy()
-                emb.title = emb.title.format(basename=basename)
-                emb.description = emb.description.format(j=j, count_entry=count_entry, i=i, batches=batches)
+
+                emb = embed_construct(
+                    emb_conv_choice,
+                    title_kwargs=dict(
+                        basename=basename
+                    ),
+                    description_kwargs=dict(
+                        j=j, count_entry=entry_count, i=i, batches=batches
+                    )
+                )
                 try:
                     match game:
                         case "GTA V":
@@ -111,7 +121,6 @@ class Convert(commands.Cog):
 
                         case "XENO 2":
                             result = await Converter.Xeno2.convert_file(savegame)
-
                 except ConverterError as e:
                     await error_handling(ctx, e, workspace_folders, None, None, None)
                     logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
@@ -129,13 +138,13 @@ class Convert(commands.Cog):
                 elif result == "ERROR":
                     emb = embCDone2
                 else:
-                    emb = embCDone3.copy()
-                    emb.description = emb.description.format(result=result, basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                    emb = embed_construct(
+                        embCDone3, description_kwargs=dict(
+                            result=result, basename=basename, j=j, entry_count=entry_count, i=i, batches=batches
+                        )
+                    )
                     ret = False
-                try:
-                    await msg.edit(embed=emb)
-                except discord.HTTPException as e:
-                    logger.info(f"Error while editing msg: {e}", exc_info=True)
+                await embed_edit(msg, emb, ignore_exc=True)
 
                 await asyncio.sleep(1)
                 if ret:
@@ -147,12 +156,12 @@ class Convert(commands.Cog):
 
             finished_files = completed_print(completed)
 
-            emb = embconvCompleted.copy()
-            emb.description = emb.description.format(finished_files=finished_files, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embconvCompleted,
+                description_kwargs=dict(
+                    finished_files=finished_files, i=i, batches=batches
+                )
+            )
 
             zipname = "savegame_Converted" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 

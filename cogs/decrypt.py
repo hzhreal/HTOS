@@ -13,14 +13,18 @@ from google_drive.exceptions import GDapiError
 from data.crypto.exceptions import CryptoError
 from data.crypto.helpers import extra_decrypt
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME,
+    SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
     logger
 )
 from utils.embeds import (
     embDecrypt1, emb11, emb_dl, emb13, embDdone
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
-from utils.helpers import DiscordContext, upload2, error_handling, send_final, task_handler
+from utils.helpers import (
+    DiscordContext, upload2, error_handling, send_final, task_handler,
+    embed_construct, embed_edit
+)
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -101,13 +105,19 @@ class Decrypt(commands.Cog):
                     destination_directory = os.path.join(destination_directory_outer, f"dec_{savefile.basename}")
                     await aiofiles.os.mkdir(destination_directory)
 
-                    emb = emb11.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        emb11, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     task = [savefile.dump]
                     await task_handler(d_ctx, task, [emb])
 
-                    emb = emb_dl.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        emb_dl, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     tasks = [
                         lambda: C1ftp.download_folder(batch.mount_location, destination_directory, not include_sce_sys),
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
@@ -119,9 +129,12 @@ class Decrypt(commands.Cog):
                     choice = secondlayer_choice if secondlayer_choice != "" else None
                     await extra_decrypt(d_ctx, savefile.title_id, destination_directory, savefile.basename, choice)
 
-                    emb = emb13.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
-                    await msg.edit(embed=emb)
+                    await embed_edit(
+                        msg, emb13,
+                        description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        ), ignore_exc=True
+                    )
                     j += 1
                 except (SocketError, FTPError, OrbisError, CryptoError, OSError, TaskCancelledError) as e:
                     status = "expected"
@@ -143,12 +156,12 @@ class Decrypt(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embDdone.copy()
-            emb.description = emb.description.format(printed=batch.printed, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embDdone,
+                description_kwargs=dict(
+                    printed=batch.printed, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             if batches == 1 and len(batch.savenames) == 1:
                 zipname = os.path.basename(destination_directory) + f"_{batch.rand_str}" + ZIPOUT_NAME[1]

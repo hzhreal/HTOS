@@ -21,7 +21,10 @@ from utils.embeds import (
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.extras import completed_print
-from utils.helpers import psusername, upload2, error_handling, send_final, UploadOpt, UploadGoogleDriveChoice, task_handler
+from utils.helpers import (
+    embed_edit, psusername, upload2, error_handling, send_final, UploadOpt, UploadGoogleDriveChoice, task_handler,
+    embed_construct, embed_edit
+)
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.helpers import DiscordContext, replace_decrypted
@@ -106,8 +109,11 @@ class Encrypt(commands.Cog):
                     pfs_size = await aiofiles.os.path.getsize(savepath) # check has already been done
                     await savefile.construct()
 
-                    emb = embmo.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        embmo, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     tasks = [
                         savefile.dump,
                         lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
@@ -127,9 +133,12 @@ class Encrypt(commands.Cog):
                     await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
 
                     if include_sce_sys:
-                        emb = embSceSys.copy()
-                        emb.title = emb.title.format(savename=savefile.basename)
-                        await msg.edit(embed=emb)
+                        await embed_edit(
+                            msg, embSceSys,
+                            title_kwargs=dict(
+                                savename=savefile.basename
+                            )
+                        )
 
                         uploaded_file_paths_sys = (await upload2(
                             d_ctx,
@@ -152,9 +161,12 @@ class Encrypt(commands.Cog):
 
                     dec_print = completed_print(completed)
 
-                    emb = embmidComplete.copy()
-                    emb.description = emb.description.format(dec_print=dec_print, savename=savefile.basename, id=playstation_id or user_id, j=j, savecount=batch.savecount, i=i, batches=batches)
-                    await msg.edit(embed=emb)
+                    await embed_edit(
+                        msg, embmidComplete,
+                        description_kwargs=dict(
+                            dec_print=dec_print, savename=savefile.basename, id=playstation_id or user_id, j=j, savecount=batch.savecount, i=i, batches=batches
+                        ), ignore_exc=True
+                    )
                     j += 1
                 except HTTPError as e:
                     err = gdapi.get_err_str_HTTPERROR(e)
@@ -184,12 +196,12 @@ class Encrypt(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embencComplete.copy()
-            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embencComplete,
+                description_kwargs=dict(
+                    printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 

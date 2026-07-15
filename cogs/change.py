@@ -21,7 +21,10 @@ from utils.embeds import (
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.extras import pngprocess
-from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler, download_attachment
+from utils.helpers import (
+    DiscordContext, psusername, upload2, error_handling,
+    send_final, task_handler, download_attachment, embed_edit, embed_construct
+)
 from utils.orbis import sfo_ctx_patch_parameters, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -112,24 +115,32 @@ class Change(commands.Cog):
                 try:
                     await savefile.construct()
 
-                    emb = embpng1.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        embpng1, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     task = [savefile.dump]
                     await task_handler(d_ctx, task, [emb])
 
-                    emb = embpng2.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        embpng2, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     tasks = [
                         lambda: C1ftp.swap_png(batch.location_to_scesys),
                         savefile.resign
                     ]
                     await task_handler(d_ctx, tasks, [emb])
 
-                    emb = embpngs.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
-                    await msg.edit(embed=emb)
+                    await embed_edit(
+                        msg, embpngs,
+                        description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        ), ignore_exc=True
+                    )
                     j += 1
-
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -150,12 +161,12 @@ class Change(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embPdone.copy()
-            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embPDone,
+                description_kwargs=dict(
+                    printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 
@@ -254,11 +265,14 @@ class Change(commands.Cog):
                 try:
                     await savefile.construct()
 
-                    emb = embTitleChange1.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        embTitleChange1, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     tasks = [
                         savefile.dump,
-                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])    
+                        lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO])
                     ]
                     await task_handler(d_ctx, tasks, [emb])
 
@@ -267,11 +281,13 @@ class Change(commands.Cog):
                     task = [savefile.resign]
                     await task_handler(d_ctx, task, [])
 
-                    emb = embTitleSuccess.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
-                    await msg.edit(embed=emb)
+                    await embed_edit(
+                        msg, embTitleSuccess,
+                        description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        ), ignore_exc=True
+                    )
                     j += 1
-
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
                     if isinstance(e, OSError) and e.errno in CON_FAIL:
@@ -292,12 +308,12 @@ class Change(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embTdone.copy()
-            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embTDone,
+                description_kwargs=dict(
+                    printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 

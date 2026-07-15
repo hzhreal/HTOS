@@ -2,7 +2,7 @@ import os
 import random
 import string
 from PIL import Image, UnidentifiedImageError
-from utils.constants import EMBED_DESC_LIM
+from utils.constants import EMBED_DESC_LIMIT
 from utils.exceptions import FileError
 
 def generate_random_string(length: int) -> str:
@@ -32,7 +32,7 @@ async def obtain_savenames(saves: list[str]) -> list[str]:
         savenames.append(base)
     return savenames
 
-def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIM // 4) -> str:
+def completed_print(savenames: list[str], pos: int = EMBED_DESC_LIMIT // 4) -> str:
     assert pos > 0
 
     savenames = [os.path.basename(x) for x in savenames]

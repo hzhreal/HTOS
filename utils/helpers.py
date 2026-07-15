@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from network.ftp_functions import FTPps
+
 import discord
 import asyncio
 import os
@@ -15,7 +20,6 @@ from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthent
 
 from google_drive.gd_functions import gdapi
 from data.crypto.helpers import extra_import
-from network.ftp_functions import FTPps
 from utils.orbis import (
     parse_pfs_header, parse_sealedkey, checkid, handle_accid,
     get_savedirname_path_len, get_savedirname_filename_len, get_path_len
@@ -23,8 +27,8 @@ from utils.orbis import (
 from utils.constants import (
     logger, blacklist_logger, bot, psnawp,
     NPSSO_global, UPLOAD_TIMEOUT, DISCORD_SAVEGAME_MAX, SCE_SYS_CONTENTS, OTHER_TIMEOUT, MAX_FILES, BLACKLIST_MESSAGE, GENERAL_TIMEOUT, GENERAL_CHUNKSIZE,
-    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIM, EMBED_FIELD_LIM,
-    SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, DISCORD_TOTAL_SIZE_LIMIT
+    BOT_DISCORD_UPLOAD_LIMIT, MAX_PATH_LEN, MAX_FILENAME_LEN, PSN_USERNAME_RE, RANDOMSTRING_LENGTH, CON_FAIL_MSG, EMBED_DESC_LIMIT, EMBED_FIELD_LIMIT,
+    EMBED_TITLE_LIMIT, SYS_FILE_MAX, SEALED_KEY_ENC_SIZE, DISCORD_TOTAL_SIZE_LIMIT
 )
 from utils.embeds import (
     embUtimeout, embnt, emb8, embvalidpsn, cancel_notify_emb,
@@ -245,10 +249,7 @@ async def task_handler(d_ctx: DiscordContext, ordered_tasks: list[Callable[[], A
             cancel_task = asyncio.create_task(wait_for_msg(d_ctx.ctx, exit_check, None, timeout=GENERAL_TIMEOUT))
 
         if embed is not None:
-            try:
-                await d_ctx.msg.edit(embed=embed)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(d_ctx.msg, embed, ignore_exc=True)
 
         done, _ = await asyncio.wait(
             {main_task, cancel_task},
@@ -742,7 +743,7 @@ async def replace_decrypted(
         msg_container: list[discord.Message] = []
         current_chunk = ""
         for line in files:
-            if len(current_chunk) + len(line) + 1 > EMBED_DESC_LIM:
+            if len(current_chunk) + len(line) + 1 > EMBED_DESC_LIMIT:
                 await send_chunk(msg_container, current_chunk)
                 current_chunk = ""
 
@@ -855,7 +856,7 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
 
     for game, _ in stored_saves.items():
         game_info = f"\n{entries_added + 1}. {game}"
-        if len(game_desc + game_info) <= EMBED_DESC_LIM:
+        if len(game_desc + game_info) <= EMBED_DESC_LIMIT:
             game_desc += game_info
         else:
             emb.description = emb.description = game_desc
@@ -904,15 +905,15 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         emb = embgame.copy()
         emb.title = game
 
-        for titleId, titleId_dict in game_dict.items():
-            for savedesc, path in titleId_dict.items():
-                if fields_added == EMBED_FIELD_LIM:
+        for titleid, titleid_dict in game_dict.items():
+            for savedesc, path in titleid_dict.items():
+                if fields_added == EMBED_FIELD_LIMIT:
                     pages_list.append(emb)
                     emb = emb.copy()
                     emb.clear_fields()
                     fields_added = 0
 
-                emb.add_field(name=titleId, value=f"{entries_added + 1}. {savedesc}")
+                emb.add_field(name=titleid, value=f"{entries_added + 1}. {savedesc}")
                 selection[entries_added] = path
                 entries_added += 1
                 fields_added += 1
@@ -945,4 +946,50 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
             if len(savenames) == 0:
                 raise WorkspaceError("Failed to get saves!")
             return ReturnTypes.SUCCESS, [os.path.join(selected_save, x) for x in savenames]
+
+def embed_construct(
+    embed: discord.Embed,
+    title_kwargs: dict[str, str] | None = None,
+    description_kwargs: dict[str, str] | None = None,
+) -> discord.Embed:
+    e = embed.copy()
+    MARKER = "\u2026"
+
+    if title_kwargs is not None:
+        s = e.title.format(**title_kwargs)
+        if len(s) > EMBED_TITLE_LIMIT:
+            # assume this is caused by the longest kwarg
+            # just truncate it and add marker at the end
+            k, v = max(title_kwargs.items(), key=lambda x: len(x[1]))
+            n = len(s) + len(MARKER) - EMBED_TITLE_LIMIT
+            v = v[:len(v) - n] + MARKER
+            title_kwargs[k] = v
+            s = e.title.format(**title_kwargs)
+        e.title = s
+    # same as above
+    if description_kwargs is not None:
+        s = e.description.format(**description_kwargs)
+        if len(s) > EMBED_DESC_LIMIT:
+            k, v = max(description_kwargs.items(), key=lambda x: len(x[1]))
+            n = len(s) + len(MARKER) - EMBED_DESC_LIMIT
+            v = v[:len(v) - n] + MARKER
+            description_kwargs[k] = v
+            s = e.description.format(**description_kwargs)
+        e.description = s
+
+    return e
+
+async def embed_edit(
+          ctx: discord.ApplicationContext | discord.Message,
+          embed: discord.Embed,
+          title_kwargs: dict[str, str] | None = None,
+          description_kwargs: dict[str, str] | None = None,
+          ignore_exc: bool = False
+        ) -> None:
+    e = embed_construct(embed, title_kwargs, description_kwargs)
+    try:
+        await ctx.edit(embed=e)
+    except (discord.HTTPException, discord.NotFound):
+        if not ignore_exc:
+            raise
 

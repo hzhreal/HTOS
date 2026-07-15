@@ -11,15 +11,18 @@ from network.exceptions import SocketError, FTPError
 from google_drive.gd_functions import gdapi
 from google_drive.exceptions import GDapiError
 from utils.constants import (
-    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    SPECIAL_REREGION_TITLEIDS,
+    IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BASE_ERROR_MSG, ZIPOUT_NAME, PS_ID_DESC,
+    SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN, SPECIAL_REREGION_TITLEIDS,
     logger
 )
 from utils.embeds import (
     emb21, emb20, embkstone1, embkstone2, embrrp, embrrps, embrrdone
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
-from utils.helpers import DiscordContext, psusername, upload2, error_handling, send_final, task_handler
+from utils.helpers import (
+    DiscordContext, psusername, upload2, error_handling, send_final, task_handler,
+    embed_construct, embed_edit
+)
 from utils.orbis import SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, OrbisError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -80,8 +83,11 @@ class ReRegion(commands.Cog):
             savefile.path = uploaded_file_paths[0].removesuffix(".bin")
             await savefile.construct()
 
-            emb = embkstone1.copy()
-            emb.description = emb.description.format(savename=savefile.basename)
+            emb = embed_construct(
+                embkstone1, description_kwargs=dict(
+                    savename=savefile.basename
+                )
+            )
             tasks = [
                 savefile.dump,
                 lambda: savefile.download_sys_elements([savefile.ElementChoice.SFO, savefile.ElementChoice.KEYSTONE])
@@ -90,9 +96,12 @@ class ReRegion(commands.Cog):
 
             target_titleid = savefile.title_id
 
-            emb = embkstone2.copy()
-            emb.description = emb.description.format(target_titleid=target_titleid)
-            await msg.edit(embed=emb)
+            await embed_edit(
+                msg, embkstone2,
+                description_kwargs=dict(
+                    target_titleid=target_titleid
+                ), ignore_exc=True
+            )
 
             shutil.rmtree(newUPLOAD_ENCRYPTED)
             await aiofiles.os.mkdir(newUPLOAD_ENCRYPTED)
@@ -118,8 +127,8 @@ class ReRegion(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
+        await embed_edit(msg, emb20, ignore_exc=True)
         try:
-            await msg.edit(embed=emb20)
             uploaded_file_paths = await upload2(d_ctx, newUPLOAD_ENCRYPTED, max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False)
         except HTTPError as e:
             err = gdapi.get_err_str_HTTPERROR(e)
@@ -162,17 +171,24 @@ class ReRegion(commands.Cog):
                     savefile.title_id = target_titleid
                     savefile.downloaded_sys_elements.add(savefile.ElementChoice.KEYSTONE)
 
-                    emb = embrrp.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches)
+                    emb = embed_construct(
+                        embrrp, description_kwargs=dict(
+                            savename=savefile.basename, j=j, savecount=batch.savecount, i=i, batches=batches
+                        )
+                    )
                     tasks = [
                         savefile.dump,
                         savefile.resign
                     ]
                     await task_handler(d_ctx, tasks, [emb])
 
-                    emb = embrrps.copy()
-                    emb.description = emb.description.format(savename=savefile.basename, id=playstation_id or user_id, target_titleid=target_titleid, j=j, savecount=batch.savecount, i=i, batches=batches)
-                    await msg.edit(embed=emb)
+                    await embed_edit(
+                        msg, embrrps,
+                        description_kwargs=dict(
+                            savename=savefile.basename, id=playstation_id or user_id, target_titleid=target_titleid,
+                            j=j, savecount=batch.savecount, i=i, batches=batches
+                        ), ignore_exc=True
+                    )
                     j += 1
                 except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
                     status = "expected"
@@ -194,12 +210,12 @@ class ReRegion(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embrrdone.copy()
-            emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id, target_titleid=target_titleid, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embrrdone,
+                description_kwargs=dict(
+                    printed=batch.printed, id=playstation_id or user_id, target_titleid=target_titleid, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 

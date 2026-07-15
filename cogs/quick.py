@@ -28,7 +28,7 @@ from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_sim
 from utils.helpers import (
     DiscordContext, psusername, upload2, error_handling, TimeoutHelper, send_final,
     run_qr_paginator, UploadGoogleDriveChoice, UploadOpt, ReturnTypes, task_handler,
-    download_attachment
+    download_attachment, embed_construct, embed_edit
 )
 from utils.orbis import (
     SaveBatch, SaveFile,
@@ -89,10 +89,7 @@ class Quick(commands.Cog):
             return
 
         if res == ReturnTypes.EXIT:
-            try:
-                await msg.edit(embed=embExit, view=None)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(msg, embExit, ignore_exc=True)
             await cleanup_simple(workspace_folders)
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
@@ -116,17 +113,23 @@ class Quick(commands.Cog):
                 savefile.path = savepath
                 await savefile.construct()
 
-                emb = embresb.copy()
-                emb.description = emb.description.format(savename=savefile.basename, i=i, savecount=batch.savecount)
+                emb = embed_construct(
+                    embresb, description_kwargs=dict(
+                        savename=savefile.basename, i=i, savecount=batch.savecount
+                    )
+                )
                 tasks = [
                     savefile.dump,
                     savefile.resign
                 ]
                 await task_handler(d_ctx, tasks, [emb])
 
-                emb = embresbs.copy()
-                emb.description = emb.description.format(savename=savefile.basename, id=playstation_id or user_id, i=i, savecount=batch.savecount)
-                await msg.edit(embed=emb)
+                await embed_edit(
+                    msg, embresbs,
+                    description_kwargs=dict(
+                        savename=savefile.basename, id=playstation_id or user_id, i=i, savecount=batch.savecount
+                    ), ignore_exc=True
+                )
                 i += 1
         except (SocketError, FTPError, OrbisError, OSError, TaskCancelledError) as e:
             status = "expected"
@@ -151,12 +154,12 @@ class Quick(commands.Cog):
             await INSTANCE_LOCK_global.release(ctx.author.id)
             return
 
-        emb = embRdone.copy()
-        emb.description = emb.description.format(printed=batch.printed, id=playstation_id or user_id)
-        try:
-            await msg.edit(embed=emb)
-        except discord.HTTPException as e:
-            logger.info(f"Error while editing msg: {e}", exc_info=True)
+        await embed_edit(
+            msg, embRdone,
+            description_kwargs=dict(
+                printed=batch.printed, id=playstation_id or user_id
+            ), ignore_exc=True
+        )
 
         zipname = ZIPOUT_NAME[0] + f"_{batch.rand_str}_1" + ZIPOUT_NAME[1]
 
@@ -293,13 +296,12 @@ class Quick(commands.Cog):
                     await sfo_ctx_write(sfo, sfo_path)
 
                     # createsave
-                    emb = embc_bulk.copy()
-                    emb.description = emb.description.format(
-                        savename=savename,
-                        j=j, savecount=savecount,
-                        i=i, batches=batches
+                    await embed_edit(
+                        msg, embc_bulk,
+                        description_kwargs=dict(
+                            savename=savename, j=j, savecount=savecount, i=i, batches=batches
+                        ), ignore_exc=True
                     )
-                    await msg.edit(embed=emb)
 
                     rand_str = os.path.basename(newUPLOAD_DECRYPTED)
                     temp_savename = savename + f"_{rand_str}"
@@ -360,15 +362,12 @@ class Quick(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
-            emb = embCRdone_bulk.copy()
-            emb.description = emb.description.format(
-                printed=completed_print(savenames), id=playstation_id or user_id,
-                i=i, batches=batches
+            await embed_edit(
+                msg, embCRdone_bulk,
+                description_kwargs=dict(
+                    printed=completed_print(savenames), id=playstation_id or user_id, i=i, batches=batches
+                ), ignore_exc=True
             )
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
 
             zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
 
@@ -452,16 +451,16 @@ class Quick(commands.Cog):
             for savegame in entry:
                 basename = os.path.basename(savegame)
 
-                emb1 = embLoading.copy()
-                emb1.description = emb1.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
-                emb2 = embApplied.copy()
-                emb2.description = emb2.description.format(basename=basename, j=j, count_entry=count_entry, i=i, batches=batches)
+                await embed_edit(
+                    msg, embLoading,
+                    description_kwargs=dict(
+                        basename=basename, j=j, count_entry=count_entry, i=i, batches=batches
+                    ), ignore_exc=True
+                )
 
                 try:
-                    await msg.edit(embed=emb1)
                     async with QuickCodes(savegame, codes) as qc:
                         await qc.apply_code()
-                    await msg.edit(embed=emb2)
                 except QuickCodesError as e:
                     e = f"**{str(e)}**" + "\nThe code has to work on all the savefiles you uploaded!"
                     await error_handling(msg, e, workspace_folders, None, None, None)
@@ -474,17 +473,24 @@ class Quick(commands.Cog):
                     await INSTANCE_LOCK_global.release(ctx.author.id)
                     return
 
+                await embed_edit(
+                    msg, embApplied,
+                    description_kwargs=dict(
+                        basename=basename, j=j, count_entry=count_entry, i=i, batches=batches
+                    ), ignore_exc=True
+                )
+
                 completed.append(basename)
                 j += 1
 
             finished_files = completed_print(completed)
 
-            emb = embqcCompleted.copy()
-            emb.description = emb.description.format(finished_files=finished_files, i=i, batches=batches)
-            try:
-                await msg.edit(embed=emb)
-            except discord.HTTPException as e:
-                logger.info(f"Error while editing msg: {e}", exc_info=True)
+            await embed_edit(
+                msg, embqcCompleted,
+                description_kwargs=dict(
+                    finished_files=finished_files, i=i, batches=batches
+                ), ignore_exc=True
+            )
 
             zipname = "savegame_CodeApplied" + f"_{rand_str}" + f"_{i}" + ZIPOUT_NAME[1]
 

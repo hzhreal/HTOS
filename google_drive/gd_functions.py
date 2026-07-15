@@ -636,7 +636,7 @@ class GDapi:
         emb = gd_upl_progress_emb.copy()
         async with aiohttp.ClientSession(timeout=self.UPLOAD_CHUNK_TIMEOUT) as session:
             while start_pos < filesize:
-                emb.description = emb.description = f"{round_half_up((start_pos / filesize) * 100)}%"
+                emb.description = f"{round_half_up((start_pos / filesize) * 100)}%"
                 await ctx.edit(embed=emb)
 
                 await file.seek(start_pos)
@@ -678,7 +678,7 @@ class GDapi:
                             except aiohttp.ContentTypeError:
                                 raise GDapiError("Unexpected error!")
                             file_id = body["id"]
-                            emb.description = emb.description = "100%"
+                            emb.description = "100%"
                             await ctx.edit(embed=emb)
                             logger.info(f"Uploaded {file_path} to google drive")
                             break
@@ -727,6 +727,7 @@ class GDapi:
             ) -> list[list[str]]:
         """Setting `ps_save_pair_upload` to `True` will also set `allow_duplicates` to `True`."""
         self.is_available_check()
+        from utils.helpers import embed_edit
 
         if ps_save_pair_upload:
             allow_duplicates = True
@@ -787,9 +788,12 @@ class GDapi:
                 elif ps_save_pair_upload and file_name.endswith(".bin"):
                     await parse_sealedkey(download_path)
 
-                emb = embgddone.copy()
-                emb.description = emb.description.format(filename=file_name, i=i, filecount=filecount)
-                await ctx.edit(embed=emb)
+                await embed_edit(
+                    ctx, embgddone,
+                    description_kwargs=dict(
+                        filename=file_name, i=i, filecount=filecount
+                    )
+                )
 
                 download_cycle.append(download_path)
                 i += 1
@@ -806,6 +810,7 @@ class GDapi:
             ) -> list[list[str]]:
         """For encrypt & createsave command."""
         self.is_available_check()
+        from utils.helpers import embed_edit
 
         files, total_filesize = await self.list_dir(folder_id, None, False, True, mounted_len_checks=True)
         filecount = len(files)
@@ -856,9 +861,12 @@ class GDapi:
                 uploaded_file_paths.append(download_path)
                 logger.info(f"Saved {file_path} to {download_path}")
 
-                emb = embgddone.copy()
-                emb.description = emb.description.format(filename=file_path, i=i, filecount=filecount)
-                await ctx.edit(embed=emb)
+                await embed_edit(
+                    ctx, embgddone,
+                    description_kwargs=dict(
+                        filename=file_path, i=i, filecount=filecount
+                    )
+                )
                 i += 1
 
         return [uploaded_file_paths]

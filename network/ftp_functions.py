@@ -15,7 +15,7 @@ FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
 
 class FTPps:
     """Async functions to interact with the FTP server."""
-    def __init__(self, ip: str, port: int, savepair_remote_path: str, download_decrypted_path: str, 
+    def __init__(self, ip: str, port: int, savepair_remote_path: str, download_decrypted_path: str,
                  upload_decrypted_path: str, upload_encrypted_path: str,
                  download_encrypted_path: str, sfo_path: str, keystone_path: str, png_path: str) -> None:
 
@@ -296,6 +296,7 @@ class FTPps:
             raise FTPError("FTP ERROR!")
 
     async def upload_scesys_contents(self, ctx: discord.ApplicationContext | discord.Message, filepaths: list[str], sce_sys_path: str) -> None:
+        from utils.helpers import embed_edit
         n = len(filepaths)
         i = 1
         try:
@@ -303,11 +304,13 @@ class FTPps:
                 await ftp.change_directory(sce_sys_path)
                 for filepath in filepaths:
                     filename = os.path.basename(filepath)
-                    emb = embuplSuccess.copy()
-                    emb.description = emb.description.format(filename=filename, i=i, filecount=n)
-
                     await self.upload_stream(ftp, filepath, filename)
-                    await ctx.edit(embed=emb)
+                    await embed_edit(
+                        ctx, embuplSuccess,
+                        description_kwargs=dict(
+                            filename=filename, i=i, filecount=n
+                        )
+                    )
                     i += 1
 
         except AIOFTPException as e:
