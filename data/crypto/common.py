@@ -17,7 +17,7 @@ from data.crypto.algorithms.rijndael.rijndael import Rijndael
 from data.crypto.exceptions import CryptoError
 
 from aiofiles.threadpool.binary import AsyncBufferedReader
-from Crypto.Cipher import AES, Blowfish
+from Crypto.Cipher import AES, Blowfish, DES3
 from typing import Literal, Any, Self
 
 from utils.constants import SCE_SYS_NAME, RANDOMSTRING_LENGTH, SAVESIZE_MAX
@@ -40,6 +40,7 @@ class CustomCrypto:
     SAVESIZE_MAX = mb_to_bytes(25) # some implementations are in pure python, can be too slow
     AES = AES
     Blowfish = Blowfish
+    DES3 = DES3
     zlib = zlib
     crc32c = crc32c
     mmh3 = mmh3
@@ -579,6 +580,18 @@ class CustomCrypto:
             bl = 0
         else:
             bl = Blowfish.block_size
+        blocksize = uint8(bl, const=True)
+        return self._create_ctx(cipher, blocksize)
+
+    def create_ctx_des3(self, key: bytes | bytearray, mode: int, **kwargs) -> int:
+        cipher = DES3.new(key, mode, **kwargs)
+        streaming_modes = (
+            DES3.MODE_CFB, DES3.MODE_OFB, DES3.MODE_CTR, DES3.MODE_OPENPGP, DES3.MODE_EAX
+        ) # some of these are not properly interfaced
+        if mode in streaming_modes:
+            bl = 0
+        else:
+            bl = DES3.block_size
         blocksize = uint8(bl, const=True)
         return self._create_ctx(cipher, blocksize)
 
