@@ -24,6 +24,8 @@ Certain games need to have an extra implementation for it to work out of the box
 | Alien: Isolation                                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Balatro                                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Borderlands 3                                       | :white_check_mark:      | :white_check_mark:                  | :black_circle:           | :white_circle:                     |
+| Call of Duty: Black Ops                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Call of Duty: Black Ops II                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Castle Crashers Remastered                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
