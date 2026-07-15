@@ -162,7 +162,7 @@ class Change(commands.Cog):
                     return
 
             await embed_edit(
-                msg, embPDone,
+                msg, embPdone,
                 description_kwargs=dict(
                     printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches
                 ), ignore_exc=True
@@ -309,7 +309,7 @@ class Change(commands.Cog):
                     return
 
             await embed_edit(
-                msg, embTDone,
+                msg, embTdone,
                 description_kwargs=dict(
                     printed=batch.printed, id=playstation_id or user_id, i=i, batches=batches
                 ), ignore_exc=True

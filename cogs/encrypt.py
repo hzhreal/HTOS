@@ -22,7 +22,7 @@ from utils.embeds import (
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
 from utils.extras import completed_print
 from utils.helpers import (
-    embed_edit, psusername, upload2, error_handling, send_final, UploadOpt, UploadGoogleDriveChoice, task_handler,
+    psusername, upload2, error_handling, send_final, UploadOpt, UploadGoogleDriveChoice, task_handler,
     embed_construct, embed_edit
 )
 from utils.orbis import SaveBatch, SaveFile
