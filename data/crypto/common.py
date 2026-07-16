@@ -245,11 +245,11 @@ class CustomCrypto:
             chunk = await self.r_stream.read(r_len)
             if not chunk:
                 break
-            chunk = buf + chunk
+            chunk = chunk + buf
             chunk_len = len(chunk)
 
             if (pos := chunk.rfind(d)) != -1:
-                target_off = r_start - len(buf) + pos
+                target_off = r_start + pos
                 break
             if d_len <= chunk_len:
                 buf = chunk[:d_len - 1]
