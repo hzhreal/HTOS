@@ -11,12 +11,13 @@ from network.ftp_functions import FTPps
 from network.exceptions import SocketError, FTPError
 from google_drive.gd_functions import gdapi
 from google_drive.exceptions import GDapiError
+from data.crypto.helpers import extra_import
 from data.cheats.quickcodes import QuickCodes
 from data.cheats.exceptions import QuickCheatsError, QuickCodesError
 from utils.constants import (
     IP, PORT_FTP, PS_UPLOADDIR, MAX_FILES, BOT_DISCORD_UPLOAD_LIMIT, BASE_ERROR_MSG,
     ZIPOUT_NAME, PS_ID_DESC, SHARED_GD_LINK_DESC, CON_FAIL, CON_FAIL_MSG, COMMAND_COOLDOWN,
-    SCE_SYS_NAME, PARAM_NAME, MOUNT_LOCATION,
+    SCE_SYS_NAME, PARAM_NAME, MOUNT_LOCATION, IGNORE_SECONDLAYER_DESC,
     logger
 )
 from utils.embeds import (
@@ -187,7 +188,8 @@ class Quick(commands.Cog):
               self,
               ctx: discord.ApplicationContext,
               playstation_id: Option(str, description=PS_ID_DESC, default=""),
-              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
+              shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default=""),
+              ignore_secondlayer_checks: Option(bool, description=IGNORE_SECONDLAYER_DESC, default=False)
             ) -> None:
 
         newUPLOAD_ENCRYPTED, newUPLOAD_DECRYPTED, newDOWNLOAD_ENCRYPTED, newPNG_PATH, newPARAM_PATH, newDOWNLOAD_DECRYPTED, newKEYSTONE_PATH = init_workspace()
@@ -288,6 +290,10 @@ class Quick(commands.Cog):
                 try:
                     # unzip archive
                     saveblocks = await zip_unpack(archive, newUPLOAD_DECRYPTED)
+
+                    # perform second layer checks
+                    if not ignore_secondlayer_checks:
+                        await extra_import(title_id, newDOWNLOAD_DECRYPTED, savename)
 
                     # process sfo (there are no duplicate entries in archive, no need to grab savename and title_id again)
                     sfo_path = os.path.join(newUPLOAD_DECRYPTED, SCE_SYS_NAME, PARAM_NAME)

@@ -136,7 +136,10 @@ You will be prompted on which numbers to type in the chat to choose a save.
 `/quick createsave`: Creates one save for each supplied folder uploaded as a ZIP file.
 Each folder need to be sufficient to produce a valid savefile.
 That is, they each need to contain the mandatory `sce_sys` files.  
-This command will not do any second layer checks on the folder.  
+
+**Arguments**:  
+`ignore_secondlayer_checks`: Choose if you want the bot to neglect checking if the files inside your save has a second layer implementation. Defaults to `False`.  
+If the game has second layer of encryption that is implemented, the files inside the folder will get encrypted if applicable.  
 
 ---
 
