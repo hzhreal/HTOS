@@ -8,6 +8,7 @@ import orjson
 
 from network.exceptions import SocketError
 from utils.constants import IP, PORT_CECIE, logger
+from utils.conversions import minutes_to_seconds
 
 class SocketPS:
     """Async functions to mainly interact with cecie."""
@@ -17,8 +18,8 @@ class SocketPS:
         self.semaphore = asyncio.Semaphore(max_connections) # Maximum 16 mounts at once
         self.semaphore_alt = asyncio.Semaphore(max_connections) # For operations that does not need a mount slot
     SUCCESS = "srOk"
-    CONNECTION_TIMEOUT = 10 # seconds
-    READ_TIMEOUT = 150 # seconds
+    CONNECTION_TIMEOUT = 30 # seconds
+    READ_TIMEOUT = minutes_to_seconds(5)
     async def send_tcp_message_with_response(self, message: bytes, semaphore: asyncio.Semaphore, deserialize: bool = True) -> str | bytes:
         writer = None
         try:

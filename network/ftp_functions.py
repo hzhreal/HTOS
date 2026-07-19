@@ -10,6 +10,7 @@ from aioftp.errors import AIOFTPException
 from network.exceptions import FTPError
 from utils.constants import GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
 from utils.embeds import embuplSuccess
+from utils.conversions import minutes_to_seconds
 
 FTP_SEMAPHORE_ALT = asyncio.Semaphore(16)
 
@@ -38,9 +39,9 @@ class FTPps:
 
     CHUNKSIZE = GENERAL_CHUNKSIZE
     TIMEOUTS = dict(
-        connection_timeout=10,
-        path_timeout=10,
-        socket_timeout=30
+        connection_timeout=30,
+        path_timeout=30,
+        socket_timeout=minutes_to_seconds(5)
     )
 
     @staticmethod
