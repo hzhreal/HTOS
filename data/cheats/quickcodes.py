@@ -134,55 +134,62 @@ class QuickCodes(CustomCrypto):
                         tmp8 = line[9:17]
                         val = uint32(tmp8).value
 
-                        await self.r_stream.seek(write)
                         match t:
                             case "0" | "8":
-                                wv8 = uint8(await self.r_stream.read(1))
+                                b = await self.ext_read(write, 1)
+                                wv8 = uint8(b)
                                 wv8.value += val
 
-                                await self.ext_write(off, wv8.as_bytes)
+                                await self.ext_write(write, wv8.as_bytes)
 
                             case "1" | "9":
-                                wv16 = uint16(await self.r_stream.read(2), "little")
+                                b = await self.ext_read(write, 2)
+                                wv16 = uint16(b, "little")
                                 wv16.value += val
 
-                                await self.ext_write(off, wv16.as_bytes)
+                                await self.ext_write(write, wv16.as_bytes)
 
                             case "2" | "A":
-                                wv32 = uint32(await self.r_stream.read(4), "little")
+                                b = await self.ext_read(write, 4)
+                                wv32 = uint32(b, "little")
                                 wv32.value += val
 
-                                await self.ext_write(off, wv32.as_bytes)
+                                await self.ext_write(write, wv32.as_bytes)
 
                             case "3" | "B":
-                                wv64 = uint64(await self.r_stream.read(8), "little")
+                                b = await self.ext_read(write, 8)
+                                wv64 = uint64(b, "little")
                                 wv64.value += val
 
-                                await self.ext_write(off, wv64.as_bytes)
+                                await self.ext_write(write, wv64.as_bytes)
 
                             case "4" | "C":
-                                wv8 = uint8(await self.r_stream.read(1))
+                                b = await self.ext_read(write, 1)
+                                wv8 = uint8(b)
                                 wv8.value -= val
 
-                                await self.ext_write(off, wv8.as_bytes)
+                                await self.ext_write(write, wv8.as_bytes)
 
                             case "5" | "D":
-                                wv16 = uint16(await self.r_stream.read(2), "little")
-                                wv16.value -= (val)
+                                b = await self.ext_read(write, 2)
+                                wv16 = uint16(b, "little")
+                                wv16.value -= val
 
-                                await self.ext_write(off, wv16.as_bytes)
+                                await self.ext_write(write, wv16.as_bytes)
 
                             case "6" | "E":
-                                wv32 = uint32(await self.r_stream.read(4), "little")
+                                b = await self.ext_read(write, 4)
+                                wv32 = uint32(b, "little")
                                 wv32.value -= val
 
-                                await self.ext_write(off, wv32.as_bytes)
+                                await self.ext_write(write, wv32.as_bytes)
 
                             case "7" | "F":
-                                wv64 = uint64(await self.r_stream.read(8), "little")
+                                b = await self.ext_read(write, 8)
+                                wv64 = uint64(b, "little")
                                 wv64.value -= val
 
-                                await self.ext_write(off, wv64.as_bytes)
+                                await self.ext_write(write, wv64.as_bytes)
 
                     case "4":
                         #   multi write
@@ -255,34 +262,32 @@ class QuickCodes(CustomCrypto):
                         #   8 = From found from a search
                         tmp6 = line[2:8]
                         off_src = int32(tmp6).value
+                        src = int64(off_src)
 
                         tmp8 = line[9:17]
                         val = uint32(tmp8).value
                         if val > self.CHUNKSIZE:
                             raise QuickCheatsError("Unsupported code!")
 
-                        src = off_src
-
                         if line[1] == "8":
-                            src += pointer.value
+                            src.value += pointer.value
+                        src = src.value
 
                         line = self.lines[line_index + 1]
                         line_index += 1
 
                         tmp6 = line[2:8]
                         off_dst = int32(tmp6).value
-
-                        dst = off_dst
+                        dst = int64(off_dst)
 
                         if line[1] == "8":
-                            dst += pointer.value
+                            dst.value += pointer.value
+                        dst = dst.value
                         if dst + val > self.size:
                             raise QuickCheatsError("Unsupported code!")
 
-                        await self.r_stream.seek(src)
-                        w = await self.r_stream.read(val)
-                        await self.w_stream.seek(dst)
-                        await self.w_stream.write(w)
+                        w = await self.ext_read(src, val)
+                        await self.ext_write(dst, w)
 
                     case "6":
                         #   special mega code
@@ -322,24 +327,26 @@ class QuickCodes(CustomCrypto):
                                 if y == "1":
                                     pointer.value = val.value
 
-                                await self.r_stream.seek(write)
                                 match t:
                                     case "0" | "8":
                                         # Data size = 8 bits
                                         # 000000VV
-                                        wv8 = uint8(await self.r_stream.read(1))
+                                        b = await self.ext_read(write, 1)
+                                        wv8 = uint8(b)
                                         ptr.value = wv8.value
 
                                     case "1" | "9":
                                         # Data size = 16 bits
                                         # 0000VVVV
-                                        wv16 = uint16(await self.r_stream.read(2), "little")
+                                        b = await self.ext_read(write, 2)
+                                        wv16 = uint16(b, "little")
                                         ptr.value = wv16.value
 
                                     case "2" | "A":
                                         # Data size = 32 bits
                                         # VVVVVVVV
-                                        wv32 = uint32(await self.r_stream.read(4), "little")
+                                        b = await self.ext_read(write, 4)
+                                        wv32 = uint32(b, "little")
                                         ptr.value = wv32.value
 
                             case "1":
@@ -421,11 +428,11 @@ class QuickCodes(CustomCrypto):
                         tmp8 = line[9:17]
                         val = uint32(tmp8).value
 
-                        await self.r_stream.seek(write)
                         match t:
                             case "0" | "8":
                                 val &= 0x000000FF
-                                wv8 = uint8(await self.r_stream.read(1))
+                                b = await self.ext_read(write, 1)
+                                wv8 = uint8(b)
                                 if val > wv8.value:
                                     wv8.value = val
 
@@ -433,14 +440,16 @@ class QuickCodes(CustomCrypto):
 
                             case "1" | "9":
                                 val &= 0x0000FFFF
-                                wv16 = uint16(await self.r_stream.read(2), "little")
+                                b = await self.ext_read(write, 2)
+                                wv16 = uint16(b, "little")
                                 if val > wv16.value:
                                     wv16.value = val
 
                                 await self.ext_write(write, wv16.as_bytes)
 
                             case "2" | "A":
-                                wv32 = uint32(await self.r_stream.read(4), "little")
+                                b = await self.ext_read(write, 4)
+                                wv32 = uint32(b, "little")
                                 if val > wv32.value:
                                     wv32.value = val
 
@@ -448,7 +457,8 @@ class QuickCodes(CustomCrypto):
 
                             case "4" | "C":
                                 val &= 0x000000FF
-                                wv8 = uint8(await self.r_stream.read(1))
+                                b = await self.ext_read(write, 1)
+                                wv8 = uint8(b)
                                 if val < wv8.value:
                                     wv8.value = val
 
@@ -456,14 +466,16 @@ class QuickCodes(CustomCrypto):
 
                             case "5" | "D":
                                 val &= 0x0000FFFF
-                                wv16 = uint16(await self.r_stream.read(2), "little")
+                                b = await self.ext_read(write, 2)
+                                wv16 = uint16(b, "little")
                                 if val < wv16.value:
                                     wv16.value = val
 
                                 await self.ext_write(write, wv16.as_bytes)
 
                             case "6" | "E":
-                                wv32 = uint32(await self.r_stream.read(4), "little")
+                                b = await self.ext_read(write, 4)
+                                wv32 = uint32(b, "little")
                                 if val < wv32.value:
                                     wv32.value = val
 
@@ -556,14 +568,15 @@ class QuickCodes(CustomCrypto):
                         tmp8 = line[9:17]
                         off = uint32(tmp8).value
 
-                        await self.r_stream.seek(off)
                         match line[1]:
                             case "0":
-                                val = uint32(await self.r_stream.read(4), "big")
+                                b = await self.ext_read(off, 4)
+                                val = uint32(b, "big")
                                 pointer.value = val.value
 
                             case "1":
-                                val = uint32(await self.r_stream.read(4), "little")
+                                b = await self.ext_read(off, 4)
+                                val = uint32(b, "little")
                                 pointer.value = val.value
 
                             case "2":
@@ -621,8 +634,7 @@ class QuickCodes(CustomCrypto):
                             if (i + 4) < size:
                                 write[(i + 4):(i + 4) + 4] = val.as_bytes
 
-                        await self.w_stream.seek(off)
-                        await self.w_stream.write(write[:size])
+                        await self.ext_write(off, write[:size])
 
                     case "B":
                         #   Backward Byte Search (Set Pointer)
@@ -722,8 +734,7 @@ class QuickCodes(CustomCrypto):
                             addr.value += pointer.value
                         addr = addr.value
 
-                        await self.r_stream.seek(addr)
-                        find = await self.r_stream.read(length)
+                        find = await self.ext_read(addr, length)
 
                         if not cnt:
                             cnt = 1
@@ -782,17 +793,16 @@ class QuickCodes(CustomCrypto):
 
                         match bit:
                             case "0":
-                                await self.r_stream.seek(off)
-                                src = uint16(await self.r_stream.read(2), "big").value
+                                b = await self.ext_read(off, 2)
+                                src = uint16(b, "big").value
 
                             case "1":
                                 val &= 0xFF
-                                await self.r_stream.seek(off)
-                                src = (await self.r_stream.read(1))[0]
+                                src = (await self.ext_read(off, 1))[0]
 
                             case "2":
-                                await self.r_stream.seek(off)
-                                src = uint16(await self.r_stream.read(2), "little").value
+                                b = await self.ext_read(off, 2)
+                                src = uint16(b, "little").value
 
                             case _:
                                 src = 0
