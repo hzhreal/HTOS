@@ -98,7 +98,7 @@ class CustomCrypto:
         self.size = await self.r_stream.seek(0, 2)
         if self.size > self.SAVESIZE_MAX:
             raise CryptoError(
-                f"File exceeds the maximum processing size limit ({bytes_to_mb(self.SAVESIZE_MAX)})."
+                f"File exceeds the maximum processing size limit ({bytes_to_mb(self.SAVESIZE_MAX)} MB)."
             )
 
     async def read(self, stop_off: int = -1, backwards: bool = False) -> int:
