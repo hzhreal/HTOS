@@ -69,7 +69,7 @@ class QuickCodes(TabBase):
 
         i = 1
         for entry in files:
-            count_entry = len(entry)
+            entry_count = len(entry)
             completed = []
             dname = os.path.dirname(entry[0])
             out_path = dname
@@ -77,7 +77,7 @@ class QuickCodes(TabBase):
 
             j = 1
             for savegame in entry:
-                info = f"(file {j}/{count_entry}, batch {i}/{batches})"
+                info = f"(file {j}/{entry_count}, batch {i}/{batches})"
                 basename = os.path.basename(savegame)
                 self.logger.info(f"Applying codes to {basename}, {info}.")
 
