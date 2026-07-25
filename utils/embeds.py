@@ -260,7 +260,7 @@ emb_conv_upl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_conv_choice = discord.Embed(
     title="Converter: Choice ({basename})",
-    description="Could not recognize the platform of the save, please choose what platform to convert the save to (file {j}/{count_entry}, batch {i}/{batches}).",
+    description="Could not recognize the platform of the save, please choose what platform to convert the save to (file {j}/{entry_count}, batch {i}/{batches}).",
     colour=Color.DEFAULT.value
 )
 emb_conv_choice.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -280,7 +280,7 @@ embCDone2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embCDone3 = discord.Embed(
     title="Success",
-    description="{result}\n**{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
+    description="{result}\n**{basename}** (file {j}/{entry_count}, batch {i}/{batches}).",
     colour=Color.DEFAULT.value
 )
 embCDone3.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -448,14 +448,14 @@ embRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embLoading = discord.Embed(
     title="Loading",
-    description="Loading **{basename}**... (file {j}/{count_entry}, batch {i}/{batches}).",
+    description="Loading **{basename}**... (file {j}/{entry_count}, batch {i}/{batches}).",
     colour=Color.DEFAULT.value
 )
 embLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embApplied = discord.Embed(
     title="Success!",
-    description="Quick codes applied to **{basename}** (file {j}/{count_entry}, batch {i}/{batches}).",
+    description="Quick codes applied to **{basename}** (file {j}/{entry_count}, batch {i}/{batches}).",
     colour=Color.DEFAULT.value
 )
 embApplied.set_footer(text=Embed_t.DEFAULT_FOOTER.value)

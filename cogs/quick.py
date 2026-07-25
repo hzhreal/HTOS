@@ -447,7 +447,7 @@ class Quick(commands.Cog):
 
         i = 1
         for entry in uploaded_file_paths:
-            count_entry = len(entry)
+            entry_count = len(entry)
             completed = []
             dname = os.path.dirname(entry[0])
             out_path = dname
@@ -460,7 +460,7 @@ class Quick(commands.Cog):
                 await embed_edit(
                     msg, embLoading,
                     description_kwargs=dict(
-                        basename=basename, j=j, count_entry=count_entry, i=i, batches=batches
+                        basename=basename, j=j, entry_count=entry_count, i=i, batches=batches
                     ), ignore_exc=True
                 )
 
@@ -482,7 +482,7 @@ class Quick(commands.Cog):
                 await embed_edit(
                     msg, embApplied,
                     description_kwargs=dict(
-                        basename=basename, j=j, count_entry=count_entry, i=i, batches=batches
+                        basename=basename, j=j, entry_count=entry_count, i=i, batches=batches
                     ), ignore_exc=True
                 )
 
