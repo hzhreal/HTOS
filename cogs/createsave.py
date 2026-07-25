@@ -220,7 +220,7 @@ class CreateSave(commands.Cog):
             msg, embCRdone,
             description_kwargs=dict(
                 savename=savename, id=playstation_id or user_id
-            )
+            ), ignore_exc=True
         )
 
         zipname = ZIPOUT_NAME[0] + f"_{rand_str}_1" + ZIPOUT_NAME[1]
