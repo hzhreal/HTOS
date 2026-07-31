@@ -725,12 +725,14 @@ async def replace_decrypted(
 
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
+            if len(msg_container) >= 100:
+                raise FileError("Unsupported save!")
             emb = embenc_out.copy()
             emb.title = emb.title.format(savename=savepairname)
             emb.description = emb.description = chunk
             msg = await d_ctx.ctx.send(embed=emb)
             msg_container.append(msg)
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
 
         SPLITVALUE = "SLASH"
 
@@ -754,15 +756,16 @@ async def replace_decrypted(
             await send_chunk(msg_container, current_chunk)
 
         opt = UploadOpt(UploadGoogleDriveChoice.SPECIAL, False)
-        uploaded_file_paths = (
-            await upload2(
-                d_ctx, local_download_path,
-                max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True,
-                savesize=savesize, opt=opt)
-        )[0]
-
-        for msg in msg_container:
-            await msg.delete(delay=0.5)
+        try:
+            uploaded_file_paths = (
+                await upload2(
+                    d_ctx, local_download_path,
+                    max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True,
+                    savesize=savesize, opt=opt)
+            )[0]
+        finally:
+            for msg in msg_container:
+                await msg.delete(delay=0.5)
 
         if opt.method == UploadMethod.DISCORD:
             for path in uploaded_file_paths:
