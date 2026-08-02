@@ -417,7 +417,7 @@ class GDapi:
                     break
 
         if next_page_token:
-            raise FileError("Maximum entries of folder has been exceeded!")
+            raise FileError("Maximum entries has been exceeded!")
 
         file_data_storage = []
 
