@@ -69,6 +69,9 @@ async def extra_decrypt(
 
         @discord.ui.button(label="Decrypted", style=discord.ButtonStyle.blurple, custom_id="decrypt")
         async def decryption_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
+            if interaction.user != d_ctx.ctx.author:
+                await interaction.response.send_message("This is not your instance!", ephemeral=True)
+                return
             await interaction.response.edit_message(view=None)
             try:
                 match self.game:
@@ -153,6 +156,9 @@ async def extra_decrypt(
 
         @discord.ui.button(label="Encrypted", style=discord.ButtonStyle.blurple, custom_id="encrypt")
         async def encryption_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
+            if interaction.user != d_ctx.ctx.author:
+                await interaction.response.send_message("This is not your instance!", ephemeral=True)
+                return
             await interaction.response.edit_message(view=None)
             helper.done = True
 

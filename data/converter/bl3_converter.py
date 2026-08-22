@@ -43,6 +43,9 @@ class BL3_conv_button(discord.ui.View):
 
     @discord.ui.button(label="PS4 -> PC", style=discord.ButtonStyle.blurple, custom_id="BL3_PS4_TO_PC_CONV")
     async def ps4_to_pc_callback(self, _, interaction: discord.Interaction) -> None:
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("This is not your instance!", ephemeral=True)
+            return
         platform = "ps4"
         await interaction.response.edit_message(view=None)
         try:
@@ -55,6 +58,9 @@ class BL3_conv_button(discord.ui.View):
 
     @discord.ui.button(label="PC -> PS4", style=discord.ButtonStyle.blurple, custom_id="BL3_PC_TO_PS4_CONV")
     async def pc_to_ps4_callback(self, _, interaction: discord.Interaction) -> None:
+        if interaction.user != self.ctx.author:
+            await interaction.response.send_message("This is not your instance!", ephemeral=True)
+            return
         platform = "pc"
         await interaction.response.edit_message(view=None)
         try:

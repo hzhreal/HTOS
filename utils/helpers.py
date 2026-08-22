@@ -929,7 +929,7 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         p_msg = await paginator.respond(d_ctx.ctx.interaction)
 
         try:
-            message: discord.Message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT) 
+            message: discord.Message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT)
         except asyncio.TimeoutError:
             await paginator.disable(page=pages_list[0])
             await p_msg.delete()

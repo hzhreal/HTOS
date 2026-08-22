@@ -102,10 +102,16 @@ class Cheats_GTAV:
 
         @discord.ui.button(label="Change money", style=discord.ButtonStyle.primary, custom_id="ChangeMoney_GTAV")
         async def change_money_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
+            if interaction.user != self.ctx.author:
+                await interaction.response.send_message("This is not your instance!", ephemeral=True)
+                return
             await interaction.response.send_modal(Cheats_GTAV.MoneyModal(self.ctx, self.helper, self.filepath, self.platform))
 
         @discord.ui.button(label="Save file", style=discord.ButtonStyle.green, custom_id="SaveFile_GTAV")
         async def save_file_callback(self, _: discord.Button, interaction: discord.Interaction) -> None:
+            if interaction.user != self.ctx.author:
+                await interaction.response.send_message("This is not your instance!", ephemeral=True)
+                return
             await interaction.response.edit_message(embed=embDone_G, view=None)
             if self.platform == "pc":
                 await crypt.encrypt_file(self.filepath, crypt.GTAV_PC_HEADER_OFFSET)
