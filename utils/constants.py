@@ -306,7 +306,7 @@ GENERAL_TIMEOUT = hours_to_seconds(1) # how long files can actually be downloade
 MISC_TIMEOUT = minutes_to_seconds(1) # how long single operations like cleaning up a folder, or requesting keyset from the console can take
 GENERAL_CHUNKSIZE = mb_to_bytes(32)
 COMMAND_COOLDOWN = 30 # seconds, for all general commands
-BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(10) # 10 mb maximum when not considering boost levels
+BOT_DISCORD_UPLOAD_LIMIT = mb_to_bytes(20) # 20 mb maximum when not considering boost levels
 
 PS_ID_DESC = "Your Playstation Network username. Do not include if you want to use the previous one."
 IGNORE_SECONDLAYER_DESC = "If you want the bot to neglect checking if the files inside your save can be encrypted/compressed."
