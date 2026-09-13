@@ -45,7 +45,7 @@ class Createsave(TabBase):
         ).classes("w-64").props("clearable")
         self.savesize_mb = ui.input(
             "Savesize (MB)",
-            validation={"Invalid savesize!": lambda s: int_validation(s, SAVESIZE_MB_MIN, SAVEBLOCKS_MIN)}
+            validation={"Invalid savesize!": lambda s: int_validation(s, SAVESIZE_MB_MIN, SAVESIZE_MB_MAX)}
         ).classes("w-64").props("clearable")
         self.ignore_secondlayer_checks_checkbox = ui.checkbox("Ignore secondlayer checks")
         self.start_button = ui.button("Start", on_click=self.on_start)
