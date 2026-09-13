@@ -5,7 +5,7 @@ from discord import Option
 from discord.ext import commands
 from utils.workspace import make_workspace
 from utils.helpers import error_handling
-from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN
+from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN, EMBED_FIELD_VALUE_LIMIT
 from utils.embeds import loadSFO_emb, finished_emb, paramEmb
 from utils.orbis import SFOContext, is_valid_savedirname, check_titleid, checkid
 from utils.instance_lock import INSTANCE_LOCK_global
@@ -29,9 +29,13 @@ class SFOEditor(SFOContext):
         p_data = self.param_data.copy()
         for param in p_data:
             emb = paramEmb.copy()
+            if param["key"] == "PARAMS":
+                param["converted_value"] = param["converted_value"].rstrip("0")
             for key, val in param.items():
                 if key == "value":
                     continue
+                if len(str(val)) > EMBED_FIELD_VALUE_LIMIT:
+                    raise ValueError("One of the values is too large to show!")
                 emb.add_field(
                     name=key.upper(),
                     value=val,
@@ -76,7 +80,7 @@ class SFO(commands.Cog):
                 await asyncio.sleep(1)
                 await ctx.send(embed=emb)
             await ctx.edit(embed=finished_emb)
-        except OrbisError as e:
+        except (OrbisError, ValueError) as e:
             await error_handling(ctx, e, workspace_folders, None, None, None)
             logger.info(f"{e} - {ctx.user.name} - (expected)", exc_info=True)
             await INSTANCE_LOCK_global.release(ctx.author.id)
@@ -100,7 +104,7 @@ class SFO(commands.Cog):
               detail: Option(str, description="utf-8", default=""),
               format: Option(str, description="utf-8", default=""),
               maintitle: Option(str, description="utf-8", default=""),
-              params: Option(str, description="utf-8-special", default=""),
+              params: Option(str, description="byte string (hexadecimal)", default=""),
               savedata_blocks: Option(int, description="uint64", default="", min_value=SAVEBLOCKS_MIN, max_value=SAVEBLOCKS_MAX),
               savedata_directory: Option(str, description="utf-8", default=""),
               savedata_list_param: Option(int, description="uint32", default="", min_value=0, max_value=0xFF_FF_FF_FF),

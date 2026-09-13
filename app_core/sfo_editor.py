@@ -46,7 +46,7 @@ class SFOEditor(SFOContext):
         with ui.row():
             # parent class has attribute called param
             self.params_ = ui.input(
-                "PARAMS (utf-8-special)"
+                "PARAMS (byte string in hexadecimal)"
             ).classes("w-64").props("clearable")
             self.savedata_blocks = ui.input(
                 "SAVEDATA_BLOCKS (uint64)",
@@ -118,15 +118,15 @@ class SFOEditor(SFOContext):
     async def on_save(self) -> None:
         parameters = {
             "ACCOUNT_ID": self.account_id.value,
-            "ATTRIBUTE": self.attribute.value,
+            "ATTRIBUTE": self.str_to_int(self.attribute.value),
             "CATEGORY": self.category.value,
             "DETAIL": self.detail.value,
             "FORMAT": self.format.value,
             "MAINTITLE": self.maintitle.value,
             "PARAMS": self.params_.value,
-            "SAVEDATA_BLOCKS": self.savedata_blocks.value,
+            "SAVEDATA_BLOCKS": self.str_to_int(self.savedata_blocks.value),
             "SAVEDATA_DIRECTORY": self.savedata_directory.value,
-            "SAVEDATA_LIST_PARAM": self.savedata_list_param.value,
+            "SAVEDATA_LIST_PARAM": self.str_to_int(self.savedata_list_param.value),
             "SUBTITLE": self.subtitle.value,
             "TITLE_ID": self.title_id.value
         }
@@ -192,4 +192,12 @@ class SFOEditor(SFOContext):
         if s.lower().startswith("0x"):
             s = s[2:]
         return checkid(s)
+
+    @staticmethod
+    def str_to_int(s: str) -> int:
+        if s.lower()[:2] == "0x":
+            b = 16
+        else:
+            b = 10
+        return int(s, b)
 

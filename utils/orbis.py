@@ -20,7 +20,7 @@ from utils.constants import (
     MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, PS_UPLOADDIR
 )
 from utils.extras import obtain_savenames, completed_print
-from utils.type_helpers import uint32, uint64, utf_8, utf_8_s, TypeCategory
+from utils.type_helpers import uint32, uint64, utf_8, bytestr, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
 from utils.conversions import bytes_to_saveblocks, mb_to_bytes, saveblocks_to_bytes, round_half_up
@@ -52,7 +52,7 @@ SFO_TYPES = {
     "DETAIL":               utf_8(""),
     "FORMAT":               utf_8(""),
     "MAINTITLE":            utf_8(""),
-    "PARAMS":               utf_8_s(""),
+    "PARAMS":               bytestr(""),
     "SAVEDATA_BLOCKS":      uint64(0, "little"),
     "SAVEDATA_DIRECTORY":   utf_8(""),
     "SAVEDATA_LIST_PARAM":  uint32(0, "little"),
@@ -213,8 +213,7 @@ class SFOContextParam:
                 t = uint32(self.value, "little")
                 value = hex(t.value)
             case "PARAMS":
-                params = utf_8_s(self.value)
-                value = params.to_str()
+                value = self.value.hex()
 
         info["converted_value"] = value
         return info
@@ -338,7 +337,7 @@ class SFOContext:
         max_len = param.max_length
 
         if t.CATEGORY == TypeCategory.CHARACTER:
-            t: utf_8 | utf_8_s
+            t: utf_8
             if t.bytelen >= max_len:
                raise OrbisError(
                     f"The parameter: {parameter} reached the max length it has of {max_len}! "
@@ -347,7 +346,7 @@ class SFOContext:
             v = t.to_cstr()
             l = len(v)
         else:
-            t: uint32 | uint64 
+            t: uint32 | uint64 | bytestr
             if t.bytelen > max_len:
                 raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}!")
             v = t.as_bytes

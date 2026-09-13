@@ -6,7 +6,7 @@ from typing import Literal
 class TypeCategory(Enum):
     INTEGER = 1
     CHARACTER = 2
-    CHARACTER_SPECIAL = 3
+    OTHER = 3
 
 class CIntSignednessState(Enum):
     SIGNED = True
@@ -204,15 +204,39 @@ class utf_8:
         except UnicodeDecodeError:
             raise ValueError("Invalid value provided!")
 
-class utf_8_s(utf_8):
+class bytestr:
     def __init__(self, value: str | bytes | bytearray = "", const: bool = False) -> None:
-        super().__init__(value, const)
+        match value:
+            case str():
+                self._value = bytes.fromhex(value)
+                self.as_bytes = self._value
+                self.bytelen = len(self.as_bytes)
+            case bytes() | bytearray():
+                self.as_bytes = bytes(value)
+                self.bytelen = len(self.as_bytes)
+                self._value = self.as_bytes
+            case _:
+                raise ValueError("Invalid type!")
+        self.const = const
 
-    CATEGORY = TypeCategory.CHARACTER_SPECIAL
+    CATEGORY = TypeCategory.OTHER
 
-    def to_bytes(self) -> bytes:
-        return self._value.encode("utf-8", errors="ignore")
+    @property
+    def value(self) -> str:
+        return self._value
 
-    def from_bytes(self) -> str:
-        return self.as_bytes.decode("utf-8", errors="ignore")
+    @value.setter
+    def value(self, value: str | bytes | bytearray) -> None:
+        assert not self.const
+        match value:
+            case str():
+                self._value = bytes.fromhex(value)
+                self.as_bytes = self._value
+                self.bytelen = len(self.as_bytes)
+            case bytes() | bytearray():
+                self.as_bytes = bytes(value)
+                self.bytelen = len(self.as_bytes)
+                self._value = self.as_bytes
+            case _:
+                raise ValueError("Invalid type!")
 
