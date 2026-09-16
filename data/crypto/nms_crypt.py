@@ -100,8 +100,8 @@ class Crypt_NMS:
         async with aiofiles.open(filepath, "rb") as savegame:
             uncompressed_data = await savegame.read()
         deobfuscated_data = Crypt_NMS.deobfuscate(uncompressed_data)
-        async with aiofiles.open(filepath, "wb") as savegame:
-            await savegame.write(deobfuscated_data)
+        if deobfuscated_data != uncompressed_data:
+            await Crypt_NMS.write_atomic(filepath, deobfuscated_data)
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
@@ -112,8 +112,8 @@ class Crypt_NMS:
             async with aiofiles.open(filepath, "rb") as savegame:
                 uncompressed_data = await savegame.read()
             obfuscated_data = Crypt_NMS.obfuscate(uncompressed_data)
-            async with aiofiles.open(filepath, "wb") as savegame:
-                await savegame.write(obfuscated_data)
+            if obfuscated_data != uncompressed_data:
+                await Crypt_NMS.write_atomic(filepath, obfuscated_data)
 
         async with Crypt_NMS.NMS(filepath) as cc:
             await cc.compress()
@@ -151,6 +151,33 @@ class Crypt_NMS:
     def file_check(path: str) -> bool:
         file_name = os.path.basename(path).lower()
         return file_name.endswith(".hg") and "savedata" in file_name
+
+    @staticmethod
+    async def write_atomic(filepath: str, data: bytes) -> None:
+        """Write bytes through a temporary file and atomically replace the target,
+        so a failure never leaves a partially written save behind."""
+        temp_filepath = filepath + ".tmp"
+        try:
+            async with aiofiles.open(temp_filepath, "wb") as savegame:
+                await savegame.write(data)
+            await aiofiles.os.replace(temp_filepath, filepath)
+        finally:
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
+
+    @staticmethod
+    def is_obfuscated(data: bytes) -> bool:
+        """Return True when the payload root uses obfuscated NMS key names."""
+        head = data[:128]
+        return any(b'"' + key + b'":' in head for key in (b"F2P", b"8>q", b"XTp", b"B89"))
+
+    @staticmethod
+    def try_load_json(data: bytes) -> Any | None:
+        """Parse a save payload, returning None when it is not valid UTF-8 JSON."""
+        try:
+            return orjson.loads(data)
+        except orjson.JSONDecodeError:
+            return None
 
     @staticmethod
     def load_keys(operation: Literal["DECODE", "ENCODE"]) -> dict[str, str]:
@@ -195,14 +222,16 @@ class Crypt_NMS:
     @staticmethod
     def deobfuscate(data: bytes) -> bytes:
         data = data.rstrip(b"\x00")
+        dict_data = Crypt_NMS.try_load_json(data)
+        if dict_data is None:
+            # NMS saves can contain raw non-UTF-8 bytes (opaque IDs and similar)
+            # which orjson cannot parse. Keep the payload byte-for-byte and skip
+            # the key mapping rather than failing the whole file.
+            if Crypt_NMS.is_obfuscated(data):
+                return data
+            raise CryptoError("Save contains non-UTF-8 data and cannot be key-mapped.")
 
         mapping = Crypt_NMS.load_keys(operation="DECODE")
-
-        try:
-            dict_data = orjson.loads(data)
-        except orjson.JSONDecodeError:
-            raise CryptoError("Failed to parse save as JSON!")
-
         mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
 
         return orjson.dumps(mapped_data)
@@ -210,14 +239,15 @@ class Crypt_NMS:
     @staticmethod
     def obfuscate(data: bytes) -> bytes:
         data = data.rstrip(b"\x00")
+        dict_data = Crypt_NMS.try_load_json(data)
+        if dict_data is None:
+            # Already obfuscated saves that simply contain raw non-UTF-8 bytes are
+            # passed through unchanged; anything else cannot be mapped safely.
+            if Crypt_NMS.is_obfuscated(data):
+                return data
+            raise CryptoError("Save contains non-UTF-8 data and cannot be key-mapped.")
 
         mapping = Crypt_NMS.load_keys(operation="ENCODE")
-
-        try:
-            dict_data = orjson.loads(data)
-        except orjson.JSONDecodeError:
-            raise CryptoError("Failed to parse save as JSON!")
-
         mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
 
         return orjson.dumps(mapped_data)
