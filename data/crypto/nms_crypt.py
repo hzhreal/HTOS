@@ -21,7 +21,9 @@ class Crypt_NMS:
     # The JSON handling will be memory heavy and is not chunked
     # Unsure about how we should do that
     JSON_ENABLE = True
-    MAX_JSON_NESTING_DEPTH = 10
+    # Cosmos saves reach depth 11 (for example SquadronPilots[].ShipResource.
+    # ProceduralTexture.Samplers[].Options[].Palette); keep headroom above that.
+    MAX_JSON_NESTING_DEPTH = 32
 
     # Max blocks to decompress
     MAX_BLOCKS = 200
@@ -232,7 +234,14 @@ class Crypt_NMS:
             raise CryptoError("Save contains non-UTF-8 data and cannot be key-mapped.")
 
         mapping = Crypt_NMS.load_keys(operation="DECODE")
-        mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
+        try:
+            mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
+        except CryptoError:
+            # Mapping can still fail (for example unexpected nesting); keep the
+            # obfuscated payload byte-for-byte so the save stays usable.
+            if Crypt_NMS.is_obfuscated(data):
+                return data
+            raise
 
         return orjson.dumps(mapped_data)
 
@@ -248,7 +257,14 @@ class Crypt_NMS:
             raise CryptoError("Save contains non-UTF-8 data and cannot be key-mapped.")
 
         mapping = Crypt_NMS.load_keys(operation="ENCODE")
-        mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
+        try:
+            mapped_data = Crypt_NMS.map_keys(dict_data, mapping)
+        except CryptoError:
+            # Mapping can still fail (for example unexpected nesting); keep the
+            # payload byte-for-byte so the save stays usable.
+            if Crypt_NMS.is_obfuscated(data):
+                return data
+            raise
 
         return orjson.dumps(mapped_data)
 
