@@ -86,12 +86,7 @@ DATABASENAME_THREADS = "valid_threads.db"
 DATABASENAME_ACCIDS = "account_ids.db"
 DATABASENAME_BLACKLIST = "blacklist.db"
 TOKEN = os.getenv("TOKEN")
-# how to obtain NPSSO:
-# go to playstation.com and login
-# go to this link https://ca.account.sony.com/api/v1/ssocookie
-# find {"npsso":"<64 character npsso code>"}
 
-# if you leave it None the psn.flipscreen.games website will be used to obtain account ID
 class NPSSO:
     def __init__(self) -> None:
         self.val: str = os.getenv("NPSSO")
