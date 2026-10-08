@@ -97,11 +97,10 @@ Both `saveblocks` and `savesize_mb` represent the same concept, you must choose 
 The platform will get automatically detected, if not you will be prompted.  
 **If your game is not available**:  
 **PS4 -> PC**: Try to decrypt the PS4 save and use the decrypted file on PC.  
-**PC -> PS4**: Try to encrypt the PC savefile into a PS4 save pair.    
+**PC -> PS4**: Try to encrypt the PC savefile into a PS4 save pair.  
 
 **Arguments**:  
 `game`: Game of the savefile.  
-`savefile`: The savegame.  
 
 ---
 
