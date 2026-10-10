@@ -75,9 +75,7 @@ So for example, you can create the path `"Grand Theft Auto V/CUSA00411/Max money
 `GOOGLE_DRIVE_JSON_PATH`: Set this to the path to the Google OAuth Client credentials JSON file, or the Google Service Account JSON credentials file.  
 `NPSSO`: The 64 character token that will be used for obtaining account ID from a username.  
 `TOKEN`: The Discord bot token.  
-The bot sets the `Message Content` intent, but it is not strictly necessary.
-Without it, every file given to the bot, that is not through an argument, must directly respond to its message.  
-And in the channel where the bot will operate it needs the following permissions:
+In the channel where the bot will operate it needs the following permissions:
 * `Send Messages`
 * `Send Messages in Threads`
 * `Create Private Threads`

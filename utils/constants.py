@@ -107,7 +107,6 @@ else:
 # BOT INITIALIZATION
 activity = discord.Activity(type=discord.ActivityType.listening, name="HTOS database")
 intents = discord.Intents.default()
-intents.message_content = True
 
 bot = commands.Bot(command_prefix=">", activity=activity, intents=intents)
 

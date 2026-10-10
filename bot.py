@@ -34,16 +34,6 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: d
         case commands.NotOwner():
             await ctx.respond("You are unauthorized to use this command.", ephemeral=True)
 
-@bot.event
-async def on_message(message: discord.Message) -> None:
-    if message.author.bot:
-        return
-
-    if message.content == "hello":
-        await message.channel.send("hi")
-
-    await bot.process_commands(message)
-
 cogs_list = [
     "change",
     "convert",

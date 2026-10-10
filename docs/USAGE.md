@@ -23,6 +23,8 @@ Example of an account ID, found inside a save exported from PS4. File structure 
 You supply these to the bot by dragging and dropping them through Discord, or by sending a public Google Drive folder link.
 The bot can recursively search for save pairs from a Google Drive folder.  
 
+Make sure that the message with the attachments or link directly replies to the bot's message, and that the reply pings the bot.  
+
 ## Bulk uploads
 All save pair commands accept saves in bulk, except for when you upload a save from your region when re-regioning
 (you can upload in bulk when you upload the ones you want to resign and re-region).
