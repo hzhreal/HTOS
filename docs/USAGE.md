@@ -1,6 +1,5 @@
 # Usage
 This is mostly for the bot, but some concepts are the same for the app.  
-The bot only takes files, no zips or any other archives.  
 
 ## Threads
 Click the create thread button in the channel that the bot is in. You will get mentioned in the created thread. All commands can be done there.
