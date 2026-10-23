@@ -20,7 +20,6 @@ from utils.embeds import (
     embTitleChange1, embTitleSuccess, embTdone
 )
 from utils.workspace import init_workspace, make_workspace, cleanup, cleanup_simple
-from utils.extras import pngprocess
 from utils.helpers import (
     DiscordContext, psusername, upload2, error_handling,
     send_final, task_handler, download_attachment, embed_edit, embed_construct
@@ -28,7 +27,6 @@ from utils.helpers import (
 from utils.orbis import sfo_ctx_patch_parameters, SaveBatch, SaveFile
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
-from utils.conversions import bytes_to_mb
 
 class Change(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -41,7 +39,10 @@ class Change(commands.Cog):
     async def picture(
               self,
               ctx: discord.ApplicationContext,
-              picture: discord.Attachment,
+              picture: Option(
+                discord.Attachment,
+                description=f"Expecting PNG with resolution {ICON0_FORMAT[0]}x{ICON0_FORMAT[1]}, max size {ICON0_MAXSIZE} bytes."
+              ),
               playstation_id: Option(str, description=PS_ID_DESC, default=""),
               shared_gd_link: Option(str, description=SHARED_GD_LINK_DESC, default="")
             ) -> None:
@@ -54,7 +55,6 @@ class Change(commands.Cog):
         C1ftp = FTPps(IP, PORT_FTP, PS_UPLOADDIR, newDOWNLOAD_DECRYPTED, newUPLOAD_DECRYPTED, newUPLOAD_ENCRYPTED,
                     newDOWNLOAD_ENCRYPTED, newPARAM_PATH, newKEYSTONE_PATH, newPNG_PATH)
         mount_paths = []
-        pngfile = os.path.join(newPNG_PATH, ICON0_NAME)
 
         msg = ctx
 
@@ -70,13 +70,9 @@ class Change(commands.Cog):
                 max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=True, ignore_filename_check=False
             )
             # png handling
-            if picture.size > SYS_FILE_MAX:
-                raise FileError(f"Image is too big! Maximum for upload is ~{bytes_to_mb(SYS_FILE_MAX)} MB ({SYS_FILE_MAX} bytes).")
+            if picture.size > ICON0_MAXSIZE:
+                raise FileError(f"Image is too big! Maximum is {ICON0_MAXSIZE} bytes.")
             await download_attachment(picture, newPNG_PATH, ICON0_NAME)
-            pngprocess(pngfile, ICON0_FORMAT)
-            png_size = await aiofiles.ospath.getsize(pngfile)
-            if png_size > ICON0_MAXSIZE:
-                raise FileError(f"Image turned out to be too big: {png_size}/{ICON0_MAXSIZE}!")
         except HTTPError as e:
             err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)

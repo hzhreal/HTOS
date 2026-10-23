@@ -115,7 +115,7 @@ The platform will get automatically detected, if not you will be prompted.
 `/change picture`: Accepts a save pair that will get resigned and the save picture will get swapped.  
 
 **Arguments**:  
-`picture`: Image file that you want to use.  
+`picture`: Image file that you want to use. A PNG file with resolution 228x128 and maximum size of 116736 bytes is expected.  
 
 ---
 
