@@ -2,6 +2,7 @@ import aiofiles
 import os
 
 from data.crypto.common import CustomCrypto as CC
+from data.crypto.exceptions import CryptoError
 from utils.type_helpers import uint32
 
 class Crypt_Terraria:
@@ -14,20 +15,44 @@ class Crypt_Terraria:
         if not Crypt_Terraria.file_check(filepath):
             return
 
-        _, ext = os.path.splitext(filepath)
+        async with CC(filepath, in_place=False) as cc:
+            magic = await cc.ext_read(0, 4)
+            if magic == Crypt_Terraria.COMP_MAGIC:
+                size = uint32(await cc.ext_read(4, 4), "little").value
+                s = 0
+                zlib = cc.create_ctx_zlib_decompress()
+                cc.set_ptr(8)
+                while await cc.read():
+                    s += await cc.decompress(zlib)
+                if s != size:
+                    raise CryptoError("Invalid save!")
 
-        async with CC(filepath, in_place=ext == ".plr") as cc:
-            match ext:
-                case ".plr":
-                    aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_CBC, iv=Crypt_Terraria.SECRET_KEY)
-                    while await cc.read():
-                        cc.decrypt(aes)
-                        await cc.write()
-                case ".wld":
-                    zlib = cc.create_ctx_zlib_decompress()
-                    cc.set_ptr(0x8)
-                    while await cc.read():
-                        await cc.decompress(zlib)
+        bs = CC.AES.block_size
+        async with CC(filepath) as cc:
+            magic = await cc.ext_read(4, len(Crypt_Terraria.DEC_MAGIC))
+            if magic == Crypt_Terraria.DEC_MAGIC:
+                return
+            if cc.size % bs != 0:
+                raise CryptoError("Invalid save!")
+
+            i = cc.size
+            cc.set_ptr(i)
+            while await cc.read(backwards=True):
+                for j in range(len(cc.chunk), bs - 1, -bs):
+                    if cc.chunk[j - bs:j] != bytes(bs):
+                        break
+                    i -= bs
+                else:
+                    continue
+                break
+            if i == 0:
+                return
+
+            aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_CBC, iv=Crypt_Terraria.SECRET_KEY)
+            cc.set_ptr(0)
+            while await cc.read(stop_off=i):
+                cc.decrypt(aes)
+                await cc.write()
 
     @staticmethod
     async def encrypt_file(filepath: str) -> None:
