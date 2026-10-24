@@ -64,10 +64,13 @@ class Crypt_Terraria:
         async with CC(filepath, in_place=ext == ".plr") as cc:
             match ext:
                 case ".plr":
+                    if cc.size % cc.AES.block_size != 0:
+                        raise CryptoError("Invalid save!")
                     aes = cc.create_ctx_aes(Crypt_Terraria.SECRET_KEY, cc.AES.MODE_CBC, iv=Crypt_Terraria.SECRET_KEY)
                     while await cc.read():
                         cc.encrypt(aes)
                         await cc.write()
+
                 case ".wld":
                     zlib = cc.create_ctx_zlib_compress()
                     size = uint32(cc.size, "little").as_bytes
