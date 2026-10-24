@@ -73,9 +73,11 @@ class Crypt_Terraria:
 
                 case ".wld":
                     zlib = cc.create_ctx_zlib_compress()
-                    size = uint32(cc.size, "little").as_bytes
+                    size = uint32(cc.size, "little")
+                    if (size.value != cc.size):
+                        raise CryptoError("Invalid save!")
                     await cc.w_stream.write(Crypt_Terraria.COMP_MAGIC)
-                    await cc.w_stream.write(size)
+                    await cc.w_stream.write(size.as_bytes)
                     while await cc.read():
                         await cc.compress(zlib)
                     await cc.compress_post(zlib)
