@@ -61,7 +61,7 @@ def save_pair_check(logger: Logger, paths: list[str], savepair_limit: int | None
                 # pair found
                 if filename_nested == os.path.splitext(filename)[0]:
                     valid_files.append(file)
-                    valid_files.append(file_nested) 
+                    valid_files.append(file_nested)
 
     valid_files_cnt = len(valid_files)
     savepair_cnt = valid_files_cnt / 2
