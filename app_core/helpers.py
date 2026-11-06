@@ -6,7 +6,7 @@ from aiofiles.ospath import exists, isfile, isdir, getsize
 from app_core.models import Logger, Settings
 from utils.constants import PS_UPLOADDIR, MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH
 from utils.orbis import OrbisError, parse_pfs_header, parse_sealedkey
-from utils.extras import FileError
+from utils.exceptions import FileError
 from utils.extras import generate_random_string
 
 async def get_files_nonrecursive(folder_path: str) -> list[str]:
