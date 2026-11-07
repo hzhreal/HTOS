@@ -383,7 +383,6 @@ class GDapi:
               ignore_filename_check: bool,
               mounted_len_checks: bool = False,
               cur_nesting: int = 0,
-              total_filesize: int = 0,
               rel_path: str | None = None,
               files: list[dict[str, str]] | None = None
             ) -> tuple[list[dict[str, str | int]], int]:
@@ -394,6 +393,8 @@ class GDapi:
 
         if cur_nesting > self.MAX_USER_NESTING:
             raise FileError(f"Max level nesting of {self.MAX_USER_NESTING} reached!")
+
+        total_filesize = 0
 
         entries = []
         next_page_token = ""
@@ -445,7 +446,7 @@ class GDapi:
 
                 _, sub_size = await self.list_dir(
                     folder_id, sys_files, ps_save_pair_upload, ignore_filename_check,
-                    mounted_len_checks, cur_nesting + 1, total_filesize, rel_path, files
+                    mounted_len_checks, cur_nesting + 1, rel_path, files
                 )
                 total_filesize += sub_size
                 # go up one level
