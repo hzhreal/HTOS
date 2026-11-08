@@ -219,7 +219,7 @@ class CustomCrypto:
             chunk_len = len(chunk)
             buf_len = len(buf)
 
-            start = max(0, buf_len - (len(d) - 1))
+            start = max(0, buf_len - (d_len - 1))
             if (pos := chunk.find(d, start)) != -1:
                 target_off = off - buf_len + pos
                 break
