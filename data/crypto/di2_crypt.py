@@ -30,7 +30,7 @@ class Crypt_DI2:
                 raise CryptoError("Invalid save!")
             length = uint32(await self.ext_read(12, 4), "little")
             start = 12 + len(length.as_bytes) + length.value
-            end = await self.rfind(self.END_MARKER, self.size - 8, start)
+            end = await self.rfind(self.END_MARKER, start, self.size - 8)
             if end == -1:
                 raise CryptoError("Invalid save!")
             if end + 12 > self.size:

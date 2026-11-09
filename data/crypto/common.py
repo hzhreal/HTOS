@@ -204,6 +204,11 @@ class CustomCrypto:
         if not (start_off < end_off <= self.size):
             return -1
 
+        # let c_0 be a chunk
+        # look for d inside c_0
+        # if there is no match, there is at most d_len - 1 bytes of d inside c_0 (and it would overlap into the next chunk)
+        # define c_1 as the last d_len - 1 bytes of c_0 prepended to the next chunk
+
         d_len = len(d)
         assert d_len <= self.CHUNKSIZE # bound growth
         target_off = -1
@@ -219,11 +224,19 @@ class CustomCrypto:
             chunk_len = len(chunk)
             buf_len = len(buf)
 
-            start = max(0, buf_len - (d_len - 1))
-            if (pos := chunk.find(d, start)) != -1:
+            if (pos := chunk.find(d)) != -1:
                 target_off = off - buf_len + pos
                 break
-            i = max(0, chunk_len - (d_len - 1))
+            # check if we are at last chunk (we assume full reads)
+            if r_len != self.CHUNKSIZE:
+                break
+            # d_len <= chunk_len
+            # then 1 <= chunk_len - d_len + 1 = chunk_len - (d_len - 1)
+            # if d_len == 1, then buf = chunk[chunk_len:]
+            # if d_len == 2, then buf = chunk[chunk_len - 1:]
+            # ...
+            # if d_len == CHUNKSIZE, then buf = chunk[buf_len + 1:] (first byte onwards of new chunk)
+            i = chunk_len - (d_len - 1)
             buf = chunk[i:]
         return target_off
 
@@ -263,10 +276,10 @@ class CustomCrypto:
             buf = chunk[i:]
         return out
 
-    async def rfind(self, d: bytes | bytearray, start_off: int = -1, end_off: int = 0) -> int:
-        if start_off < 0:
-            start_off = self.size
-        if not end_off < start_off <= self.size:
+    async def rfind(self, d: bytes | bytearray, start_off: int = 0, end_off: int = -1) -> int:
+        if end_off < 0:
+            end_off = self.size
+        if not (start_off < end_off <= self.size):
             return -1
 
         d_len = len(d)
@@ -274,8 +287,8 @@ class CustomCrypto:
         target_off = -1
         buf = bytes()
 
-        for off in range(start_off, end_off, -self.CHUNKSIZE):
-            r_len = min(self.CHUNKSIZE, off - end_off)
+        for off in range(end_off, start_off, -self.CHUNKSIZE):
+            r_len = min(self.CHUNKSIZE, off - start_off)
             r_start = off - r_len
             await self.r_stream.seek(r_start)
             chunk = await self.r_stream.read(r_len)
@@ -283,10 +296,12 @@ class CustomCrypto:
                 break
             chunk = chunk + buf
 
-            end = len(chunk) - len(buf) + (d_len - 1)
-            if (pos := chunk.rfind(d, None, end)) != -1:
+            if (pos := chunk.rfind(d)) != -1:
                 target_off = r_start + pos
                 break
+            if r_len != self.CHUNKSIZE:
+                break
+
             buf = chunk[:d_len - 1]
         return target_off
 
