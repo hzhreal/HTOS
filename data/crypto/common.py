@@ -240,6 +240,42 @@ class CustomCrypto:
             buf = chunk[i:]
         return target_off
 
+    async def find_all(self, ds: list[bytes], max_outs: int, start_off: int = 0, end_off: int = -1) -> list[tuple[int, bytes]]:
+        if end_off < 0:
+            end_off = self.size
+        if not (start_off < end_off <= self.size):
+            return []
+
+        d_len = max(map(len, ds))
+        assert d_len <= self.CHUNKSIZE # bound growth
+        buf = bytes()
+        out = []
+        outs = 0
+        await self.r_stream.seek(start_off)
+
+        for off in range(start_off, end_off, self.CHUNKSIZE):
+            r_len = min(self.CHUNKSIZE, end_off - off)
+            chunk = await self.r_stream.read(r_len)
+            if not chunk:
+                break
+            chunk = buf + chunk
+            chunk_len = len(chunk)
+            buf_len = len(buf)
+
+            for d in ds:
+                start = max(0, buf_len - (len(d) - 1))
+                i = chunk.find(d, start)
+                while i != -1:
+                    target_off = off - buf_len + i
+                    if outs >= max_outs:
+                        raise CryptoError("Invalid!")
+                    out.append((target_off, d))
+                    outs += 1
+                    i = chunk.find(d, i + 1)
+            i = max(0, chunk_len - (d_len - 1))
+            buf = chunk[i:]
+        return out
+
     async def rfind(self, d: bytes | bytearray, start_off: int = 0, end_off: int = -1) -> int:
         if end_off < 0:
             end_off = self.size
