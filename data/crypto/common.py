@@ -240,10 +240,10 @@ class CustomCrypto:
             buf = chunk[i:]
         return target_off
 
-    async def rfind(self, d: bytes | bytearray, start_off: int = -1, end_off: int = 0) -> int:
-        if start_off < 0:
-            start_off = self.size
-        if not end_off < start_off <= self.size:
+    async def rfind(self, d: bytes | bytearray, start_off: int = 0, end_off: int = -1) -> int:
+        if end_off < 0:
+            end_off = self.size
+        if not (start_off < end_off <= self.size):
             return -1
 
         d_len = len(d)
@@ -251,23 +251,22 @@ class CustomCrypto:
         target_off = -1
         buf = bytes()
 
-        for off in range(start_off, end_off, -self.CHUNKSIZE):
-            r_len = min(self.CHUNKSIZE, off - end_off)
+        for off in range(end_off, start_off, -self.CHUNKSIZE):
+            r_len = min(self.CHUNKSIZE, off - start_off)
             r_start = off - r_len
             await self.r_stream.seek(r_start)
             chunk = await self.r_stream.read(r_len)
             if not chunk:
                 break
             chunk = chunk + buf
-            chunk_len = len(chunk)
 
             if (pos := chunk.rfind(d)) != -1:
                 target_off = r_start + pos
                 break
-            if d_len <= chunk_len:
-                buf = chunk[:d_len - 1]
-            else:
-                buf = chunk
+            if r_len != self.CHUNKSIZE:
+                break
+
+            buf = chunk[:d_len - 1]
         return target_off
 
     async def copy(self, start_off: int = 0, end_off: int = -1) -> None:

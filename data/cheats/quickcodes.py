@@ -48,17 +48,17 @@ class QuickCodes(CustomCrypto):
         assert count >= 1
         s = search[:length]
 
-        end_off = size
+        end_off = min(start + length, size)
         k = 0
         while k < count:
-            off = await self.rfind(s, start, end_off)
+            off = await self.rfind(s, 0, end_off)
             if off != -1:
-                end_off = off - 1
+                end_off = off + length - 1
                 k += 1
             else:
                 break
         if k == count:
-            return end_off + 1
+            return end_off - length + 1
         return -1
 
     @staticmethod
