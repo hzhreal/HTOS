@@ -220,20 +220,15 @@ async def make_workspace(ctx: discord.ApplicationContext, workspaceList: list[st
     """Used for checking if a command is being run in a valid thread."""
     await ctx.defer()
 
-    threadId = uint64(thread_id, "big")
-
     try:
-        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
-            cursor = await db.cursor()
-            await cursor.execute("SELECT * FROM Threads WHERE disc_threadid = ?", (threadId.as_bytes,))
-
-            row = await cursor.fetchone()
-            if not row:
-                await ctx.respond(embed=embChannelError)
-                raise WorkspaceError("Invalid channel!")
-    except aiosqlite.Error:
+        user = await fetch_threadid_db_user(thread_id)
+    except WorkspaceError as e:
+        logger.error(f"Error while fetching from thread db: {e}")
         await ctx.respond(embed=retry_emb)
         raise WorkspaceError("Please try again.")
+    if user is None:
+        await ctx.respond(embed=embChannelError)
+        raise WorkspaceError("Invalid channel!")
 
     # check blacklist while we are at it
     search = await blacklist_check_db(ctx.author.id, None)
@@ -358,26 +353,58 @@ async def list_stored_saves() -> dict[str, dict[str, dict[str, str]]]:
 async def write_threadid_db(disc_userid: int, thread_id: int) -> list[int]:
     """Used to write thread IDs into the db on behalf of a user, if an entry exists it will be overwritten."""
     delete_these = []
-    userId = uint64(disc_userid, "big")
-    threadId = uint64(thread_id, "big")
+    user_id = uint64(disc_userid, "big")
+    thread_id = uint64(thread_id, "big")
 
     try:
         async with aiosqlite.connect(DATABASENAME_THREADS) as db:
             cursor = await db.cursor()
 
-            await cursor.execute("SELECT disc_threadid from Threads WHERE disc_userid = ?", (userId.as_bytes,)) # obtain thread id to delete from disc server, fetchall incase of any errors when deleting
+            # obtain thread id to delete from disc server, fetchall incase of any errors when deleting
+            await cursor.execute("SELECT disc_threadid from Threads WHERE disc_userid = ?", (user_id.as_bytes,))
             rows = await cursor.fetchall()
 
-            await cursor.execute("DELETE FROM Threads WHERE disc_userid = ?", (userId.as_bytes,)) # delete all thread ids from a user in the database, limit to 1 thread per user
-            await cursor.execute("INSERT INTO Threads (disc_userid, disc_threadid) VALUES (?, ?)", (userId.as_bytes, threadId.as_bytes,)) # finally, write
+
+            # delete all thread ids from a user in the database, limit to 1 thread per user
+            await cursor.execute("DELETE FROM Threads WHERE disc_userid = ?", (user_id.as_bytes,))
+            # finally, write
+            await cursor.execute("INSERT INTO Threads (disc_userid, disc_threadid) VALUES (?, ?)", (user_id.as_bytes, thread_id.as_bytes,))
             await db.commit()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
 
     for thread_id in rows:
-        threadId = uint64(thread_id[0], "big")
-        delete_these.append(threadId.value)
+        thread_id = uint64(thread_id[0], "big")
+        delete_these.append(thread_id.value)
     return delete_these
+
+async def fetch_threadid_db_user(thread_id: int) -> int | None:
+    thread_id = uint64(thread_id, "big")
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT * FROM Threads WHERE disc_threadid = ?", (thread_id.as_bytes,))
+
+            row = await cursor.fetchone()
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
+    if not row:
+        return None
+    return uint64(row[0], "big").value
+
+async def fetch_threadid_db_thread(disc_userid: int) -> int | None:
+    disc_userid = uint64(disc_userid, "big")
+    try:
+        async with aiosqlite.connect(DATABASENAME_THREADS) as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT * FROM Threads WHERE disc_userid = ?", (disc_userid.as_bytes,))
+
+            row = await cursor.fetchone()
+    except aiosqlite.Error as e:
+        raise WorkspaceError(e)
+    if not row:
+        return None
+    return uint64(row[1], "big").value
 
 async def fetchall_threadid_db() -> dict[int, int]:
     db_dict = {}
@@ -391,10 +418,10 @@ async def fetchall_threadid_db() -> dict[int, int]:
         raise WorkspaceError(e)
 
     for user_id, thread_id in ids:
-        userId = uint64(user_id, "big")
-        threadId = uint64(thread_id, "big")
+        user_id = uint64(user_id, "big")
+        thread_id = uint64(thread_id, "big")
 
-        db_dict[userId.value] = threadId.value
+        db_dict[user_id.value] = thread_id.value
     return db_dict
 
 async def delall_threadid_db(db_dict: dict[int, int]) -> None:
@@ -403,10 +430,10 @@ async def delall_threadid_db(db_dict: dict[int, int]) -> None:
             cursor = await db.cursor()
 
             for user_id, thread_id in db_dict.items():
-                userId = uint64(user_id, "big")
-                threadId = uint64(thread_id, "big")
+                user_id = uint64(user_id, "big")
+                thread_id = uint64(thread_id, "big")
 
-                await cursor.execute("DELETE FROM Threads WHERE disc_userid = ? AND disc_threadid = ?", (userId.as_bytes, threadId.as_bytes,))
+                await cursor.execute("DELETE FROM Threads WHERE disc_userid = ? AND disc_threadid = ?", (user_id.as_bytes, thread_id.as_bytes,))
             await db.commit()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
@@ -414,13 +441,13 @@ async def delall_threadid_db(db_dict: dict[int, int]) -> None:
 async def fetch_accountid_db(disc_userid: int) -> str | None:
     """Used to obtain an account ID stored in the db to user."""
 
-    userId = uint64(disc_userid, "big")
+    userid = uint64(disc_userid, "big")
 
     try:
         async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
             cursor = await db.cursor()
 
-            await cursor.execute("SELECT ps_accountid FROM Account_IDs WHERE disc_userid = ?", (userId.as_bytes,))
+            await cursor.execute("SELECT ps_accountid FROM Account_IDs WHERE disc_userid = ?", (userid.as_bytes,))
             row = await cursor.fetchone()
     except aiosqlite.Error as e:
         raise WorkspaceError(e)
@@ -437,14 +464,15 @@ async def write_accountid_db(disc_userid: int, account_id: str) -> None:
     accid = int(account_id, 16)
     accid = uint64(accid, "big")
 
-    userId = uint64(disc_userid, "big")
+    userid = uint64(disc_userid, "big")
 
     try:
         async with aiosqlite.connect(DATABASENAME_ACCIDS) as db:
             cursor = await db.cursor()
 
-            await cursor.execute("DELETE FROM Account_IDs WHERE disc_userid = ?", (userId.as_bytes,)) # remove previously stored accid
-            await cursor.execute("INSERT INTO Account_IDs (disc_userid, ps_accountid) VALUES (?, ?)", (userId.as_bytes, accid.as_bytes,))
+            # remove previously stored accid
+            await cursor.execute("DELETE FROM Account_IDs WHERE disc_userid = ?", (userid.as_bytes,))
+            await cursor.execute("INSERT INTO Account_IDs (disc_userid, ps_accountid) VALUES (?, ?)", (userid.as_bytes, accid.as_bytes,))
             await db.commit()
     except aiosqlite.Error as e:
         logger.error(f"Could not write account ID to database: {e}")

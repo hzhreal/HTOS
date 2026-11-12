@@ -38,7 +38,8 @@ from utils.embeds import (
 from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError 
 from utils.workspace import (
     fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple,
-    write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db
+    write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db,
+    fetch_threadid_db_thread
 )
 from utils.extras import generate_random_string
 from utils.conversions import bytes_to_mb
@@ -87,6 +88,15 @@ class ThreadButton(discord.ui.View):
         current_instance = INSTANCE_LOCK_global.instances.get(interaction.user.id)
         if current_instance is not None:
             await interaction.response.send_message("You can not create a new thread when you already have an active instance!", ephemeral=True)
+            try:
+                thread_id = await fetch_threadid_db_thread(interaction.user.id)
+            except WorkspaceError as e:
+                logger.error(f"Error while fetching from thread db: {e}")
+                return
+            if thread_id is not None:
+                thread = interaction.channel.get_thread(thread_id)
+                if thread is not None:
+                    await thread.send(interaction.user.mention)
             return
         await interaction.response.send_message("Creating thread...", ephemeral=True)
 
