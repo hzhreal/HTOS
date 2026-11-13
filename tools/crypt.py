@@ -19,18 +19,18 @@ class Option(Enum):
     DECRYPT = "Decrypted"
     ENCRYPT = "Encrypted"
 
-def main() -> None:
+def main(argc: int) -> None:
     title_id = argv[1].upper()
     opt = argv[2].lower()
     filepath = argv[3]
-    if len(argv) - 1 >= 4:
+    if argc - 1 >= 4:
         savepairname = argv[4]
     else:
         savepairname = ""
 
     if not check_titleid(title_id):
         print(f"Invalid title ID: {title_id}.")
-        sys.exit()
+        sys.exit(1)
     if opt == "-d":
         opt = Option.DECRYPT
     elif opt == "-e":
@@ -38,10 +38,10 @@ def main() -> None:
     else:
         print(f"Invalid option: {opt}.")
         print_usage()
-        sys.exit()
+        sys.exit(1)
     if not isfile(filepath):
         print(f"{filepath} is not a file.")
-        sys.exit()
+        sys.exit(1)
 
     # write backup
     shutil.copyfile(filepath, filepath + ".bak")
@@ -61,8 +61,8 @@ def print_usage() -> None:
 
 if __name__ == "__main__":
     argc = len(argv)
-    if (argc - 1) < 3:
+    if argc - 1 < 3:
         print_usage()
-        sys.exit()
-    main()
+        sys.exit(1)
+    main(argc)
 
