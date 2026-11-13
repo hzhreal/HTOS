@@ -20,45 +20,14 @@ from utils.constants import (
     MAX_FILENAME_LEN, MAX_PATH_LEN, RANDOMSTRING_LENGTH, PS_UPLOADDIR
 )
 from utils.extras import obtain_savenames, completed_print
-from utils.type_helpers import uint32, uint64, utf_8, bytestr, TypeCategory
 from utils.workspace import enumerate_files
 from utils.exceptions import OrbisError
 from utils.conversions import bytes_to_saveblocks, mb_to_bytes, saveblocks_to_bytes, round_half_up
-
-SFO_MAGIC = 0x46535000
-SFO_VERSION = 0x0101
+from utils.orbis_sfo import SFOContext
 
 SAVEDIR_RE = re.compile(r"^[a-zA-Z0-9\-_.\@]+$")
 TITLE_ID_RE = re.compile(r"^CUSA\d{5}$")
 ACCID_RE = re.compile(r"^[0-9a-fA-F]+$")
-
-# account_id: uint64
-# attribute: uint32
-# category: utf-8
-# detail: utf-8
-# format: utf-8
-# maintitle: utf-8
-# params: utf-8-s
-# savedata_blocks: uint64
-# savedata_directory: utf-8
-# savedata_list_param: uint32
-# subtitle: utf-8
-# title_id: utf-8
-
-SFO_TYPES = {
-    "ACCOUNT_ID":           uint64(0, "little"),
-    "ATTRIBUTE":            uint32(0, "little"),
-    "CATEGORY":             utf_8(""),
-    "DETAIL":               utf_8(""),
-    "FORMAT":               utf_8(""),
-    "MAINTITLE":            utf_8(""),
-    "PARAMS":               bytestr(""),
-    "SAVEDATA_BLOCKS":      uint64(0, "little"),
-    "SAVEDATA_DIRECTORY":   utf_8(""),
-    "SAVEDATA_LIST_PARAM":  uint32(0, "little"),
-    "SUBTITLE":             utf_8(""),
-    "TITLE_ID":             utf_8("")
-}
 
 @dataclass
 class SaveBatch:
@@ -170,216 +139,6 @@ class PFSHeader:
     data_block_count: int
     size: int
 
-@dataclass
-class SFOHeader:
-    magic: int
-    version: int
-    key_table_offset: int
-    data_table_offset: int
-    num_entries: int
-
-@dataclass
-class SFOIndexTable:
-    key_offset: int
-    param_format: int
-    param_length: int
-    param_max_length: int
-    data_offset: int
-
-@dataclass
-class SFOContextParam:
-    key: str
-    format: int
-    length: int
-    max_length: int
-    actual_length: int
-    value: bytearray
-
-    def as_dict(self) -> dict[str, str | int | bytearray]:
-        info = vars(self)
-        value = 0
-
-        match self.key:
-            case "ACCOUNT_ID":
-                accid = uint64(self.value, "little")
-                value = "0x" + hex(accid.value)[2:].zfill(16)
-            case "SAVEDATA_BLOCKS":
-                blocks = uint64(self.value, "little")
-                value = hex(blocks.value)
-            case "CATEGORY" | "DETAIL" | "FORMAT" | "MAINTITLE" | "SAVEDATA_DIRECTORY" | "SUBTITLE" | "TITLE_ID":
-                t = utf_8(self.value)
-                value = t.to_str()
-            case "ATTRIBUTE" | "SAVEDATA_LIST_PARAM":
-                t = uint32(self.value, "little")
-                value = hex(t.value)
-            case "PARAMS":
-                value = self.value.hex()
-
-        info["converted_value"] = value
-        return info
-
-class SFOContext:
-    """Instance creator for param.sfo r/w."""
-    def __init__(self) -> None:
-        self.params: list[SFOContextParam] = []
-
-    def sfo_read(self, sfo: bytearray) -> None:
-        sfo_len = len(sfo)
-        if sfo_len < 20:
-            raise OrbisError("Invalid param.sfo size!")
-
-        header_data = struct.unpack("<IIIII", sfo[:20])
-        header = SFOHeader(*header_data)
-
-        if header.magic != SFO_MAGIC:
-            raise OrbisError("Invalid param.sfo header magic!")
-
-        if header.num_entries > 12:
-            raise OrbisError("The param.sfo has too many entries!")
-
-        total_entry_sizes = 0
-        try:
-            for i in range(header.num_entries):
-                index_offset = 20 + i * 16
-                index_data = struct.unpack("<HHIII", sfo[index_offset:index_offset + 16])
-                index_table = SFOIndexTable(*index_data)
-
-                param_offset = header.key_table_offset + index_table.key_offset
-                key_end = sfo.find(b"\x00", param_offset)
-                if key_end == -1 or param_offset > key_end:
-                    raise OrbisError("")
-                param_key = sfo[param_offset:key_end].decode("utf-8")
-
-                param_data_offset = header.data_table_offset + index_table.data_offset
-                if param_data_offset + index_table.param_max_length > sfo_len:
-                    raise OrbisError("")
-                total_entry_sizes += index_table.param_max_length
-                if total_entry_sizes > sfo_len:
-                    raise OrbisError("")
-                param_data = sfo[param_data_offset:param_data_offset + index_table.param_max_length]
-
-                param = SFOContextParam(key=param_key, format=index_table.param_format,
-                                        length=index_table.param_length, max_length=index_table.param_max_length,
-                                        value=param_data, actual_length=index_table.param_max_length)
-
-                self.params.append(param)
-        except (struct.error, UnicodeDecodeError, IndexError, OrbisError):
-            raise OrbisError("Param.sfo could not be parsed!")
-
-    def sfo_write(self) -> bytearray:
-        num_params = len(self.params)
-        key_table_size, data_table_size = 0, 0
-
-        for param in self.params:
-            key_table_size += len(param.key) + 1
-            data_table_size += param.actual_length
-
-        sfo_size = 20 + num_params * 16 + key_table_size + data_table_size
-        key_table_size += (sfo_size + 7) & ~7 - sfo_size
-        sfo_size = (sfo_size + 7) & ~7
-
-        sfo = bytearray(b"\0" * sfo_size)
-
-        header = SFOHeader(SFO_MAGIC, SFO_VERSION, 20 + num_params * 16, (20 + num_params * 16 + key_table_size) + 2, num_params)
-
-        try:
-            struct.pack_into(
-                "<IIIII",
-                sfo, 0, header.magic, header.version, header.key_table_offset, header.data_table_offset, header.num_entries
-            )
-        except struct.error:
-            raise OrbisError("Failed to generate a param.sfo!")
-
-        key_offset, data_offset = 0, 0
-        for i, param in enumerate(self.params):
-            index_offset = 20 + i * 16
-            index_table = SFOIndexTable(key_offset, param.format, param.length, param.max_length, data_offset)
-
-            try:
-                struct.pack_into(
-                    "<HHIII",
-                    sfo, index_offset, index_table.key_offset, index_table.param_format,
-                    index_table.param_length, index_table.param_max_length, index_table.data_offset
-                )
-            except struct.error:
-                raise OrbisError("Failed to generate a param.sfo!")
-
-            key_offset += len(param.key) + 1
-            data_offset += param.actual_length
-
-        for i, param in enumerate(self.params):
-            index_table = SFOIndexTable(*struct.unpack("<HHIII", sfo[20 + i * 16: 20 + i * 16 + 16]))
-            key_offset = index_table.key_offset
-            data_offset = index_table.data_offset
-
-            try:
-                struct.pack_into(f"{len(param.key)+1}s", sfo, header.key_table_offset + key_offset, param.key.encode("utf-8"))
-                struct.pack_into(f"{param.actual_length}s", sfo, header.data_table_offset + data_offset, param.value)
-            except struct.error:
-                raise OrbisError("Failed to generate a param.sfo!")
-
-        return sfo
-
-    def sfo_patch_parameter(self, parameter: str, new_data: str | int) -> None:
-        param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
-        if not param:
-            raise OrbisError(f"Invalid parameter: {parameter}!")
-
-        param_type: uint32 | uint64 | utf_8 | utf_8_s | None = SFO_TYPES.get(parameter)
-        if not param_type:
-            raise OrbisError(f"Unsupported parameter: {parameter}!")
-
-        if param_type.CATEGORY == TypeCategory.INTEGER:
-            t = type(param_type)(new_data, "little")
-        else:
-            t = type(param_type)(new_data)
-
-        max_len = param.max_length
-
-        if t.CATEGORY == TypeCategory.CHARACTER:
-            t: utf_8
-            if t.bytelen >= max_len:
-               raise OrbisError(
-                    f"The parameter: {parameter} reached the max length it has of {max_len}! "
-                    "Remember last byte is reserved for null termination for this parameter."
-                )
-            v = t.to_cstr()
-            l = len(v)
-        else:
-            t: uint32 | uint64 | bytestr
-            if t.bytelen > max_len:
-                raise OrbisError(f"The parameter: {parameter} reached the max length it has of {max_len}!")
-            v = t.as_bytes
-            l = t.bytelen
-
-        param.length = l
-        param.value = v
-
-    def sfo_get_param_value(self, parameter: str) -> int | str:
-        param: SFOContextParam | None = next((param for param in self.params if param.key == parameter), None)
-        if not param:
-            raise OrbisError(f"Missing sfo parameter: {parameter}!")
-
-        param_type: uint32 | uint64 | utf_8 | utf_8_s | None = SFO_TYPES.get(parameter)
-        try:
-            if param_type.CATEGORY == TypeCategory.INTEGER:
-                v = type(param_type)(param.value, "little").value
-            else:
-                v = type(param_type)(param.value).to_str()
-        except ValueError:
-            raise OrbisError(f"Invalid sfo parameter value for {parameter}!")
-        return v
-
-    def sfo_get_param_data(self) -> list[dict[str, str | int | bytearray]]:
-        param_data = []
-        for param in self.params:
-            param: SFOContextParam
-            try:
-                param_data.append(param.as_dict())
-            except ValueError:
-                raise OrbisError("Failed to get param data!")
-        return param_data
-
 class PfsSKKey:
     def __init__(self, data: bytearray) -> None:
         assert len(data) == self.SIZE
@@ -445,11 +204,11 @@ async def sfo_ctx_create(sfo_path: str) -> SFOContext:
     async with aiofiles.open(sfo_path, "rb") as sfo:
         sfo_data = bytearray(await sfo.read())
     ctx = SFOContext()
-    ctx.sfo_read(sfo_data)
+    ctx.read(sfo_data)
     return ctx
 
 async def sfo_ctx_write(ctx: SFOContext, sfo_path: str) -> None:
-    sfo_data = ctx.sfo_write()
+    sfo_data = ctx.write()
     async with aiofiles.open(sfo_path, "wb") as sfo:
         await sfo.write(sfo_data)
 
@@ -458,12 +217,12 @@ def sfo_ctx_patch_parameters(ctx: SFOContext, **patches: int | str) -> None:
     filtered_patches = {key: value for key, value in patches.items() if value}
 
     for key in filtered_patches:
-        ctx.sfo_patch_parameter(key, filtered_patches[key])
+        ctx.patch_parameter(key, filtered_patches[key])
 
 def obtainCUSA(ctx: SFOContext) -> str:
     """Obtains TITLE_ID from sfo file."""
 
-    title_id = ctx.sfo_get_param_value("TITLE_ID")
+    title_id = ctx.get_param_value("TITLE_ID")
     if not check_titleid(title_id):
         raise OrbisError("Invalid title id!")
 
@@ -474,16 +233,16 @@ def check_titleid(titleid: str) -> bool:
 
 def resign(ctx: SFOContext, account_id: str) -> None:
     """Traditional resigning."""
-    ctx.sfo_patch_parameter("ACCOUNT_ID", account_id)
+    ctx.patch_parameter("ACCOUNT_ID", account_id)
 
 async def reregion_write(ctx: SFOContext, title_id: str, dec_files_folder: str) -> None:
     """Writes the new title id in the sfo file, changes the SAVEDATA_DIRECTORY for the games needed."""
 
-    ctx.sfo_patch_parameter("TITLE_ID", title_id)
-    savepairname = ctx.sfo_get_param_value("SAVEDATA_DIRECTORY")
+    ctx.patch_parameter("TITLE_ID", title_id)
+    savepairname = ctx.get_param_value("SAVEDATA_DIRECTORY")
     new_name = await extra_reregion_pre(dec_files_folder, title_id, savepairname)
     if new_name:
-        ctx.sfo_patch_parameter("SAVEDATA_DIRECTORY", new_name)
+        ctx.patch_parameter("SAVEDATA_DIRECTORY", new_name)
 
 def is_valid_savedirname(savename: str) -> bool:
     return bool(SAVEDIR_RE.fullmatch(savename))

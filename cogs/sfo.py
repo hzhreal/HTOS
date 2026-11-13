@@ -7,7 +7,8 @@ from utils.workspace import make_workspace
 from utils.helpers import error_handling
 from utils.constants import logger, SYS_FILE_MAX, BASE_ERROR_MSG, SAVEBLOCKS_MAX, SAVEBLOCKS_MIN, COMMAND_COOLDOWN, EMBED_FIELD_VALUE_LIMIT
 from utils.embeds import loadSFO_emb, finished_emb, paramEmb
-from utils.orbis import SFOContext, is_valid_savedirname, check_titleid, checkid
+from utils.orbis import is_valid_savedirname, check_titleid, checkid
+from utils.orbis_sfo import SFOContext
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError, OrbisError
 
@@ -17,23 +18,19 @@ class SFOEditor(SFOContext):
         super().__init__()
         self.sfo_data = sfo_data
 
-    def read(self) -> None:
-        self.sfo_read(self.sfo_data)
-        self.param_data = self.sfo_get_param_data()
+    def editor_read(self) -> None:
+        self.read(self.sfo_data)
+        self.param_data = self.get_param_data()
 
-    def write(self) -> None:
-        self.sfo_data = self.sfo_write()
+    def editor_write(self) -> None:
+        self.sfo_data = self.write()
 
     def dict_embed(self) -> list[discord.Embed]:
         embeds = []
         p_data = self.param_data.copy()
         for param in p_data:
             emb = paramEmb.copy()
-            if param["key"] == "PARAMS":
-                param["converted_value"] = param["converted_value"].rstrip("0")
             for key, val in param.items():
-                if key == "value":
-                    continue
                 if len(str(val)) > EMBED_FIELD_VALUE_LIMIT:
                     raise ValueError("One of the values is too large to show!")
                 emb.add_field(
@@ -74,7 +71,7 @@ class SFO(commands.Cog):
 
         try:
             sfo_ctx = SFOEditor(sfo_data)
-            sfo_ctx.read()
+            sfo_ctx.editor_read()
             param_embeds = sfo_ctx.dict_embed()
             for emb in param_embeds:
                 await asyncio.sleep(1)
@@ -168,12 +165,12 @@ class SFO(commands.Cog):
 
         try:
             sfo_ctx = SFOEditor(sfo_data)
-            sfo_ctx.read()
+            sfo_ctx.editor_read()
             for key, val in parameters.items():
                 if not val:
                     continue
-                sfo_ctx.sfo_patch_parameter(key, val)
-            sfo_ctx.write()
+                sfo_ctx.patch_parameter(key, val)
+            sfo_ctx.editor_write()
 
             await ctx.edit(embed=finished_emb)
             await ctx.respond(file=discord.File(BytesIO(sfo_ctx.sfo_data), filename=sfo.filename))

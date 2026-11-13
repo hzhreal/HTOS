@@ -6,7 +6,8 @@ from aiofiles.ospath import isfile
 from app_core.models import Logger
 from app_core.helpers import int_validation
 from utils.constants import SAVEBLOCKS_MIN, SAVEBLOCKS_MAX
-from utils.orbis import SFOContext, checkid
+from utils.orbis import checkid
+from utils.orbis_sfo import SFOContext
 from utils.exceptions import OrbisError
 
 class SFOEditor(SFOContext):
@@ -84,8 +85,8 @@ class SFOEditor(SFOContext):
             "TITLE_ID": self.title_id,
         }
 
-        with ui.dialog() as dialog, ui.card().classes("w-full"):
-            self.info = Logger()
+        with ui.dialog() as dialog, ui.card().classes("w-full max-w-none"):
+            self.info = Logger(h="h-[80vh]")
             ui.button("Close", on_click=dialog.close)
         self.info_btn = ui.button("Display info", on_click=dialog.open)
 
@@ -100,7 +101,7 @@ class SFOEditor(SFOContext):
         try:
             async with aiofiles.open(self.sfopath, "rb") as sfo:
                 self.sfo_data = bytearray(await sfo.read())
-            self.read()
+            self.editor_read()
         except OrbisError as e:
             ui.notify(e)
             return
@@ -110,7 +111,7 @@ class SFOEditor(SFOContext):
 
         self.p_data = self.param_data.copy()
         for param in self.p_data:
-            self.map[param["key"]].value = param["converted_value"].rstrip("\x00")
+            self.map[param["key"]].value = param["value"]
         self.print_info()
 
         self.enable_buttons()
@@ -139,8 +140,8 @@ class SFOEditor(SFOContext):
             ui.notify(f"Created {bak_path}.")
 
             for key, val in parameters.items():
-                self.sfo_patch_parameter(key, val)
-            await self.write()
+                self.patch_parameter(key, val)
+            await self.editor_write()
         except OrbisError as e:
             ui.notify(e)
             return
@@ -169,12 +170,13 @@ class SFOEditor(SFOContext):
         self.info_btn.enable()
         self.save_btn.enable()
 
-    def read(self) -> None:
-        self.sfo_read(self.sfo_data)
-        self.param_data = self.sfo_get_param_data()
+    def editor_read(self) -> None:
+        self.params.clear()
+        self.read(self.sfo_data)
+        self.param_data = self.get_param_data()
 
-    async def write(self) -> None:
-        self.sfo_data = self.sfo_write()
+    async def editor_write(self) -> None:
+        self.sfo_data = self.write()
         async with aiofiles.open(self.sfopath, "wb") as sfo:
             await sfo.write(self.sfo_data)
 

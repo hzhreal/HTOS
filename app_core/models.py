@@ -112,12 +112,14 @@ class Profiles:
         return len(self.profiles) == 0
 
 class Logger:
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, h: str = "h-96") -> None:
         self.settings = settings
         self.text = ""
-        with ui.scroll_area().classes("w-full h-96 border") as scroll_area:
+        with ui.scroll_area().classes(f"w-full {h} border") as scroll_area:
             self.scroll_area = scroll_area
-            self.obj = ui.markdown().classes("w-full")
+            self.obj = ui.markdown().classes("w-full").style(
+                "user-select: text; -webkit-user-select: text;"
+            )
 
     def update_obj(self) -> None:
         self.obj.set_content(self.text)

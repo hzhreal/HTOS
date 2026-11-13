@@ -225,7 +225,7 @@ class Quick(commands.Cog):
                     # grab and validate savename
                     sfo_path = await zip_unpack_sfo(archive, newPARAM_PATH)
                     sfo = await sfo_ctx_create(sfo_path)
-                    savename = sfo.sfo_get_param_value("SAVEDATA_DIRECTORY")
+                    savename = sfo.get_param_value("SAVEDATA_DIRECTORY")
                     validate_savedirname(savename)
                     validate_savedirname_path(savename)
                     title_id = obtainCUSA(sfo)

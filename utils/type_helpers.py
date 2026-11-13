@@ -3,11 +3,6 @@ from math import ceil
 from enum import Enum
 from typing import Literal
 
-class TypeCategory(Enum):
-    INTEGER = 1
-    CHARACTER = 2
-    OTHER = 3
-
 class CIntSignednessState(Enum):
     SIGNED = True
     UNSIGNED = False
@@ -55,11 +50,7 @@ class Cint:
                 self._value = self.cast(int(value, 16))
             case bytes() | bytearray():
                 self._value = self.from_bytes(value)
-            case _:
-                raise ValueError("Invalid type!")
         self.const = const
-
-    CATEGORY = TypeCategory.INTEGER
 
     ENDIANNESS_TABLE = {
         "little": "<",
@@ -96,8 +87,6 @@ class Cint:
                 self._value = self.cast(int(value, 16))
             case bytes() | bytearray():
                 self._value = self.from_bytes(value)
-            case _:
-                raise ValueError("Invalid type!")
 
     def to_bytes(self, n: int) -> bytes:
         try:
@@ -161,11 +150,7 @@ class utf_8:
                 self.as_bytes = bytes(value)
                 self.bytelen = len(self.as_bytes)
                 self._value = self.from_bytes()
-            case _:
-                raise ValueError("Invalid type!")
         self.const = const
-
-    CATEGORY = TypeCategory.CHARACTER
 
     @property
     def value(self) -> str:
@@ -183,8 +168,6 @@ class utf_8:
                 self.as_bytes = bytes(value)
                 self.bytelen = len(self.as_bytes)
                 self._value = self.from_bytes()
-            case _:
-                raise ValueError("Invalid type!")
 
     def to_str(self) -> str:
         return self._value.rstrip("\x00")
@@ -194,13 +177,13 @@ class utf_8:
 
     def to_bytes(self) -> bytes:
         try:
-            return self._value.encode("utf-8")
+            return self._value.encode()
         except UnicodeEncodeError:
             raise ValueError("Invalid value provided!")
 
     def from_bytes(self) -> str:
         try:
-            return self.as_bytes.decode("utf-8")
+            return self.as_bytes.decode()
         except UnicodeDecodeError:
             raise ValueError("Invalid value provided!")
 
@@ -215,14 +198,10 @@ class bytestr:
                 self.as_bytes = bytes(value)
                 self.bytelen = len(self.as_bytes)
                 self._value = self.as_bytes
-            case _:
-                raise ValueError("Invalid type!")
         self.const = const
 
-    CATEGORY = TypeCategory.OTHER
-
     @property
-    def value(self) -> str:
+    def value(self) -> bytes:
         return self._value
 
     @value.setter
@@ -237,6 +216,4 @@ class bytestr:
                 self.as_bytes = bytes(value)
                 self.bytelen = len(self.as_bytes)
                 self._value = self.as_bytes
-            case _:
-                raise ValueError("Invalid type!")
 
