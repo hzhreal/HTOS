@@ -237,6 +237,7 @@ class SFOContext:
 
     def read(self, sfo: bytearray) -> None:
         sfo_len = len(sfo)
+        assert sfo_len <= SYS_FILE_MAX
         i = 0
 
         if i + SFOHeader.sizeof__self > sfo_len:
