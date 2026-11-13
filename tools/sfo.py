@@ -26,9 +26,6 @@ def main() -> None:
     param_data = sfo.get_param_data()
     pprint.pprint(param_data)
 
-    with open(sfo_path + ".out", "wb") as f:
-        f.write(sfo.write())
-
 def print_usage() -> None:
     print(f"USAGE: python {argv[0]} <sfo path>")
 

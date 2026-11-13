@@ -352,7 +352,11 @@ class SFOContext:
 
             l = len(param.key)
             base = header.key_table_offset + key_offset
-            sfo[base:base + l] = param.key.encode(encoding="ascii")
+            try:
+                key = param.key.encode(encoding="ascii")
+            except UnicodeEncodeError:
+                assert 0
+            sfo[base:base + l] = key
             key_offset += l + 1
 
             l = len(param.value)
