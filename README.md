@@ -28,7 +28,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Call of Duty: Black Ops II                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Castle Crashers Remastered                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Crisis Core: Final Fantasy VII                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
-| Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dark Souls: Remastered                              | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Dead Island 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 2                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead or Alive 5: Last Round                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |

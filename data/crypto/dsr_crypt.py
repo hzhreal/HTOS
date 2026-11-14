@@ -57,3 +57,12 @@ class Crypt_DSR:
             if is_dec:
                 await Crypt_DSR.encrypt_file(filepath)
 
+    @staticmethod
+    def reregion_get_new_name(title_id: str, savepairname: str) -> str:
+        from utils.orbis import check_titleid
+        # Example name: CUSA08495DRAKS0005
+        l = len(title_id)
+        if not check_titleid(savepairname[:l]):
+            return
+        return title_id + savepairname[l:]
+
