@@ -250,7 +250,6 @@ class CustomCrypto:
         assert d_len <= self.CHUNKSIZE # bound growth
         buf = bytes()
         out = []
-        outs = 0
         await self.r_stream.seek(start_off)
 
         for off in range(start_off, end_off, self.CHUNKSIZE):
@@ -267,10 +266,9 @@ class CustomCrypto:
                 i = chunk.find(d, start)
                 while i != -1:
                     target_off = off - buf_len + i
-                    if outs >= max_outs:
+                    if len(out) >= max_outs:
                         raise CryptoError("Invalid!")
                     out.append((target_off, d))
-                    outs += 1
                     i = chunk.find(d, i + 1)
             i = max(0, chunk_len - (d_len - 1))
             buf = chunk[i:]
