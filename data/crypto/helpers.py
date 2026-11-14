@@ -850,6 +850,9 @@ async def extra_reregion_pre(
 
         elif title_id in REV2_TITLEID:
             new_name = Crypto.Rev2.reregion_get_new_name(title_id)
+
+        elif title_id in DSR_TITLEID:
+            new_name = Crypto.DSR.reregion_get_new_name(title_id, savepairname)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
     return new_name
@@ -885,6 +888,9 @@ async def extra_reregion_post(
 
     elif title_id in REV2_TITLEID:
         new_name = Crypto.Rev2.reregion_get_new_name(title_id)
+
+    elif title_id in DSR_TITLEID:
+        new_name = Crypto.DSR.reregion_get_new_name(title_id, savepairname)
 
     else:
         return
