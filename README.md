@@ -42,6 +42,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | FINAL FANTASY I-VI Pixel Remaster                   | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Goat Simulator 3                                    | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Grand Theft Auto V                                  | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
+| JoJo's Bizarre Adventure: All-Star Battle R         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Jump Force                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Kingdom Hearts III                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | L.A. Noire                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
