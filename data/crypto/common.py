@@ -152,8 +152,9 @@ class CustomCrypto:
         return self.ctx_container[ctx]
 
     def delete_ctx(self, ctx: int) -> None:
-        self._get_ctx(ctx)
+        _ = self._get_ctx(ctx)
         del self.ctx_container[ctx]
+        self.i -= 1
 
     def _prepare_write(self) -> None:
         assert type(self.chunk) == bytearray
