@@ -33,7 +33,7 @@ from utils.orbis import (
 )
 from utils.exceptions import PSNIDError, FileError, OrbisError, WorkspaceError, TaskCancelledError
 from utils.instance_lock import INSTANCE_LOCK_global
-from utils.conversions import saveblocks_to_bytes, mb_to_saveblocks
+from utils.conversions import mb_to_saveblocks
 
 SAVEBLOCKS_DESC = f"The value you put in will determine savesize (blocks * 32768)."
 SAVESIZE_MB_DESC = "The value you put in will determine savesize (in MB)."
