@@ -268,11 +268,9 @@ class GDapi:
         sys_files: frozenset[str] | None,
         ps_save_pair_upload: bool,
         ignore_filename_check: bool,
-        savesize: int | None = None
     ) -> list[dict[str, str]]:
 
         valid_files_data = []
-        total_size = 0
 
         if ps_save_pair_upload:
             # assume the normal orbis filesystem is case sensitive
@@ -312,11 +310,7 @@ class GDapi:
             elif (sys_files is not None) and (file_size > SYS_FILE_MAX or filepath not in sys_files): # sce_sys files are not that big
                 raise FileError("Invalid sce_sys file uploaded!")
 
-            elif savesize is not None and total_size + file_size > savesize:
-                raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-
             else:
-                total_size += file_size
                 file_data = {"filepath": filepath, "fileid": file_id, "filesize": file_size}
                 valid_files_data.append(file_data)
         return valid_files_data
@@ -807,7 +801,6 @@ class GDapi:
               dst_local_dir: str,
               folder_id: str,
               max_files: int,
-              savesize: int | None = None
             ) -> list[list[str]]:
         """For encrypt & createsave command."""
         self.is_available_check()
@@ -821,8 +814,6 @@ class GDapi:
             raise FileError(f"Amount of files cannot exceed {max_files}!")
         elif total_filesize > self.TOTAL_SIZE_LIMIT:
             raise FileError(f"Total size cannot exceed: {self.TOTAL_SIZE_LIMIT}!")
-        elif savesize is not None and total_filesize > savesize:
-            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
 
         ld = os.path.realpath(dst_local_dir)
         uploaded_file_paths = []

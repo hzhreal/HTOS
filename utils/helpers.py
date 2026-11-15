@@ -349,7 +349,6 @@ def check_saves(
     sys_files: bool,
     ignore_filename_check: bool,
     ignore_dupe_check: bool,
-    savesize: int | None = None
 ) -> tuple[list[discord.message.Attachment], int]:
     """Handles file checks universally through discord upload."""
 
@@ -399,9 +398,6 @@ def check_saves(
         elif sys_files and (filename not in SCE_SYS_CONTENTS or attachment.size > SYS_FILE_MAX):
             raise FileError("Invalid sce_sys file uploaded!")
 
-        elif savesize is not None and total_size + attachment.size > savesize:
-            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-
         else:
             total_size += attachment.size
             valid_files.append(attachment)
@@ -415,7 +411,6 @@ async def upload2(
           sys_files: bool,
           ps_save_pair_upload: bool,
           ignore_filename_check: bool,
-          savesize: int | None = None,
           opt: UploadOpt | None = None
         ) -> list[list[str]]:
 
@@ -433,7 +428,7 @@ async def upload2(
         download_cycle = []
 
         valid_attachments, total_size = check_saves(
-            attachments, ps_save_pair_upload, sys_files, ignore_filename_check, False, savesize
+            attachments, ps_save_pair_upload, sys_files, ignore_filename_check, False
         )
         filecount = len(valid_attachments)
         if filecount == 0:
@@ -479,7 +474,7 @@ async def upload2(
                 ps_save_pair_upload, ignore_filename_check, opt.gd_allow_duplicates
             )]
         else:
-            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+            task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files)]
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
         try:
@@ -530,7 +525,7 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
 
     return file_path
 
-async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: int, splitvalue: str, savesize: int | None = None) -> list[str]:
+async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: int, splitvalue: str) -> list[str]:
     message = await wait_for_msg(d_ctx.ctx, upl_check, embUtimeout, timeout=UPLOAD_TIMEOUT)
 
     if len(message.attachments) > max_files:
@@ -540,7 +535,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         attachments = message.attachments
         uploaded_file_paths = []
 
-        valid_attachments, total_size = check_saves(attachments, False, False, True, True, savesize)
+        valid_attachments, total_size = check_saves(attachments, False, False, True, True)
         filecount = len(valid_attachments)
         if filecount == 0:
             raise FileError("Invalid files uploaded!")
@@ -607,7 +602,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
         google_drive_link = message.content
         await message.delete()
         folder_id = gdapi.get_folderid(google_drive_link)
-        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files, savesize)]
+        task = [lambda: gdapi.downloadfiles_recursive(d_ctx.msg, save_location, folder_id, max_files)]
         await d_ctx.msg.edit(embed=cancel_notify_emb)
         await asyncio.sleep(1)
         try:
@@ -699,7 +694,6 @@ async def replace_decrypted(
           upload_individually: bool,
           local_download_path: str,
           savepairname: str,
-          savesize: int,
           ignore_secondlayer_checks: bool
         ) -> list[str]:
 
@@ -707,7 +701,6 @@ async def replace_decrypted(
 
     completed = []
     if upload_individually:
-        total_size = 0
         for file in files:
             full_path = mount_location + "/" + file
             cwd_here = full_path.split("/")
@@ -729,10 +722,6 @@ async def replace_decrypted(
             task = [lambda: fInstance.replacer(new_path, cwd_here, last_N)]
             await task_handler(d_ctx, task, [])
             completed.append(file)
-            total_size += await aiofiles.os.path.getsize(new_path)
-        if total_size > savesize:
-            raise FileError(f"The files you are uploading for this save exceeds the savesize {bytes_to_mb(savesize)} MB!")
-
     else:
         async def send_chunk(msg_container: list[discord.Message], chunk: str) -> None:
             if len(msg_container) >= 100:
@@ -770,8 +759,8 @@ async def replace_decrypted(
             uploaded_file_paths = (
                 await upload2(
                     d_ctx, local_download_path,
-                    max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True,
-                    savesize=savesize, opt=opt)
+                    max_files=MAX_FILES, sys_files=False, ps_save_pair_upload=False, ignore_filename_check=True, opt=opt
+                )
             )[0]
         finally:
             for msg in msg_container:

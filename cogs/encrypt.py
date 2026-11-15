@@ -106,7 +106,6 @@ class Encrypt(commands.Cog):
             for savepath in batch.savenames:
                 savefile.path = savepath
                 try:
-                    pfs_size = await aiofiles.os.path.getsize(savepath) # check has already been done
                     await savefile.construct()
 
                     emb = embed_construct(
@@ -127,7 +126,7 @@ class Encrypt(commands.Cog):
                     completed = await replace_decrypted(
                         d_ctx, C1ftp, files, savefile.title_id,
                         batch.mount_location, upload_individually,
-                        newUPLOAD_DECRYPTED, savefile.basename, pfs_size, ignore_secondlayer_checks
+                        newUPLOAD_DECRYPTED, savefile.basename, ignore_secondlayer_checks
                     )
                     shutil.rmtree(newUPLOAD_DECRYPTED)
                     await aiofiles.os.mkdir(newUPLOAD_DECRYPTED)
@@ -140,14 +139,15 @@ class Encrypt(commands.Cog):
                             )
                         )
 
-                        uploaded_file_paths_sys = (await upload2(
-                            d_ctx,
-                            newUPLOAD_DECRYPTED,
-                            max_files=len(SCE_SYS_CONTENTS),
-                            sys_files=True,
-                            ps_save_pair_upload=False,
-                            ignore_filename_check=False,
-                            savesize=pfs_size)
+                        uploaded_file_paths_sys = (
+                            await upload2(
+                                d_ctx,
+                                newUPLOAD_DECRYPTED,
+                                max_files=len(SCE_SYS_CONTENTS),
+                                sys_files=True,
+                                ps_save_pair_upload=False,
+                                ignore_filename_check=False
+                            )
                         )[0]
                         await C1ftp.upload_scesys_contents(msg, uploaded_file_paths_sys, batch.location_to_scesys)
                         shutil.rmtree(newUPLOAD_DECRYPTED)

@@ -70,10 +70,9 @@ class CreateSave(commands.Cog):
 
         # saveblocks takes priority
         if saveblocks:
-            savesize = saveblocks_to_bytes(saveblocks)
+            pass
         elif savesize_mb:
             saveblocks = mb_to_saveblocks(savesize_mb)
-            savesize = saveblocks_to_bytes(saveblocks)
         else:
             e = "You need to add the `saveblocks` or `savesize_mb` argument!"
             await error_handling(ctx, e, workspace_folders, None, None, None)
@@ -122,7 +121,7 @@ class CreateSave(commands.Cog):
 
             # next, other files (gamesaves)
             await msg.edit(embed=emb2)
-            _ = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE, savesize)
+            _ = await upload2_special(d_ctx, newUPLOAD_DECRYPTED, MAX_FILES, self.DISC_UPL_SPLITVALUE)
         except HTTPError as e:
             err = gdapi.get_err_str_HTTPERROR(e)
             await error_handling(msg, err, workspace_folders, None, None, None)
