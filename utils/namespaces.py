@@ -58,6 +58,7 @@ from data.crypto.balatro_crypt import Crypt_Balatro
 from data.crypto.wwe2k25_crypt import Crypt_WWE2K25
 from data.crypto.bo_crypt import Crypt_BO
 from data.crypto.jojo_crypt import Crypt_JoJo
+from data.crypto.kcd1_crypt import Crypt_KCD1
 
 from types import SimpleNamespace
 
@@ -82,6 +83,6 @@ Crypto = SimpleNamespace(
     SAOFB=Crypt_SAOFB, MHR=Crypt_MHR, DoA5LR=Crypt_DoA5LR,
     RE6=Crypt_RE6, MEarth=Crypt_MEarth, GS3=Crypt_GS3,
     JForce=Crypt_JForce, Balatro=Crypt_Balatro, WWE2K25=Crypt_WWE2K25,
-    BO=Crypt_BO, JoJo=Crypt_JoJo
+    BO=Crypt_BO, JoJo=Crypt_JoJo, KCD1=Crypt_KCD1
 )
 
