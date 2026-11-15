@@ -293,7 +293,12 @@ def verify_titleids() -> None:
     for ts in title_ids:
         for t in ts:
             assert check_titleid(t), t
-SPECIAL_REREGION_TITLEIDS = frozenset.union(XENO2_TITLEID, MGSV_GZ_TITLEID, MGSV_TPP_TITLEID, MINECRAFT_TITLEID)
+SPECIAL_REREGION_TITLEIDS = frozenset.union(
+    XENO2_TITLEID,
+    MGSV_TPP_TITLEID, MGSV_GZ_TITLEID, MGSV_DE_TITLEID,
+    REV2_TITLEID,
+    DSR_TITLEID
+)
 
 # BOT CONFIG
 DISCORD_SAVEGAME_MAX = gb_to_bytes(1) # discord file size limit for nitro users
