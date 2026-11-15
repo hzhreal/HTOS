@@ -20,7 +20,7 @@ from utils.constants import (
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
     KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID, SAO_FB_TITLEID, MHR_TITLEID,
     DOA5_LR_TITLEID, RE6_TITLEID, MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID, GS3_TITLEID, JFORCE_TITLEID, BALATRO_TITLEID, WWE_2K25_TITLEID,
-    BO1_TITLEID, BO2_TITLEID, JOJO_ASBR_TITLEID, KCD1_TITLEID, TSUSHIMA_TITLEID, DC_UNIVERSE_TITLEID
+    BO1_TITLEID, BO2_TITLEID, JOJO_ASBR_TITLEID, KCD1_TITLEID, TSUSHIMA_TITLEID, DC_UNIVERSE_TITLEID, GREEDFALL_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -153,6 +153,8 @@ async def extra_decrypt(
                         await Crypto.JoJo.check_dec_ps(folderpath)
                     case "KCD1":
                         await Crypto.KCD1.check_dec_ps(folderpath)
+                    case "GREEDFALL":
+                        await Crypto.GreedFall.check_dec_ps(folderpath)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -682,6 +684,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("KCD1"))
         await helper.await_done()
 
+    elif title_id in GREEDFALL_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.GreedFall.check_dec_ps(folderpath)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("GREEDFALL"))
+        await helper.await_done()
+
 async def extra_import(title_id: str, folderpath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -866,6 +880,9 @@ async def extra_import(title_id: str, folderpath: str, savepairname: str) -> Non
 
         elif title_id in DC_UNIVERSE_TITLEID:
             await Crypto.DCUniverse.check_enc_ps(folderpath)
+
+        elif title_id in GREEDFALL_TITLEID:
+            await Crypto.GreedFall.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
