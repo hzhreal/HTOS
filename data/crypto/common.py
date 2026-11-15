@@ -21,7 +21,7 @@ from Crypto.Cipher import AES, Blowfish, DES3
 from typing import Literal, Any, Self
 
 from utils.constants import SCE_SYS_NAME, RANDOMSTRING_LENGTH
-# from utils.constants import SAVESIZE_MAX
+# from utils.constants import SAVESIZE_MAX, MAX_FILES_MOUNTPOINT
 from utils.conversions import mb_to_bytes, bytes_to_mb
 from utils.type_helpers import Cint, uint8, uint32, uint64
 from utils.extras import generate_random_string
@@ -38,6 +38,7 @@ class CustomCryptoCtx:
 class CustomCrypto:
     CHUNKSIZE = mb_to_bytes(1)
     SAVESIZE_MAX = mb_to_bytes(25) # some implementations are in pure python, can be too slow
+    MAX_FILES_MOUNTPOINT = 20 # same reason as above
     AES = AES
     Blowfish = Blowfish
     DES3 = DES3
@@ -854,6 +855,8 @@ class CustomCrypto:
             entry_path = os.path.join(path, entry)
 
             if await aiofiles.os.path.isfile(entry_path) and entry not in exclude:
+                if len(files) >= CustomCrypto.MAX_FILES_MOUNTPOINT:
+                    raise CryptoError("There are too many files inside the save!")
                 files.append(entry_path)
             elif await aiofiles.os.path.isdir(entry_path) and entry_path != os.path.join(path, SCE_SYS_NAME):
                 await CustomCrypto.obtain_files(entry_path, exclude, files)

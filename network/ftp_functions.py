@@ -8,7 +8,10 @@ import asyncio
 from aioftp.errors import AIOFTPException
 
 from network.exceptions import FTPError
-from utils.constants import GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, logger
+from utils.constants import (
+    GENERAL_CHUNKSIZE, SYS_FILE_MAX, KEYSTONE_SIZE, KEYSTONE_NAME, PARAM_NAME, ICON0_NAME, SCE_SYS_NAME, MAX_FILES_MOUNTPOINT,
+    logger
+)
 from utils.embeds import embuplSuccess
 from utils.conversions import minutes_to_seconds
 
@@ -221,6 +224,9 @@ class FTPps:
             raise FTPError("FTP ERROR!")
 
     async def download_folder(self, folder_path: str, downloadpath: str, ignore_scesys: bool) -> None:
+        # call list_files to respect MAX_FILES_MOUNTPOINT
+        # throw away result for convenience
+        _ = await self.list_files(folder_path)
         try:
             async with aioftp.Client.context(self.ip, self.port, **self.TIMEOUTS) as ftp:
                 await ftp.download(folder_path, downloadpath, write_into=True)
@@ -328,6 +334,8 @@ class FTPps:
                 if await ftp.exists(target_path):
                     await ftp.change_directory(target_path)
                     async for path in ftp.list(recursive=recursive):
+                        if len(files) >= MAX_FILES_MOUNTPOINT:
+                            raise FTPError("There are too many files inside the save!")
                         files.append(path)
         except AIOFTPException as e:
             logger.exception(f"[FTP ERROR]: {e}")

@@ -300,6 +300,7 @@ DISCORD_SAVEGAME_MAX = gb_to_bytes(1) # discord file size limit for nitro users
 DISCORD_TOTAL_SIZE_LIMIT = gb_to_bytes(1) # discord file size limit for nitro users
 SYS_FILE_MAX = mb_to_bytes(1) # sce_sys files are not that big so 1 MB, keep this low
 MAX_FILES = 100
+MAX_FILES_MOUNTPOINT = 1000
 UPLOAD_TIMEOUT = minutes_to_seconds(10) # how long the user has to upload files or send google drive folder link
 OTHER_TIMEOUT = minutes_to_seconds(5) # how long the user has for button clicks, responding to quickresign command, and responding with account id
 GENERAL_TIMEOUT = hours_to_seconds(1) # how long files can actually be downloaded and uploaded for, before timing out
