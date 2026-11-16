@@ -20,7 +20,8 @@ from utils.constants import (
     TOB_TITLEID, TR6R_TITLEID, STRIDER_TITLEID, DIABLO3_TITLEID, ALIEN_ISO_TITLEID, SHANTAE_SCURSE_TITLEID, MAFIA3_TITLEID, DEADRISING_TITLEID,
     KH3_TITLEID, PO_PERSIA_TITLEID, LUNAR_R_TITLEID, DSTRANDING_TITLEID, FC5_TITLEID, FF_PIXEL_TITLEID, SAO_FB_TITLEID, MHR_TITLEID,
     DOA5_LR_TITLEID, RE6_TITLEID, MEARTH_SOM_TITLEID, MEARTH_SOW_TITLEID, GS3_TITLEID, JFORCE_TITLEID, BALATRO_TITLEID, WWE_2K25_TITLEID,
-    BO1_TITLEID, BO2_TITLEID, JOJO_ASBR_TITLEID, KCD1_TITLEID, TSUSHIMA_TITLEID, DC_UNIVERSE_TITLEID, GREEDFALL_TITLEID, EVIL_WITHIN_TITLEID
+    BO1_TITLEID, BO2_TITLEID, JOJO_ASBR_TITLEID, KCD1_TITLEID, TSUSHIMA_TITLEID, DC_UNIVERSE_TITLEID, GREEDFALL_TITLEID, EVIL_WITHIN_TITLEID,
+    STAR_OCEAN_TITLEID
 )
 from utils.embeds import embdecTimeout, embdecFormat, embErrdec
 from utils.extras import generate_random_string
@@ -157,6 +158,8 @@ async def extra_decrypt(
                         await Crypto.GreedFall.check_dec_ps(folderpath)
                     case "EVILWITHIN":
                         await Crypto.EvilWithin.check_dec_ps(folderpath)
+                    case "STAROCEAN":
+                        await Crypto.StarOcean.check_dec_ps(folderpath)
             except (ValueError, IOError, IndexError):
                 raise CryptoError("Invalid save!")
 
@@ -710,6 +713,18 @@ async def extra_decrypt(
         await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("EVILWITHIN"))
         await helper.await_done()
 
+    elif title_id in STAR_OCEAN_TITLEID:
+        if choice is not None:
+            if choice:
+                try:
+                    await Crypto.StarOcean.check_dec_ps(folderpath)
+                except (ValueError, IOError, IndexError):
+                    raise CryptoError("Invalid save!")
+            return
+
+        await d_ctx.msg.edit(embed=emb, view=CryptChoiceButton("STAROCEAN"))
+        await helper.await_done()
+
 async def extra_import(title_id: str, folderpath: str, savepairname: str) -> None:
     try:
         if title_id in GTAV_TITLEID:
@@ -900,6 +915,9 @@ async def extra_import(title_id: str, folderpath: str, savepairname: str) -> Non
 
         elif title_id in EVIL_WITHIN_TITLEID:
             await Crypto.EvilWithin.check_enc_ps(folderpath)
+
+        elif title_id in STAR_OCEAN_TITLEID:
+            await Crypto.StarOcean.check_enc_ps(folderpath)
     except (ValueError, IOError, IndexError):
         raise CryptoError("Invalid save!")
 
