@@ -13,7 +13,7 @@ import errno
 
 from discord.ext import pages
 from dataclasses import dataclass
-from typing import Literal, Callable, Awaitable, Any
+from typing import Callable, Awaitable, Any
 from enum import Enum
 from discord.ui.item import Item
 from psnawp_api.core.psnawp_exceptions import PSNAWPNotFoundError, PSNAWPAuthenticationError
@@ -174,25 +174,39 @@ async def error_handling(
     except Exception as e:
         logger.exception(f"Unhandled exception while cleaning up: {e}")
 
+DEFAULT_EXIT_VAL = "EXIT"
+def is_exit(s: str, val: str = DEFAULT_EXIT_VAL) -> bool:
+    return val.lower() in s.lower()
+
 """Makes the bot expect multiple files through discord or google drive."""
 def upl_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (len(message.attachments) >= 1) or (message.content and gdapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+        return len(message.attachments) >= 1 or gdapi.is_google_drive_link(message.content) or is_exit(message.content)
+    return False
 
 """Makes the bot expect a single file through discord or google drive."""
 def upl1_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (len(message.attachments) == 1) or (message.content and gdapi.is_google_drive_link(message.content)) or (message.content and message.content == "EXIT")
+        return len(message.attachments) == 1 or gdapi.is_google_drive_link(message.content) or is_exit(message.content)
+    return False
 
 def accid_input_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return (message.content and checkid(message.content)) or (message.content and message.content == "EXIT")
+        return checkid(message.content) or is_exit(message.content)
+    return False
 
 def exit_check(message: discord.Message, ctx: discord.ApplicationContext) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        return message.content and message.content == "EXIT"
+        return is_exit(message.content)
+    return False
 
-async def wait_for_msg(ctx: discord.ApplicationContext, check: Callable[[discord.Message, discord.ApplicationContext], bool], embed: discord.Embed | None, delete_response: bool = False, timeout: int | None = OTHER_TIMEOUT) -> discord.Message:
+async def wait_for_msg(
+          ctx: discord.ApplicationContext,
+          check: Callable[[discord.Message, discord.ApplicationContext], bool],
+          embed: discord.Embed | None,
+          delete_response: bool = False,
+          timeout: int | None = OTHER_TIMEOUT
+    ) -> discord.Message:
     try:
         response = await bot.wait_for("message", check=lambda message: check(message, ctx), timeout=timeout)
         if delete_response:
@@ -460,7 +474,7 @@ async def upload2(
         opt.method = UploadMethod.DISCORD
         await message.delete() # delete afterwards for reliability
 
-    elif message.content == "EXIT":
+    elif is_exit(message.content):
         raise TimeoutError("EXITED!")
 
     else:
@@ -509,7 +523,7 @@ async def upload1(d_ctx: DiscordContext, save_location: str) -> str:
             await message.delete()
             await d_ctx.msg.edit(embed=emb)
 
-    elif message.content == "EXIT":
+    elif is_exit(message.content):
         raise TimeoutError("EXITED!")
 
     else:
@@ -595,7 +609,7 @@ async def upload2_special(d_ctx: DiscordContext, save_location: str, max_files: 
 
         await message.delete()
 
-    elif message.content == "EXIT":
+    elif is_exit(message.content):
         raise TimeoutError("EXITED!")
 
     else:
@@ -619,7 +633,7 @@ async def psusername(ctx: discord.ApplicationContext, username: str) -> str:
         e.description = e.description.format(msg=msg)
         await ctx.respond(embed=e)
         res = await wait_for_msg(ctx, accid_input_check, embnt, delete_response=True)
-        if res.content == "EXIT":
+        if is_exit(res.content):
             raise PSNIDError("EXITED!")
         if res.content.lower().startswith("0x"):
             n = 2
@@ -836,19 +850,18 @@ async def send_final(d_ctx: DiscordContext, file_name: str, zip_dir: str, shared
         emb.description = emb.description.format(url=file_url[0], extra_msg=extra_msg)
         await d_ctx.ctx.send(embed=emb, reference=d_ctx.msg)
 
-def qr_check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int, exit_val: str) -> str | bool:
+def qr_check(message: discord.Message, ctx: discord.ApplicationContext, max_index: int, exit_val: str = DEFAULT_EXIT_VAL) -> bool:
     if message.author == ctx.author and message.channel == ctx.channel:
-        if message.content == exit_val:
-            return message.content
-        else:
-            try:
-                index = int(message.content)
-                return 1 <= index <= max_index
-            except ValueError:
-                return False
+        if is_exit(message.content, exit_val):
+            return True
+        try:
+            index = int(message.content)
+            return 1 <= index <= max_index
+        except ValueError:
+            return False
     return False
 
-async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> tuple[str, dict[str, dict[str, str]]] | tuple[Literal["EXIT"], Literal["EXIT"]]:
+async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> tuple[str, dict[str, dict[str, str]]]:
     game_desc = ""
     game_msgs = []
     selection = {}
@@ -876,7 +889,11 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
         raise WorkspaceError("NO STORED SAVES!")
 
     try:
-       message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "EXIT"), timeout=OTHER_TIMEOUT) 
+        message: discord.Message = await bot.wait_for(
+            "message",
+            check=lambda message: qr_check(message, d_ctx.ctx, entries_added),
+            timeout=OTHER_TIMEOUT
+        )
     except asyncio.TimeoutError:
         await clean_msgs(game_msgs)
         raise TimeoutError("TIMED OUT!")
@@ -884,20 +901,19 @@ async def qr_interface_main(d_ctx: DiscordContext, stored_saves: dict[str, dict[
     await message.delete()
     await clean_msgs(game_msgs)
 
-    if message.content == "EXIT":
-        return message.content, message.content
+    if is_exit(message.content):
+        return "", {}
 
-    else:
-        game = selection[int(message.content) - 1]
-        selected_game = stored_saves.get(game)
-        if not selected_game:
-            raise WorkspaceError("Could not find game!")
-        return game, selected_game
+    game = selection[int(message.content) - 1]
+    selected_game = stored_saves.get(game)
+    if not selected_game:
+        raise WorkspaceError("Could not find game!")
+    return game, selected_game
 
 async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[str, dict[str, str]]]) -> tuple[ReturnTypes, list[str]]:
     while True:
         game, game_dict = await qr_interface_main(d_ctx, stored_saves)
-        if game == "EXIT" and game_dict == "EXIT":
+        if not game and not game_dict:
             return ReturnTypes.EXIT, []
 
         pages_list = []
@@ -928,7 +944,11 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         p_msg = await paginator.respond(d_ctx.ctx.interaction)
 
         try:
-            message: discord.Message = await bot.wait_for("message", check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"), timeout=OTHER_TIMEOUT)
+            message: discord.Message = await bot.wait_for(
+                "message",
+                check=lambda message: qr_check(message, d_ctx.ctx, entries_added, "BACK"),
+                timeout=OTHER_TIMEOUT
+            )
         except asyncio.TimeoutError:
             await paginator.disable(page=pages_list[0])
             await p_msg.delete()
@@ -939,15 +959,14 @@ async def run_qr_paginator(d_ctx: DiscordContext, stored_saves: dict[str, dict[s
         await paginator.disable(page=pages_list[0])
         await p_msg.delete()
 
-        if message.content == "BACK":
+        if is_exit(message.content, "BACK"):
             continue
 
-        else:
-            selected_save = selection[int(message.content) - 1]
-            savenames = await get_savenames_from_bin_ext(selected_save)
-            if len(savenames) == 0:
-                raise WorkspaceError("Failed to get saves!")
-            return ReturnTypes.SUCCESS, [os.path.join(selected_save, x) for x in savenames]
+        selected_save = selection[int(message.content) - 1]
+        savenames = await get_savenames_from_bin_ext(selected_save)
+        if len(savenames) == 0:
+            raise WorkspaceError("Failed to get saves!")
+        return ReturnTypes.SUCCESS, [os.path.join(selected_save, x) for x in savenames]
 
 def embed_construct(
     embed: discord.Embed,
