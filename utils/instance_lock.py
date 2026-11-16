@@ -44,7 +44,10 @@ class InstanceLock:
             self._timeout_handler(disc_userid)
 
             if self.instances_len == self.maximum_instances:
-                raise InstanceError(f"There are no available slots! Maximum of {self.maximum_instances} reached. Please try again later.")
+                raise InstanceError(
+                    f"There are no available slots! Maximum of {self.maximum_instances} reached."
+                    " Please try again later."
+                )
 
             instance = self.instances.get(disc_userid)
             if not instance:
@@ -52,7 +55,10 @@ class InstanceLock:
                 self.instances[disc_userid] = instance
 
             if instance.active_instances == self.maximum_instances_per_user:
-                raise InstanceError(f"You can only have {self.maximum_instances_per_user} active instance(s) at a time!")
+                raise InstanceError(
+                    f"You can only have {self.maximum_instances_per_user} active instance(s) at a time!"
+                    " Do you have any other commands active?"
+                )
 
             # every time a new slot is given, recalculate the timestamp
             instance.timestamp = time.time()

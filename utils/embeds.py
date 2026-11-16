@@ -679,7 +679,7 @@ embgame = discord.Embed(
 embgame.set_footer(text=Embed_t.QR_FOOTER2.value)
 
 emb_il = discord.Embed(
-    title="Too many users at the moment!",
+    title="Failed to acquire instance",
     description="{error}",
     colour=Color.YELLOW.value
 )
