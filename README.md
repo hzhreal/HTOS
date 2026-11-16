@@ -33,6 +33,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Dead Island 1                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Island 2                                       | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead or Alive 5: Last Round                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Dead or Alive 6                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Dead Rising                                         | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Death Stranding                                     | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Diablo III                                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
