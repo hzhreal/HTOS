@@ -77,6 +77,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil Village                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shantae and the Pirate's Curse                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shin Megami Tensei 5                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| STAR OCEAN - THE LAST HOPE - 4K & Full HD Remaster  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Stardew Valley                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Strider                                             | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Sword Art Online: Fatal Bullet                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
