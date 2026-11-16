@@ -213,7 +213,7 @@ class GDapi:
 
     @staticmethod
     def is_google_drive_link(text: str) -> bool:
-        return bool(GD_LINK_RE.match(text))
+        return bool(GD_LINK_RE.fullmatch(text))
 
     @staticmethod
     def get_err_str_HTTPERROR(e: HTTPError) -> str:
