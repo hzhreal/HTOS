@@ -65,6 +65,7 @@ from data.crypto.greedfall_crypt import Crypt_GreedFall
 from data.crypto.evilwithin_crypt import Crypt_EvilWithin
 from data.crypto.starocean_crypt import Crypt_StarOcean
 from data.crypto.doa6_crypt import Crypt_DoA6
+from data.crypto.legomsh_crypt import Crypt_LEGOMSH
 
 from types import SimpleNamespace
 
@@ -91,6 +92,7 @@ Crypto = SimpleNamespace(
     JForce=Crypt_JForce, Balatro=Crypt_Balatro, WWE2K25=Crypt_WWE2K25,
     BO=Crypt_BO, JoJo=Crypt_JoJo, KCD1=Crypt_KCD1,
     Tsushima=Crypt_Tsushima, DCUniverse=Crypt_DCUniverse, GreedFall=Crypt_GreedFall,
-    EvilWithin=Crypt_EvilWithin, StarOcean=Crypt_StarOcean, DoA6=Crypt_DoA6
+    EvilWithin=Crypt_EvilWithin, StarOcean=Crypt_StarOcean, DoA6=Crypt_DoA6,
+    LEGOMSH=Crypt_LEGOMSH
 )
 
