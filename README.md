@@ -77,6 +77,9 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil: Resistance                           | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Resident Evil: Revelations 2                        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Resident Evil Village                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Samurai Warriors 4                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Samurai Warriors 4-II                               | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Samurai Warriors: Spirit of Sanada                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shantae and the Pirate's Curse                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shin Megami Tensei 5                                | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | STAR OCEAN - THE LAST HOPE - 4K & Full HD Remaster  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
@@ -127,6 +130,7 @@ Nioh 2: Checksum fix is for version 01.27 only.
 No Man's Sky: Only `savedata.hg` is implemented.  
 Prince of Persia: The Lost Crown: Only `PopSaveGameSlot*.AlkSave` is implemented.  
 Red Dead Redemption 2: Only money quick cheat is implemented.  
+Samurai Warriors 4-II: Only latest save version is supported.
 Terraria: Only `.plr` and some `.wld` are implemented.  
 Xenoverse 2: The conversion will only make the savegame work on the PC save editor.  
 
