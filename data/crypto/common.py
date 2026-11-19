@@ -13,6 +13,7 @@ from types import TracebackType
 
 from data.crypto.algorithms.jhash.lookup2 import JHashLookup2
 from data.crypto.algorithms.rijndael.rijndael import Rijndael
+from data.crypto.algorithms.md5.md5 import MD5
 
 from data.crypto.exceptions import CryptoError
 
@@ -50,6 +51,7 @@ class CustomCrypto:
     anycrc = anycrc
     JHashLookup2 = JHashLookup2
     Rijndael = Rijndael
+    MD5 = MD5
 
     def __init__(
         self,
@@ -559,7 +561,7 @@ class CustomCrypto:
                 assert 0
             return
 
-        if not start_off < end_off <= self.size:
+        if not start_off <= end_off <= self.size:
             raise CryptoError("Invalid!")
         await self.r_stream.seek(start_off)
 
@@ -722,6 +724,10 @@ class CustomCrypto:
 
     def create_ctx_md5(self) -> int:
         update_obj = hashlib.md5()
+        return self._create_ctx(update_obj)
+
+    def create_ctx_md5_any(self, **kwargs) -> int:
+        update_obj = MD5(**kwargs)
         return self._create_ctx(update_obj)
 
     def create_ctx_sha1(self) -> int:
