@@ -79,6 +79,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Resident Evil: Revelations 2                        | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_check_mark:                 |
 | Resident Evil Village                               | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Samurai Warriors 4                                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Samurai Warriors 4 Empires                          | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Samurai Warriors 4-II                               | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Samurai Warriors: Spirit of Sanada                  | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Shantae and the Pirate's Curse                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
