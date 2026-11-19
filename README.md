@@ -65,6 +65,7 @@ Certain games need to have an extra implementation for it to work out of the box
 | Monster Hunter World: Iceborne                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Nioh 2                                              | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | No Man's Sky                                        | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
+| Payday 2: Crimewave Edition                         | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Prince of Persia: The Lost Crown                    | :large_blue_circle:     | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Raspberry Cube                                      | :white_check_mark:      | :white_circle:                      | :black_circle:           | :white_circle:                     |
 | Red Dead Redemption 2                               | :white_check_mark:      | :white_check_mark:                  | :large_blue_circle:      | :white_circle:                     |
@@ -128,6 +129,7 @@ Far Cry 5: Any compressed image data will not be decompressed.
 Grand Theft Auto V: Only money quick cheat is implemented.  
 Nioh 2: Checksum fix is for version 01.27 only.  
 No Man's Sky: Only `savedata.hg` is implemented.  
+Payday 2: Crimewave Edition: Only latest save version is supported.
 Prince of Persia: The Lost Crown: Only `PopSaveGameSlot*.AlkSave` is implemented.  
 Red Dead Redemption 2: Only money quick cheat is implemented.  
 Samurai Warriors 4-II: Only latest save version is supported.
