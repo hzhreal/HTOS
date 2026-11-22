@@ -990,7 +990,7 @@ def extra_reregion_pre_needs_folder(
 async def extra_reregion_post(
           savepath: str,
           title_id: str,
-        ) -> str | None:
+        ) -> str:
     """
     On encrypted savepairs.
     Renames the save after re-regioning for the games that need it, random string is appended at the end for no overwriting.
@@ -1017,11 +1017,11 @@ async def extra_reregion_post(
         new_name = Crypto.Injustice.reregion_get_new_name(title_id)
 
     else:
-        return
+        return ""
     if not new_name:
-        return
+        return ""
     if savepairname == new_name:
-        return
+        return ""
 
     savefolder = os.path.dirname(savepath)
     new_file = os.path.join(savefolder, new_name)

@@ -106,7 +106,7 @@ class SaveFile:
         savepath = await self.batch.fInstance.dlencrypted_bulk(self.batch.user_id, self.realSave, self.title_id)
         if self.reregion_check:
             sp = await extra_reregion_post(savepath, self.title_id)
-            if sp is not None:
+            if sp:
                 savepath = sp
         await fix_pfs_auth_code_info(savepath)
 
