@@ -15,7 +15,7 @@ from utils.embeds import (
 )
 from utils.helpers import ThreadButton, error_handling
 from utils.workspace import fetchall_threadid_db, delall_threadid_db, make_workspace
-from utils.orbis import keyset_to_fw
+from utils.orbis import keyset_to_max_fw
 from utils.instance_lock import INSTANCE_LOCK_global
 from utils.exceptions import WorkspaceError
 
@@ -42,7 +42,7 @@ class Misc(commands.Cog):
         try:
             async with asyncio.timeout(MISC_TIMEOUT):
                 keyset = await C1socket.socket_keyset()
-            fw = keyset_to_fw(keyset)
+            fw = keyset_to_max_fw(keyset)
 
             emb = keyset_emb.copy()
             emb.description = emb.description.format(keyset=keyset, fw=fw)

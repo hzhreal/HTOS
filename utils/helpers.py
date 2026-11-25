@@ -35,7 +35,7 @@ from utils.embeds import (
     embe, embuplSuccess, embuplSuccess1, embencupl,
     embenc_out, embencinst, embgdout, embgames, embgame, embwlcom,
 )
-from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError 
+from utils.exceptions import PSNIDError, FileError, WorkspaceError, TaskCancelledError
 from utils.workspace import (
     fetch_accountid_db, write_accountid_db, cleanup, cleanup_simple,
     write_threadid_db, get_savenames_from_bin_ext, blacklist_check_db,

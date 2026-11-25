@@ -10,12 +10,12 @@ class Color(Enum):
 
 class Embed_t(Enum):
     DEFAULT_FOOTER = f"Made by hzh. ({VERSION})"
-    QR_FOOTER1 = "Respond with the number of your desired game, or type 'EXIT' to quit."
-    QR_FOOTER2 = "Respond with the number of your desired save, or type 'BACK' to go to the game menu."
+    QR_FOOTER1 = "Reply with the number of your desired game, or reply with 'EXIT' to quit."
+    QR_FOOTER2 = "Reply with the number of your desired save, or reply with 'BACK' to go to the game menu."
 
 embUtimeout = discord.Embed(
     title="Upload alert: Error",
-    description="Time's up! You didn't attach any files.",
+    description="Time's up! You didn't reply with any files.",
     colour=Color.DEFAULT.value
 )
 embUtimeout.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -29,49 +29,49 @@ embhttp.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embEncrypted1 = discord.Embed(
     title="Resigning process: Encrypted",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embEncrypted1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embDecrypt1 = discord.Embed(
     title="Decrypt Process",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embDecrypt1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb14 = discord.Embed(
     title="Resigning process: Decrypted",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb14.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb20 = discord.Embed(
     title="Re-region process: Upload encrypted files from the FOREIGN region",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb20.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb21 = discord.Embed(
     title="Re-region process: Upload encrypted files from YOUR region",
-    description="Please attach two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb21.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng = discord.Embed(
     title="PNG Process",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embpng.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb8 = discord.Embed(
     title="Error: PSN username",
-    description=f"{{msg}}. You have {OTHER_TIMEOUT} seconds to reply with your account ID instead.\nOr type 'EXIT' to cancel command.",
+    description=f"{{msg}}. You have {OTHER_TIMEOUT} seconds to reply with your account ID instead.\nOr reply with 'EXIT' to cancel command.",
     colour=Color.YELLOW.value
 )
 emb8.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -99,7 +99,7 @@ embinit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTitleChange = discord.Embed(
     title="Change title: Upload",
-    description="Please attach at least two encrypted savefiles that you want to upload (.bin and non bin). Or type 'EXIT' to cancel command.",
+    description="Please reply with at least two encrypted savefiles that you want to upload (.bin and non bin). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embTitleChange.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -127,7 +127,7 @@ embDone_G.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_upl_savegame = discord.Embed(
     title="Upload files",
-    description=f"Please attach at least 1 savefile, it must be fully decrypted. Or type 'EXIT' to cancel command.",
+    description=f"Please reply with at least 1 savefile, it must be fully decrypted. Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 emb_upl_savegame.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -176,7 +176,7 @@ embChannelError.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 cancel_notify_emb = discord.Embed(
     title="Notice",
-    description="You can 'EXIT' if you want to cancel while the files are uploading.",
+    description="You can reply with 'EXIT' if you want to cancel while the files are uploading.",
     color=Color.DEFAULT.value
 )
 cancel_notify_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -196,14 +196,14 @@ gd_maintenance_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng1 = discord.Embed(
     title="PNG process: Initializng",
-    description="Your save (**{savename}**) is being mounted, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) is being mounted, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embpng1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embpng2 = discord.Embed(
     title="PNG process: Initializng",
-    description="Your save (**{savename}**) has mounted, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) has mounted, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embpng2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -220,7 +220,7 @@ embPdone = discord.Embed(
     description=(
         "Altered the save png of **{printed}** and resigned to **{id}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -228,7 +228,7 @@ embPdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embTitleChange1 = discord.Embed(
     title="Title altering process: Initializng",
-    description="Processing {savename} (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to attempt cancelling.",
+    description="Processing {savename} (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to attempt cancelling.",
     colour=Color.DEFAULT.value
 )
 embTitleChange1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -245,7 +245,7 @@ embTdone = discord.Embed(
     description=(
         "Altered the save titles of **{printed}**, and resigned to **{id}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -253,7 +253,7 @@ embTdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_conv_upl = discord.Embed(
     title="Conversion process: {game}",
-    description="Please attach atleast 1 savefile. Or type 'EXIT' to cancel command.",
+    description="Please reply with atleast 1 savefile. Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
     )
 emb_conv_upl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -290,7 +290,7 @@ embconvCompleted = discord.Embed(
     description=(
         "Converted **{finished_files}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -298,7 +298,7 @@ embconvCompleted.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embSceSys = discord.Embed(
     title="Upload: sce_sys contents\n{savename}",
-    description="Please attach the sce_sys files you want to upload. Or type 'EXIT' to cancel command.",
+    description="Please reply with the sce_sys files you want to upload. Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -306,11 +306,11 @@ embSceSys.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 embgs = discord.Embed(
     title="Upload: Gamesaves\n{savename}",
     description=(
-        "Please attach the gamesave files you want to upload.\n"
+        "Please reply with the gamesave files you want to upload.\n"
         "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
         "For **Discord uploads** rename the files according to the path they are going to have inside the savefile using the value '{splitvalue}'. For example the file 'savedata' inside the data directory would be called 'data{splitvalue}savedata'.\n\n"
         "For **Google Drive uploads** just create the directories on the drive and send the folder link from root, it will be recursively downloaded.\n\n"
-        "*Or type 'EXIT' to cancel command.*"
+        "*Or reply with 'EXIT' to cancel command.*"
     ),
     colour=Color.DEFAULT.value
 )
@@ -328,7 +328,7 @@ embCRdone = discord.Embed(
     description=(
         "**{savename}** created & resigned to **{id}**.\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -336,14 +336,14 @@ embCRdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb11 = discord.Embed(
     title="Decryption process: Initializing",
-    description="Mounting {savename} (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Mounting {savename} (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 emb11.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 emb_dl = discord.Embed(
     title="Decryption process: Downloading",
-    description="{savename} mounted (save {j}/{savecount}, batch {i}/{batches}), downloading decrypted savefile...\nSend 'EXIT' to cancel.",
+    description="{savename} mounted (save {j}/{savecount}, batch {i}/{batches}), downloading decrypted savefile...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 emb_dl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -360,7 +360,7 @@ embDdone = discord.Embed(
     description=(
         "**{printed}** has been decrypted (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "Send 'EXIT' to cancel."
+        "Reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -368,7 +368,7 @@ embDdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embmo = discord.Embed(
     title="Encryption process: Initializing",
-    description="Mounting **{savename}**, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Mounting **{savename}**, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embmo.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -385,7 +385,7 @@ embencComplete = discord.Embed(
     description=(
         "Encrypted files into **{printed}** for **{id}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -393,7 +393,7 @@ embencComplete.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 keyset_emb = discord.Embed(
     title="Success",
-    description="Keyset: {keyset}\nFW: {fw}",
+    description="Max keyset: {keyset}\nMax firmware: {fw}",
     color=Color.DEFAULT.value
 )
 keyset_emb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -423,7 +423,7 @@ embExit.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embresb = discord.Embed(
     title="Resigning process: Encrypted",
-    description="Your save (**{savename}**) is being resigned ({i}/{savecount}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) is being resigned ({i}/{savecount}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embresb.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -440,7 +440,7 @@ embRdone = discord.Embed(
     description=(
         "**{printed}** resigned to **{id}**.\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -465,7 +465,7 @@ embqcCompleted = discord.Embed(
     description=(
         "Quick codes applied to **{finished_files}** ({i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -480,7 +480,7 @@ embchLoading.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embkstone1 = discord.Embed(
     title="Obtain process: Keystone",
-    description="Obtaining keystone from file: **{savename}**, please wait...\nSend 'EXIT' to cancel.",
+    description="Obtaining keystone from file: **{savename}**, please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embkstone1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -494,7 +494,7 @@ embkstone2.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embrrp = discord.Embed(
     title="Re-regioning process: Encrypted",
-    description="Your save (**{savename}**) is being re-regioned & resigned, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) is being re-regioned & resigned, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embrrp.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -511,7 +511,7 @@ embrrdone = discord.Embed(
     description=(
         "**{printed}** re-regioned & resigned to **{id}** (**{target_titleid}**), (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )
@@ -519,7 +519,7 @@ embrrdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embres = discord.Embed(
     title="Resigning process: Encrypted",
-    description="Your save (**{savename}**) is being resigned, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Your save (**{savename}**) is being resigned, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embres.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -536,7 +536,7 @@ embRbdone = discord.Embed(
     description=(
         "**{printed}** resigned to **{id}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value)
 embRbdone.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -635,7 +635,7 @@ embuplSuccess1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embencupl = discord.Embed(
     title="Current save: {savename}",
-    description="Please attach a decrypted savefile that you want to upload, MUST be equivalent to {filename} (can be any name). Or type 'EXIT' to cancel command.",
+    description="Please reply with a decrypted savefile that you want to upload, MUST be equivalent to {filename} (can be any name). Or reply with 'EXIT' to cancel command.",
     colour=Color.DEFAULT.value
 )
 embencupl.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -651,10 +651,10 @@ embencinst = discord.Embed(
     description=(
         "**FOLLOW THESE INSTRUCTIONS CAREFULLY**\n\n"
         "FOR **DISCORD ATTACHMENT UPLOAD**:\n"
-        "Please attach at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{splitvalue}'.\n"
+        "Please reply with at least one of these files and make sure its the same name, including path in the name if that is the case. Instead of '/' use '{splitvalue}'.\n"
         "\nFOR **GOOGLE DRIVE LINK UPLOAD**:\n"
         "UPLOAD WITH ANY FOLDER STRUCTURE!\n\n"
-        "*Or type 'EXIT' to cancel command*."
+        "*Or reply with 'EXIT' to cancel command*."
         "\n\nHere are the contents:"),
     colour=Color.DEFAULT.value
 )
@@ -706,14 +706,14 @@ embwlcom.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embzip1 = discord.Embed(
     title="Upload folder",
-    description="Please attach one or more ZIP files each containing a sufficient folder to produce a valid savefile.",
+    description="Please reply with one or more ZIP files each containing a sufficient folder to produce a valid savefile.",
     colour=Color.DEFAULT.value
 )
 embzip1.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
 
 embc_bulk = discord.Embed(
     title="Processing",
-    description="Creating **{savename}**, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nSend 'EXIT' to cancel.",
+    description="Creating **{savename}**, (save {j}/{savecount}, batch {i}/{batches}), please wait...\nReply with 'EXIT' to cancel.",
     colour=Color.DEFAULT.value
 )
 embc_bulk.set_footer(text=Embed_t.DEFAULT_FOOTER.value)
@@ -723,7 +723,7 @@ embCRdone_bulk = discord.Embed(
     description=(
         "**{printed}** resigned to **{id}** (batch {i}/{batches}).\n"
         "Uploading file...\n"
-        "If file is being uploaded to Google Drive, you can send 'EXIT' to cancel."
+        "If file is being uploaded to Google Drive, you can reply with 'EXIT' to cancel."
     ),
     colour=Color.DEFAULT.value
 )

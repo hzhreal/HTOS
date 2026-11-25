@@ -163,30 +163,27 @@ class PfsSKKey:
     def as_array(self) -> list[int]:
         return list(self.data)
 
-def keyset_to_fw(keyset: int) -> str:
-    match keyset:
-        case 1:
-            return "Any"
-        case 2:
-            return "4.50+"
-        case 3:
-            return "4.70+"
-        case 4:
-            return "5.00+"
-        case 5:
-            return "5.50+"
-        case 6:
-            return "6.00+"
-        case 7:
-            return "6.50+"
-        case 8:
-            return "7.00+"
-        case 9:
-            return "7.50+"
-        case 10:
-            return "8.00+"
-        case _:
-            return "?"
+def keyset_to_max_fw(keyset: int) -> str:
+    fws = (
+        "1.00",
+        "4.50",
+        "4.70",
+        "5.00",
+        "5.50",
+        "6.00",
+        "6.50",
+        "7.00",
+        "7.50",
+        "8.00",
+    )
+    if not (1 <= keyset <= len(fws)):
+        return "?"
+
+    if keyset == len(fws):
+        max_fw = "Any"
+    else:
+        max_fw = fws[keyset]
+    return max_fw
 
 def checkid(accid: str) -> bool:
     if accid.lower().startswith("0x"):
