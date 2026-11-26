@@ -35,7 +35,7 @@ class SFOEditor(SFOContext):
                     raise ValueError("One of the values is too large to show!")
                 emb.add_field(
                     name=key.upper(),
-                    value=val,
+                    value=f"`{val}`" if val else "",
                     inline=True
                 )
             embeds.append(emb)
